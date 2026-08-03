@@ -1,5 +1,6 @@
 #include "beez/plugin/shell/shell_executor.h"
 
+#include "beez/core/context.h"
 #include "beez/plugin/plugin_host.h"
 
 #include <cstdlib>
@@ -9,10 +10,35 @@
 namespace beez::plugin::shell
 {
 
-int ShellExecutor::execute(const std::string& command, const core::Context& /*context*/)
+namespace
 {
+
+std::string shellQuote(const std::string& value)
+{
+    std::string quoted = "'";
+    for (const char Character : value)
+    {
+        if (Character == '\'')
+        {
+            quoted += "'\\''";
+        }
+        else
+        {
+            quoted += Character;
+        }
+    }
+    quoted += '\'';
+    return quoted;
+}
+
+}  // namespace
+
+int ShellExecutor::execute(const std::string& command, const core::Context& context)
+{
+    const std::string WrappedCommand =
+        "cd " + shellQuote(context.projectRoot().string()) + " && " + command;
     // NOLINTNEXTLINE(bugprone-command-processor,cert-env33-c,concurrency-mt-unsafe)
-    return std::system(command.c_str());
+    return std::system(WrappedCommand.c_str());
 }
 
 std::string ShellPlugin::name() const

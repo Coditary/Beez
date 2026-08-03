@@ -42,7 +42,8 @@ class Orchestrator
     // cppcheck-suppress functionStatic
     [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(const Workflow& workflow);
 
-    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel dependencies
+    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel
+    // dependencies
     Registry& registry_;
     Context& context_;
     plugin::PluginHost& pluginHost_;
