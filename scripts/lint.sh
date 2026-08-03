@@ -5,7 +5,7 @@ BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
 
 echo "=== Running clang-tidy ==="
-CXX_FILES=$(find src include tests -name "*.cpp" -o -name "*.hpp" 2>/dev/null)
+CXX_FILES=$(find src include tests -name "*.cpp" -o -name "*.hpp" -o -name "*.h" 2>/dev/null)
 if [ -z "$CXX_FILES" ]; then
     echo "No C++ files found"
 else
@@ -17,7 +17,16 @@ fi
 
 echo ""
 echo "=== Running cmake-format check ==="
-cmake-format --check CMakeLists.txt src/CMakeLists.txt tests/CMakeLists.txt libs/CMakeLists.txt plugins/CMakeLists.txt 2>&1 || true
+cmake-format --check \
+    CMakeLists.txt \
+    src/CMakeLists.txt \
+    src/app/CMakeLists.txt \
+    src/core/CMakeLists.txt \
+    src/plugins/CMakeLists.txt \
+    src/plugins/lua/CMakeLists.txt \
+    src/plugins/shell/CMakeLists.txt \
+    tests/CMakeLists.txt \
+    fuzz/CMakeLists.txt 2>&1 || true
 
 echo ""
 echo "=== Lint complete ==="

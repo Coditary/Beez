@@ -40,9 +40,9 @@ jobs:
       - name: Lint
         if: matrix.build_type == 'Release'
         run: |
-          find src include tests -name "*.cpp" -o -name "*.hpp" | xargs clang-tidy -p build --use-color || true
+          find src include tests -name "*.cpp" -o -name "*.hpp" -o -name "*.h" | xargs clang-tidy -p build --use-color || true
 
       - name: Format check
         if: matrix.build_type == 'Release'
         run: |
-          clang-format --dry-run --Werror src/**/*.{cpp,hpp} include/**/*.{cpp,hpp} tests/**/*.{cpp,hpp} || true
+          clang-format --dry-run --Werror src/**/*.{cpp,h,hpp} include/**/*.{cpp,h,hpp} tests/**/*.{cpp,h,hpp} || true

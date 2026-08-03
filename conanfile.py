@@ -13,12 +13,13 @@ class BeezConan(ConanFile):
 
     settings = "os", "compiler", "build_type", "arch"
 
-    exports_sources = "CMakeLists.txt", "src/*", "include/*", "libs/*", "plugins/*", "tests/*"
+    exports_sources = "CMakeLists.txt", "src/*", "include/*", "tests/*", "build.lua"
 
     generators = "CMakeDeps", "CMakeToolchain"
 
     def requirements(self):
         self.requires("gtest/1.14.0")
+        self.requires("lua/5.4.6")
 
     def layout(self):
         cmake_layout(self)

@@ -1,14 +1,19 @@
-.PHONY: help setup build debug test lint format analyze security clean coverage all sanitize tidy format-check
+.PHONY: help setup build debug test lint format analyze security clean coverage all sanitize tidy format-check run
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
 CONAN_PROFILE ?= clang-release
+ARGS ?=
+BEEZ_BIN := $(BUILD_DIR)/build/$(BUILD_TYPE)/bin/beez
 
 export CC = clang
 export CXX = clang++
 
-CXX_FILES := $(shell find src include tests -name '*.cpp' -o -name '*.hpp' 2>/dev/null)
-CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt tests/CMakeLists.txt libs/CMakeLists.txt plugins/CMakeLists.txt
+CXX_FILES := $(shell find src include tests -name '*.cpp' -o -name '*.hpp' -o -name '*.h' 2>/dev/null)
+CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt src/app/CMakeLists.txt src/core/CMakeLists.txt src/plugins/CMakeLists.txt src/plugins/lua/CMakeLists.txt src/plugins/shell/CMakeLists.txt tests/CMakeLists.txt fuzz/CMakeLists.txt
+
+hi:
+	echo heyyy
 
 help: ## Alle Targets anzeigen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -28,6 +33,9 @@ debug: ## Debug build mit Sanitizern
 
 test: ## Tests ausführen
 	cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure --verbose
+
+run: ## Beez ausführen (z.B. make run ARGS=clean)
+	$(BEEZ_BIN) $(ARGS)
 
 lint: ## clang-tidy + cmake-format check
 	./scripts/lint.sh $(BUILD_DIR)
