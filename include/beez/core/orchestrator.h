@@ -39,11 +39,14 @@ class Orchestrator
 
   private:
     [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task);
+    // cppcheck-suppress functionStatic
     [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(const Workflow& workflow);
 
+    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel dependencies
     Registry& registry_;
     Context& context_;
     plugin::PluginHost& pluginHost_;
+    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 };
 
 }  // namespace beez::core

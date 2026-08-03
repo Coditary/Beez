@@ -13,7 +13,13 @@ namespace beez::plugin
 class IExecutor
 {
   public:
+    IExecutor() = default;
     virtual ~IExecutor() = default;
+    IExecutor(const IExecutor&) = delete;
+    IExecutor& operator=(const IExecutor&) = delete;
+    IExecutor(IExecutor&&) = delete;
+    IExecutor& operator=(IExecutor&&) = delete;
+
     virtual int execute(const std::string& command, const core::Context& context) = 0;
 };
 

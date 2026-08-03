@@ -14,7 +14,7 @@
 #include <string>
 #include <utility>
 
-// NOLINTBEGIN(misc-include-cleaner)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
 
 namespace beez::plugin::lua
@@ -183,4 +183,4 @@ void LuaDslPlugin::registerCapabilities(PluginHost& host)
 }
 
 }  // namespace beez::plugin::lua
-// NOLINTEND(misc-include-cleaner)
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

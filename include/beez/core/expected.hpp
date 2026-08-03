@@ -9,7 +9,9 @@ namespace beez
 template <typename T, typename E> class Expected
 {
   public:
+    // cppcheck-suppress noExplicitConstructor
     Expected(T value) : data_(std::move(value)) {}
+    // cppcheck-suppress noExplicitConstructor
     Expected(E error) : data_(std::move(error)) {}
 
     [[nodiscard]] bool hasValue() const
@@ -50,6 +52,7 @@ template <typename E> class Expected<void, E>
 {
   public:
     Expected() = default;
+    // cppcheck-suppress noExplicitConstructor
     Expected(E error) : error_(std::move(error)), hasValue_(false) {}
 
     [[nodiscard]] bool hasValue() const

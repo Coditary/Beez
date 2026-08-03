@@ -33,14 +33,14 @@ IDslLoader* PluginHost::dslLoader() const
     return dslLoader_.get();
 }
 
-void PluginHost::setExecutor(std::unique_ptr<IExecutor> executor)
+void PluginHost::setExecutor(std::unique_ptr<IExecutor> newExecutor)
 {
-    executor_ = std::move(executor);
+    executor_ = std::move(newExecutor);
 }
 
-void PluginHost::setDslLoader(std::unique_ptr<IDslLoader> dslLoader)
+void PluginHost::setDslLoader(std::unique_ptr<IDslLoader> newDslLoader)
 {
-    dslLoader_ = std::move(dslLoader);
+    dslLoader_ = std::move(newDslLoader);
 }
 
 }  // namespace beez::plugin

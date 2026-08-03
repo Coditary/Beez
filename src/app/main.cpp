@@ -8,8 +8,9 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <string>
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
     try
     {
@@ -36,7 +37,9 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        const auto RunResult = orchestrator.run(argv[1]);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) -- argc validated above
+        const std::string CommandName(argv[1]);
+        const auto RunResult = orchestrator.run(CommandName);
         if (!RunResult)
         {
             std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';

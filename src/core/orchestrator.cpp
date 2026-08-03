@@ -80,6 +80,7 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task)
     return ExitCode;
 }
 
+// cppcheck-suppress functionStatic
 Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& /*workflow*/)
 {
     return OrchestratorError::WorkflowNotImplemented;
