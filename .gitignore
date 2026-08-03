@@ -28,7 +28,7 @@ conanbuildinfo.cmake
 compile_commands.json
 
 # Reports
-*.txt
+*report.txt
 !README.md
 !LICENSE
 
@@ -37,3 +37,9 @@ compile_commands.json
 *.gcno
 *.gcov
 coverage/
+
+# libFuzzer artifacts (when run outside build/)
+leak-*
+crash-*
+timeout-*
+slow-unit-*
