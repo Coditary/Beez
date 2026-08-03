@@ -11,10 +11,10 @@ TEST(ShellExecutorTest, TrueCommandReturnsZero)
     EXPECT_EQ(executor.execute("true", Ctx), 0);
 }
 
-TEST(ShellExecutorTest, FalseCommandReturnsNonZero)
+TEST(ShellExecutorTest, FalseCommandReturnsOne)
 {
     const beez::core::Context Ctx;
     beez::plugin::shell::ShellExecutor executor;
 
-    EXPECT_NE(executor.execute("false", Ctx), 0);
+    EXPECT_EQ(executor.execute("false", Ctx), 1);
 }

@@ -28,6 +28,7 @@ cmake-format --check \
     tests/CMakeLists.txt \
     tests/unit/CMakeLists.txt \
     tests/integration/CMakeLists.txt \
+    tests/system/CMakeLists.txt \
     fuzz/CMakeLists.txt 2>&1 || true
 
 echo ""
