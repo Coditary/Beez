@@ -43,3 +43,8 @@ leak-*
 crash-*
 timeout-*
 slow-unit-*
+
+# libFuzzer corpus: keep .lua seeds, ignore hash-named generated inputs
+fuzz/corpus/**/*
+!fuzz/corpus/**/
+!fuzz/corpus/**/*.lua

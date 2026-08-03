@@ -81,6 +81,8 @@ fuzzer: setup-fuzzer ## Fuzzer bauen
 	cmake --build --preset conan-debug --target fuzz_lua_dsl
 
 fuzzer-smoke: fuzzer ## Fuzzer kurz laufen lassen (FUZZER_TIME Sekunden, default 30)
+	@test -n "$$(ls fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
+		(echo "ERROR: No fuzz seeds in fuzz/corpus/lua_dsl/*.lua" && exit 1)
 	rm -rf $(BUILD_DIR)/fuzz/corpus/lua_dsl
 	mkdir -p $(BUILD_DIR)/fuzz/corpus/lua_dsl
 	cp fuzz/corpus/lua_dsl/*.lua $(BUILD_DIR)/fuzz/corpus/lua_dsl/
@@ -90,6 +92,8 @@ fuzzer-smoke: fuzzer ## Fuzzer kurz laufen lassen (FUZZER_TIME Sekunden, default
 fuzzer-run: fuzzer-smoke ## Alias für fuzzer-smoke
 
 fuzzer-corpus: fuzzer ## Fuzzer länger laufen lassen und Corpus unter build/ sammeln
+	@test -n "$$(ls fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
+		(echo "ERROR: No fuzz seeds in fuzz/corpus/lua_dsl/*.lua" && exit 1)
 	rm -rf $(BUILD_DIR)/fuzz/corpus
 	mkdir -p $(BUILD_DIR)/fuzz/corpus/lua_dsl
 	cp fuzz/corpus/lua_dsl/*.lua $(BUILD_DIR)/fuzz/corpus/lua_dsl/
