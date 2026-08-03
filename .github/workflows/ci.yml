@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang clang-tidy cppcheck
+
+      - name: Install Conan
+        run: |
+          pip install conan
+          conan profile detect
+
+      - name: Configure
+        run: |
+          conan install . --output-folder=build --build=missing -s build_type=${{ matrix.build_type }}
+          cd build && cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Test
+        run: cd build && ctest --output-on-failure --verbose
+
+      - name: Lint
+        if: matrix.build_type == 'Release'
+        run: |
+          find src include tests -name "*.cpp" -o -name "*.hpp" | xargs clang-tidy -p build --use-color || true
+
+      - name: Format check
+        if: matrix.build_type == 'Release'
+        run: |
+          clang-format --dry-run --Werror src/**/*.{cpp,hpp} include/**/*.{cpp,hpp} tests/**/*.{cpp,hpp} || true

@@ -1,0 +1,39 @@
+# Build
+build/
+out/
+cmake-build-*/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Conan
+conan_cache/
+conan_paths.cmake
+conanbuildinfo.cmake
+
+# Compiled
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Compile commands
+compile_commands.json
+
+# Reports
+*.txt
+!README.md
+!LICENSE
+
+# Coverage
+*.gcda
+*.gcno
+*.gcov
+coverage/

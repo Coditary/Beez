@@ -1,0 +1,34 @@
+from conan import ConanFile
+from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.build import can_run
+import os
+
+
+class BeezConan(ConanFile):
+    name = "beez"
+    version = "0.1.0"
+    package_type = "application"
+    license = "Apache-2.0"
+    url = "https://github.com/Leodoras/Beez"
+
+    settings = "os", "compiler", "build_type", "arch"
+
+    exports_sources = "CMakeLists.txt", "src/*", "include/*", "libs/*", "plugins/*", "tests/*"
+
+    generators = "CMakeDeps", "CMakeToolchain"
+
+    def requirements(self):
+        self.requires("gtest/1.14.0")
+
+    def layout(self):
+        cmake_layout(self)
+
+    def build(self):
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
+
+    def test(self):
+        if can_run(self):
+            cmd = os.path.join(self.cpp.bindir, "beez_tests")
+            self.run(cmd, env="conanrun")

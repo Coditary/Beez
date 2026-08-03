@@ -1,0 +1,26 @@
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+option(ENABLE_MSAN "Enable MemorySanitizer" OFF)
+
+function(beez_enable_sanitizers target)
+    if(ENABLE_ASAN)
+        target_compile_options(${target} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=address)
+    endif()
+
+    if(ENABLE_UBSAN)
+        target_compile_options(${target} PRIVATE -fsanitize=undefined -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=undefined)
+    endif()
+
+    if(ENABLE_TSAN)
+        target_compile_options(${target} PRIVATE -fsanitize=thread -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=thread)
+    endif()
+
+    if(ENABLE_MSAN)
+        target_compile_options(${target} PRIVATE -fsanitize=memory -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=memory)
+    endif()
+endfunction()

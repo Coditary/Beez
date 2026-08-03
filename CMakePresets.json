@@ -1,0 +1,65 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "clang-release",
+            "displayName": "Clang Release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/Release",
+            "installDir": "${sourceDir}/build/install",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "BUILD_TESTING": "ON",
+                "BUILD_CACHE": "ON"
+            }
+        },
+        {
+            "name": "clang-debug",
+            "displayName": "Clang Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/Debug",
+            "installDir": "${sourceDir}/build/install",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "BUILD_TESTING": "ON",
+                "BUILD_CACHE": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "clang-release",
+            "displayName": "Clang Release Build",
+            "configurePreset": "clang-release"
+        },
+        {
+            "name": "clang-debug",
+            "displayName": "Clang Debug Build",
+            "configurePreset": "clang-debug"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "clang-release",
+            "displayName": "Clang Release Tests",
+            "configurePreset": "clang-release",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "extra"
+            }
+        },
+        {
+            "name": "clang-debug",
+            "displayName": "Clang Debug Tests",
+            "configurePreset": "clang-debug",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "extra"
+            }
+        }
+    ]
+}
