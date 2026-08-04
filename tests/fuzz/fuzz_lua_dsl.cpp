@@ -81,10 +81,13 @@ void loadFuzzInput()
 {
     const StderrSilencer silenceExpectedParseErrors;
 
-    beez::core::Registry registry;
     beez::core::Context context(fuzzProjectRoot());
     beez::plugin::lua::LuaDslLoader loader;
-    static_cast<void>(loader.load(context, registry));
+    {
+        beez::core::Registry registry;
+        static_cast<void>(loader.load(context, registry));
+    }
+    loader.releaseState();
 }
 
 }  // namespace

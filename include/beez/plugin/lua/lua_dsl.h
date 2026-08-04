@@ -21,6 +21,7 @@ class LuaDslLoader : public IDslLoader
     LuaDslLoader& operator=(LuaDslLoader&&) = delete;
 
     bool load(const core::Context& context, core::Registry& registry) override;
+    void releaseState();
 
   private:
     struct Impl;

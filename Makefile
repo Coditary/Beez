@@ -106,7 +106,7 @@ fuzzer-smoke: fuzzer ## Fuzzer kurz laufen lassen (FUZZER_TIME Sekunden, default
 	cp tests/fuzz/corpus/lua_dsl/*.lua $(FUZZER_CORPUS_DIR)/
 	@echo "=== Running fuzz_lua_dsl for $(FUZZER_TIME)s (invalid Lua input is expected) ==="
 	@mkdir -p $(REPORTS_DIR)/fuzz
-	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=$(FUZZER_TIME) -print_final_stats=1 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-smoke-report.txt'
+	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=$(FUZZER_TIME) -print_final_stats=1 -rss_limit_mb=0 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-smoke-report.txt'
 
 fuzzer-run: fuzzer-smoke ## Alias für fuzzer-smoke
 
@@ -117,7 +117,7 @@ fuzzer-corpus: fuzzer ## Fuzzer länger laufen lassen und Corpus sammeln
 	mkdir -p $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
 	cp tests/fuzz/corpus/lua_dsl/*.lua $(FUZZER_CORPUS_DIR)/
 	@mkdir -p $(REPORTS_DIR)/fuzz
-	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=60 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-corpus-report.txt'
+	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=60 -rss_limit_mb=0 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-corpus-report.txt'
 
 all: build test format-check lint analyze security coverage sanitize fuzzer-smoke ## Komplette QS-Pipeline
 	@echo "=== All quality checks passed ==="

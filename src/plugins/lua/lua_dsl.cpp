@@ -206,7 +206,7 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
 class DslBinder
 {
   public:
-    DslBinder(core::Registry* registry, std::shared_ptr<sol::state> luaState)
+    DslBinder(core::Registry* registry, std::weak_ptr<sol::state> luaState)
         : registry_(registry), luaState_(std::move(luaState))
     {
     }
@@ -235,7 +235,13 @@ class DslBinder
 
     void step(const sol::table& options) const
     {
-        registry_->registerStep(parseStepTable(options, luaState_));
+        const auto LuaState = luaState_.lock();
+        if (!LuaState)
+        {
+            throw std::runtime_error("lua state is no longer available");
+        }
+
+        registry_->registerStep(parseStepTable(options, LuaState));
     }
 
     void workflow(const std::string& name, const sol::table& steps) const
@@ -245,12 +251,13 @@ class DslBinder
 
   private:
     core::Registry* registry_;
-    std::shared_ptr<sol::state> luaState_;
+    std::weak_ptr<sol::state> luaState_;
 };
 
 void registerDsl(const std::shared_ptr<sol::state>& luaState, core::Registry& registry)
 {
-    auto binder = std::make_shared<DslBinder>(&registry, luaState);
+    const std::weak_ptr<sol::state> WeakState = luaState;
+    auto binder = std::make_shared<DslBinder>(&registry, WeakState);
 
     (*luaState)["task"] = sol::overload(
         [binder](const std::string& name, const std::string& run) { binder->task(name, run); },
@@ -269,6 +276,7 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 {
     try
     {
+        impl_->luaState = nullptr;
         impl_->luaState = std::make_shared<sol::state>();
         impl_->luaState->open_libraries(sol::lib::base, sol::lib::package);
 
@@ -290,6 +298,11 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
         impl_->luaState = nullptr;
         return false;
     }
+}
+
+void LuaDslLoader::releaseState()
+{
+    impl_->luaState = nullptr;
 }
 
 std::string LuaDslPlugin::name() const
