@@ -11,7 +11,8 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       security-events: write
       packages: read
@@ -25,6 +26,10 @@ jobs:
           - language: cpp
             build-mode: manual
 
+    env:
+      CC: clang
+      CXX: clang++
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,23 +40,37 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang
+          sudo apt-get install -y --no-install-recommends \
+            cmake \
+            ninja-build \
+            clang \
+            pipx
 
       - name: Install Conan
         run: |
-          pip install conan
-          conan profile detect
+          pipx install conan
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Configure
+      - name: Prepare Conan profile
         run: |
-          conan install . --output-folder=build --build=missing -s build_type=Debug
-          cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
+          echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
+          echo "Using Conan profile at ${PROFILE_PATH}"
+          cat "${PROFILE_PATH}"
 
-      - name: Build
-        run: cmake --build build --config Debug
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-${{ runner.os }}-
+
+      - name: Build (Debug)
+        run: make debug
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

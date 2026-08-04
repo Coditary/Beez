@@ -43,7 +43,7 @@ jobs:
         run: |
           pipx install conan
           pipx install gcovr
-          pipx install cmake-format
+          pipx install cmakelang
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Prepare Conan profile
@@ -74,9 +74,13 @@ jobs:
         run: |
           {
             echo "## Test results"
-            echo '```'
-            tail -n 40 test-output.txt
-            echo '```'
+            if [ -f test-output.txt ]; then
+              echo '```'
+              tail -n 40 test-output.txt
+              echo '```'
+            else
+              echo "Tests did not run (no output captured)."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check formatting
