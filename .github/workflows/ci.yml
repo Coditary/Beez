@@ -44,6 +44,7 @@ jobs:
           pipx install conan
           pipx install gcovr
           pipx install cmakelang
+          pipx inject cmakelang pyyaml
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Prepare Conan profile
