@@ -3,7 +3,7 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
-HEADER_FILTER='(src|include)/.*'
+HEADER_FILTER='(src|include|tests)/.*'
 TIDY_CHECKS='-*,clang-analyzer-*,bugprone-*,cppcoreguidelines-*,performance-*'
 FAILED=0
 
@@ -38,7 +38,7 @@ else
         file_has_issue=0
         for line in "${tidy_output[@]}"; do
             echo "$line"
-            if [[ "$line" =~ ^(src|include)/.*(warning|error): ]]; then
+            if [[ "$line" =~ /(src|include|tests)/.*(warning|error): ]]; then
                 file_has_issue=1
             fi
         done

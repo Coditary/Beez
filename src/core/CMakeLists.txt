@@ -1,4 +1,4 @@
-add_library(beez_core STATIC context.cpp registry.cpp orchestrator.cpp plugin_host.cpp)
+add_library(beez_core STATIC context.cpp registry.cpp orchestrator.cpp phase_argument_parser.cpp plugin_host.cpp)
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 

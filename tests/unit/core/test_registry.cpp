@@ -1,5 +1,6 @@
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/registry.h"
+#include "beez/core/step.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
@@ -18,6 +19,12 @@ TEST(RegistryTest, FindUnknownTaskReturnsEmpty)
     EXPECT_FALSE(Registry.findTask("missing").has_value());
 }
 
+TEST(RegistryTest, FindUnknownStepReturnsEmpty)
+{
+    const beez::core::Registry Registry;
+    EXPECT_FALSE(Registry.findStep("missing").has_value());
+}
+
 TEST(RegistryTest, FindUnknownWorkflowReturnsEmpty)
 {
     const beez::core::Registry Registry;
@@ -30,7 +37,7 @@ TEST(RegistryTest, RegisterAndFindOrphanTask)
 
     beez::core::Task task;
     task.name = "clean";
-    task.run = "rm -fr app.o";
+    task.commands = {"rm -fr app.o"};
     registry.registerTask(std::move(task));
 
     const auto Found = registry.findTask("clean");
@@ -40,30 +47,31 @@ TEST(RegistryTest, RegisterAndFindOrphanTask)
         return;
     }
     EXPECT_EQ(Found->name, "clean");
-    EXPECT_EQ(Found->run, "rm -fr app.o");
-    EXPECT_TRUE(Found->isOrphan());
+    ASSERT_EQ(Found->commands.size(), 1U);
+    EXPECT_EQ(Found->commands[0], "rm -fr app.o");
 }
 
-TEST(RegistryTest, RegisterAndFindPhaseBoundTask)
+TEST(RegistryTest, RegisterAndFindStep)
 {
     beez::core::Registry registry;
 
-    beez::core::Task task;
-    task.name = "doxygen";
-    task.run = "doxygen Doxyfile";
-    task.phase = "generate";
-    task.scope = "docs";
-    registry.registerTask(std::move(task));
+    beez::core::Step step;
+    step.name = "doxygen";
+    step.phase = "generate";
+    step.scope = "docs";
+    step.shellRun = "doxygen Doxyfile";
+    registry.registerStep(std::move(step));
 
-    const auto Found = registry.findTask("doxygen");
+    const auto Found = registry.findStep("doxygen");
     ASSERT_TRUE(Found.has_value());
     if (!Found)
     {
         return;
     }
-    EXPECT_EQ(Found->phase, std::optional<std::string> {"generate"});
-    EXPECT_EQ(Found->scope, std::optional<std::string> {"docs"});
-    EXPECT_FALSE(Found->isOrphan());
+    EXPECT_EQ(Found->phase, "generate");
+    EXPECT_EQ(Found->scope, "docs");
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "doxygen Doxyfile");
 }
 
 TEST(RegistryTest, RegisterTaskOverwritesExisting)
@@ -72,12 +80,12 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
 
     beez::core::Task first;
     first.name = "clean";
-    first.run = "rm -fr app.o";
+    first.commands = {"rm -fr app.o"};
     registry.registerTask(std::move(first));
 
     beez::core::Task second;
     second.name = "clean";
-    second.run = "echo updated";
+    second.commands = {"echo updated"};
     registry.registerTask(std::move(second));
 
     const auto Found = registry.findTask("clean");
@@ -86,83 +94,96 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
     {
         return;
     }
-    EXPECT_EQ(Found->run, "echo updated");
+    ASSERT_EQ(Found->commands.size(), 1U);
+    EXPECT_EQ(Found->commands[0], "echo updated");
 }
 
-TEST(RegistryTest, TasksForPhaseFiltersByPhaseAndScope)
+TEST(RegistryTest, StepsForPhaseFiltersByPhaseAndScope)
 {
     beez::core::Registry registry;
 
-    beez::core::Task docsTask;
-    docsTask.name = "doxygen";
-    docsTask.run = "doxygen";
-    docsTask.phase = "generate";
-    docsTask.scope = "docs";
-    registry.registerTask(std::move(docsTask));
+    beez::core::Step docsStep;
+    docsStep.name = "doxygen";
+    docsStep.phase = "generate";
+    docsStep.scope = "docs";
+    docsStep.shellRun = "doxygen";
+    registry.registerStep(std::move(docsStep));
 
-    beez::core::Task codeTask;
-    codeTask.name = "protobuf";
-    codeTask.run = "protoc";
-    codeTask.phase = "generate";
-    codeTask.scope = "code";
-    registry.registerTask(std::move(codeTask));
+    beez::core::Step codeStep;
+    codeStep.name = "protobuf";
+    codeStep.phase = "generate";
+    codeStep.scope = "code";
+    codeStep.shellRun = "protoc";
+    registry.registerStep(std::move(codeStep));
 
-    const auto DocsMatches = registry.tasksForPhase("generate", "docs");
+    const auto DocsMatches = registry.stepsForPhase("generate", "docs");
     ASSERT_EQ(DocsMatches.size(), 1U);
     EXPECT_EQ(DocsMatches.front().name, "doxygen");
 
-    const auto CodeMatches = registry.tasksForPhase("generate", "code");
+    const auto CodeMatches = registry.stepsForPhase("generate", "code");
     ASSERT_EQ(CodeMatches.size(), 1U);
     EXPECT_EQ(CodeMatches.front().name, "protobuf");
 }
 
-TEST(RegistryTest, TasksForPhaseReturnsEmptyWhenNoMatch)
+TEST(RegistryTest, StepsForPhaseReturnsEmptyWhenNoMatch)
 {
     beez::core::Registry registry;
 
-    beez::core::Task task;
-    task.name = "compile";
-    task.run = "make";
-    task.phase = "compile";
-    task.scope = "code";
-    registry.registerTask(std::move(task));
+    beez::core::Step step;
+    step.name = "compile";
+    step.phase = "compile";
+    step.scope = "code";
+    step.shellRun = "make";
+    registry.registerStep(std::move(step));
 
-    EXPECT_TRUE(registry.tasksForPhase("generate", "docs").empty());
-    EXPECT_TRUE(registry.tasksForPhase("compile", "docs").empty());
+    EXPECT_TRUE(registry.stepsForPhase("generate", "docs").empty());
+    EXPECT_TRUE(registry.stepsForPhase("compile", "docs").empty());
 }
 
-TEST(RegistryTest, TasksForPhaseWildcardScopeMatchesAllScopes)
+TEST(RegistryTest, StepsForPhaseWildcardScopeMatchesAllScopes)
 {
     beez::core::Registry registry;
 
-    beez::core::Task docsTask;
-    docsTask.name = "doxygen";
-    docsTask.run = "doxygen";
-    docsTask.phase = "generate";
-    docsTask.scope = "docs";
-    registry.registerTask(std::move(docsTask));
+    beez::core::Step docsStep;
+    docsStep.name = "doxygen";
+    docsStep.phase = "generate";
+    docsStep.scope = "docs";
+    docsStep.shellRun = "doxygen";
+    registry.registerStep(std::move(docsStep));
 
-    beez::core::Task codeTask;
-    codeTask.name = "protobuf";
-    codeTask.run = "protoc";
-    codeTask.phase = "generate";
-    codeTask.scope = "code";
-    registry.registerTask(std::move(codeTask));
+    beez::core::Step codeStep;
+    codeStep.name = "protobuf";
+    codeStep.phase = "generate";
+    codeStep.scope = "code";
+    codeStep.shellRun = "protoc";
+    registry.registerStep(std::move(codeStep));
 
-    const auto Matches = registry.tasksForPhase("generate", "*");
+    const auto Matches = registry.stepsForPhase("generate", "*");
     ASSERT_EQ(Matches.size(), 2U);
 }
 
-TEST(RegistryTest, OrphanTasksAreExcludedFromPhaseQuery)
+TEST(RegistryTest, ScopesForPhaseReturnsUniqueSortedScopes)
 {
     beez::core::Registry registry;
 
-    beez::core::Task orphan;
-    orphan.name = "clean";
-    orphan.run = "rm -fr app.o";
-    registry.registerTask(std::move(orphan));
+    beez::core::Step docsStep;
+    docsStep.name = "doxygen";
+    docsStep.phase = "generate";
+    docsStep.scope = "docs";
+    docsStep.shellRun = "doxygen";
+    registry.registerStep(std::move(docsStep));
 
-    EXPECT_TRUE(registry.tasksForPhase("generate", "*").empty());
+    beez::core::Step codeStep;
+    codeStep.name = "protobuf";
+    codeStep.phase = "generate";
+    codeStep.scope = "code";
+    codeStep.shellRun = "protoc";
+    registry.registerStep(std::move(codeStep));
+
+    const auto Scopes = registry.scopesForPhase("generate");
+    ASSERT_EQ(Scopes.size(), 2U);
+    EXPECT_EQ(Scopes[0], "code");
+    EXPECT_EQ(Scopes[1], "docs");
 }
 
 TEST(RegistryTest, RegisterAndFindWorkflow)

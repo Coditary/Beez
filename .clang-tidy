@@ -20,7 +20,7 @@ Checks: >
 
 WarningsAsErrors: ''
 
-HeaderFilterRegex: 'src/.*|include/.*'
+HeaderFilterRegex: 'src/.*|include/.*|tests/.*'
 
 CheckOptions:
   - key: readability-braces-around-statements.ShortStatementLines

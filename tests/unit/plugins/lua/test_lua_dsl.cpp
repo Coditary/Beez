@@ -38,29 +38,59 @@ task("clean", "rm -fr app.o")
     {
         return;
     }
-    EXPECT_EQ(Found->run, "rm -fr app.o");
-    EXPECT_TRUE(Found->isOrphan());
+    ASSERT_EQ(Found->commands.size(), 1U);
+    EXPECT_EQ(Found->commands[0], "rm -fr app.o");
 }
 
-TEST(LuaDslTest, LoadsPhaseBoundTaskFromTableForm)
+TEST(LuaDslTest, LoadsTaskWithMultipleCommands)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-task("doxygen", { phase = "generate", scope = "docs", run = "doxygen Doxyfile" })
+task("hello", {
+    "echo Hello World",
+    "echo Goodbye World",
+})
 )");
 
     beez::core::Registry registry;
     ASSERT_TRUE(loadScript(Project, registry));
 
-    const auto Found = registry.findTask("doxygen");
+    const auto Found = registry.findTask("hello");
     ASSERT_TRUE(Found.has_value());
     if (!Found)
     {
         return;
     }
-    EXPECT_EQ(Found->phase, std::optional<std::string> {"generate"});
-    EXPECT_EQ(Found->scope, std::optional<std::string> {"docs"});
-    EXPECT_EQ(Found->run, "doxygen Doxyfile");
+    ASSERT_EQ(Found->commands.size(), 2U);
+    EXPECT_EQ(Found->commands[0], "echo Hello World");
+    EXPECT_EQ(Found->commands[1], "echo Goodbye World");
+}
+
+TEST(LuaDslTest, LoadsStepFromTableForm)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "doxygen",
+    phase = "generate",
+    scope = "docs",
+    run = "doxygen Doxyfile",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("doxygen");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    EXPECT_EQ(Found->phase, "generate");
+    EXPECT_EQ(Found->scope, "docs");
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "doxygen Doxyfile");
 }
 
 TEST(LuaDslTest, LoadsSequentialWorkflow)
@@ -124,11 +154,23 @@ TEST(LuaDslTest, ReturnsFalseForSyntaxError)
     EXPECT_FALSE(registry.findTask("clean").has_value());
 }
 
-TEST(LuaDslTest, ReturnsFalseWhenTaskTableMissingRun)
+TEST(LuaDslTest, ReturnsFalseWhenStepTableMissingRun)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-task("broken", { phase = "generate", scope = "docs" })
+step({ name = "broken", phase = "generate", scope = "docs" })
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("broken").has_value());
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenTaskTableIsNotCommandList)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("broken", { phase = "generate", scope = "docs", run = "true" })
 )");
 
     beez::core::Registry registry;

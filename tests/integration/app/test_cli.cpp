@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <string>
 
 TEST(CliTest, MissingArgumentsShowsUsage)
@@ -45,16 +46,75 @@ TEST(CliTest, UnknownTaskExitsWithError)
     EXPECT_NE(Result.output.find("name not found in registry"), std::string::npos);
 }
 
-TEST(CliTest, WorkflowInvocationIsNotImplementedYet)
+TEST(CliTest, WorkflowInvocationRunsMatchingSteps)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({
+    name = "gen-code",
+    phase = "generate",
+    scope = "code",
+    run = "touch .workflow-ran",
+})
 workflow("build", {
     { phase = "generate", scope = "code" },
 })
 )");
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"build"});
-    EXPECT_NE(Result.exitCode, 0);
-    EXPECT_NE(Result.output.find("workflow execution is not yet implemented"), std::string::npos);
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".workflow-ran"));
+}
+
+TEST(CliTest, PhaseInvocationRunsMatchingStepsWithColonSyntax)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "gen-code",
+    phase = "generate",
+    scope = "code",
+    run = "touch .phase-colon-ran",
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"-p", "generate:code"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".phase-colon-ran"));
+}
+
+TEST(CliTest, PhaseInvocationRunsMatchingSteps)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "gen-code",
+    phase = "generate",
+    scope = "code",
+    run = "touch .phase-ran",
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"-p", R"(generate["code"])"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".phase-ran"));
+}
+
+TEST(CliTest, StepInvocationRunsSingleStep)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = "touch .step-ran",
+})
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"-s", "compile"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".step-ran"));
 }

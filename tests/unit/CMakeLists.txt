@@ -7,6 +7,7 @@ add_executable(
     core/test_workflow.cpp
     core/test_context.cpp
     core/test_orchestrator.cpp
+    core/test_phase_argument_parser.cpp
     core/test_plugin_host.cpp
     plugins/lua/test_lua_dsl.cpp
     plugins/shell/test_shell_executor.cpp

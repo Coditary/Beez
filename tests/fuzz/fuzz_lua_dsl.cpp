@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <string>
+#include <ios>
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <fcntl.h>
@@ -18,20 +18,20 @@
 namespace
 {
 
-constexpr std::size_t kMaxInputSize = 64 * 1024;
+constexpr std::size_t MaxInputSize = 65536U;
 
 class StderrSilencer
 {
   public:
     StderrSilencer()
     {
-        std::fflush(stderr);
+        static_cast<void>(std::fflush(stderr));
         saved_ = dup(STDERR_FILENO);
-        const int nullFd = open("/dev/null", O_WRONLY);
-        if (nullFd >= 0)
+        const int NullFd = open("/dev/null", O_WRONLY);
+        if (NullFd >= 0)
         {
-            dup2(nullFd, STDERR_FILENO);
-            close(nullFd);
+            static_cast<void>(dup2(NullFd, STDERR_FILENO));
+            static_cast<void>(close(NullFd));
         }
     }
 
@@ -39,9 +39,9 @@ class StderrSilencer
     {
         if (saved_ >= 0)
         {
-            std::fflush(stderr);
-            dup2(saved_, STDERR_FILENO);
-            close(saved_);
+            static_cast<void>(std::fflush(stderr));
+            static_cast<void>(dup2(saved_, STDERR_FILENO));
+            static_cast<void>(close(saved_));
         }
     }
 
@@ -65,7 +65,7 @@ std::filesystem::path fuzzScriptPath()
     return fuzzProjectRoot() / "build.lua";
 }
 
-bool writeFuzzInput(const uint8_t* data, const std::size_t size)
+bool writeFuzzInput(const uint8_t* data, const std::size_t InputSize)
 {
     std::ofstream stream(fuzzScriptPath(), std::ios::binary | std::ios::trunc);
     if (!stream)
@@ -73,34 +73,40 @@ bool writeFuzzInput(const uint8_t* data, const std::size_t size)
         return false;
     }
 
-    stream.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size));
+    stream.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(InputSize));
     return stream.good();
 }
 
 void loadFuzzInput()
 {
-    const StderrSilencer silenceExpectedParseErrors;
+    const StderrSilencer SilenceExpectedParseErrors;
 
-    beez::core::Registry registry;
-    beez::core::Context context(fuzzProjectRoot());
+    const beez::core::Context FuzzContext(fuzzProjectRoot());
     beez::plugin::lua::LuaDslLoader loader;
-    static_cast<void>(loader.load(context, registry));
+    {
+        beez::core::Registry registry;
+        static_cast<void>(loader.load(FuzzContext, registry));
+    }
+    loader.releaseState();
 }
 
 }  // namespace
 
+// NOLINTNEXTLINE(readability-identifier-naming,readability-non-const-parameter)
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
     (void)argc;
     (void)argv;
     // Belt-and-suspenders: disable LSan when the fuzzer binary is linked with ASan.
+    // NOLINTNEXTLINE(bugprone-command-processor,cert-env33-c,concurrency-mt-unsafe,misc-include-cleaner)
     setenv("ASAN_OPTIONS", "detect_leaks=0", 1);
     return 0;
 }
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, const std::size_t size)
 {
-    if (data == nullptr || size == 0 || size > kMaxInputSize)
+    if (data == nullptr || size == 0 || size > MaxInputSize)
     {
         return 0;
     }

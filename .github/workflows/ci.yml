@@ -68,16 +68,16 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          make test 2>&1 | tee test-output.txt
+          make test
 
       - name: Test summary
         if: always()
         run: |
           {
             echo "## Test results"
-            if [ -f test-output.txt ]; then
+            if [ -f report/test/test-report.txt ]; then
               echo '```'
-              tail -n 40 test-output.txt
+              tail -n 40 report/test/test-report.txt
               echo '```'
             else
               echo "Tests did not run (no output captured)."
@@ -110,5 +110,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: build/build/Debug/coverage.html
+          path: report/coverage/
+          if-no-files-found: ignore
+
+      - name: Upload QA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-reports
+          path: report/
           if-no-files-found: ignore

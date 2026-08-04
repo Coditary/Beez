@@ -3,6 +3,7 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
+HEADER_FILTER='(src|include|tests)/.*'
 FAILED=0
 
 echo "=== Running clang-tidy ==="
@@ -13,13 +14,15 @@ else
     while IFS= read -r file; do
         echo "Checking: $file"
         mapfile -t tidy_output < <(
-            clang-tidy -p "$COMPDB_DIR" "$file" --use-color 2>&1 || true
+            clang-tidy -p "$COMPDB_DIR" "$file" \
+                --header-filter="$HEADER_FILTER" \
+                --use-color 2>&1 || true
         )
 
         file_has_issue=0
         for line in "${tidy_output[@]}"; do
             echo "$line"
-            if [[ "$line" =~ ^.*(warning|error): ]]; then
+            if [[ "$line" =~ /(src|include|tests)/.*(warning|error): ]]; then
                 file_has_issue=1
             fi
         done
@@ -44,7 +47,7 @@ if ! cmake-format --check \
     tests/unit/CMakeLists.txt \
     tests/integration/CMakeLists.txt \
     tests/system/CMakeLists.txt \
-    fuzz/CMakeLists.txt; then
+    tests/fuzz/CMakeLists.txt; then
     FAILED=1
 fi
 

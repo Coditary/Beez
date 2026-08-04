@@ -27,11 +27,16 @@ task("mark", "touch .beez-ran")
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".beez-ran"));
 }
 
-TEST(OrchestratorPipelineTest, LoadsAndRunsPhaseBoundTaskByName)
+TEST(OrchestratorPipelineTest, LoadsAndRunsStepByName)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-task("docs", { phase = "generate", scope = "docs", run = "touch .docs-ran" })
+step({
+    name = "docs",
+    phase = "generate",
+    scope = "docs",
+    run = "touch .docs-ran",
+})
 )");
 
     beez::test::BeezRuntime runtime(Project.path());
@@ -39,7 +44,7 @@ task("docs", { phase = "generate", scope = "docs", run = "touch .docs-ran" })
 
     ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
 
-    const auto RunResult = orchestrator.run("docs");
+    const auto RunResult = orchestrator.runStep("docs");
     ASSERT_TRUE(RunResult.hasValue());
     EXPECT_EQ(RunResult.value(), 0);
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".docs-ran"));
@@ -87,10 +92,16 @@ task("known", "true")
     EXPECT_EQ(RunResult.error(), beez::core::OrchestratorError::NotFound);
 }
 
-TEST(OrchestratorPipelineTest, WorkflowExecutionIsNotImplementedYet)
+TEST(OrchestratorPipelineTest, WorkflowExecutionRunsMatchingSteps)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({
+    name = "gen-code",
+    phase = "generate",
+    scope = "code",
+    run = "touch .generated",
+})
 workflow("build", {
     { phase = "generate", scope = "code" },
 })
@@ -102,6 +113,6 @@ workflow("build", {
     ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
 
     const auto RunResult = orchestrator.run("build");
-    ASSERT_FALSE(RunResult.hasValue());
-    EXPECT_EQ(RunResult.error(), beez::core::OrchestratorError::WorkflowNotImplemented);
+    ASSERT_TRUE(RunResult.hasValue());
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".generated"));
 }
