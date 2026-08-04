@@ -1,6 +1,8 @@
 #include "beez/core/phase_argument_parser.hpp"
+#include "beez/core/phase_request.hpp"
 
 #include <cctype>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
@@ -14,7 +16,11 @@ namespace
 [[nodiscard]] std::optional<std::string> parseQuotedString(const std::string& input,
                                                            std::size_t& position)
 {
-    if (position >= input.size() || input[position] != '"')
+    if (position >= input.size())
+    {
+        return std::nullopt;
+    }
+    if (input.at(position) != '"')
     {
         return std::nullopt;
     }
@@ -23,7 +29,7 @@ namespace
     std::string value;
     while (position < input.size())
     {
-        const char Character = input[position];
+        const char Character = input.at(position);
         if (Character == '"')
         {
             ++position;
@@ -55,12 +61,17 @@ namespace
     std::size_t position = bracketPosition + 1;
     while (position < input.size())
     {
-        while (position < input.size() && (input[position] == ' ' || input[position] == ','))
+        while (position < input.size() &&
+               (input.at(position) == ' ' || input.at(position) == ','))
         {
             ++position;
         }
 
-        if (position >= input.size() || input[position] == ']')
+        if (position >= input.size())
+        {
+            break;
+        }
+        if (input.at(position) == ']')
         {
             break;
         }
@@ -73,18 +84,18 @@ namespace
 
         request.scopes.push_back(*Scope);
 
-        while (position < input.size() && input[position] == ' ')
+        while (position < input.size() && input.at(position) == ' ')
         {
             ++position;
         }
 
-        if (position < input.size() && input[position] == ',')
+        if (position < input.size() && input.at(position) == ',')
         {
             ++position;
             continue;
         }
 
-        if (position < input.size() && input[position] == ']')
+        if (position < input.size() && input.at(position) == ']')
         {
             break;
         }
@@ -105,23 +116,23 @@ namespace
         return std::nullopt;
     }
 
-    std::string scopesPart = input.substr(colonPosition + 1);
-    if (scopesPart.empty())
+    const std::string ScopesPart = input.substr(colonPosition + 1);
+    if (ScopesPart.empty())
     {
         return std::nullopt;
     }
 
     std::size_t start = 0;
-    while (start < scopesPart.size())
+    while (start < ScopesPart.size())
     {
-        const auto CommaPosition = scopesPart.find(',', start);
-        if (CommaPosition != std::string::npos && CommaPosition + 1 >= scopesPart.size())
+        const auto CommaPosition = ScopesPart.find(',', start);
+        if (CommaPosition != std::string::npos && CommaPosition + 1 >= ScopesPart.size())
         {
             return std::nullopt;
         }
 
-        const auto End = CommaPosition == std::string::npos ? scopesPart.size() : CommaPosition;
-        std::string scope = scopesPart.substr(start, End - start);
+        const auto End = CommaPosition == std::string::npos ? ScopesPart.size() : CommaPosition;
+        std::string scope = ScopesPart.substr(start, End - start);
 
         while (!scope.empty() && std::isspace(static_cast<unsigned char>(scope.front())) != 0)
         {

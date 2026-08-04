@@ -3,6 +3,7 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
+HEADER_FILTER='(src|include|tests)/.*'
 FAILED=0
 
 echo "=== Running security analysis ==="
@@ -16,6 +17,7 @@ else
         echo "Scanning: $file"
         mapfile -t tidy_output < <(
             clang-tidy -p "$COMPDB_DIR" "$file" \
+                --header-filter="$HEADER_FILTER" \
                 --checks='-*,clang-analyzer-security-*,cert-*,misc-security-*' \
                 --use-color 2>&1 || true
         )
@@ -23,7 +25,7 @@ else
         file_has_issue=0
         for line in "${tidy_output[@]}"; do
             echo "$line"
-            if [[ "$line" =~ ^.*(warning|error): ]]; then
+            if [[ "$line" =~ /(src|include|tests)/.*(warning|error): ]]; then
                 file_has_issue=1
             fi
         done

@@ -124,4 +124,5 @@ all: build test format-check lint analyze security coverage sanitize fuzzer-smok
 	@echo "=== Reports written to $(REPORTS_DIR)/ ==="
 
 tidy: ## Nur clang-tidy
-	clang-tidy -p $(BUILD_DIR)/build/$(BUILD_TYPE) $(CXX_FILES) --use-color
+	clang-tidy -p $(BUILD_DIR)/build/$(BUILD_TYPE) $(CXX_FILES) \
+		--header-filter='(src|include|tests)/.*' --use-color

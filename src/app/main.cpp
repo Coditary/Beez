@@ -7,13 +7,11 @@
 #include "beez/plugin/plugin_host.h"
 #include "beez/plugin/shell/shell_executor.h"
 
-#include <cstddef>
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
-#include <vector>
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
 
