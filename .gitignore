@@ -1,3 +1,6 @@
+# CI
+.ci/
+
 # Build
 build/
 out/
