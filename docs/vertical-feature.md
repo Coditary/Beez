@@ -42,7 +42,8 @@ Refactor + quality assurance (make all)
 | Unit tests | `tests/unit/` | Mirrors `src/` structure |
 | Integration tests | `tests/integration/` | Interaction between components |
 | System tests | `tests/system/` | Black-box with fixture projects |
-| Fuzzer | `fuzz/` | Parser robustness (Lua DSL) |
+| Fuzzer | `tests/fuzz/` | Parser robustness (Lua DSL) |
+| QA reports | `report/` | Generated output from `make test`, `lint`, `analyze`, etc. |
 
 Modules are **flat** under `src/`, no nested `src/` or `include/` per module.
 
@@ -154,7 +155,7 @@ Only write production code to make failing tests pass (Green phase).
 
 When `lua_dsl.cpp` or DSL syntax changes:
 
-1. Add a seed file at `fuzz/corpus/lua_dsl/<descriptive_name>.lua`
+1. Add a seed file at `tests/fuzz/corpus/lua_dsl/<descriptive_name>.lua`
 2. Only commit `.lua` files with descriptive names, **no** hash artifacts
 3. `make fuzzer-smoke` must pass
 
@@ -253,7 +254,7 @@ The Cursor rule `.cursor/rules/vertical-feature.mdc` ensures QA steps are includ
 
 - Write production code before tests (no TDD)
 - Implement a feature in only one layer and leave tests for "later"
-- Commit hash files from the fuzzer into `fuzz/corpus/`
+- Commit hash files from the fuzzer into `tests/fuzz/corpus/`
 - Skip `make all` or only run `make test`
 - Forget to add new files to `CMakeLists.txt`
 - Create nested module folders (`src/core/src/`)

@@ -43,11 +43,16 @@ task("second", "touch .second")
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".second"));
 }
 
-TEST(LuaShellPipelineTest, WorkflowIsRegisteredButNotExecutable)
+TEST(LuaShellPipelineTest, WorkflowExecutesRegisteredSteps)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-task("compile", { phase = "compile", scope = "code", run = "true" })
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = "touch .compiled",
+})
 workflow("build", {
     { phase = "compile", scope = "code" },
 })
@@ -58,6 +63,6 @@ workflow("build", {
 
     ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
     EXPECT_TRUE(runtime.registry().findWorkflow("build").has_value());
-    EXPECT_FALSE(orchestrator.run("build").hasValue());
-    EXPECT_TRUE(orchestrator.run("compile").hasValue());
+    EXPECT_TRUE(orchestrator.run("build").hasValue());
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".compiled"));
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <optional>
 #include <string>
+#include <vector>
 
 namespace beez::core
 {
@@ -10,14 +10,7 @@ namespace beez::core
 struct Task
 {
     std::string name;
-    std::string run;
-    std::optional<std::string> phase;
-    std::optional<std::string> scope;
-
-    [[nodiscard]] bool isOrphan() const
-    {
-        return !phase.has_value();
-    }
+    std::vector<std::string> commands;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 

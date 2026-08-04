@@ -1,18 +1,22 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint format analyze security clean coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
 CONAN_PROFILE ?= clang-release
+REPORTS_DIR ?= report
 ARGS ?=
 BEEZ_BIN := $(BUILD_DIR)/build/$(BUILD_TYPE)/bin/beez
 FUZZER_BIN := $(BUILD_DIR)/build/Debug/fuzz/fuzz_lua_dsl
 FUZZER_TIME ?= 30
+FUZZER_CORPUS_DIR := $(REPORTS_DIR)/fuzz/corpus/lua_dsl
+FUZZER_ARTIFACTS_DIR := $(REPORTS_DIR)/fuzz/artifacts
 
 export CC = clang
 export CXX = clang++
+export REPORTS_DIR
 
 CXX_FILES := $(shell find src include tests -name '*.cpp' -o -name '*.hpp' -o -name '*.h' 2>/dev/null)
-CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt src/app/CMakeLists.txt src/core/CMakeLists.txt src/plugins/CMakeLists.txt src/plugins/lua/CMakeLists.txt src/plugins/shell/CMakeLists.txt tests/CMakeLists.txt tests/unit/CMakeLists.txt tests/integration/CMakeLists.txt tests/system/CMakeLists.txt fuzz/CMakeLists.txt
+CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt src/app/CMakeLists.txt src/core/CMakeLists.txt src/plugins/CMakeLists.txt src/plugins/lua/CMakeLists.txt src/plugins/shell/CMakeLists.txt tests/CMakeLists.txt tests/unit/CMakeLists.txt tests/integration/CMakeLists.txt tests/system/CMakeLists.txt tests/fuzz/CMakeLists.txt
 
 help: ## Alle Targets anzeigen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -43,64 +47,81 @@ debug: ## Debug build
 	cmake --build --preset conan-debug
 
 test: ## Tests ausführen (BUILD_TYPE=Release|Debug)
-	cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure --verbose
+	@mkdir -p $(REPORTS_DIR)/test
+	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure --verbose 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/test-report.txt'
 
 run: ## Beez ausführen (z.B. make run ARGS=clean)
 	$(BEEZ_BIN) $(ARGS)
 
 lint: ## clang-tidy + cmake-format check
-	./scripts/lint.sh $(BUILD_DIR)
+	@mkdir -p $(REPORTS_DIR)/lint
+	bash -o pipefail -c './scripts/lint.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/lint/lint-report.txt'
 
 format: ## Alles formatieren
 	clang-format -i $(CXX_FILES)
 	cmake-format -i $(CMAKE_FILES)
 
 format-check: ## Formatierung prüfen (CI)
-	clang-format --dry-run --Werror $(CXX_FILES)
-	cmake-format --check $(CMAKE_FILES)
+	@mkdir -p $(REPORTS_DIR)/format
+	bash -o pipefail -c '{ \
+		echo "=== clang-format ==="; \
+		clang-format --dry-run --Werror $(CXX_FILES); \
+		echo "=== cmake-format ==="; \
+		cmake-format --check $(CMAKE_FILES); \
+	} 2>&1 | tee $(REPORTS_DIR)/format/format-check-report.txt'
 
 analyze: ## Static Analysis (cppcheck + clang-tidy)
-	./scripts/analyze.sh $(BUILD_DIR)
+	@mkdir -p $(REPORTS_DIR)/analyze
+	bash -o pipefail -c './scripts/analyze.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/analyze/analyze-report.txt'
 
 security: ## Security Checks
-	./scripts/security.sh $(BUILD_DIR)
+	@mkdir -p $(REPORTS_DIR)/security
+	bash -o pipefail -c './scripts/security.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/security/security-report.txt'
 
 clean: ## Build artifacts löschen
 	rm -rf $(BUILD_DIR)
 
+clean-reports: ## QA-Reports löschen
+	rm -rf $(REPORTS_DIR)
+
 coverage: setup-coverage ## Code-Coverage-Report erzeugen
 	cmake --build --preset conan-debug
-	cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure
-	cd $(BUILD_DIR)/build/Debug && gcovr --gcov-executable 'llvm-cov gcov' --root $(CURDIR) --filter '$(CURDIR)/src/' --filter '$(CURDIR)/tests/' --html-details coverage.html .
+	@mkdir -p $(REPORTS_DIR)/test $(REPORTS_DIR)/coverage
+	bash -o pipefail -c 'cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/coverage-test-report.txt'
+	cd $(BUILD_DIR)/build/Debug && gcovr --gcov-executable 'llvm-cov gcov' --root $(CURDIR) --filter '$(CURDIR)/src/' --filter '$(CURDIR)/tests/' --html-details $(CURDIR)/$(REPORTS_DIR)/coverage/index.html .
 
 sanitize: setup-sanitize ## Debug-Build mit ASan/UBSan + Tests
 	cmake --build --preset conan-debug
-	cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure
+	@mkdir -p $(REPORTS_DIR)/sanitize
+	bash -o pipefail -c 'cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/sanitize/sanitize-report.txt'
 
 fuzzer: setup-fuzzer ## Fuzzer bauen
 	cmake --build --preset conan-debug --target fuzz_lua_dsl
 
 fuzzer-smoke: fuzzer ## Fuzzer kurz laufen lassen (FUZZER_TIME Sekunden, default 30)
-	@test -n "$$(ls fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
-		(echo "ERROR: No fuzz seeds in fuzz/corpus/lua_dsl/*.lua" && exit 1)
-	rm -rf $(BUILD_DIR)/fuzz/corpus/lua_dsl
-	mkdir -p $(BUILD_DIR)/fuzz/corpus/lua_dsl
-	cp fuzz/corpus/lua_dsl/*.lua $(BUILD_DIR)/fuzz/corpus/lua_dsl/
+	@test -n "$$(ls tests/fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
+		(echo "ERROR: No fuzz seeds in tests/fuzz/corpus/lua_dsl/*.lua" && exit 1)
+	rm -rf $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
+	mkdir -p $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
+	cp tests/fuzz/corpus/lua_dsl/*.lua $(FUZZER_CORPUS_DIR)/
 	@echo "=== Running fuzz_lua_dsl for $(FUZZER_TIME)s (invalid Lua input is expected) ==="
-	ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(BUILD_DIR)/fuzz/corpus/lua_dsl -dict=fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=$(FUZZER_TIME) -print_final_stats=1
+	@mkdir -p $(REPORTS_DIR)/fuzz
+	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=$(FUZZER_TIME) -print_final_stats=1 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-smoke-report.txt'
 
 fuzzer-run: fuzzer-smoke ## Alias für fuzzer-smoke
 
-fuzzer-corpus: fuzzer ## Fuzzer länger laufen lassen und Corpus unter build/ sammeln
-	@test -n "$$(ls fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
-		(echo "ERROR: No fuzz seeds in fuzz/corpus/lua_dsl/*.lua" && exit 1)
-	rm -rf $(BUILD_DIR)/fuzz/corpus
-	mkdir -p $(BUILD_DIR)/fuzz/corpus/lua_dsl
-	cp fuzz/corpus/lua_dsl/*.lua $(BUILD_DIR)/fuzz/corpus/lua_dsl/
-	ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(BUILD_DIR)/fuzz/corpus/lua_dsl -dict=fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=60 -artifact_prefix=$(BUILD_DIR)/fuzz/corpus/
+fuzzer-corpus: fuzzer ## Fuzzer länger laufen lassen und Corpus sammeln
+	@test -n "$$(ls tests/fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
+		(echo "ERROR: No fuzz seeds in tests/fuzz/corpus/lua_dsl/*.lua" && exit 1)
+	rm -rf $(REPORTS_DIR)/fuzz/corpus $(FUZZER_ARTIFACTS_DIR)
+	mkdir -p $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
+	cp tests/fuzz/corpus/lua_dsl/*.lua $(FUZZER_CORPUS_DIR)/
+	@mkdir -p $(REPORTS_DIR)/fuzz
+	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=60 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-corpus-report.txt'
 
 all: build test format-check lint analyze security coverage sanitize fuzzer-smoke ## Komplette QS-Pipeline
 	@echo "=== All quality checks passed ==="
+	@echo "=== Reports written to $(REPORTS_DIR)/ ==="
 
 tidy: ## Nur clang-tidy
 	clang-tidy -p $(BUILD_DIR)/build/$(BUILD_TYPE) $(CXX_FILES) --use-color

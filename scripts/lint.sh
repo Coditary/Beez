@@ -44,7 +44,7 @@ if ! cmake-format --check \
     tests/unit/CMakeLists.txt \
     tests/integration/CMakeLists.txt \
     tests/system/CMakeLists.txt \
-    fuzz/CMakeLists.txt; then
+    tests/fuzz/CMakeLists.txt; then
     FAILED=1
 fi
 

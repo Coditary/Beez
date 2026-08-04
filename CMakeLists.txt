@@ -24,10 +24,9 @@ add_subdirectory(src)
 
 if (BUILD_TESTING)
     enable_testing()
-    add_subdirectory(tests)
 endif ()
 
-add_subdirectory(fuzz)
+add_subdirectory(tests)
 
 message(STATUS "Beez v${PROJECT_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

@@ -3,6 +3,7 @@
 #include "beez/plugin/dsl_loader.hpp"
 #include "beez/plugin/plugin.hpp"
 
+#include <memory>
 #include <string>
 
 namespace beez::plugin::lua
@@ -11,7 +12,19 @@ namespace beez::plugin::lua
 class LuaDslLoader : public IDslLoader
 {
   public:
+    LuaDslLoader();
+    ~LuaDslLoader() override;
+
+    LuaDslLoader(const LuaDslLoader&) = delete;
+    LuaDslLoader& operator=(const LuaDslLoader&) = delete;
+    LuaDslLoader(LuaDslLoader&&) = delete;
+    LuaDslLoader& operator=(LuaDslLoader&&) = delete;
+
     bool load(const core::Context& context, core::Registry& registry) override;
+
+  private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 class LuaDslPlugin : public IPlugin
