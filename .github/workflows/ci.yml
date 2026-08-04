@@ -1,48 +1,114 @@
-name: CI
+name: Quality Assurance
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
 
+concurrency:
+  group: qa-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        build_type: [Debug, Release]
+  qa:
+    name: Quality Assurance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    env:
+      CC: clang
+      CXX: clang++
+      FUZZER_TIME: 30
+      STRICT_CI: 1
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build clang clang-tidy cppcheck
+          sudo apt-get install -y --no-install-recommends \
+            cmake \
+            ninja-build \
+            clang \
+            clang-tidy \
+            clang-format \
+            llvm \
+            cppcheck \
+            pipx
 
-      - name: Install Conan
+      - name: Install Python tools
         run: |
-          pip install conan
-          conan profile detect
+          pipx install conan
+          pipx install gcovr
+          pipx install cmakelang
+          pipx inject cmakelang pyyaml
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Configure
+      - name: Prepare Conan profile
         run: |
-          conan install . --output-folder=build --build=missing -s build_type=${{ matrix.build_type }}
-          cd build && cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTING=ON
+          PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
+          echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
+          echo "Using Conan profile at ${PROFILE_PATH}"
+          cat "${PROFILE_PATH}"
 
-      - name: Build
-        run: cmake --build build --config ${{ matrix.build_type }}
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-${{ runner.os }}-
 
-      - name: Test
-        run: cd build && ctest --output-on-failure --verbose
+      - name: Build (Release)
+        run: make build
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          make test 2>&1 | tee test-output.txt
+
+      - name: Test summary
+        if: always()
+        run: |
+          {
+            echo "## Test results"
+            if [ -f test-output.txt ]; then
+              echo '```'
+              tail -n 40 test-output.txt
+              echo '```'
+            else
+              echo "Tests did not run (no output captured)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check formatting
+        run: make format-check
 
       - name: Lint
-        if: matrix.build_type == 'Release'
-        run: |
-          find src include tests -name "*.cpp" -o -name "*.hpp" | xargs clang-tidy -p build --use-color || true
+        run: make lint
 
-      - name: Format check
-        if: matrix.build_type == 'Release'
-        run: |
-          clang-format --dry-run --Werror src/**/*.{cpp,hpp} include/**/*.{cpp,hpp} tests/**/*.{cpp,hpp} || true
+      - name: Static analysis
+        run: make analyze
+
+      - name: Security analysis
+        run: make security
+
+      - name: Coverage
+        run: make coverage
+
+      - name: Sanitizer (ASan/UBSan)
+        run: make sanitize
+
+      - name: Fuzzer smoke test
+        run: make fuzzer-smoke
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/build/Debug/coverage.html
+          if-no-files-found: ignore

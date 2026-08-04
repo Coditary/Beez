@@ -1,0 +1,47 @@
+#pragma once
+
+#include "beez/core/context.h"
+#include "beez/core/orchestrator.h"
+#include "beez/core/registry.h"
+#include "beez/plugin/lua/lua_dsl.h"
+#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/shell/shell_executor.h"
+
+#include <filesystem>
+#include <memory>
+
+namespace beez::test
+{
+
+class BeezRuntime
+{
+  public:
+    explicit BeezRuntime(const std::filesystem::path& projectRoot) : context_(projectRoot)
+    {
+        pluginHost_.addPlugin(std::make_unique<beez::plugin::lua::LuaDslPlugin>());
+        pluginHost_.addPlugin(std::make_unique<beez::plugin::shell::ShellPlugin>());
+        pluginHost_.initialize(registry_, context_);
+    }
+
+    [[nodiscard]] beez::core::Orchestrator orchestrator()
+    {
+        return {registry_, context_, pluginHost_};
+    }
+
+    [[nodiscard]] const beez::core::Registry& registry() const
+    {
+        return registry_;
+    }
+
+    [[nodiscard]] const beez::core::Context& context() const
+    {
+        return context_;
+    }
+
+  private:
+    beez::core::Context context_;
+    beez::core::Registry registry_;
+    beez::plugin::PluginHost pluginHost_;
+};
+
+}  // namespace beez::test
