@@ -20,6 +20,8 @@ class BeezConan(ConanFile):
     def requirements(self):
         self.requires("gtest/1.14.0")
         self.requires("lua/5.4.6")
+        self.requires("cli11/2.6.2")
+        self.requires("spdlog/1.15.3")
 
     def layout(self):
         cmake_layout(self)

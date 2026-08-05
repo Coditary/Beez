@@ -13,11 +13,16 @@
 #include "beez/plugin/executor.hpp"
 #include "beez/plugin/plugin_host.h"
 
+#include "beez/core/run_options.hpp"
+#include "beez/logging/logger.hpp"
+#include "beez/logging/output_mode.hpp"
+
 #include "helpers/temp_project.hpp"
 #include "helpers/test_step_config.hpp"
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -38,10 +43,16 @@ class RecordingExecutor : public beez::plugin::IExecutor
   public:
     explicit RecordingExecutor(std::shared_ptr<ExecutorState> state) : state_(std::move(state)) {}
 
-    int execute(const std::string& command, const beez::core::Context& /*context*/) override
+    int execute(const std::string& command,
+                const beez::core::Context& /*context*/,
+                std::string* capturedOutput) override
     {
         state_->commands.push_back(command);
         ++state_->callCount;
+        if (capturedOutput != nullptr)
+        {
+            *capturedOutput = "captured\n";
+        }
         return state_->exitCode;
     }
 
@@ -522,4 +533,59 @@ TEST(OrchestratorTest, LoadBuildScriptSucceedsWhenLoaderSucceeds)
     const auto Result = orchestrator.loadBuildScript();
     ASSERT_TRUE(Result.hasValue());
     EXPECT_TRUE(State->loadCalled);
+}
+
+TEST(OrchestratorTest, DryRunSkipsShellExecution)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Task task;
+    task.name = "clean";
+    task.actions = {beez::core::makeShellAction("echo clean")};
+    registry.registerTask(std::move(task));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::logging::RecordingLogger logger;
+    const beez::core::RunOptions Options {.dryRun = true, .logger = &logger};
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.run("clean");
+    ASSERT_TRUE(Result.hasValue());
+    EXPECT_EQ(State->callCount, 0);
+    ASSERT_FALSE(logger.lines().empty());
+    EXPECT_EQ(logger.lines().front().kind, beez::logging::RecordedLine::Kind::BeginRun);
+}
+
+TEST(OrchestratorTest, VerboseModeCapturesShellOutput)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Task task;
+    task.name = "clean";
+    task.actions = {beez::core::makeShellAction("echo clean")};
+    registry.registerTask(std::move(task));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::logging::RecordingLogger logger;
+    const beez::core::RunOptions Options {.outputMode = beez::logging::OutputMode::Verbose,
+                                          .logger = &logger};
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.run("clean");
+    ASSERT_TRUE(Result.hasValue());
+    EXPECT_EQ(State->callCount, 1);
+
+    const auto HasCapturedOutput = std::ranges::any_of(
+        logger.lines(),
+        [](const beez::logging::RecordedLine& line)
+        { return line.kind == beez::logging::RecordedLine::Kind::CommandOutput; });
+    EXPECT_TRUE(HasCapturedOutput);
 }

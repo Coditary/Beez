@@ -18,6 +18,7 @@ struct Step
     std::string name;
     std::string phase;
     std::string scope;
+    std::optional<std::string> description;
     std::optional<std::string> shellRun;
     StepCallback callback;
     StepConfigPtr config;

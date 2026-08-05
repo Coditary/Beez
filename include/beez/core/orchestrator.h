@@ -5,12 +5,17 @@
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
 #include "beez/core/registry.h"
+#include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
+#include "beez/logging/logger.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
+
+#include <atomic>
 
 namespace beez::plugin
 {
@@ -35,7 +40,10 @@ enum class OrchestratorError : std::uint8_t
 class Orchestrator
 {
   public:
-    Orchestrator(Registry& registry, Context& context, plugin::PluginHost& pluginHost);
+    Orchestrator(Registry& registry,
+                 Context& context,
+                 plugin::PluginHost& pluginHost,
+                 RunOptions runOptions = {});
 
     [[nodiscard]] Expected<void, OrchestratorError> loadBuildScript();
     [[nodiscard]] Expected<int, OrchestratorError> run(const std::string& name);
@@ -43,18 +51,43 @@ class Orchestrator
     [[nodiscard]] Expected<int, OrchestratorError> runStep(const std::string& name);
 
   private:
-    [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task);
+    struct ProgressState
+    {
+        std::atomic<std::size_t> index {0};
+        std::size_t total = 0;
+    };
+
+    [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task,
+                                                           ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(const Workflow& workflow);
-    [[nodiscard]] Expected<int, OrchestratorError> runStepInstance(const Step& step);
+    [[nodiscard]] Expected<int, OrchestratorError> runStepInstance(const Step& step,
+                                                                   ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError>
-    runPhaseInvocation(const PhaseInvocation& invocation);
-    [[nodiscard]] Expected<int, OrchestratorError> runShellCommand(const std::string& command);
+    runPhaseInvocation(const PhaseInvocation& invocation, ProgressState& progress);
+    struct ProgressLabel
+    {
+        std::string category;
+        std::string detail;
+    };
+
+    [[nodiscard]] Expected<int, OrchestratorError> runShellCommand(const std::string& command,
+                                                                   const ProgressLabel& label,
+                                                                   ProgressState& progress,
+                                                                   logging::LogChannelId channel);
+
+    void logProgress(ProgressState& progress,
+                     const std::string& category,
+                     const std::string& detail) const;
+    [[nodiscard]] std::size_t countWorkflowSteps(const Workflow& workflow) const;
+    [[nodiscard]] std::size_t countPhaseInvocationSteps(const PhaseInvocation& invocation) const;
+    [[nodiscard]] std::size_t countPhaseRequestSteps(const PhaseRequest& request) const;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel
     // dependencies
     Registry& registry_;
     Context& context_;
     plugin::PluginHost& pluginHost_;
+    RunOptions runOptions_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 };
 

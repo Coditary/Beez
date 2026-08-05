@@ -27,6 +27,7 @@ class Registry
     [[nodiscard]] std::vector<Step> stepsForPhase(const std::string& phase,
                                                   const std::string& scope) const;
     [[nodiscard]] std::vector<std::string> scopesForPhase(const std::string& phase) const;
+    [[nodiscard]] std::vector<std::string> phases() const;
 
     [[nodiscard]] const std::unordered_map<std::string, Task>& tasks() const
     {

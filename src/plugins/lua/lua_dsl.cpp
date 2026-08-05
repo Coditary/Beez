@@ -153,6 +153,17 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
     }
     step.scope = ScopeValue.as<std::string>();
 
+    const sol::object DescriptionValue = options["description"];
+    if (DescriptionValue.valid())
+    {
+        if (!DescriptionValue.is<std::string>())
+        {
+            throw std::runtime_error("step '" + step.name +
+                                     "' field 'description' must be a string");
+        }
+        step.description = DescriptionValue.as<std::string>();
+    }
+
     const sol::object ConfigValue = options["config"];
     if (ConfigValue.valid())
     {

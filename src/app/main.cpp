@@ -1,8 +1,12 @@
+#include "beez/cli/cli_app.hpp"
+#include "beez/cli/list_formatter.hpp"
+#include "beez/cli/parsed_options.hpp"
 #include "beez/core/context.h"
 #include "beez/core/orchestrator.h"
-#include "beez/core/phase_argument_parser.hpp"
-#include "beez/core/phase_request.hpp"
 #include "beez/core/registry.h"
+#include "beez/core/run_options.hpp"
+#include "beez/logging/output_mode.hpp"
+#include "beez/logging/spdlog_backend.hpp"
 #include "beez/plugin/lua/lua_dsl.h"
 #include "beez/plugin/plugin_host.h"
 #include "beez/plugin/shell/shell_executor.h"
@@ -10,108 +14,28 @@
 #include <exception>
 #include <iostream>
 #include <memory>
-#include <optional>
-#include <string>
-
-// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
-
-namespace
-{
-
-struct CliOptions
-{
-    std::optional<std::string> stepName;
-    std::optional<beez::core::PhaseRequest> phaseRequest;
-    std::optional<std::string> commandName;
-};
-
-// NOLINTNEXTLINE(modernize-avoid-c-arrays) -- standard main argv signature
-[[nodiscard]] std::optional<CliOptions> parseArguments(int argc, const char* argv[])
-{
-    CliOptions options;
-    int index = 1;
-
-    while (index < argc)
-    {
-        const std::string Argument(argv[index]);
-
-        if (Argument == "-p")
-        {
-            ++index;
-            if (index >= argc)
-            {
-                return std::nullopt;
-            }
-
-            const auto Parsed = beez::core::parsePhaseArgument(argv[index]);
-            if (!Parsed)
-            {
-                return std::nullopt;
-            }
-
-            options.phaseRequest = Parsed;
-            ++index;
-            continue;
-        }
-
-        if (Argument == "-s")
-        {
-            ++index;
-            if (index >= argc)
-            {
-                return std::nullopt;
-            }
-
-            options.stepName = argv[index];
-            ++index;
-            continue;
-        }
-
-        if (options.commandName.has_value())
-        {
-            return std::nullopt;
-        }
-
-        options.commandName = Argument;
-        ++index;
-    }
-
-    if (!options.stepName.has_value() && !options.phaseRequest.has_value() &&
-        !options.commandName.has_value())
-    {
-        return std::nullopt;
-    }
-
-    return options;
-}
-
-void printUsage()
-{
-    std::cerr << "Usage: beez <task|workflow>\n";
-    std::cerr << "       beez -p <phase>[:scope1,scope2]\n";
-    std::cerr << "       beez -p <phase>[\"scope1\",\"scope2\"]\n";
-    std::cerr << "       beez -s <step>\n";
-}
-
-}  // namespace
-
-// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
 
 int main(int argc, const char* argv[])
 {
     try
     {
-        if (argc < 2)
+        const auto Parsed = beez::cli::CliApp::parse(argc, argv);
+        if (Parsed.reason == beez::cli::CliExitReason::Help)
         {
-            printUsage();
-            return 1;
+            std::cout << beez::cli::CliApp::helpText();
+            return Parsed.exitCode;
         }
 
-        const auto Options = parseArguments(argc, argv);
-        if (!Options)
+        if (Parsed.reason == beez::cli::CliExitReason::Version)
         {
-            printUsage();
-            return 1;
+            std::cout << beez::cli::CliApp::versionText() << '\n';
+            return Parsed.exitCode;
+        }
+
+        if (Parsed.reason == beez::cli::CliExitReason::Error)
+        {
+            std::cerr << beez::cli::CliApp::helpText();
+            return Parsed.exitCode != 0 ? Parsed.exitCode : 1;
         }
 
         beez::core::Context context;
@@ -122,7 +46,17 @@ int main(int argc, const char* argv[])
         pluginHost.addPlugin(std::make_unique<beez::plugin::shell::ShellPlugin>());
         pluginHost.initialize(registry, context);
 
-        beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+        const auto OutputMode = Parsed.options.verbose ? beez::logging::OutputMode::Verbose
+                                                       : beez::logging::OutputMode::Clean;
+        auto logger = beez::logging::createSpdlogLogger(OutputMode);
+
+        const beez::core::RunOptions Options {
+            .dryRun = Parsed.options.dryRun,
+            .outputMode = OutputMode,
+            .logger = logger.get(),
+        };
+
+        beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
 
         const auto LoadResult = orchestrator.loadBuildScript();
         if (!LoadResult)
@@ -131,9 +65,16 @@ int main(int argc, const char* argv[])
             return 1;
         }
 
-        if (Options->stepName)
+        if (Parsed.options.listKind.has_value())
         {
-            const auto RunResult = orchestrator.runStep(*Options->stepName);
+            const auto Names = beez::cli::collectEntityNames(registry, *Parsed.options.listKind);
+            std::cout << beez::cli::formatEntityList(*Parsed.options.listKind, Names);
+            return 0;
+        }
+
+        if (Parsed.options.stepName)
+        {
+            const auto RunResult = orchestrator.runStep(*Parsed.options.stepName);
             if (!RunResult)
             {
                 std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';
@@ -143,9 +84,9 @@ int main(int argc, const char* argv[])
             return RunResult.value();
         }
 
-        if (Options->phaseRequest)
+        if (Parsed.options.phaseRequest)
         {
-            const auto RunResult = orchestrator.runPhase(*Options->phaseRequest);
+            const auto RunResult = orchestrator.runPhase(*Parsed.options.phaseRequest);
             if (!RunResult)
             {
                 std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';
@@ -155,13 +96,13 @@ int main(int argc, const char* argv[])
             return RunResult.value();
         }
 
-        if (!Options->commandName.has_value())
+        if (!Parsed.options.target.has_value())
         {
-            printUsage();
+            std::cerr << beez::cli::CliApp::helpText();
             return 1;
         }
 
-        const auto RunResult = orchestrator.run(*Options->commandName);
+        const auto RunResult = orchestrator.run(*Parsed.options.target);
         if (!RunResult)
         {
             std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';

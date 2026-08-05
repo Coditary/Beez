@@ -93,6 +93,30 @@ step({
     EXPECT_EQ(Found->shellRun.value_or(""), "doxygen Doxyfile");
 }
 
+TEST(LuaDslTest, LoadsStepDescriptionWhenProvided)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "doxygen",
+    phase = "generate",
+    scope = "docs",
+    description = "Generate API documentation",
+    run = "doxygen Doxyfile",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("doxygen");
+    ASSERT_TRUE(Found.has_value());
+    // NOLINTBEGIN(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    ASSERT_TRUE(Found->description.has_value());
+    EXPECT_EQ(Found->description.value(), "Generate API documentation");
+    // NOLINTEND(bugprone-unchecked-optional-access)
+}
+
 TEST(LuaDslTest, StepWithoutConfigHasNoConfig)
 {
     const beez::test::TempProject Project;
