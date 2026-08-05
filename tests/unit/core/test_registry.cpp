@@ -3,6 +3,7 @@
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
+#include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 
@@ -39,7 +40,7 @@ TEST(RegistryTest, RegisterAndFindOrphanTask)
 
     beez::core::Task task;
     task.name = "clean";
-    task.commands = {"rm -fr app.o"};
+    task.actions = {beez::core::makeShellAction("rm -fr app.o")};
     registry.registerTask(std::move(task));
 
     const auto Found = registry.findTask("clean");
@@ -49,8 +50,8 @@ TEST(RegistryTest, RegisterAndFindOrphanTask)
         return;
     }
     EXPECT_EQ(Found->name, "clean");
-    ASSERT_EQ(Found->commands.size(), 1U);
-    EXPECT_EQ(Found->commands[0], "rm -fr app.o");
+    ASSERT_EQ(Found->actions.size(), 1U);
+    beez::test::expectShellCommand(*Found, 0, "rm -fr app.o");
 }
 
 TEST(RegistryTest, RegisterAndFindStep)
@@ -82,12 +83,12 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
 
     beez::core::Task first;
     first.name = "clean";
-    first.commands = {"rm -fr app.o"};
+    first.actions = {beez::core::makeShellAction("rm -fr app.o")};
     registry.registerTask(std::move(first));
 
     beez::core::Task second;
     second.name = "clean";
-    second.commands = {"echo updated"};
+    second.actions = {beez::core::makeShellAction("echo updated")};
     registry.registerTask(std::move(second));
 
     const auto Found = registry.findTask("clean");
@@ -96,8 +97,8 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
     {
         return;
     }
-    ASSERT_EQ(Found->commands.size(), 1U);
-    EXPECT_EQ(Found->commands[0], "echo updated");
+    ASSERT_EQ(Found->actions.size(), 1U);
+    beez::test::expectShellCommand(*Found, 0, "echo updated");
 }
 
 TEST(RegistryTest, StepsForPhaseFiltersByPhaseAndScope)
@@ -269,7 +270,7 @@ TEST(RegistryTest, ConfigureStepAfterRegistrationMergesIntoStep)
     beez::test::expectStepConfigTag(registry, "shader", "inline+external");
 }
 
-TEST(RegistryTest, InlineStepConfigOverridesPendingConfigureStep)
+TEST(RegistryTest, ConfigureStepOverridesInlineStepDefault)
 {
     beez::core::Registry registry;
 
@@ -283,5 +284,5 @@ TEST(RegistryTest, InlineStepConfigOverridesPendingConfigureStep)
     step.config = beez::test::makeTestConfig("inline");
     registry.registerStep(std::move(step));
 
-    beez::test::expectStepConfigTag(registry, "shader", "external+inline");
+    beez::test::expectStepConfigTag(registry, "shader", "inline+external");
 }

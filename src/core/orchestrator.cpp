@@ -6,12 +6,14 @@
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
+#include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/plugin/plugin_host.h"
 
 #include <filesystem>
 #include <future>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace beez::core
@@ -94,9 +96,35 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
 Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task)
 {
     int lastExitCode = 0;
-    for (const auto& command : task.commands)
+    for (const auto& action : task.actions)
     {
-        const auto Result = runShellCommand(command);
+        if (const auto* shellAction = std::get_if<TaskShellAction>(&action))
+        {
+            const auto Result = runShellCommand(shellAction->command);
+            if (!Result)
+            {
+                return Result.error();
+            }
+            lastExitCode = Result.value();
+            continue;
+        }
+
+        const auto* stepAction = std::get_if<TaskStepAction>(&action);
+        if (stepAction == nullptr)
+        {
+            return OrchestratorError::ExecutionFailed;
+        }
+
+        const auto FoundStep = registry_.findStep(stepAction->stepName);
+        if (!FoundStep)
+        {
+            return OrchestratorError::NotFound;
+        }
+
+        Step step = *FoundStep;
+        step.config = mergeStepConfigs(step.config, stepAction->config);
+
+        const auto Result = runStepInstance(step);
         if (!Result)
         {
             return Result.error();

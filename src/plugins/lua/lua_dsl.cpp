@@ -5,6 +5,7 @@
 #include "beez/core/registry.h"
 #include "beez/core/step.hpp"
 #include "beez/core/task.hpp"
+#include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 #include "beez/plugin/plugin_host.h"
@@ -35,49 +36,96 @@ LuaDslLoader::~LuaDslLoader() = default;
 namespace
 {
 
-std::vector<std::string> parseCommandList(const sol::table& commandsTable)
+std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
+                                               const std::shared_ptr<sol::state>& luaState)
 {
-    std::vector<std::string> commands;
-    commandsTable.for_each(
-        [&commands](const sol::object& /*key*/, const sol::object& value)
+    std::vector<core::TaskAction> actions;
+    actionsTable.for_each(
+        [&actions, &luaState](const sol::object& key, const sol::object& value)
         {
-            if (!value.is<std::string>())
+            if (!key.is<int>())
             {
-                throw std::runtime_error("task command list must contain only strings");
+                return;
             }
-            commands.push_back(value.as<std::string>());
+
+            if (value.is<std::string>())
+            {
+                actions.push_back(core::makeShellAction(value.as<std::string>()));
+                return;
+            }
+
+            if (!value.is<sol::table>())
+            {
+                throw std::runtime_error(
+                    "task action list entries must be strings or step invocation tables");
+            }
+
+            const sol::table StepTable = value.as<sol::table>();
+            const sol::object NameValue = StepTable["name"];
+            if (!NameValue.valid() || !NameValue.is<std::string>())
+            {
+                throw std::runtime_error("task step invocation is missing required field 'name'");
+            }
+
+            core::TaskStepAction stepAction;
+            stepAction.stepName = NameValue.as<std::string>();
+
+            const sol::object ConfigValue = StepTable["config"];
+            if (ConfigValue.valid())
+            {
+                if (!ConfigValue.is<sol::table>())
+                {
+                    throw std::runtime_error("task step invocation field 'config' must be a table");
+                }
+
+                stepAction.config = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
+            }
+
+            actions.emplace_back(std::move(stepAction));
         });
 
-    if (commands.empty())
+    if (actions.empty())
     {
-        throw std::runtime_error("task command list must not be empty");
+        throw std::runtime_error("task action list must not be empty");
     }
 
-    return commands;
+    return actions;
 }
 
-bool isCommandListTable(const sol::table& table)
+bool isTaskActionListTable(const sol::table& table)
 {
     if (table.empty())
     {
         return false;
     }
 
-    bool hasStringEntry = false;
+    bool hasActionEntry = false;
     table.for_each(
-        [&hasStringEntry](const sol::object& key, const sol::object& value)
+        [&hasActionEntry](const sol::object& key, const sol::object& value)
         {
             if (!key.is<int>())
             {
                 return;
             }
+
             if (value.is<std::string>())
             {
-                hasStringEntry = true;
+                hasActionEntry = true;
+                return;
+            }
+
+            if (value.is<sol::table>())
+            {
+                const sol::table StepTable = value.as<sol::table>();
+                const sol::object NameValue = StepTable["name"];
+                if (NameValue.valid() && NameValue.is<std::string>())
+                {
+                    hasActionEntry = true;
+                }
             }
         });
 
-    return hasStringEntry;
+    return hasActionEntry;
 }
 
 core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::state>& luaState)
@@ -229,20 +277,26 @@ class DslBinder
     {
         core::Task task;
         task.name = name;
-        task.commands = {run};
+        task.actions = {core::makeShellAction(run)};
         registry_->registerTask(std::move(task));
     }
 
-    void task(const std::string& name, const sol::table& commands) const
+    void task(const std::string& name, const sol::table& actions) const
     {
-        if (!isCommandListTable(commands))
+        if (!isTaskActionListTable(actions))
         {
-            throw std::runtime_error("task '" + name + "' table form must be a list of commands");
+            throw std::runtime_error("task '" + name + "' table form must be a list of actions");
+        }
+
+        const auto LuaState = luaState_.lock();
+        if (!LuaState)
+        {
+            throw std::runtime_error("lua state is no longer available");
         }
 
         core::Task task;
         task.name = name;
-        task.commands = parseCommandList(commands);
+        task.actions = parseTaskActions(actions, LuaState);
         registry_->registerTask(std::move(task));
     }
 

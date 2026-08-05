@@ -1,6 +1,8 @@
 #pragma once
 
 #include "beez/core/registry.h"
+#include "beez/core/task.hpp"
+#include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 
@@ -12,10 +14,76 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace beez::test
 {
+
+inline std::optional<core::Task> requireTask(const core::Registry& registry, const std::string& name)
+{
+    const auto Found = registry.findTask(name);
+    EXPECT_TRUE(Found.has_value());
+    return Found;
+}
+
+inline const core::TaskShellAction* shellActionAt(const core::Task& task, std::size_t index)
+{
+    if (index >= task.actions.size())
+    {
+        ADD_FAILURE() << "task action index out of range: " << index;
+        return nullptr;
+    }
+
+    return std::get_if<core::TaskShellAction>(task.actions.data() + index);
+}
+
+inline const core::TaskStepAction* stepActionAt(const core::Task& task, std::size_t index)
+{
+    if (index >= task.actions.size())
+    {
+        ADD_FAILURE() << "task action index out of range: " << index;
+        return nullptr;
+    }
+
+    return std::get_if<core::TaskStepAction>(task.actions.data() + index);
+}
+
+inline void expectShellCommand(const core::Task& task,
+                               std::size_t index,
+                               const std::string& expectedCommand)
+{
+    const auto* shell = shellActionAt(task, index);
+    ASSERT_NE(shell, nullptr);
+    if (shell == nullptr)
+    {
+        return;
+    }
+    EXPECT_EQ(shell->command, expectedCommand);
+}
+
+inline void expectStepInvocation(const core::Task& task,
+                                 std::size_t index,
+                                 const std::string& expectedName,
+                                 bool expectsConfig)
+{
+    const auto* step = stepActionAt(task, index);
+    ASSERT_NE(step, nullptr);
+    if (step == nullptr)
+    {
+        return;
+    }
+    EXPECT_EQ(step->stepName, expectedName);
+    EXPECT_EQ(step->config != nullptr, expectsConfig);
+}
+
+inline void expectMixedTaskWithStepInvocation(const core::Task& task)
+{
+    ASSERT_EQ(task.actions.size(), 3U);
+    expectShellCommand(task, 0, "echo start");
+    expectStepInvocation(task, 1, "cpp:compile", false);
+    expectShellCommand(task, 2, "echo done");
+}
 
 inline std::optional<core::Workflow> requireWorkflow(const core::Registry& registry,
                                                      const std::string& name)
