@@ -101,8 +101,43 @@ task("echo-task", "echo beez-clean-hidden-output")
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"echo-task"});
     EXPECT_EQ(Result.exitCode, 0);
-    EXPECT_EQ(Result.output.find("beez-clean-hidden-output"), std::string::npos);
-    EXPECT_NE(Result.output.find("[1/1]"), std::string::npos);
+    EXPECT_NE(Result.output.find("| echo beez-clean-hidden-output"), std::string::npos);
+    EXPECT_EQ(Result.output.find("  | beez-clean-hidden-output"), std::string::npos);
+}
+
+TEST(CliTest, CleanModeShowsCommandInProgressLine)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("build", {
+    "echo beez-progress-command",
+})
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"build"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_NE(Result.output.find("| echo beez-progress-command"), std::string::npos);
+    EXPECT_EQ(Result.output.find("task: build"), std::string::npos);
+}
+
+TEST(CliTest, CleanModeShowsStepDescriptionInProgressLine)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "gen-code",
+    phase = "generate",
+    scope = "code",
+    description = "Generate C++ headers",
+    run = "true",
+})
+task("build", { { name = "gen-code" } })
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"build"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_NE(Result.output.find("| Generate C++ headers"), std::string::npos);
+    EXPECT_EQ(Result.output.find("step: gen-code"), std::string::npos);
 }
 
 TEST(CliTest, MissingBuildScriptExitsWithError)

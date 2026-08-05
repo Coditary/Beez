@@ -3,6 +3,7 @@
 #include "beez/core/expected.hpp"
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
+#include "beez/core/progress_detail.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
@@ -185,11 +186,11 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, Progres
     {
         if (const auto* shellAction = std::get_if<TaskShellAction>(&action))
         {
-            const auto Result =
-                runShellCommand(shellAction->command,
-                                {.category = "task", .detail = "task: " + task.name},
-                                progress,
-                                {});
+            const auto Result = runShellCommand(
+                shellAction->command,
+                {.category = "task", .detail = truncateForDisplay(shellAction->command)},
+                progress,
+                {});
             if (!Result)
             {
                 return Result.error();
@@ -227,7 +228,7 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, Progres
 Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                                                                ProgressState& progress)
 {
-    const std::string Detail = "step: " + step.name;
+    const std::string Detail = stepProgressDetail(step);
     const std::string Category = step.phase.empty() ? "step" : step.phase;
 
     if (const auto& command = step.shellRun)

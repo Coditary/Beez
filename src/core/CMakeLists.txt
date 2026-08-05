@@ -7,6 +7,7 @@ add_library(
     plugin_host.cpp
     step_config.cpp
     stream_capture.cpp
+    progress_detail.cpp
 )
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
