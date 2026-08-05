@@ -123,4 +123,26 @@ std::vector<std::string> Registry::scopesForPhase(const std::string& phase) cons
     return scopes;
 }
 
+std::vector<std::string> Registry::phases() const
+{
+    std::vector<std::string> phases;
+    for (const auto& [name, step] : steps_)
+    {
+        (void)name;
+        if (step.phase.empty())
+        {
+            continue;
+        }
+
+        if (std::ranges::find(phases, step.phase) == phases.end())
+        {
+            phases.push_back(step.phase);
+        }
+    }
+
+    // NOLINTNEXTLINE(modernize-use-ranges) -- std::ranges::sort requires additional headers
+    std::sort(phases.begin(), phases.end());
+    return phases;
+}
+
 }  // namespace beez::core

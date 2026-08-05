@@ -39,7 +39,7 @@ std::string CliApp::helpText()
     stream << "  -v, --version    Display the installed Beez and Lua version\n";
     stream << "      --verbose    Enable verbose logging (Ninja-style)\n";
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
-    stream << "      --list TEXT  List registered entities (tasks, workflows, steps)\n";
+    stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";
     stream << "  -p, --phase TEXT Run a phase (phase[:scope1,scope2] or phase[\"scope\"])\n";
     stream << "  -s, --step TEXT  Run a single step by name\n";
     return stream.str();
@@ -71,8 +71,8 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
-    app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps)")
-        ->check(CLI::IsMember({"tasks", "workflows", "steps"}));
+    app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
+        ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
         "-p,--phase", phaseArgument, "Run a phase (phase[:scope1,scope2] or phase[\"scope\"])");
     app.add_option("-s,--step", stepName, "Run a single step by name");

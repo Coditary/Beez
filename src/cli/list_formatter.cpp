@@ -40,6 +40,10 @@ std::vector<std::string> collectEntityNames(const core::Registry& registry, cons
             names.push_back(name);
         }
     }
+    else if (kind == "phases")
+    {
+        names = registry.phases();
+    }
 
     std::ranges::sort(names);
     return names;
