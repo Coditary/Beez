@@ -39,7 +39,9 @@ if ! cmake-format --check \
     CMakeLists.txt \
     src/CMakeLists.txt \
     src/app/CMakeLists.txt \
+    src/cli/CMakeLists.txt \
     src/core/CMakeLists.txt \
+    src/logging/CMakeLists.txt \
     src/plugins/CMakeLists.txt \
     src/plugins/lua/CMakeLists.txt \
     src/plugins/shell/CMakeLists.txt \

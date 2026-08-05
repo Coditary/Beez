@@ -11,7 +11,9 @@ namespace beez::plugin::shell
 class ShellExecutor : public IExecutor
 {
   public:
-    int execute(const std::string& command, const core::Context& context) override;
+    int execute(const std::string& command,
+                const core::Context& context,
+                std::string* capturedOutput = nullptr) override;
 };
 
 class ShellPlugin : public IPlugin

@@ -16,7 +16,7 @@ export CXX = clang++
 export REPORTS_DIR
 
 CXX_FILES := $(shell find src include tests -name '*.cpp' -o -name '*.hpp' -o -name '*.h' 2>/dev/null)
-CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt src/app/CMakeLists.txt src/core/CMakeLists.txt src/plugins/CMakeLists.txt src/plugins/lua/CMakeLists.txt src/plugins/shell/CMakeLists.txt tests/CMakeLists.txt tests/unit/CMakeLists.txt tests/integration/CMakeLists.txt tests/system/CMakeLists.txt tests/fuzz/CMakeLists.txt
+CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt src/app/CMakeLists.txt src/cli/CMakeLists.txt src/core/CMakeLists.txt src/logging/CMakeLists.txt src/plugins/CMakeLists.txt src/plugins/lua/CMakeLists.txt src/plugins/shell/CMakeLists.txt tests/CMakeLists.txt tests/unit/CMakeLists.txt tests/integration/CMakeLists.txt tests/system/CMakeLists.txt tests/fuzz/CMakeLists.txt
 
 help: ## Alle Targets anzeigen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \

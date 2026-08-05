@@ -20,7 +20,8 @@
 namespace beez::test
 {
 
-inline std::optional<core::Task> requireTask(const core::Registry& registry, const std::string& name)
+inline std::optional<core::Task> requireTask(const core::Registry& registry,
+                                             const std::string& name)
 {
     const auto Found = registry.findTask(name);
     EXPECT_TRUE(Found.has_value());
@@ -49,9 +50,8 @@ inline const core::TaskStepAction* stepActionAt(const core::Task& task, std::siz
     return std::get_if<core::TaskStepAction>(task.actions.data() + index);
 }
 
-inline void expectShellCommand(const core::Task& task,
-                               std::size_t index,
-                               const std::string& expectedCommand)
+inline void
+expectShellCommand(const core::Task& task, std::size_t index, const std::string& expectedCommand)
 {
     const auto* shell = shellActionAt(task, index);
     ASSERT_NE(shell, nullptr);

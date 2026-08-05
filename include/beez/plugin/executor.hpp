@@ -20,7 +20,9 @@ class IExecutor
     IExecutor(IExecutor&&) = delete;
     IExecutor& operator=(IExecutor&&) = delete;
 
-    virtual int execute(const std::string& command, const core::Context& context) = 0;
+    virtual int execute(const std::string& command,
+                        const core::Context& context,
+                        std::string* capturedOutput = nullptr) = 0;
 };
 
 }  // namespace beez::plugin
