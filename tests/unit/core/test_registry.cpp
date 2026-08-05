@@ -1,11 +1,13 @@
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/registry.h"
 #include "beez/core/step.hpp"
+#include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 
 #include "helpers/test_helpers.hpp"
+#include "helpers/test_step_config.hpp"
 
 #include <gtest/gtest.h>
 
@@ -232,4 +234,54 @@ TEST(RegistryTest, RegisterWorkflowWithParallelPhases)
     beez::test::expectParallelStep(FoundWorkflow->steps[0],
                                    {{"generate", "docs"}, {"generate", "code"}});
     beez::test::expectSequentialStep(FoundWorkflow->steps[1], "compile", "code");
+}
+
+TEST(RegistryTest, ConfigureStepBeforeRegistrationAppliesOnRegister)
+{
+    beez::core::Registry registry;
+
+    registry.configureStep("shader", beez::test::makeTestConfig("external"));
+
+    beez::core::Step step;
+    step.name = "shader";
+    step.phase = "generate";
+    step.scope = "code";
+    step.shellRun = "echo shader";
+    registry.registerStep(std::move(step));
+
+    beez::test::expectStepConfigTag(registry, "shader", "external");
+}
+
+TEST(RegistryTest, ConfigureStepAfterRegistrationMergesIntoStep)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "shader";
+    step.phase = "generate";
+    step.scope = "code";
+    step.shellRun = "echo shader";
+    step.config = beez::test::makeTestConfig("inline");
+    registry.registerStep(std::move(step));
+
+    registry.configureStep("shader", beez::test::makeTestConfig("external"));
+
+    beez::test::expectStepConfigTag(registry, "shader", "inline+external");
+}
+
+TEST(RegistryTest, InlineStepConfigOverridesPendingConfigureStep)
+{
+    beez::core::Registry registry;
+
+    registry.configureStep("shader", beez::test::makeTestConfig("external"));
+
+    beez::core::Step step;
+    step.name = "shader";
+    step.phase = "generate";
+    step.scope = "code";
+    step.shellRun = "echo shader";
+    step.config = beez::test::makeTestConfig("inline");
+    registry.registerStep(std::move(step));
+
+    beez::test::expectStepConfigTag(registry, "shader", "external+inline");
 }

@@ -1,4 +1,5 @@
 #include "beez/core/context.h"
+#include "beez/core/step_config.hpp"
 
 #include <filesystem>
 #include <utility>
@@ -11,6 +12,26 @@ Context::Context(std::filesystem::path projectRoot) : projectRoot_(std::move(pro
 std::filesystem::path Context::buildScriptPath() const
 {
     return projectRoot_ / "build.lua";
+}
+
+void Context::setStepConfigAccessor(StepConfigAccessor accessor)
+{
+    stepConfigAccessor_ = std::move(accessor);
+}
+
+void Context::clearStepConfigAccessor()
+{
+    stepConfigAccessor_ = nullptr;
+}
+
+StepConfigPtr Context::getConfig() const
+{
+    if (!stepConfigAccessor_)
+    {
+        return nullptr;
+    }
+
+    return stepConfigAccessor_();
 }
 
 }  // namespace beez::core

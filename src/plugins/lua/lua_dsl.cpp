@@ -8,6 +8,7 @@
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 #include "beez/plugin/plugin_host.h"
+#include "lua_step_config.hpp"
 
 #include <iostream>
 #include <memory>
@@ -104,6 +105,17 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
     }
     step.scope = ScopeValue.as<std::string>();
 
+    const sol::object ConfigValue = options["config"];
+    if (ConfigValue.valid())
+    {
+        if (!ConfigValue.is<sol::table>())
+        {
+            throw std::runtime_error("step '" + step.name + "' field 'config' must be a table");
+        }
+
+        step.config = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
+    }
+
     const sol::object RunValue = options["run"];
     if (!RunValue.valid())
     {
@@ -119,9 +131,10 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
     if (RunValue.is<sol::protected_function>())
     {
         const sol::protected_function LuaFunction = RunValue.as<sol::protected_function>();
-        step.callback = [luaState, LuaFunction](const core::Context& /*context*/) mutable -> int
+        step.callback = [luaState, LuaFunction](const core::Context& context) mutable -> int
         {
-            const sol::protected_function_result Result = LuaFunction();
+            const sol::table StepContext = bindStepContext(luaState, context);
+            const sol::protected_function_result Result = LuaFunction(StepContext);
             if (!Result.valid())
             {
                 const sol::error LuaError = Result;
@@ -244,6 +257,17 @@ class DslBinder
         registry_->registerStep(parseStepTable(options, LuaState));
     }
 
+    void configureStep(const std::string& name, const sol::table& configTable) const
+    {
+        const auto LuaState = luaState_.lock();
+        if (!LuaState)
+        {
+            throw std::runtime_error("lua state is no longer available");
+        }
+
+        registry_->configureStep(name, makeLuaStepConfig(LuaState, configTable));
+    }
+
     void workflow(const std::string& name, const sol::table& steps) const
     {
         registry_->registerWorkflow(parseWorkflow(name, steps));
@@ -265,6 +289,9 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState, core::Registry& re
         { binder->task(name, commands); });
 
     (*luaState)["step"] = [binder](const sol::table& options) { binder->step(options); };
+
+    (*luaState)["configure_step"] = [binder](const std::string& name, const sol::table& configTable)
+    { binder->configureStep(name, configTable); };
 
     (*luaState)["workflow"] = [binder](const std::string& name, const sol::table& steps)
     { binder->workflow(name, steps); };

@@ -4,6 +4,7 @@
 #include "beez/core/phase_request.hpp"
 #include "beez/core/registry.h"
 #include "beez/core/step.hpp"
+#include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
@@ -12,6 +13,7 @@
 #include "beez/plugin/plugin_host.h"
 
 #include "helpers/temp_project.hpp"
+#include "helpers/test_step_config.hpp"
 
 #include <gtest/gtest.h>
 
@@ -276,6 +278,41 @@ TEST(OrchestratorTest, RunStepExecutesRegisteredStep)
     ASSERT_TRUE(Result.hasValue());
     ASSERT_EQ(State->commands.size(), 1U);
     EXPECT_EQ(State->commands[0], "echo compile");
+}
+
+TEST(OrchestratorTest, RunStepCallbackReceivesContextWithConfig)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "shader";
+    step.phase = "generate";
+    step.scope = "code";
+    step.config = beez::test::makeTestConfig("shader-config");
+    step.callback = [](const beez::core::Context& ctx) -> int
+    {
+        const auto Config = ctx.getConfig();
+        if (Config == nullptr)
+        {
+            return 1;
+        }
+
+        const auto* typed = dynamic_cast<const beez::test::TestStepConfig*>(Config.get());
+        if (typed == nullptr || typed->tag() != "shader-config")
+        {
+            return 1;
+        }
+
+        return 0;
+    };
+    registry.registerStep(std::move(step));
+
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto Result = orchestrator.runStep("shader");
+    ASSERT_TRUE(Result.hasValue());
 }
 
 TEST(OrchestratorTest, RunPhaseExecutesAllScopesWhenNoneSpecified)
