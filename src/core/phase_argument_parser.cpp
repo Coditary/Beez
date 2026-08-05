@@ -61,8 +61,7 @@ namespace
     std::size_t position = bracketPosition + 1;
     while (position < input.size())
     {
-        while (position < input.size() &&
-               (input.at(position) == ' ' || input.at(position) == ','))
+        while (position < input.size() && (input.at(position) == ' ' || input.at(position) == ','))
         {
             ++position;
         }

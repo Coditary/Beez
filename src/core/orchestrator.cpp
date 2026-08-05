@@ -4,6 +4,7 @@
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
 #include "beez/core/step.hpp"
+#include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/plugin/plugin_host.h"
@@ -115,7 +116,12 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step)
 
     if (step.hasCallback())
     {
+        context_.setStepConfigAccessor([config = step.config]() -> StepConfigPtr
+                                       { return config; });
+
         const int ExitCode = step.callback(context_);
+        context_.clearStepConfigAccessor();
+
         if (ExitCode != 0)
         {
             return OrchestratorError::ExecutionFailed;

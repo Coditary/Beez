@@ -93,6 +93,116 @@ step({
     EXPECT_EQ(Found->shellRun.value_or(""), "doxygen Doxyfile");
 }
 
+TEST(LuaDslTest, StepWithoutConfigHasNoConfig)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "plain",
+    phase = "generate",
+    scope = "code",
+    run = "echo plain",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("plain");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    EXPECT_FALSE(Found->hasConfig());
+}
+
+TEST(LuaDslTest, LoadsStepWithInlineConfig)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "shader",
+    phase = "generate",
+    scope = "code",
+    config = {
+        shader_version = "450",
+        optimize = true,
+    },
+    run = "echo shader",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    beez::test::expectStepHasConfig(registry, "shader");
+}
+
+TEST(LuaDslTest, LoadsConfigureStepBeforeStepRegistration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure_step("shader", {
+    shader_version = "450",
+    optimize = true,
+})
+step({
+    name = "shader",
+    phase = "generate",
+    scope = "code",
+    run = "echo shader",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    beez::test::expectStepHasConfig(registry, "shader");
+}
+
+TEST(LuaDslTest, LoadsConfigureStepAfterStepRegistration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "shader",
+    phase = "generate",
+    scope = "code",
+    config = {
+        output_dir = "build/shaders",
+    },
+    run = "echo shader",
+})
+configure_step("shader", {
+    shader_version = "450",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    beez::test::expectStepHasConfig(registry, "shader");
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenStepConfigIsNotTable)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "broken",
+    phase = "generate",
+    scope = "code",
+    config = "not-a-table",
+    run = "echo broken",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("broken").has_value());
+}
+
 TEST(LuaDslTest, LoadsSequentialWorkflow)
 {
     const beez::test::TempProject Project;

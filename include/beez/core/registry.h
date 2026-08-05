@@ -1,6 +1,7 @@
 #pragma once
 
 #include "beez/core/step.hpp"
+#include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 
@@ -17,6 +18,7 @@ class Registry
   public:
     void registerTask(Task task);
     void registerStep(Step step);
+    void configureStep(const std::string& name, const StepConfigPtr& config);
     void registerWorkflow(Workflow workflow);
 
     [[nodiscard]] std::optional<Task> findTask(const std::string& name) const;
@@ -42,8 +44,13 @@ class Registry
     }
 
   private:
+    void applyStepConfig(const std::string& name, const StepConfigPtr& config);
+
     std::unordered_map<std::string, Task> tasks_;
     std::unordered_map<std::string, Step> steps_;
+    // TODO(step-config): After build.lua is fully loaded, warn on pending entries that never
+    // matched a registered step.
+    std::unordered_map<std::string, StepConfigPtr> pendingStepConfigs_;
     std::unordered_map<std::string, Workflow> workflows_;
 };
 

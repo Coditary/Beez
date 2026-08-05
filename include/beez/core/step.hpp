@@ -1,6 +1,7 @@
 #pragma once
 
 #include "beez/core/context.h"
+#include "beez/core/step_config.hpp"
 
 #include <functional>
 #include <optional>
@@ -19,6 +20,12 @@ struct Step
     std::string scope;
     std::optional<std::string> shellRun;
     StepCallback callback;
+    StepConfigPtr config;
+
+    [[nodiscard]] bool hasConfig() const
+    {
+        return config != nullptr && !config->empty();
+    }
 
     [[nodiscard]] bool hasShellRun() const
     {

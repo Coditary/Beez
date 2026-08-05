@@ -5,7 +5,8 @@
 #include <optional>
 #include <string>
 
-// NOLINTBEGIN(bugprone-unchecked-optional-access) -- gtest ASSERT_TRUE does not propagate to clang-tidy
+// NOLINTBEGIN(bugprone-unchecked-optional-access) -- gtest ASSERT_TRUE does not propagate to
+// clang-tidy
 TEST(PhaseArgumentParserTest, ParsesPhaseWithoutScopes)
 {
     const auto Parsed = beez::core::parsePhaseArgument("generate");

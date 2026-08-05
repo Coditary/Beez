@@ -1,6 +1,7 @@
 #include "beez/core/registry.h"
 
 #include "beez/core/step.hpp"
+#include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 
@@ -21,7 +22,31 @@ void Registry::registerTask(Task task)
 
 void Registry::registerStep(Step step)
 {
+    const auto PendingIterator = pendingStepConfigs_.find(step.name);
+    if (PendingIterator != pendingStepConfigs_.end())
+    {
+        step.config = mergeStepConfigs(PendingIterator->second, step.config);
+        pendingStepConfigs_.erase(PendingIterator);
+    }
+
     steps_.insert_or_assign(step.name, std::move(step));
+}
+
+void Registry::configureStep(const std::string& name, const StepConfigPtr& config)
+{
+    applyStepConfig(name, config);
+}
+
+void Registry::applyStepConfig(const std::string& name, const StepConfigPtr& config)
+{
+    const auto StepIterator = steps_.find(name);
+    if (StepIterator != steps_.end())
+    {
+        StepIterator->second.config = mergeStepConfigs(StepIterator->second.config, config);
+        return;
+    }
+
+    pendingStepConfigs_[name] = mergeStepConfigs(pendingStepConfigs_[name], config);
 }
 
 void Registry::registerWorkflow(Workflow workflow)
