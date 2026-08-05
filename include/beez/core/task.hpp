@@ -1,5 +1,7 @@
 #pragma once
 
+#include "beez/core/task_action.hpp"
+
 #include <string>
 #include <vector>
 
@@ -10,7 +12,7 @@ namespace beez::core
 struct Task
 {
     std::string name;
-    std::vector<std::string> commands;
+    std::vector<TaskAction> actions;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 

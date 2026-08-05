@@ -106,3 +106,65 @@ workflow("build", {
     EXPECT_TRUE(orchestrator.run("build").hasValue());
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".compiled"));
 }
+
+TEST(LuaShellPipelineTest, TaskStepInvocationUsesConfigureStepOverStepDefault)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("full_build", {
+    { name = "compile:lua" },
+})
+configure_step("compile:lua", {
+    output_dir = "build",
+})
+step({
+    name = "compile:lua",
+    phase = "compile",
+    scope = "code",
+    config = {
+        output_dir = "build/shaders-out",
+    },
+    run = function(ctx)
+        local config = ctx.get_config()
+        if config.output_dir ~= "build" then
+            return 1
+        end
+        return 0
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.run("full_build").hasValue());
+}
+
+TEST(LuaShellPipelineTest, TaskWithStepInvocationExecutesRegisteredStep)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "cpp:compile",
+    phase = "compile",
+    scope = "code",
+    run = "touch .task-compiled",
+})
+task("full_build", {
+    "touch .task-started",
+    { name = "cpp:compile" },
+    "touch .task-done",
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.run("full_build").hasValue());
+
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-started"));
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-compiled"));
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-done"));
+}

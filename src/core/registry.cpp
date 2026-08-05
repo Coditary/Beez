@@ -25,7 +25,7 @@ void Registry::registerStep(Step step)
     const auto PendingIterator = pendingStepConfigs_.find(step.name);
     if (PendingIterator != pendingStepConfigs_.end())
     {
-        step.config = mergeStepConfigs(PendingIterator->second, step.config);
+        step.config = mergeStepConfigs(step.config, PendingIterator->second);
         pendingStepConfigs_.erase(PendingIterator);
     }
 

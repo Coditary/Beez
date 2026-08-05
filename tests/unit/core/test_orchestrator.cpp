@@ -6,6 +6,7 @@
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
 #include "beez/core/task.hpp"
+#include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 #include "beez/plugin/dsl_loader.hpp"
@@ -150,7 +151,7 @@ TEST(OrchestratorTest, RunTaskWithoutExecutorReturnsNotAvailable)
 
     beez::core::Task task;
     task.name = "clean";
-    task.commands = {"echo clean"};
+    task.actions = {beez::core::makeShellAction("echo clean")};
     registry.registerTask(std::move(task));
 
     beez::plugin::PluginHost pluginHost;
@@ -168,7 +169,7 @@ TEST(OrchestratorTest, RunTaskExecutesViaRegisteredExecutor)
 
     beez::core::Task task;
     task.name = "clean";
-    task.commands = {"echo clean"};
+    task.actions = {beez::core::makeShellAction("echo clean")};
     registry.registerTask(std::move(task));
 
     const auto State = std::make_shared<ExecutorState>();
@@ -192,7 +193,8 @@ TEST(OrchestratorTest, RunTaskExecutesMultipleCommandsSequentially)
 
     beez::core::Task task;
     task.name = "hello";
-    task.commands = {"echo first", "echo second"};
+    task.actions = {beez::core::makeShellAction("echo first"),
+                    beez::core::makeShellAction("echo second")};
     registry.registerTask(std::move(task));
 
     const auto State = std::make_shared<ExecutorState>();
@@ -215,7 +217,7 @@ TEST(OrchestratorTest, RunTaskPropagatesExecutorExitCode)
 
     beez::core::Task task;
     task.name = "fail";
-    task.commands = {"exit 42"};
+    task.actions = {beez::core::makeShellAction("exit 42")};
     registry.registerTask(std::move(task));
 
     const auto State = std::make_shared<ExecutorState>();
@@ -237,7 +239,7 @@ TEST(OrchestratorTest, RunPrefersTaskOverWorkflowWithSameName)
 
     beez::core::Task task;
     task.name = "build";
-    task.commands = {"echo task"};
+    task.actions = {beez::core::makeShellAction("echo task")};
     registry.registerTask(std::move(task));
 
     beez::core::Workflow workflow;
@@ -376,6 +378,97 @@ TEST(OrchestratorTest, RunPhaseExecutesOnlyRequestedScopes)
     ASSERT_TRUE(Result.hasValue());
     ASSERT_EQ(State->commands.size(), 1U);
     EXPECT_EQ(State->commands[0], "echo code");
+}
+
+TEST(OrchestratorTest, RunTaskExecutesStepInvocation)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step compileStep;
+    compileStep.name = "cpp:compile";
+    compileStep.phase = "compile";
+    compileStep.scope = "code";
+    compileStep.shellRun = "echo compile";
+    registry.registerStep(std::move(compileStep));
+
+    beez::core::Task task;
+    task.name = "full_build";
+    task.actions = {beez::core::makeShellAction("echo start"),
+                    beez::core::makeStepAction("cpp:compile"),
+                    beez::core::makeShellAction("echo done")};
+    registry.registerTask(std::move(task));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto Result = orchestrator.run("full_build");
+    ASSERT_TRUE(Result.hasValue());
+    ASSERT_EQ(State->commands.size(), 3U);
+    EXPECT_EQ(State->commands[0], "echo start");
+    EXPECT_EQ(State->commands[1], "echo compile");
+    EXPECT_EQ(State->commands[2], "echo done");
+}
+
+TEST(OrchestratorTest, RunTaskStepInvocationReturnsNotFoundWhenStepMissing)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Task task;
+    task.name = "full_build";
+    task.actions = {beez::core::makeStepAction("missing:step")};
+    registry.registerTask(std::move(task));
+
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto Result = orchestrator.run("full_build");
+    ASSERT_FALSE(Result.hasValue());
+    EXPECT_EQ(Result.error(), beez::core::OrchestratorError::NotFound);
+}
+
+TEST(OrchestratorTest, RunTaskStepInvocationMergesInlineConfig)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step shaderStep;
+    shaderStep.name = "shader";
+    shaderStep.phase = "generate";
+    shaderStep.scope = "code";
+    shaderStep.config = beez::test::makeTestConfig("base");
+    shaderStep.callback = [](const beez::core::Context& ctx) -> int
+    {
+        const auto Config = ctx.getConfig();
+        if (Config == nullptr)
+        {
+            return 1;
+        }
+
+        const auto* typed = dynamic_cast<const beez::test::TestStepConfig*>(Config.get());
+        if (typed == nullptr || typed->tag() != "base+inline")
+        {
+            return 1;
+        }
+
+        return 0;
+    };
+    registry.registerStep(std::move(shaderStep));
+
+    beez::core::Task task;
+    task.name = "build";
+    task.actions = {beez::core::makeStepAction("shader", beez::test::makeTestConfig("inline"))};
+    registry.registerTask(std::move(task));
+
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto Result = orchestrator.run("build");
+    ASSERT_TRUE(Result.hasValue());
 }
 
 TEST(OrchestratorTest, LoadBuildScriptReturnsNotFoundWhenMissing)
