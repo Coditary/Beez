@@ -27,6 +27,17 @@
 namespace beez::core
 {
 
+namespace
+{
+
+[[nodiscard]] double elapsedSeconds(const std::chrono::steady_clock::time_point& start)
+{
+    const auto End = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(End - start).count();
+}
+
+}  // namespace
+
 const char* toString(OrchestratorError error)
 {
     switch (error)
@@ -81,12 +92,13 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
             runOptions_.logger->beginRun("Task", name);
         }
 
+        const auto Start = std::chrono::steady_clock::now();
         ProgressState progress {.total = FoundTask->actions.size()};
         const auto Result = runTask(*FoundTask, progress);
 
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(static_cast<bool>(Result), 0.0);
+            runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
         }
 
         return Result;
@@ -101,8 +113,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 
         const auto Start = std::chrono::steady_clock::now();
         const auto Result = runWorkflow(*FoundWorkflow);
-        const auto End = std::chrono::steady_clock::now();
-        const auto Duration = std::chrono::duration<double>(End - Start).count();
+        const auto Duration = elapsedSeconds(Start);
 
         if (runOptions_.logger != nullptr)
         {
@@ -269,12 +280,13 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
         runOptions_.logger->beginRun("Step", name);
     }
 
+    const auto Start = std::chrono::steady_clock::now();
     ProgressState progress {.total = 1};
     const auto Result = runStepInstance(*FoundStep, progress);
 
     if (runOptions_.logger != nullptr)
     {
-        runOptions_.logger->endRun(static_cast<bool>(Result), 0.0);
+        runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
     }
 
     return Result;
@@ -352,6 +364,8 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         runOptions_.logger->beginRun("Phase", request.phase);
     }
 
+    const auto Start = std::chrono::steady_clock::now();
+
     std::vector<std::string> scopes = request.scopes;
     if (scopes.empty())
     {
@@ -362,7 +376,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     {
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(true, 0.0);
+            runOptions_.logger->endRun(true, elapsedSeconds(Start));
         }
         return 0;
     }
@@ -377,7 +391,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         {
             if (runOptions_.logger != nullptr)
             {
-                runOptions_.logger->endRun(false, 0.0);
+                runOptions_.logger->endRun(false, elapsedSeconds(Start));
             }
             return Result.error();
         }
@@ -385,7 +399,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     if (runOptions_.logger != nullptr)
     {
-        runOptions_.logger->endRun(true, 0.0);
+        runOptions_.logger->endRun(true, elapsedSeconds(Start));
     }
 
     return 0;
