@@ -18,6 +18,7 @@ struct ParsedOptions
     std::optional<std::string> listKind;
     bool verbose = false;
     bool dryRun = false;
+    bool enableCache = true;
     std::vector<std::string> userOptions;
 };
 

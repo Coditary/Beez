@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include <atomic>
@@ -24,6 +25,8 @@ class PluginHost;
 
 namespace beez::core
 {
+
+class StepCache;
 
 enum class OrchestratorError : std::uint8_t
 {
@@ -45,6 +48,12 @@ class Orchestrator
                  Context& context,
                  plugin::PluginHost& pluginHost,
                  RunOptions runOptions = {});
+    ~Orchestrator();
+
+    Orchestrator(const Orchestrator&) = delete;
+    Orchestrator& operator=(const Orchestrator&) = delete;
+    Orchestrator(Orchestrator&&) = delete;
+    Orchestrator& operator=(Orchestrator&&) = delete;
 
     [[nodiscard]] Expected<void, OrchestratorError> loadBuildScript();
     [[nodiscard]] Expected<int, OrchestratorError> run(const std::string& name);
@@ -89,6 +98,7 @@ class Orchestrator
     Context& context_;
     plugin::PluginHost& pluginHost_;
     RunOptions runOptions_;
+    std::unique_ptr<StepCache> ownedStepCache_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 };
 
