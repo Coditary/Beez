@@ -1,0 +1,52 @@
+#include "beez/core/content_hash.hpp"
+
+#include <gtest/gtest.h>
+
+#include <filesystem>
+#include <fstream>
+#include <string>
+
+namespace
+{
+
+void writeFile(const std::filesystem::path& path, const std::string& content)
+{
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream stream(path);
+    stream << content;
+}
+
+}  // namespace
+
+TEST(ContentHashTest, HashBytesIsDeterministic)
+{
+    const auto Hasher = beez::core::makeSha256Hasher();
+    EXPECT_EQ(Hasher->hashBytes("hello"), Hasher->hashBytes("hello"));
+    EXPECT_NE(Hasher->hashBytes("hello"), Hasher->hashBytes("world"));
+}
+
+TEST(ContentHashTest, CombineProducesStableDigest)
+{
+    const auto Hasher = beez::core::makeSha256Hasher();
+    const std::string Combined = Hasher->combine({"alpha", "beta", "gamma"});
+    EXPECT_EQ(Combined.size(), 16U);
+    EXPECT_EQ(Combined, Hasher->combine({"alpha", "beta", "gamma"}));
+    EXPECT_NE(Combined, Hasher->combine({"alpha", "gamma", "beta"}));
+}
+
+TEST(ContentHashTest, HashFileReflectsContent)
+{
+    const auto Directory = std::filesystem::temp_directory_path() / "beez_hash_file_test";
+    const auto FilePath = Directory / "input.txt";
+    writeFile(FilePath, "cache-me");
+
+    const auto Hasher = beez::core::makeSha256Hasher();
+    const std::string First = Hasher->hashFile(FilePath);
+    writeFile(FilePath, "cache-me-updated");
+    const std::string Second = Hasher->hashFile(FilePath);
+
+    std::filesystem::remove_all(Directory);
+
+    EXPECT_EQ(First.size(), 16U);
+    EXPECT_NE(First, Second);
+}

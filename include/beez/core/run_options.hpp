@@ -10,11 +10,15 @@ class ILogger;
 namespace beez::core
 {
 
+class StepCache;
+
 struct RunOptions
 {
     bool dryRun = false;
+    bool enableCache = true;
     logging::OutputMode outputMode = logging::OutputMode::Clean;
     logging::ILogger* logger = nullptr;
+    StepCache* stepCache = nullptr;
 };
 
 }  // namespace beez::core

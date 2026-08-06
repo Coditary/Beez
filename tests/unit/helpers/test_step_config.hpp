@@ -19,6 +19,11 @@ class TestStepConfig final : public core::StepConfig
         return tag_.empty();
     }
 
+    [[nodiscard]] std::string cacheFingerprint() const override
+    {
+        return tag_;
+    }
+
     [[nodiscard]] const std::string& tag() const
     {
         return tag_;

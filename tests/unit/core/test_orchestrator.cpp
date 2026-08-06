@@ -23,6 +23,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -626,4 +628,105 @@ TEST(OrchestratorTest, RunPhaseOrdersStepsByArtifactDependencies)
     ASSERT_EQ(State->commands.size(), 2U);
     EXPECT_EQ(State->commands[0], "echo compile");
     EXPECT_EQ(State->commands[1], "echo link");
+}
+
+namespace
+{
+
+void writeProjectFile(const std::filesystem::path& path, const std::string& content)
+{
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream stream(path);
+    stream << content;
+}
+
+}  // namespace
+
+TEST(OrchestratorTest, SkipsCachedStepOnSecondRun)
+{
+    const beez::test::TempProject Project;
+    writeProjectFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
+
+    beez::core::Context context(Project.path());
+    beez::core::Registry registry;
+
+    int callbackCount = 0;
+    beez::core::Step compileStep;
+    compileStep.name = "compile";
+    compileStep.phase = "compile";
+    compileStep.scope = "cpp";
+    compileStep.input = {"src/**/*.cpp"};
+    compileStep.output = {"build/**/*.o"};
+    compileStep.callback = [&Project, &callbackCount](const beez::core::Context&)
+    {
+        ++callbackCount;
+        writeProjectFile(Project.path() / "build" / "main.o", "object\n");
+        return 0;
+    };
+    registry.registerStep(std::move(compileStep));
+
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const beez::core::PhaseRequest Request {.phase = "compile", .scopes = {"cpp"}};
+    ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
+    ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
+    EXPECT_EQ(callbackCount, 1);
+}
+
+TEST(OrchestratorTest, ReexecutesWhenCachedOutputsAreMissing)
+{
+    const beez::test::TempProject Project;
+    writeProjectFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
+
+    beez::core::Context context(Project.path());
+    beez::core::Registry registry;
+
+    int callbackCount = 0;
+    beez::core::Step compileStep;
+    compileStep.name = "compile";
+    compileStep.phase = "compile";
+    compileStep.scope = "cpp";
+    compileStep.input = {"src/**/*.cpp"};
+    compileStep.output = {"build/**/*.o"};
+    compileStep.callback = [&Project, &callbackCount](const beez::core::Context&)
+    {
+        ++callbackCount;
+        writeProjectFile(Project.path() / "build" / "main.o", "object\n");
+        return 0;
+    };
+    registry.registerStep(std::move(compileStep));
+
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const beez::core::PhaseRequest Request {.phase = "compile", .scopes = {"cpp"}};
+    ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
+    std::filesystem::remove(Project.path() / "build" / "main.o");
+    ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
+    EXPECT_EQ(callbackCount, 2);
+}
+
+TEST(OrchestratorTest, StepsWithoutArtifactsAlwaysExecute)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "noop";
+    step.phase = "generate";
+    step.scope = "docs";
+    step.shellRun = "echo noop";
+    registry.registerStep(std::move(step));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const beez::core::PhaseRequest Request {.phase = "generate", .scopes = {"docs"}};
+    ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
+    ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
+    EXPECT_EQ(State->callCount, 2);
 }

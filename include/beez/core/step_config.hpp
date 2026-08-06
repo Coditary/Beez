@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 namespace beez::core
 {
@@ -17,6 +18,8 @@ class StepConfig
     StepConfig& operator=(StepConfig&&) = delete;
 
     [[nodiscard]] virtual bool empty() const = 0;
+
+    [[nodiscard]] virtual std::string cacheFingerprint() const = 0;
 
     [[nodiscard]] virtual std::shared_ptr<const StepConfig>
     mergedWith(const std::shared_ptr<const StepConfig>& overlay) const = 0;

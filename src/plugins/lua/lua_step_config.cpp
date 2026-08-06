@@ -3,10 +3,14 @@
 #include "beez/core/context.h"
 #include "beez/core/step_config.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <sstream>
+#include <string>
 #include <utility>
+#include <vector>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters)
 #include <sol/sol.hpp>
@@ -35,6 +39,46 @@ sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
     return merged;
 }
 
+[[nodiscard]] std::string serializeTable(const sol::table& table)
+{
+    std::vector<std::string> entries;
+    table.for_each(
+        [&entries](const sol::object& key, const sol::object& value)
+        {
+            std::ostringstream stream;
+            stream << key.as<std::string>() << '=';
+            if (value.is<bool>())
+            {
+                stream << (value.as<bool>() ? "true" : "false");
+            }
+            else if (value.is<std::string>())
+            {
+                stream << value.as<std::string>();
+            }
+            else if (value.is<int>())
+            {
+                stream << value.as<int>();
+            }
+            else if (value.is<double>())
+            {
+                stream << value.as<double>();
+            }
+            else
+            {
+                stream << "<unsupported>";
+            }
+            entries.push_back(stream.str());
+        });
+
+    std::ranges::sort(entries);
+    std::ostringstream combined;
+    for (const auto& entry : entries)
+    {
+        combined << entry << '\n';
+    }
+    return combined.str();
+}
+
 class LuaStepConfig final : public core::StepConfig
 {
   public:
@@ -46,6 +90,15 @@ class LuaStepConfig final : public core::StepConfig
     [[nodiscard]] bool empty() const override
     {
         return !lazyBuilder_;
+    }
+
+    [[nodiscard]] std::string cacheFingerprint() const override
+    {
+        if (!lazyBuilder_)
+        {
+            return {};
+        }
+        return serializeTable(materialize());
     }
 
     [[nodiscard]] core::StepConfigPtr mergedWith(const core::StepConfigPtr& overlay) const override
