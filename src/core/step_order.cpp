@@ -42,12 +42,10 @@ using InDegree = std::unordered_map<std::string, std::size_t>;
     return std::ranges::any_of(leftPatterns,
                                [&rightPatterns, &matcher](const std::string& left)
                                {
-                                   return std::ranges::any_of(rightPatterns,
-                                                              [&left, &matcher](const std::string& right)
-                                                              {
-                                                                  return matcher.patternsOverlap(left,
-                                                                                                 right);
-                                                              });
+                                   return std::ranges::any_of(
+                                       rightPatterns,
+                                       [&left, &matcher](const std::string& right)
+                                       { return matcher.patternsOverlap(left, right); });
                                });
 }
 
