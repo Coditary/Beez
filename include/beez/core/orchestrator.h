@@ -33,6 +33,7 @@ enum class OrchestratorError : std::uint8_t
     BuildScriptLoadFailed,
     ExecutorNotAvailable,
     InvalidPhaseRequest,
+    StepOrderingFailed,
 };
 
 [[nodiscard]] const char* toString(OrchestratorError error);

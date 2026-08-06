@@ -128,6 +128,44 @@ bool isTaskActionListTable(const sol::table& table)
     return hasActionEntry;
 }
 
+std::vector<std::string> parseStringArrayField(const sol::table& options,
+                                               const std::string& fieldName,
+                                               const std::string& stepName)
+{
+    const sol::object FieldValue = options[fieldName];
+    if (!FieldValue.valid())
+    {
+        return {};
+    }
+
+    if (!FieldValue.is<sol::table>())
+    {
+        throw std::runtime_error("step '" + stepName + "' field '" + fieldName +
+                                 "' must be a table of strings");
+    }
+
+    std::vector<std::string> values;
+    const sol::table FieldTable = FieldValue.as<sol::table>();
+    FieldTable.for_each(
+        [&values, &fieldName, &stepName](const sol::object& key, const sol::object& value)
+        {
+            if (!key.is<int>())
+            {
+                return;
+            }
+
+            if (!value.is<std::string>())
+            {
+                throw std::runtime_error("step '" + stepName + "' field '" + fieldName +
+                                         "' must contain only strings");
+            }
+
+            values.push_back(value.as<std::string>());
+        });
+
+    return values;
+}
+
 core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::state>& luaState)
 {
     core::Step step;
@@ -174,6 +212,10 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
 
         step.config = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
     }
+
+    step.input = parseStringArrayField(options, "input", step.name);
+    step.output = parseStringArrayField(options, "output", step.name);
+    step.mutate = parseStringArrayField(options, "mutate", step.name);
 
     const sol::object RunValue = options["run"];
     if (!RunValue.valid())
@@ -338,6 +380,11 @@ class DslBinder
         registry_->registerWorkflow(parseWorkflow(name, steps));
     }
 
+    void order(const std::string& before, const std::string& after) const
+    {
+        registry_->registerStepOrder(before, after);
+    }
+
   private:
     core::Registry* registry_;
     std::weak_ptr<sol::state> luaState_;
@@ -360,6 +407,9 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState, core::Registry& re
 
     (*luaState)["workflow"] = [binder](const std::string& name, const sol::table& steps)
     { binder->workflow(name, steps); };
+
+    (*luaState)["order"] = [binder](const std::string& before, const std::string& after)
+    { binder->order(before, after); };
 }
 
 }  // namespace

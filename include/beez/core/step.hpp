@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace beez::core
 {
@@ -22,6 +23,9 @@ struct Step
     std::optional<std::string> shellRun;
     StepCallback callback;
     StepConfigPtr config;
+    std::vector<std::string> input;
+    std::vector<std::string> output;
+    std::vector<std::string> mutate;
 
     [[nodiscard]] bool hasConfig() const
     {

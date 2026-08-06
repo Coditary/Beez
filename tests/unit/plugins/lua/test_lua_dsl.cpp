@@ -396,3 +396,109 @@ task("broken", { phase = "generate", scope = "docs", run = "true" })
     EXPECT_FALSE(loadScript(Project, registry));
     EXPECT_FALSE(registry.findTask("broken").has_value());
 }
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity) -- raw string literals inflate metric
+TEST(LuaDslTest, LoadsStepArtifactFields)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "cpp",
+    input = { "src/**/*.cpp" },
+    output = { "build/**/*.o" },
+    run = "echo compile",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("compile");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_EQ(Found->input.size(), 1U);
+    EXPECT_EQ(Found->input[0], "src/**/*.cpp");
+    ASSERT_EQ(Found->output.size(), 1U);
+    EXPECT_EQ(Found->output[0], "build/**/*.o");
+    EXPECT_TRUE(Found->mutate.empty());
+}
+
+TEST(LuaDslTest, LoadsStepMutateField)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "cpp:format",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo format",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("cpp:format");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_EQ(Found->mutate.size(), 1U);
+    EXPECT_EQ(Found->mutate[0], "src/**/*.cpp");
+}
+
+TEST(LuaDslTest, LoadsOrderDeclaration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+order("cpp:lint", "cpp:format")
+step({
+    name = "cpp:format",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo format",
+})
+step({
+    name = "cpp:lint",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo lint",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_TRUE(Ordered.hasValue());
+    ASSERT_EQ(Ordered.value().size(), 2U);
+    EXPECT_EQ(Ordered.value()[0].name, "cpp:lint");
+    EXPECT_EQ(Ordered.value()[1].name, "cpp:format");
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenArtifactFieldIsNotTable)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "broken",
+    phase = "compile",
+    scope = "cpp",
+    input = "src/**/*.cpp",
+    run = "echo broken",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("broken").has_value());
+}

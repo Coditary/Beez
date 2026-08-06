@@ -1,7 +1,10 @@
 #include "beez/core/registry.h"
 
+#include "beez/core/expected.hpp"
+#include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/step_order.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 
@@ -54,6 +57,11 @@ void Registry::registerWorkflow(Workflow workflow)
     workflows_.insert_or_assign(workflow.name, std::move(workflow));
 }
 
+void Registry::registerStepOrder(const std::string& before, const std::string& after)
+{
+    stepOrderHints_.push_back(StepOrderHint {.before = before, .after = after});
+}
+
 std::optional<Task> Registry::findTask(const std::string& name) const
 {
     const auto TaskIterator = tasks_.find(name);
@@ -84,11 +92,13 @@ std::optional<Workflow> Registry::findWorkflow(const std::string& name) const
     return WorkflowIterator->second;
 }
 
-std::vector<Step> Registry::stepsForPhase(const std::string& phase, const std::string& scope) const
+Expected<std::vector<Step>, StepOrderError> Registry::stepsForPhase(const std::string& phase,
+                                                                    const std::string& scope) const
 {
     std::vector<Step> matched;
     for (const auto& [name, step] : steps_)
     {
+        (void)name;
         if (step.phase != phase)
         {
             continue;
@@ -99,7 +109,9 @@ std::vector<Step> Registry::stepsForPhase(const std::string& phase, const std::s
             matched.push_back(step);
         }
     }
-    return matched;
+
+    const auto Matcher = makeSimpleGlobMatcher();
+    return orderSteps(matched, stepOrderHints_, *Matcher);
 }
 
 std::vector<std::string> Registry::scopesForPhase(const std::string& phase) const

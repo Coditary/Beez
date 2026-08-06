@@ -8,6 +8,8 @@ add_executable(
     cli/test_cli_app.cpp
     cli/test_list_formatter.cpp
     core/test_registry.cpp
+    core/test_glob_pattern.cpp
+    core/test_step_order.cpp
     core/test_workflow.cpp
     core/test_context.cpp
     core/test_orchestrator.cpp
