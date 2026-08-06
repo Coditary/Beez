@@ -168,3 +168,125 @@ task("full_build", {
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-compiled"));
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-done"));
 }
+
+TEST(LuaShellPipelineTest, StepSpawnExecutesWorkerCommands)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = function(ctx)
+        local job = ctx:spawn({
+            name = "compile_main",
+            cmd = "mkdir -p build && touch build/main.o",
+            outputs = { "build/main.o" },
+        })
+        return ctx:wait(job)
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "main.o"));
+}
+
+TEST(LuaShellPipelineTest, StepSpawnWaitAllExecutesMultipleWorkers)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = function(ctx)
+        local jobs = {}
+        local job_a = ctx:spawn({
+            name = "compile_a",
+            cmd = "mkdir -p build && touch build/a.o",
+            outputs = { "build/a.o" },
+        })
+        local job_b = ctx:spawn({
+            name = "compile_b",
+            cmd = "mkdir -p build && touch build/b.o",
+            outputs = { "build/b.o" },
+        })
+        jobs[1] = job_a
+        jobs[2] = job_b
+        return ctx:wait_all(jobs)
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "a.o"));
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "b.o"));
+}
+
+TEST(LuaShellPipelineTest, StepAutoDrainsWorkersWithoutExplicitWait)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = function(ctx)
+        ctx:spawn({
+            name = "compile_main",
+            cmd = "mkdir -p build && touch build/main.o",
+            outputs = { "build/main.o" },
+        })
+        return 0
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "main.o"));
+}
+
+TEST(LuaShellPipelineTest, StepSpawnSupportsMultipleCommands)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = function(ctx)
+        local job = ctx:spawn({
+            name = "compile_main",
+            cmd = {
+                "mkdir -p build",
+                "touch build/main.o",
+                "touch build/main.done",
+            },
+            outputs = { "build/main.o", "build/main.done" },
+        })
+        return ctx:wait(job)
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "main.o"));
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "main.done"));
+}

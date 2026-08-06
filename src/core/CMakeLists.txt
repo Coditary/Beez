@@ -9,6 +9,7 @@ add_library(
     phase_argument_parser.cpp
     plugin_host.cpp
     step_cache.cpp
+    worker_pool.cpp
     step_config.cpp
     env_file.cpp
     step_order.cpp

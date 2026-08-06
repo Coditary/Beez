@@ -8,6 +8,8 @@
 namespace beez::core
 {
 
+class WorkerPool;
+
 class Context
 {
   public:
@@ -27,9 +29,18 @@ class Context
 
     [[nodiscard]] StepConfigPtr getConfig() const;
 
+    void setWorkerPool(WorkerPool* pool);
+    void clearWorkerPool();
+
+    [[nodiscard]] WorkerPool* workerPool() const
+    {
+        return workerPool_;
+    }
+
   private:
     std::filesystem::path projectRoot_;
     StepConfigAccessor stepConfigAccessor_;
+    WorkerPool* workerPool_ = nullptr;
 };
 
 }  // namespace beez::core

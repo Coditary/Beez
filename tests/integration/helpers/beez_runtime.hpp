@@ -3,6 +3,7 @@
 #include "beez/core/context.h"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
+#include "beez/core/run_options.hpp"
 #include "beez/plugin/lua/lua_dsl.h"
 #include "beez/plugin/plugin_host.h"
 #include "beez/plugin/shell/shell_executor.h"
@@ -23,9 +24,9 @@ class BeezRuntime
         pluginHost_.initialize(registry_, context_);
     }
 
-    [[nodiscard]] beez::core::Orchestrator orchestrator()
+    [[nodiscard]] beez::core::Orchestrator orchestrator(beez::core::RunOptions options = {})
     {
-        return {registry_, context_, pluginHost_};
+        return {registry_, context_, pluginHost_, options};
     }
 
     [[nodiscard]] const beez::core::Registry& registry() const

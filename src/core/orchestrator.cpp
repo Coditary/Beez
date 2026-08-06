@@ -13,6 +13,7 @@
 #include "beez/core/stream_capture.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/task_action.hpp"
+#include "beez/core/worker_pool.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 #include "beez/logging/logger.hpp"
@@ -28,6 +29,7 @@
 #include <numeric>
 #include <optional>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -241,6 +243,7 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, Progres
     return lastExitCode;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity) -- step cache + worker pool branches
 Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                                                                ProgressState& progress)
 {
@@ -291,8 +294,37 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         context_.setStepConfigAccessor([config = step.config]() -> StepConfigPtr
                                        { return config; });
 
-        const auto Captured =
-            captureProcessOutput([this, &step]() { return step.callback(context_); });
+        WorkerPool::ExecuteFn executeWorkerCommand = [this](const std::string& command) -> int
+        {
+            auto* executor = pluginHost_.executor();
+            if (executor == nullptr)
+            {
+                return -1;
+            }
+
+            return executor->execute(command, context_, nullptr);
+        };
+
+        WorkerPool workerPool(context_.projectRoot(),
+                              std::move(executeWorkerCommand),
+                              stepCache,
+                              stepCache != nullptr ? stepCache->matcher() : defaultGlobMatcher(),
+                              step.name,
+                              runOptions_.dryRun);
+        context_.setWorkerPool(&workerPool);
+
+        const auto Captured = captureProcessOutput(
+            [this, &step, &workerPool]() -> int
+            {
+                const int CallbackExitCode = step.callback(context_);
+                if (CallbackExitCode != 0)
+                {
+                    return CallbackExitCode;
+                }
+
+                return workerPool.drainAll();
+            });
+        context_.clearWorkerPool();
         context_.clearStepConfigAccessor();
 
         if (runOptions_.outputMode == logging::OutputMode::Verbose &&

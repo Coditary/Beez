@@ -11,6 +11,7 @@ add_executable(
     core/test_content_hash.cpp
     core/test_glob_expand.cpp
     core/test_step_cache.cpp
+    core/test_worker_pool.cpp
     core/test_env_file.cpp
     core/test_glob_pattern.cpp
     core/test_step_order.cpp
