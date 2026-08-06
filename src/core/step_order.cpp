@@ -34,19 +34,39 @@ namespace
 using Adjacency = std::unordered_map<std::string, std::set<std::string>>;
 using InDegree = std::unordered_map<std::string, std::size_t>;
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) -- left/right semantics are intentional
-[[nodiscard]] bool patternsOverlapAny(const std::vector<std::string>& leftPatterns,
-                                      const std::vector<std::string>& rightPatterns,
-                                      const IGlobMatcher& matcher)
+struct PatternRef
 {
-    return std::ranges::any_of(leftPatterns,
-                               [&rightPatterns, &matcher](const std::string& left)
-                               {
-                                   return std::ranges::any_of(
-                                       rightPatterns,
-                                       [&left, &matcher](const std::string& right)
-                                       { return matcher.patternsOverlap(left, right); });
-                               });
+    const Step* step = nullptr;
+    const std::string* pattern = nullptr;
+};
+
+using PrefixBuckets = std::unordered_map<std::string, std::vector<PatternRef>>;
+
+[[nodiscard]] std::string globLiteralPrefix(const std::string& pattern)
+{
+    for (std::size_t index = 0; index < pattern.size(); ++index)
+    {
+        if (pattern[index] == '*' || pattern[index] == '?')
+        {
+            return pattern.substr(0, index);
+        }
+    }
+    return pattern;
+}
+
+[[nodiscard]] bool literalPrefixesCompatible(const std::string& left, const std::string& right)
+{
+    if (left.empty() || right.empty())
+    {
+        return true;
+    }
+
+    if (left == right)
+    {
+        return true;
+    }
+
+    return left.starts_with(right) || right.starts_with(left);
 }
 
 void addEdge(const std::string& before,
@@ -75,30 +95,125 @@ void addEdge(const std::string& before,
                                { return hint.before == before && hint.after == after; });
 }
 
-void addArtifactEdges(const Step& step,
-                      const Step& other,
-                      const IGlobMatcher& matcher,
-                      Adjacency& adjacency,
-                      InDegree& inDegree)
+void collectPatternRefs(const Step& step,
+                        const std::vector<std::string>& patterns,
+                        std::vector<PatternRef>& refs)
 {
-    if (patternsOverlapAny(step.output, other.input, matcher))
+    for (const auto& pattern : patterns)
     {
-        addEdge(step.name, other.name, adjacency, inDegree);
+        refs.push_back(PatternRef {.step = &step, .pattern = &pattern});
+    }
+}
+
+[[nodiscard]] PrefixBuckets bucketByLiteralPrefix(const std::vector<PatternRef>& refs)
+{
+    PrefixBuckets buckets;
+    buckets.reserve(refs.size());
+    for (const auto& ref : refs)
+    {
+        buckets[globLiteralPrefix(*ref.pattern)].push_back(ref);
+    }
+    return buckets;
+}
+
+void linkProducerBeforeConsumer(const std::vector<PatternRef>& producers,
+                                const std::vector<PatternRef>& consumers,
+                                const IGlobMatcher& matcher,
+                                Adjacency& adjacency,
+                                InDegree& inDegree)
+{
+    if (producers.empty() || consumers.empty())
+    {
+        return;
     }
 
-    if (patternsOverlapAny(step.mutate, other.input, matcher))
+    const PrefixBuckets ConsumerBuckets = bucketByLiteralPrefix(consumers);
+    for (const auto& producer : producers)
     {
-        addEdge(step.name, other.name, adjacency, inDegree);
+        const std::string ProducerPrefix = globLiteralPrefix(*producer.pattern);
+        for (const auto& [consumerPrefix, consumerRefs] : ConsumerBuckets)
+        {
+            if (!literalPrefixesCompatible(ProducerPrefix, consumerPrefix))
+            {
+                continue;
+            }
+
+            for (const auto& consumer : consumerRefs)
+            {
+                if (producer.step == consumer.step)
+                {
+                    continue;
+                }
+
+                if (!matcher.patternsOverlap(*producer.pattern, *consumer.pattern))
+                {
+                    continue;
+                }
+
+                addEdge(producer.step->name, consumer.step->name, adjacency, inDegree);
+            }
+        }
+    }
+}
+
+[[nodiscard]] std::optional<StepOrderError>
+resolveMutateOverlap(const Step& step,
+                     const Step& other,
+                     const std::vector<StepOrderHint>& hints,
+                     Adjacency& adjacency,
+                     InDegree& inDegree);
+
+void linkMutateConflicts(const std::vector<PatternRef>& mutates,
+                         const std::vector<StepOrderHint>& hints,
+                         const IGlobMatcher& matcher,
+                         Adjacency& adjacency,
+                         InDegree& inDegree,
+                         std::optional<StepOrderError>& error)
+{
+    if (mutates.size() < 2)
+    {
+        return;
     }
 
-    if (patternsOverlapAny(step.output, other.mutate, matcher))
+    const PrefixBuckets MutateBuckets = bucketByLiteralPrefix(mutates);
+    for (auto left = MutateBuckets.begin(); left != MutateBuckets.end(); ++left)
     {
-        addEdge(step.name, other.name, adjacency, inDegree);
-    }
+        for (auto right = left; right != MutateBuckets.end(); ++right)
+        {
+            if (!literalPrefixesCompatible(left->first, right->first))
+            {
+                continue;
+            }
 
-    if (patternsOverlapAny(step.mutate, other.output, matcher))
-    {
-        addEdge(other.name, step.name, adjacency, inDegree);
+            const auto& LeftRefs = left->second;
+            const auto& RightRefs = right->second;
+            for (std::size_t leftIndex = 0; leftIndex < LeftRefs.size(); ++leftIndex)
+            {
+                const std::size_t RightStart = (left == right) ? leftIndex + 1 : 0;
+                for (std::size_t rightIndex = RightStart; rightIndex < RightRefs.size();
+                     ++rightIndex)
+                {
+                    const auto& Left = LeftRefs[leftIndex];
+                    const auto& Right = RightRefs[rightIndex];
+                    if (Left.step == Right.step)
+                    {
+                        continue;
+                    }
+
+                    if (!matcher.patternsOverlap(*Left.pattern, *Right.pattern))
+                    {
+                        continue;
+                    }
+
+                    if (const auto Conflict = resolveMutateOverlap(
+                            *Left.step, *Right.step, hints, adjacency, inDegree))
+                    {
+                        error = Conflict;
+                        return;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -114,21 +229,21 @@ resolveMutateOverlap(const Step& step,
 
     if (StepBeforeOther && OtherBeforeStep)
     {
-        StepOrderError error;
-        error.kind = StepOrderErrorKind::MutateConflict;
-        error.message = "conflicting order hints between mutate steps '" + step.name + "' and '" +
-                        other.name + "'";
-        return error;
+        StepOrderError mutateError;
+        mutateError.kind = StepOrderErrorKind::MutateConflict;
+        mutateError.message = "conflicting order hints between mutate steps '" + step.name +
+                              "' and '" + other.name + "'";
+        return mutateError;
     }
 
     if (!StepBeforeOther && !OtherBeforeStep)
     {
-        StepOrderError error;
-        error.kind = StepOrderErrorKind::MutateConflict;
-        error.message = "cannot resolve mutate conflict between '" + step.name + "' and '" +
-                        other.name + "'; add order(\"" + step.name + "\", \"" + other.name +
-                        "\") or the reverse";
-        return error;
+        StepOrderError mutateError;
+        mutateError.kind = StepOrderErrorKind::MutateConflict;
+        mutateError.message = "cannot resolve mutate conflict between '" + step.name + "' and '" +
+                              other.name + "'; add order(\"" + step.name + "\", \"" + other.name +
+                              "\") or the reverse";
+        return mutateError;
     }
 
     if (StepBeforeOther)
@@ -143,6 +258,11 @@ resolveMutateOverlap(const Step& step,
     return std::nullopt;
 }
 
+[[nodiscard]] bool stepHasArtifacts(const Step& step)
+{
+    return !step.input.empty() || !step.output.empty() || !step.mutate.empty();
+}
+
 [[nodiscard]] std::optional<StepOrderError>
 buildDependencyGraph(const std::vector<Step>& steps,
                      const std::vector<StepOrderHint>& hints,
@@ -151,33 +271,29 @@ buildDependencyGraph(const std::vector<Step>& steps,
                      InDegree& inDegree,
                      std::unordered_map<std::string, const Step*>& stepByName)
 {
+    std::vector<PatternRef> outputs;
+    std::vector<PatternRef> inputs;
+    std::vector<PatternRef> mutates;
+
     for (const auto& step : steps)
     {
         stepByName.emplace(step.name, &step);
         inDegree.emplace(step.name, 0);
+        collectPatternRefs(step, step.output, outputs);
+        collectPatternRefs(step, step.input, inputs);
+        collectPatternRefs(step, step.mutate, mutates);
     }
 
-    for (const auto& step : steps)
+    linkProducerBeforeConsumer(outputs, inputs, matcher, adjacency, inDegree);
+    linkProducerBeforeConsumer(mutates, inputs, matcher, adjacency, inDegree);
+    linkProducerBeforeConsumer(outputs, mutates, matcher, adjacency, inDegree);
+    linkProducerBeforeConsumer(mutates, outputs, matcher, adjacency, inDegree);
+
+    std::optional<StepOrderError> mutateError;
+    linkMutateConflicts(mutates, hints, matcher, adjacency, inDegree, mutateError);
+    if (mutateError.has_value())
     {
-        for (const auto& other : steps)
-        {
-            if (step.name == other.name)
-            {
-                continue;
-            }
-
-            addArtifactEdges(step, other, matcher, adjacency, inDegree);
-
-            if (!step.mutate.empty() && !other.mutate.empty() &&
-                patternsOverlapAny(step.mutate, other.mutate, matcher))
-            {
-                if (const auto Conflict =
-                        resolveMutateOverlap(step, other, hints, adjacency, inDegree))
-                {
-                    return Conflict;
-                }
-            }
-        }
+        return mutateError;
     }
 
     for (const auto& hint : hints)
@@ -198,24 +314,21 @@ topologicalSort(const std::vector<Step>& steps,
                 InDegree inDegree,
                 const std::unordered_map<std::string, const Step*>& stepByName)
 {
-    std::vector<std::string> ready;
-    ready.reserve(steps.size());
+    std::set<std::string> ready;
     for (const auto& [name, degree] : inDegree)
     {
         if (degree == 0)
         {
-            ready.push_back(name);
+            ready.insert(name);
         }
     }
-
-    std::ranges::sort(ready);
 
     std::vector<Step> ordered;
     ordered.reserve(steps.size());
 
     while (!ready.empty())
     {
-        const std::string Current = ready.front();
+        const std::string Current = *ready.begin();
         ready.erase(ready.begin());
         ordered.push_back(*stepByName.at(Current));
 
@@ -236,11 +349,9 @@ topologicalSort(const std::vector<Step>& steps,
             --degree;
             if (degree == 0)
             {
-                ready.push_back(successor);
+                ready.insert(successor);
             }
         }
-
-        std::ranges::sort(ready);
     }
 
     if (ordered.size() != steps.size())
@@ -254,6 +365,14 @@ topologicalSort(const std::vector<Step>& steps,
     return ordered;
 }
 
+[[nodiscard]] Expected<std::vector<Step>, StepOrderError>
+sortStepsAlphabetically(std::vector<Step> steps)
+{
+    std::ranges::sort(steps,
+                      [](const Step& left, const Step& right) { return left.name < right.name; });
+    return steps;
+}
+
 }  // namespace
 
 Expected<std::vector<Step>, StepOrderError> orderSteps(const std::vector<Step>& steps,
@@ -263,6 +382,12 @@ Expected<std::vector<Step>, StepOrderError> orderSteps(const std::vector<Step>& 
     if (steps.empty())
     {
         return std::vector<Step> {};
+    }
+
+    const bool HasArtifacts = std::ranges::any_of(steps, stepHasArtifacts);
+    if (!HasArtifacts && hints.empty())
+    {
+        return sortStepsAlphabetically(steps);
     }
 
     Adjacency adjacency;

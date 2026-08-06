@@ -28,4 +28,7 @@ class IGlobMatcher
 
 [[nodiscard]] std::unique_ptr<IGlobMatcher> makeSimpleGlobMatcher();
 
+// Shared matcher with persistent caches — use for ordering hot paths.
+[[nodiscard]] IGlobMatcher& defaultGlobMatcher();
+
 }  // namespace beez::core

@@ -110,8 +110,8 @@ Expected<std::vector<Step>, StepOrderError> Registry::stepsForPhase(const std::s
         }
     }
 
-    const auto Matcher = makeSimpleGlobMatcher();
-    return orderSteps(matched, stepOrderHints_, *Matcher);
+    IGlobMatcher& matcher = defaultGlobMatcher();
+    return orderSteps(matched, stepOrderHints_, matcher);
 }
 
 std::vector<std::string> Registry::scopesForPhase(const std::string& phase) const
