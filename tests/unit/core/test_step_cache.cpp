@@ -181,6 +181,26 @@ TEST_F(StepCacheTest, MissViaIndexWhenInputSizeChanges)
     EXPECT_FALSE(Result.skip);
 }
 
+TEST_F(StepCacheTest, TracksOnlyExplicitOutputPaths)
+{
+    writeFile(root / "build" / "a.o", "a\n");
+    writeFile(root / "build" / "noise.bin", "noise\n");
+
+    beez::core::Step step;
+    step.name = "compile_a";
+    step.phase = "compile";
+    step.scope = "cpp";
+    step.shellRun = "touch build/a.o";
+    step.output = {"build/a.o"};
+
+    beez::core::OutputTracker tracker(root, *matcher);
+    tracker.begin(step);
+    const auto Outputs = tracker.end(step);
+
+    ASSERT_EQ(Outputs.size(), 1U);
+    EXPECT_EQ(Outputs.front(), "build/a.o");
+}
+
 TEST_F(StepCacheTest, CapturesBuildDirectoryOutputsWhenNoOutputPatterns)
 {
     writeFile(root / "src" / "main.cpp", "int main() {}\n");

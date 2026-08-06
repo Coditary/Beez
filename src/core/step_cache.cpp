@@ -407,14 +407,29 @@ OutputTracker::OutputTracker(std::filesystem::path projectRoot, const IGlobMatch
 {
 }
 
+bool OutputTracker::hasExplicitArtifactPatterns(const Step& step)
+{
+    return !step.output.empty() || !step.mutate.empty();
+}
+
 void OutputTracker::begin(const Step& step)
 {
-    snapshotBefore_ = snapshot(watchDirectories(step));
+    if (hasExplicitArtifactPatterns(step))
+    {
+        return;
+    }
+
+    snapshotBefore_ = snapshotDirectories(watchDirectories(step));
 }
 
 std::vector<std::string> OutputTracker::end(const Step& step)
 {
-    const auto After = snapshot(watchDirectories(step));
+    if (hasExplicitArtifactPatterns(step))
+    {
+        return resolveOutputs(step, {});
+    }
+
+    const auto After = snapshotDirectories(watchDirectories(step));
     std::vector<std::string> changed;
     for (const auto& [path, stamp] : After)
     {
@@ -453,7 +468,7 @@ std::vector<std::filesystem::path> OutputTracker::watchDirectories(const Step& s
 }
 
 std::unordered_map<std::string, OutputTracker::FileStamp>
-OutputTracker::snapshot(const std::vector<std::filesystem::path>& directories) const
+OutputTracker::snapshotDirectories(const std::vector<std::filesystem::path>& directories) const
 {
     std::unordered_map<std::string, FileStamp> files;
     for (const auto& directory : directories)

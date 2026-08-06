@@ -80,9 +80,10 @@ class OutputTracker
     [[nodiscard]] std::vector<std::string>
     resolveOutputs(const Step& step, const std::vector<std::string>& snapshotDiff) const;
 
+    [[nodiscard]] static bool hasExplicitArtifactPatterns(const Step& step);
     [[nodiscard]] std::vector<std::filesystem::path> watchDirectories(const Step& step) const;
     [[nodiscard]] std::unordered_map<std::string, FileStamp>
-    snapshot(const std::vector<std::filesystem::path>& directories) const;
+    snapshotDirectories(const std::vector<std::filesystem::path>& directories) const;
 
     std::filesystem::path projectRoot_;
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed matcher
