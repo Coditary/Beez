@@ -1,8 +1,8 @@
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/orchestrator.h"
-#include "beez/core/phase_request.hpp"
 #include "beez/core/registry.h"
 #include "beez/core/run_options.hpp"
+#include "beez/core/step.hpp"
 #include "beez/core/step_order.hpp"
 #include "beez/plugin/executor.hpp"
 #include "beez/plugin/plugin_host.h"
@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -33,8 +34,12 @@ class PerformanceReportEnvironment final : public ::testing::Environment
     }
 };
 
-const auto* const PerformanceReport =
+// NOLINTNEXTLINE(cert-err58-cpp,bugprone-throwing-static-initialization) -- gtest global env
+const bool PerformanceReportRegistered = []()
+{
     ::testing::AddGlobalTestEnvironment(new PerformanceReportEnvironment());
+    return true;
+}();
 
 class RecordingExecutor final : public beez::plugin::IExecutor
 {
@@ -46,6 +51,35 @@ class RecordingExecutor final : public beez::plugin::IExecutor
         return 0;
     }
 };
+
+[[nodiscard]] bool producerMustRunBeforeConsumer(const beez::core::Step& producer,
+                                                 const beez::core::Step& consumer,
+                                                 const beez::core::IGlobMatcher& matcher)
+{
+    for (const auto& outputPattern : producer.output)
+    {
+        for (const auto& inputPattern : consumer.input)
+        {
+            if (matcher.patternsOverlap(outputPattern, inputPattern))
+            {
+                return true;
+            }
+        }
+    }
+
+    for (const auto& mutatePattern : producer.mutate)
+    {
+        for (const auto& inputPattern : consumer.input)
+        {
+            if (matcher.patternsOverlap(mutatePattern, inputPattern))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 void expectOrderingIsValid(const std::vector<beez::core::Step>& steps,
                            const std::vector<beez::core::Step>& ordered,
@@ -68,30 +102,7 @@ void expectOrderingIsValid(const std::vector<beez::core::Step>& steps,
                 continue;
             }
 
-            bool producerBeforeConsumer = false;
-            for (const auto& outputPattern : producer.output)
-            {
-                for (const auto& inputPattern : consumer.input)
-                {
-                    if (matcher.patternsOverlap(outputPattern, inputPattern))
-                    {
-                        producerBeforeConsumer = true;
-                    }
-                }
-            }
-
-            for (const auto& mutatePattern : producer.mutate)
-            {
-                for (const auto& inputPattern : consumer.input)
-                {
-                    if (matcher.patternsOverlap(mutatePattern, inputPattern))
-                    {
-                        producerBeforeConsumer = true;
-                    }
-                }
-            }
-
-            if (producerBeforeConsumer)
+            if (producerMustRunBeforeConsumer(producer, consumer, matcher))
             {
                 ASSERT_LT(ProducerPosition, positions.at(consumer.name));
             }
@@ -115,9 +126,9 @@ void validateOrdering(const std::vector<beez::core::Step>& steps,
 
 void runThroughputScenario(const beez::perf::PipelineScenario& scenario)
 {
-    beez::perf::PerformanceWorkspace workspace(scenario.name);
-    auto pipeline = beez::perf::buildPipeline(workspace.path(), scenario);
-    beez::core::IGlobMatcher& matcher = beez::core::defaultGlobMatcher();
+    const beez::perf::PerformanceWorkspace Workspace(scenario.name);
+    auto pipeline = beez::perf::buildPipeline(Workspace.path(), scenario);
+    const beez::core::IGlobMatcher& matcher = beez::core::defaultGlobMatcher();
 
     const auto OrderStart = std::chrono::steady_clock::now();
     const auto Ordered = beez::core::orderSteps(pipeline.steps, {}, matcher);
@@ -139,7 +150,7 @@ void runThroughputScenario(const beez::perf::PipelineScenario& scenario)
     ASSERT_TRUE(RegistryOrdered.hasValue());
     ASSERT_EQ(RegistryOrdered.value().size(), scenario.stepCount);
 
-    beez::core::Context context(workspace.path());
+    beez::core::Context context(Workspace.path());
     beez::plugin::PluginHost pluginHost;
     pluginHost.setExecutor(std::make_unique<RecordingExecutor>());
     const beez::core::RunOptions Options {.dryRun = true};

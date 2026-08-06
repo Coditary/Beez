@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <optional>
 #include <set>
 #include <string>
@@ -44,14 +45,9 @@ using PrefixBuckets = std::unordered_map<std::string, std::vector<PatternRef>>;
 
 [[nodiscard]] std::string globLiteralPrefix(const std::string& pattern)
 {
-    for (std::size_t index = 0; index < pattern.size(); ++index)
-    {
-        if (pattern[index] == '*' || pattern[index] == '?')
-        {
-            return pattern.substr(0, index);
-        }
-    }
-    return pattern;
+    const auto Wildcard = std::ranges::find_if(
+        pattern, [](const char Character) { return Character == '*' || Character == '?'; });
+    return pattern.substr(0, static_cast<std::size_t>(std::distance(pattern.begin(), Wildcard)));
 }
 
 [[nodiscard]] bool literalPrefixesCompatible(const std::string& left, const std::string& right)
@@ -99,10 +95,10 @@ void collectPatternRefs(const Step& step,
                         const std::vector<std::string>& patterns,
                         std::vector<PatternRef>& refs)
 {
-    for (const auto& pattern : patterns)
-    {
-        refs.push_back(PatternRef {.step = &step, .pattern = &pattern});
-    }
+    std::ranges::transform(patterns,
+                           std::back_inserter(refs),
+                           [&step](const std::string& pattern) -> PatternRef
+                           { return PatternRef {.step = &step, .pattern = &pattern}; });
 }
 
 [[nodiscard]] PrefixBuckets bucketByLiteralPrefix(const std::vector<PatternRef>& refs)
@@ -163,6 +159,34 @@ resolveMutateOverlap(const Step& step,
                      Adjacency& adjacency,
                      InDegree& inDegree);
 
+[[nodiscard]] bool tryLinkMutatePair(const PatternRef& left,
+                                     const PatternRef& right,
+                                     const std::vector<StepOrderHint>& hints,
+                                     const IGlobMatcher& matcher,
+                                     Adjacency& adjacency,
+                                     InDegree& inDegree,
+                                     std::optional<StepOrderError>& error)
+{
+    if (left.step == right.step)
+    {
+        return false;
+    }
+
+    if (!matcher.patternsOverlap(*left.pattern, *right.pattern))
+    {
+        return false;
+    }
+
+    if (const auto Conflict =
+            resolveMutateOverlap(*left.step, *right.step, hints, adjacency, inDegree))
+    {
+        error = Conflict;
+        return true;
+    }
+
+    return false;
+}
+
 void linkMutateConflicts(const std::vector<PatternRef>& mutates,
                          const std::vector<StepOrderHint>& hints,
                          const IGlobMatcher& matcher,
@@ -185,30 +209,22 @@ void linkMutateConflicts(const std::vector<PatternRef>& mutates,
                 continue;
             }
 
-            const auto& LeftRefs = left->second;
-            const auto& RightRefs = right->second;
-            for (std::size_t leftIndex = 0; leftIndex < LeftRefs.size(); ++leftIndex)
+            const auto& leftRefs = left->second;
+            const auto& rightRefs = right->second;
+            for (std::size_t leftIndex = 0; leftIndex < leftRefs.size(); ++leftIndex)
             {
                 const std::size_t RightStart = (left == right) ? leftIndex + 1 : 0;
-                for (std::size_t rightIndex = RightStart; rightIndex < RightRefs.size();
+                for (std::size_t rightIndex = RightStart; rightIndex < rightRefs.size();
                      ++rightIndex)
                 {
-                    const auto& Left = LeftRefs[leftIndex];
-                    const auto& Right = RightRefs[rightIndex];
-                    if (Left.step == Right.step)
+                    if (tryLinkMutatePair(leftRefs.at(leftIndex),
+                                          rightRefs.at(rightIndex),
+                                          hints,
+                                          matcher,
+                                          adjacency,
+                                          inDegree,
+                                          error))
                     {
-                        continue;
-                    }
-
-                    if (!matcher.patternsOverlap(*Left.pattern, *Right.pattern))
-                    {
-                        continue;
-                    }
-
-                    if (const auto Conflict = resolveMutateOverlap(
-                            *Left.step, *Right.step, hints, adjacency, inDegree))
-                    {
-                        error = Conflict;
                         return;
                     }
                 }

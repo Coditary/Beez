@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace beez::perf
@@ -32,12 +33,12 @@ struct PipelineBuildResult
 inline PipelineBuildResult buildPipeline(const std::filesystem::path& workspace,
                                          const PipelineScenario& scenario)
 {
-    ArtifactVaultSpec vaultSpec {.fileCount = scenario.fileCount,
-                                 .shardCount = std::max<std::size_t>(scenario.shardCount, 1U),
-                                 .laneCount = std::max<std::size_t>(scenario.laneCount, 1U),
-                                 .materializeLimit = scenario.materializeLimit};
+    const ArtifactVaultSpec VaultSpec {.fileCount = scenario.fileCount,
+                                       .shardCount = std::max<std::size_t>(scenario.shardCount, 1U),
+                                       .laneCount = std::max<std::size_t>(scenario.laneCount, 1U),
+                                       .materializeLimit = scenario.materializeLimit};
 
-    PipelineBuildResult result {.steps = {}, .vault = ArtifactVault(workspace, vaultSpec)};
+    PipelineBuildResult result {.steps = {}, .vault = ArtifactVault(workspace, VaultSpec)};
 
     static const std::vector<std::string> StageExtensions = {
         "raw", "lint", "fmt", "obj", "pak", "tex"};
@@ -51,11 +52,11 @@ inline PipelineBuildResult buildPipeline(const std::filesystem::path& workspace,
         step.scope = "vault";
         step.shellRun = "echo " + step.name;
 
-        const std::size_t Shard = index % vaultSpec.shardCount;
-        const std::size_t Lane = (index / 3U) % vaultSpec.laneCount;
+        const std::size_t Shard = index % VaultSpec.shardCount;
+        const std::size_t Lane = (index / 3U) % VaultSpec.laneCount;
         const std::size_t Stage = index % StageExtensions.size();
         const std::size_t NextStage = (Stage + 1U) % StageExtensions.size();
-        const std::size_t BridgeShard = (Shard + 1U) % vaultSpec.shardCount;
+        const std::size_t BridgeShard = (Shard + 1U) % VaultSpec.shardCount;
         const std::size_t InputPass = index;
         const std::size_t OutputPass = index + 1U;
 

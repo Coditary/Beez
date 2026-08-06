@@ -1,6 +1,8 @@
 #include "beez/core/glob_pattern.hpp"
 
+#include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <regex>
 #include <string>
@@ -91,14 +93,9 @@ std::string concreteSample(const std::string& pattern)
 
 [[nodiscard]] std::size_t firstWildcardIndex(const std::string& pattern)
 {
-    for (std::size_t index = 0; index < pattern.size(); ++index)
-    {
-        if (pattern[index] == '*' || pattern[index] == '?')
-        {
-            return index;
-        }
-    }
-    return pattern.size();
+    const auto Wildcard = std::ranges::find_if(
+        pattern, [](const char Character) { return Character == '*' || Character == '?'; });
+    return static_cast<std::size_t>(std::distance(pattern.begin(), Wildcard));
 }
 
 [[nodiscard]] bool literalPrefixMayOverlap(const std::string& leftPattern,
@@ -165,12 +162,12 @@ class CachedGlobMatcher final : public IGlobMatcher
             return Cached->second;
         }
 
-        const std::regex& LeftRegex = compiledRegex(leftPattern);
-        const std::regex& RightRegex = compiledRegex(rightPattern);
-        const std::string& LeftSample = concreteSampleCached(leftPattern);
-        const std::string& RightSample = concreteSampleCached(rightPattern);
+        const std::regex& leftRegex = compiledRegex(leftPattern);
+        const std::regex& rightRegex = compiledRegex(rightPattern);
+        const std::string& leftSample = concreteSampleCached(leftPattern);
+        const std::string& rightSample = concreteSampleCached(rightPattern);
         const bool Overlaps =
-            std::regex_match(LeftSample, RightRegex) || std::regex_match(RightSample, LeftRegex);
+            std::regex_match(leftSample, rightRegex) || std::regex_match(rightSample, leftRegex);
         overlapCache_.emplace(CacheKey, Overlaps);
         return Overlaps;
     }

@@ -6,8 +6,11 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <ratio>
 #include <sstream>
 #include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 namespace beez::perf

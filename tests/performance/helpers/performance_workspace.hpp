@@ -2,6 +2,8 @@
 
 #include <filesystem>
 #include <string>
+#include <system_error>
+#include <utility>
 
 namespace beez::perf
 {
@@ -9,7 +11,7 @@ namespace beez::perf
 inline std::filesystem::path performanceRoot()
 {
 #ifdef BEEZ_PERF_ROOT_DIR
-    return std::filesystem::path(BEEZ_PERF_ROOT_DIR);
+    return {BEEZ_PERF_ROOT_DIR};
 #else
     return std::filesystem::current_path() / "test" / "performance";
 #endif

@@ -110,7 +110,7 @@ Expected<std::vector<Step>, StepOrderError> Registry::stepsForPhase(const std::s
         }
     }
 
-    IGlobMatcher& matcher = defaultGlobMatcher();
+    const IGlobMatcher& matcher = defaultGlobMatcher();
     return orderSteps(matched, stepOrderHints_, matcher);
 }
 

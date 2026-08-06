@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <system_error>
 #include <vector>
 
 namespace beez::perf
@@ -65,12 +66,12 @@ class ArtifactVault
     [[nodiscard]] static std::string pad(std::size_t value, std::size_t modulus)
     {
         const std::size_t Width = std::to_string(std::max<std::size_t>(modulus, 1U) - 1).size() + 1;
-        const auto Text = std::to_string(value);
-        if (Text.size() >= Width)
+        auto text = std::to_string(value);
+        if (text.size() >= Width)
         {
-            return Text;
+            return text;
         }
-        return std::string(Width - Text.size(), '0') + Text;
+        return std::string(Width - text.size(), '0') + text;
     }
 
     [[nodiscard]] static std::string extensionForStage(std::size_t stage)
