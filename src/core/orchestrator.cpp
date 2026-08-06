@@ -1,11 +1,13 @@
 #include "beez/core/orchestrator.h"
 
 #include "beez/core/expected.hpp"
+#include "beez/core/glob_pattern.hpp"
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
 #include "beez/core/progress_detail.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
+#include "beez/core/step_cache.hpp"
 #include "beez/core/step_config.hpp"
 #include "beez/core/step_order.hpp"
 #include "beez/core/stream_capture.hpp"
@@ -22,7 +24,9 @@
 #include <filesystem>
 #include <future>
 #include <iostream>
+#include <memory>
 #include <numeric>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -66,10 +70,18 @@ const char* toString(OrchestratorError error)
 Orchestrator::Orchestrator(Registry& registry,
                            Context& context,
                            plugin::PluginHost& pluginHost,
-                           RunOptions runOptions)
+                           RunOptions runOptions)  // cppcheck-suppress passedByValue
     : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions)
 {
+    if (runOptions_.enableCache && runOptions_.stepCache == nullptr)
+    {
+        ownedStepCache_ =
+            std::make_unique<StepCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
+        runOptions_.stepCache = ownedStepCache_.get();
+    }
 }
+
+Orchestrator::~Orchestrator() = default;
 
 Expected<void, OrchestratorError> Orchestrator::loadBuildScript()
 {
@@ -235,9 +247,36 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
     const std::string Detail = stepProgressDetail(step);
     const std::string Category = step.phase.empty() ? "step" : step.phase;
 
+    const StepCache* stepCache = runOptions_.stepCache;
+    std::optional<OutputTracker> outputTracker;
+    if (stepCache != nullptr && isStepCacheable(step) && !runOptions_.dryRun)
+    {
+        const auto Lookup = stepCache->lookup(step, context_.projectRoot(), step.config);
+        if (Lookup.skip)
+        {
+            logProgress(progress, Category, Detail + " (cached)");
+            return 0;
+        }
+
+        outputTracker.emplace(context_.projectRoot(), stepCache->matcher());
+        outputTracker->begin(step);
+    }
+
     if (const auto& command = step.shellRun)
     {
-        return runShellCommand(*command, {.category = Category, .detail = Detail}, progress, {});
+        const auto Result =
+            runShellCommand(*command, {.category = Category, .detail = Detail}, progress, {});
+        if (!Result)
+        {
+            return Result.error();
+        }
+
+        if (outputTracker.has_value() && stepCache != nullptr)
+        {
+            stepCache->store(step, context_.projectRoot(), step.config, outputTracker->end(step));
+        }
+
+        return Result.value();
     }
 
     logProgress(progress, Category, Detail);
@@ -266,6 +305,12 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         {
             return OrchestratorError::ExecutionFailed;
         }
+
+        if (outputTracker.has_value() && stepCache != nullptr)
+        {
+            stepCache->store(step, context_.projectRoot(), step.config, outputTracker->end(step));
+        }
+
         return Captured.exitCode;
     }
 
