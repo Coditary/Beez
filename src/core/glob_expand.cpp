@@ -3,7 +3,9 @@
 #include "beez/core/glob_pattern.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
+#include <iterator>
 #include <ranges>
 #include <string>
 #include <vector>
@@ -30,18 +32,69 @@ namespace
     return absolutePath.lexically_relative(projectRoot).generic_string();
 }
 
+[[nodiscard]] bool hasWildcard(const std::string& pattern)
+{
+    return pattern.find('*') != std::string::npos || pattern.find('?') != std::string::npos;
+}
+
+[[nodiscard]] std::size_t indexOfFirstWildcard(const std::string& pattern)
+{
+    const auto Wildcard = std::ranges::find_if(
+        pattern, [](const char Character) { return Character == '*' || Character == '?'; });
+    return static_cast<std::size_t>(std::distance(pattern.begin(), Wildcard));
+}
+
+[[nodiscard]] std::filesystem::path searchRootForPattern(const std::string& pattern,
+                                                         const std::filesystem::path& projectRoot)
+{
+    const std::size_t WildcardIndex = indexOfFirstWildcard(pattern);
+    if (WildcardIndex == pattern.size())
+    {
+        return projectRoot;
+    }
+
+    const std::string Prefix = pattern.substr(0, WildcardIndex);
+    const auto Slash = Prefix.rfind('/');
+    if (Slash == std::string::npos)
+    {
+        return projectRoot;
+    }
+
+    return projectRoot / Prefix.substr(0, Slash);
+}
+
+void collectLiteralMatch(const std::string& pattern,
+                         const std::filesystem::path& projectRoot,
+                         std::vector<std::string>& matches)
+{
+    const auto Absolute = projectRoot / pattern;
+    if (!std::filesystem::is_regular_file(Absolute))
+    {
+        return;
+    }
+
+    matches.push_back(pattern);
+}
+
 void collectMatches(const std::string& pattern,
                     const std::filesystem::path& projectRoot,
                     const IGlobMatcher& matcher,
                     std::vector<std::string>& matches)
 {
-    if (!std::filesystem::exists(projectRoot))
+    if (!hasWildcard(pattern))
+    {
+        collectLiteralMatch(pattern, projectRoot, matches);
+        return;
+    }
+
+    const auto SearchRoot = searchRootForPattern(pattern, projectRoot);
+    if (!std::filesystem::exists(SearchRoot))
     {
         return;
     }
 
     for (const auto& entry : std::filesystem::recursive_directory_iterator(
-             projectRoot, std::filesystem::directory_options::skip_permission_denied))
+             SearchRoot, std::filesystem::directory_options::skip_permission_denied))
     {
         if (!entry.is_regular_file())
         {

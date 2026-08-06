@@ -197,6 +197,204 @@ void addDirectoryFromPattern(const std::string& pattern,
     directories.insert(pattern.substr(0, slashIndex));
 }
 
+struct InputStamp
+{
+    std::string path;
+    std::uintmax_t size = 0;
+    std::filesystem::file_time_type modified {};
+};
+
+struct CacheIndexEntry
+{
+    std::string key;
+    std::string command;
+    std::string config;
+    std::string version;
+    std::vector<InputStamp> inputs;
+    std::vector<std::string> outputs;
+};
+
+[[nodiscard]] std::string sanitizeIndexComponent(std::string value)
+{
+    for (char& character : value)
+    {
+        if (character == '/' || character == ':' || character == '\\')
+        {
+            character = '_';
+        }
+    }
+    return value;
+}
+
+[[nodiscard]] std::filesystem::path indexPathForStep(const std::filesystem::path& indexRoot,
+                                                    const Step& step)
+{
+    const std::string FileName = sanitizeIndexComponent(step.name) + "__" +
+                                 sanitizeIndexComponent(step.phase) + "__" +
+                                 sanitizeIndexComponent(step.scope) + ".index";
+    return indexRoot / FileName;
+}
+
+[[nodiscard]] std::string stepCommandFingerprint(const Step& step)
+{
+    if (step.shellRun.has_value())
+    {
+        return *step.shellRun;
+    }
+
+    if (step.hasCallback())
+    {
+        return "<callback>";
+    }
+
+    return {};
+}
+
+[[nodiscard]] std::vector<InputStamp> collectInputStamps(const Step& step,
+                                                         const std::filesystem::path& projectRoot,
+                                                         const IGlobMatcher& matcher)
+{
+    const auto InputFiles =
+        expandGlobPatterns(artifactPatternsForInputs(step), projectRoot, matcher);
+
+    std::vector<InputStamp> stamps;
+    stamps.reserve(InputFiles.size());
+    for (const auto& relativePath : InputFiles)
+    {
+        const auto Absolute = projectRoot / relativePath;
+        std::error_code errorCode;
+        if (!std::filesystem::is_regular_file(Absolute, errorCode))
+        {
+            continue;
+        }
+
+        stamps.push_back(InputStamp {.path = relativePath,
+                                     .size = std::filesystem::file_size(Absolute, errorCode),
+                                     .modified = std::filesystem::last_write_time(Absolute,
+                                                                                  errorCode)});
+    }
+
+    std::ranges::sort(stamps,
+                      [](const InputStamp& left, const InputStamp& right)
+                      { return left.path < right.path; });
+    return stamps;
+}
+
+[[nodiscard]] bool inputStampsMatch(const std::vector<InputStamp>& expected,
+                                    const std::vector<InputStamp>& actual)
+{
+    if (expected.size() != actual.size())
+    {
+        return false;
+    }
+
+    for (std::size_t index = 0; index < expected.size(); ++index)
+    {
+        if (expected[index].path != actual[index].path || expected[index].size != actual[index].size ||
+            expected[index].modified != actual[index].modified)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+[[nodiscard]] std::optional<CacheIndexEntry>
+readCacheIndex(const std::filesystem::path& indexPath)
+{
+    if (!std::filesystem::exists(indexPath))
+    {
+        return std::nullopt;
+    }
+
+    std::ifstream stream(indexPath);
+    if (!stream.is_open())
+    {
+        return std::nullopt;
+    }
+
+    CacheIndexEntry entry;
+    std::string line;
+    while (std::getline(stream, line))
+    {
+        const auto Equals = line.find('=');
+        if (Equals == std::string::npos)
+        {
+            continue;
+        }
+
+        const std::string Field = line.substr(0, Equals);
+        const std::string Value = line.substr(Equals + 1);
+        if (Field == "key")
+        {
+            entry.key = Value;
+        }
+        else if (Field == "command")
+        {
+            entry.command = Value;
+        }
+        else if (Field == "config")
+        {
+            entry.config = Value;
+        }
+        else if (Field == "version")
+        {
+            entry.version = Value;
+        }
+        else if (Field == "input")
+        {
+            const auto FirstSeparator = Value.find('\t');
+            const auto SecondSeparator = Value.find('\t', FirstSeparator + 1);
+            if (FirstSeparator == std::string::npos || SecondSeparator == std::string::npos)
+            {
+                continue;
+            }
+
+            InputStamp stamp;
+            stamp.path = Value.substr(0, FirstSeparator);
+            stamp.size = static_cast<std::uintmax_t>(
+                std::stoull(Value.substr(FirstSeparator + 1, SecondSeparator - FirstSeparator - 1)));
+            stamp.modified = std::filesystem::file_time_type(
+                std::filesystem::file_time_type::duration(std::stoll(Value.substr(SecondSeparator + 1))));
+            entry.inputs.push_back(std::move(stamp));
+        }
+        else if (Field == "output")
+        {
+            entry.outputs.push_back(Value);
+        }
+    }
+
+    if (entry.key.empty())
+    {
+        return std::nullopt;
+    }
+
+    std::ranges::sort(entry.inputs,
+                      [](const InputStamp& left, const InputStamp& right)
+                      { return left.path < right.path; });
+    return entry;
+}
+
+void writeCacheIndex(const std::filesystem::path& indexPath, const CacheIndexEntry& entry)
+{
+    std::filesystem::create_directories(indexPath.parent_path());
+    std::ofstream stream(indexPath, std::ios::trunc);
+    stream << "key=" << entry.key << '\n';
+    stream << "command=" << entry.command << '\n';
+    stream << "config=" << entry.config << '\n';
+    stream << "version=" << entry.version << '\n';
+    for (const auto& stamp : entry.inputs)
+    {
+        stream << "input=" << stamp.path << '\t' << stamp.size << '\t'
+               << stamp.modified.time_since_epoch().count() << '\n';
+    }
+    for (const auto& output : entry.outputs)
+    {
+        stream << "output=" << output << '\n';
+    }
+}
+
 }  // namespace
 
 bool isStepCacheable(const Step& step)
@@ -306,16 +504,24 @@ OutputTracker::resolveOutputs(const Step& step, const std::vector<std::string>& 
 }
 
 StepCache::StepCache(const std::filesystem::path& cacheRoot, const IGlobMatcher& matcher)
-    : StepCache(
-          makeContentAddressedCacheKeyStrategy(), makeFileSystemCacheStore(cacheRoot), matcher)
+    : StepCache(makeContentAddressedCacheKeyStrategy(),
+                makeFileSystemCacheStore(cacheRoot),
+                matcher,
+                cacheRoot / "index")
 {
 }
 
 StepCache::StepCache(std::unique_ptr<ICacheKeyStrategy> keyStrategy,
                      std::unique_ptr<ICacheStore> store,
-                     const IGlobMatcher& matcher)
-    : keyStrategy_(std::move(keyStrategy)), store_(std::move(store)), matcher_(matcher)
+                     const IGlobMatcher& matcher,
+                     std::filesystem::path indexRoot)
+    : keyStrategy_(std::move(keyStrategy)), store_(std::move(store)), matcher_(matcher),
+      indexRoot_(std::move(indexRoot))
 {
+    if (!indexRoot_.empty())
+    {
+        std::filesystem::create_directories(indexRoot_);
+    }
 }
 
 CacheLookupResult StepCache::lookup(const Step& step,
@@ -328,6 +534,14 @@ CacheLookupResult StepCache::lookup(const Step& step,
         return result;
     }
 
+    if (!indexRoot_.empty())
+    {
+        if (const auto Indexed = lookupViaIndex(step, projectRoot, config))
+        {
+            return *Indexed;
+        }
+    }
+
     result.key = keyStrategy_->computeKey(step, projectRoot, config, matcher_);
     const auto Entry = store_->lookup(result.key);
     if (!Entry.has_value())
@@ -336,6 +550,11 @@ CacheLookupResult StepCache::lookup(const Step& step,
     }
 
     result.skip = outputsExist(Entry->outputs, projectRoot);
+    if (result.skip && !indexRoot_.empty())
+    {
+        writeIndex(step, projectRoot, config, result.key, Entry->outputs);
+    }
+
     return result;
 }
 
@@ -354,6 +573,63 @@ void StepCache::store(const Step& step,
     entry.stepName = step.name;
     entry.outputs = outputs;
     store_->store(entry);
+
+    if (!indexRoot_.empty())
+    {
+        writeIndex(step, projectRoot, config, entry.key, outputs);
+    }
+}
+
+std::optional<CacheLookupResult>
+StepCache::lookupViaIndex(const Step& step,
+                          const std::filesystem::path& projectRoot,
+                          const StepConfigPtr& config) const
+{
+    const auto IndexPath = indexPathForStep(indexRoot_, step);
+    const auto IndexEntry = readCacheIndex(IndexPath);
+    if (!IndexEntry.has_value())
+    {
+        return std::nullopt;
+    }
+
+    if (IndexEntry->command != stepCommandFingerprint(step) ||
+        IndexEntry->config != configFingerprint(config) ||
+        IndexEntry->version != version::VersionString)
+    {
+        return std::nullopt;
+    }
+
+    const auto CurrentStamps = collectInputStamps(step, projectRoot, matcher_);
+    if (!inputStampsMatch(IndexEntry->inputs, CurrentStamps))
+    {
+        return std::nullopt;
+    }
+
+    if (!outputsExist(IndexEntry->outputs, projectRoot))
+    {
+        return std::nullopt;
+    }
+
+    CacheLookupResult result;
+    result.key = IndexEntry->key;
+    result.skip = true;
+    return result;
+}
+
+void StepCache::writeIndex(const Step& step,
+                           const std::filesystem::path& projectRoot,
+                           const StepConfigPtr& config,
+                           const std::string& key,
+                           const std::vector<std::string>& outputs) const
+{
+    CacheIndexEntry indexEntry;
+    indexEntry.key = key;
+    indexEntry.command = stepCommandFingerprint(step);
+    indexEntry.config = configFingerprint(config);
+    indexEntry.version = version::VersionString;
+    indexEntry.inputs = collectInputStamps(step, projectRoot, matcher_);
+    indexEntry.outputs = outputs;
+    writeCacheIndex(indexPathForStep(indexRoot_, step), indexEntry);
 }
 
 std::unique_ptr<ICacheKeyStrategy> makeContentAddressedCacheKeyStrategy()
