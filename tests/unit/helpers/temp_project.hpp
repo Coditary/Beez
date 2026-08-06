@@ -37,6 +37,12 @@ class TempProject
         stream << content;
     }
 
+    void writeDotEnv(const std::string& content) const
+    {
+        std::ofstream stream(path_ / ".env");
+        stream << content;
+    }
+
   private:
     std::filesystem::path path_;
     static inline std::atomic<int> idCounter {0};

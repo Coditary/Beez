@@ -502,3 +502,66 @@ step({
     EXPECT_FALSE(loadScript(Project, registry));
     EXPECT_FALSE(registry.findStep("broken").has_value());
 }
+
+TEST(LuaDslTest, LoadsBuildScriptWithoutBeezEnvWhenDotEnvMissing)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("hello", "echo no-env-overhead")
+)");
+
+    beez::core::Registry registry;
+    EXPECT_TRUE(loadScript(Project, registry));
+}
+
+TEST(LuaDslTest, BeezEnvReadsValueFromDotEnvFile)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("MY_ENV=secret-value\n");
+    Project.writeBuildLua(R"(
+task("show-env", "echo " .. beez.env("MY_ENV"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "show-env");
+    ASSERT_TRUE(Found.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    beez::test::expectShellCommand(*Found, 0, "echo secret-value");
+}
+
+TEST(LuaDslTest, BeezEnvReturnsNilWhenVariableIsMissing)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("OTHER=value\n");
+    Project.writeBuildLua(R"(
+step({
+    name = "check-env",
+    phase = "test",
+    scope = "code",
+    run = function()
+        if beez.env("MISSING_ENV") ~= nil then
+            error("expected nil for missing env variable")
+        end
+        return 0
+    end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+    ASSERT_TRUE(registry.findStep("check-env").has_value());
+}
+
+TEST(LuaDslTest, BeezEnvDoesNotReadDotEnvUntilCalled)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("this is not valid dotenv {{{\n");
+    Project.writeBuildLua(R"(
+task("hello", "echo without env access")
+)");
+
+    beez::core::Registry registry;
+    EXPECT_TRUE(loadScript(Project, registry));
+}

@@ -7,6 +7,7 @@ add_library(
     phase_argument_parser.cpp
     plugin_host.cpp
     step_config.cpp
+    env_file.cpp
     step_order.cpp
     stream_capture.cpp
     progress_detail.cpp
