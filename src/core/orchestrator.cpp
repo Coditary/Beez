@@ -7,6 +7,7 @@
 #include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/step_order.hpp"
 #include "beez/core/stream_capture.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/task_action.hpp"
@@ -20,6 +21,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <future>
+#include <iostream>
 #include <numeric>
 #include <string>
 #include <variant>
@@ -55,6 +57,8 @@ const char* toString(OrchestratorError error)
         return "no shell executor plugin available";
     case OrchestratorError::InvalidPhaseRequest:
         return "invalid phase request";
+    case OrchestratorError::StepOrderingFailed:
+        return "step ordering failed";
     }
     return "unknown orchestrator error";
 }
@@ -295,9 +299,13 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
 
 std::size_t Orchestrator::countPhaseInvocationSteps(const PhaseInvocation& invocation) const
 {
-    return registry_
-        .stepsForPhase(invocation.phase, invocation.scope.empty() ? "*" : invocation.scope)
-        .size();
+    const auto MatchedSteps = registry_.stepsForPhase(
+        invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
+    if (!MatchedSteps.hasValue())
+    {
+        return 0;
+    }
+    return MatchedSteps.value().size();
 }
 
 std::size_t Orchestrator::countPhaseRequestSteps(const PhaseRequest& request) const
@@ -341,7 +349,13 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
     const auto MatchedSteps = registry_.stepsForPhase(
         invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
 
-    for (const auto& step : MatchedSteps)
+    if (!MatchedSteps.hasValue())
+    {
+        std::cerr << "Step ordering error: " << MatchedSteps.error().message << '\n';
+        return OrchestratorError::StepOrderingFailed;
+    }
+
+    for (const auto& step : MatchedSteps.value())
     {
         const auto Result = runStepInstance(step, progress);
         if (!Result)

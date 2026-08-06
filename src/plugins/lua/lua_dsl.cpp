@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/lua_dsl.h"
 
 #include "beez/core/context.h"
+#include "beez/core/env_file.hpp"
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/registry.h"
 #include "beez/core/step.hpp"
@@ -13,6 +14,7 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -128,6 +130,44 @@ bool isTaskActionListTable(const sol::table& table)
     return hasActionEntry;
 }
 
+std::vector<std::string> parseStringArrayField(const sol::table& options,
+                                               const std::string& fieldName,
+                                               const std::string& stepName)
+{
+    const sol::object FieldValue = options[fieldName];
+    if (!FieldValue.valid())
+    {
+        return {};
+    }
+
+    if (!FieldValue.is<sol::table>())
+    {
+        throw std::runtime_error("step '" + stepName + "' field '" + fieldName +
+                                 "' must be a table of strings");
+    }
+
+    std::vector<std::string> values;
+    const sol::table FieldTable = FieldValue.as<sol::table>();
+    FieldTable.for_each(
+        [&values, &fieldName, &stepName](const sol::object& key, const sol::object& value)
+        {
+            if (!key.is<int>())
+            {
+                return;
+            }
+
+            if (!value.is<std::string>())
+            {
+                throw std::runtime_error("step '" + stepName + "' field '" + fieldName +
+                                         "' must contain only strings");
+            }
+
+            values.push_back(value.as<std::string>());
+        });
+
+    return values;
+}
+
 core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::state>& luaState)
 {
     core::Step step;
@@ -174,6 +214,10 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
 
         step.config = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
     }
+
+    step.input = parseStringArrayField(options, "input", step.name);
+    step.output = parseStringArrayField(options, "output", step.name);
+    step.mutate = parseStringArrayField(options, "mutate", step.name);
 
     const sol::object RunValue = options["run"];
     if (!RunValue.valid())
@@ -275,6 +319,35 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
     return workflow;
 }
 
+class BeezDslEnv
+{
+  public:
+    explicit BeezDslEnv(const std::filesystem::path& projectRoot)
+        : envFilePath_(projectRoot / ".env")
+    {
+    }
+
+    sol::object env(sol::this_state lua, const std::string& key) const
+    {
+        if (!envFile_.has_value())
+        {
+            envFile_.emplace(envFilePath_);
+        }
+
+        const auto Value = envFile_->lookup(key);
+        if (!Value.has_value())
+        {
+            return sol::lua_nil;
+        }
+
+        return sol::make_object(lua, *Value);
+    }
+
+  private:
+    std::filesystem::path envFilePath_;
+    mutable std::optional<core::EnvFile> envFile_;
+};
+
 class DslBinder
 {
   public:
@@ -338,15 +411,23 @@ class DslBinder
         registry_->registerWorkflow(parseWorkflow(name, steps));
     }
 
+    void order(const std::string& before, const std::string& after) const
+    {
+        registry_->registerStepOrder(before, after);
+    }
+
   private:
     core::Registry* registry_;
     std::weak_ptr<sol::state> luaState_;
 };
 
-void registerDsl(const std::shared_ptr<sol::state>& luaState, core::Registry& registry)
+void registerDsl(const std::shared_ptr<sol::state>& luaState,
+                 core::Registry& registry,
+                 const core::Context& context)
 {
     const std::weak_ptr<sol::state> WeakState = luaState;
     auto binder = std::make_shared<DslBinder>(&registry, WeakState);
+    auto beezApi = std::make_shared<BeezDslEnv>(context.projectRoot());
 
     (*luaState)["task"] = sol::overload(
         [binder](const std::string& name, const std::string& run) { binder->task(name, run); },
@@ -360,6 +441,14 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState, core::Registry& re
 
     (*luaState)["workflow"] = [binder](const std::string& name, const sol::table& steps)
     { binder->workflow(name, steps); };
+
+    (*luaState)["order"] = [binder](const std::string& before, const std::string& after)
+    { binder->order(before, after); };
+
+    sol::table beezTable = luaState->create_table();
+    beezTable["env"] = [beezApi](sol::this_state lua, const std::string& key)
+    { return beezApi->env(lua, key); };
+    (*luaState)["beez"] = beezTable;
 }
 
 }  // namespace
@@ -372,7 +461,7 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
         impl_->luaState = std::make_shared<sol::state>();
         impl_->luaState->open_libraries(sol::lib::base, sol::lib::package);
 
-        registerDsl(impl_->luaState, registry);
+        registerDsl(impl_->luaState, registry, context);
 
         const auto ScriptPath = context.buildScriptPath().string();
         impl_->luaState->script_file(ScriptPath);

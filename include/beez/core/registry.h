@@ -1,7 +1,9 @@
 #pragma once
 
+#include "beez/core/expected.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/step_order.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/workflow.hpp"
 
@@ -20,12 +22,13 @@ class Registry
     void registerStep(Step step);
     void configureStep(const std::string& name, const StepConfigPtr& config);
     void registerWorkflow(Workflow workflow);
+    void registerStepOrder(const std::string& before, const std::string& after);
 
     [[nodiscard]] std::optional<Task> findTask(const std::string& name) const;
     [[nodiscard]] std::optional<Step> findStep(const std::string& name) const;
     [[nodiscard]] std::optional<Workflow> findWorkflow(const std::string& name) const;
-    [[nodiscard]] std::vector<Step> stepsForPhase(const std::string& phase,
-                                                  const std::string& scope) const;
+    [[nodiscard]] Expected<std::vector<Step>, StepOrderError>
+    stepsForPhase(const std::string& phase, const std::string& scope) const;
     [[nodiscard]] std::vector<std::string> scopesForPhase(const std::string& phase) const;
     [[nodiscard]] std::vector<std::string> phases() const;
 
@@ -53,6 +56,7 @@ class Registry
     // matched a registered step.
     std::unordered_map<std::string, StepConfigPtr> pendingStepConfigs_;
     std::unordered_map<std::string, Workflow> workflows_;
+    std::vector<StepOrderHint> stepOrderHints_;
 };
 
 }  // namespace beez::core

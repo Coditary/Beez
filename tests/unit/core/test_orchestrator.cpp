@@ -122,6 +122,8 @@ TEST(OrchestratorErrorTest, ToStringCoversAllErrors)
                  "no shell executor plugin available");
     EXPECT_STREQ(beez::core::toString(beez::core::OrchestratorError::InvalidPhaseRequest),
                  "invalid phase request");
+    EXPECT_STREQ(beez::core::toString(beez::core::OrchestratorError::StepOrderingFailed),
+                 "step ordering failed");
 }
 
 TEST(OrchestratorTest, RunUnknownNameReturnsNotFound)
@@ -588,4 +590,40 @@ TEST(OrchestratorTest, VerboseModeCapturesShellOutput)
         [](const beez::logging::RecordedLine& line)
         { return line.kind == beez::logging::RecordedLine::Kind::CommandOutput; });
     EXPECT_TRUE(HasCapturedOutput);
+}
+
+TEST(OrchestratorTest, RunPhaseOrdersStepsByArtifactDependencies)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step linkStep;
+    linkStep.name = "link";
+    linkStep.phase = "compile";
+    linkStep.scope = "cpp";
+    linkStep.shellRun = "echo link";
+    linkStep.input = {"build/**/*.o"};
+    registry.registerStep(std::move(linkStep));
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile";
+    compileStep.phase = "compile";
+    compileStep.scope = "cpp";
+    compileStep.shellRun = "echo compile";
+    compileStep.input = {"src/**/*.cpp"};
+    compileStep.output = {"build/**/*.o"};
+    registry.registerStep(std::move(compileStep));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const beez::core::PhaseRequest Request {.phase = "compile", .scopes = {"cpp"}};
+    const auto Result = orchestrator.runPhase(Request);
+    ASSERT_TRUE(Result.hasValue());
+    ASSERT_EQ(State->commands.size(), 2U);
+    EXPECT_EQ(State->commands[0], "echo compile");
+    EXPECT_EQ(State->commands[1], "echo link");
 }

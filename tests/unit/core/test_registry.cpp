@@ -2,6 +2,7 @@
 #include "beez/core/registry.h"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/step_order.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
@@ -120,12 +121,14 @@ TEST(RegistryTest, StepsForPhaseFiltersByPhaseAndScope)
     registry.registerStep(std::move(codeStep));
 
     const auto DocsMatches = registry.stepsForPhase("generate", "docs");
-    ASSERT_EQ(DocsMatches.size(), 1U);
-    EXPECT_EQ(DocsMatches.front().name, "doxygen");
+    ASSERT_TRUE(DocsMatches.hasValue());
+    ASSERT_EQ(DocsMatches.value().size(), 1U);
+    EXPECT_EQ(DocsMatches.value().front().name, "doxygen");
 
     const auto CodeMatches = registry.stepsForPhase("generate", "code");
-    ASSERT_EQ(CodeMatches.size(), 1U);
-    EXPECT_EQ(CodeMatches.front().name, "protobuf");
+    ASSERT_TRUE(CodeMatches.hasValue());
+    ASSERT_EQ(CodeMatches.value().size(), 1U);
+    EXPECT_EQ(CodeMatches.value().front().name, "protobuf");
 }
 
 TEST(RegistryTest, StepsForPhaseReturnsEmptyWhenNoMatch)
@@ -139,8 +142,13 @@ TEST(RegistryTest, StepsForPhaseReturnsEmptyWhenNoMatch)
     step.shellRun = "make";
     registry.registerStep(std::move(step));
 
-    EXPECT_TRUE(registry.stepsForPhase("generate", "docs").empty());
-    EXPECT_TRUE(registry.stepsForPhase("compile", "docs").empty());
+    const auto NoGenerateDocs = registry.stepsForPhase("generate", "docs");
+    ASSERT_TRUE(NoGenerateDocs.hasValue());
+    EXPECT_TRUE(NoGenerateDocs.value().empty());
+
+    const auto NoCompileDocs = registry.stepsForPhase("compile", "docs");
+    ASSERT_TRUE(NoCompileDocs.hasValue());
+    EXPECT_TRUE(NoCompileDocs.value().empty());
 }
 
 TEST(RegistryTest, StepsForPhaseWildcardScopeMatchesAllScopes)
@@ -162,7 +170,8 @@ TEST(RegistryTest, StepsForPhaseWildcardScopeMatchesAllScopes)
     registry.registerStep(std::move(codeStep));
 
     const auto Matches = registry.stepsForPhase("generate", "*");
-    ASSERT_EQ(Matches.size(), 2U);
+    ASSERT_TRUE(Matches.hasValue());
+    ASSERT_EQ(Matches.value().size(), 2U);
 }
 
 TEST(RegistryTest, ScopesForPhaseReturnsUniqueSortedScopes)
@@ -285,4 +294,85 @@ TEST(RegistryTest, ConfigureStepOverridesInlineStepDefault)
     registry.registerStep(std::move(step));
 
     beez::test::expectStepConfigTag(registry, "shader", "inline+external");
+}
+
+TEST(RegistryTest, StepsForPhaseOrdersByArtifactDependencies)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step linkStep;
+    linkStep.name = "link";
+    linkStep.phase = "compile";
+    linkStep.scope = "cpp";
+    linkStep.shellRun = "echo link";
+    linkStep.input = {"build/**/*.o"};
+    registry.registerStep(std::move(linkStep));
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile";
+    compileStep.phase = "compile";
+    compileStep.scope = "cpp";
+    compileStep.shellRun = "echo compile";
+    compileStep.input = {"src/**/*.cpp"};
+    compileStep.output = {"build/**/*.o"};
+    registry.registerStep(std::move(compileStep));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_TRUE(Ordered.hasValue());
+    ASSERT_EQ(Ordered.value().size(), 2U);
+    EXPECT_EQ(Ordered.value()[0].name, "compile");
+    EXPECT_EQ(Ordered.value()[1].name, "link");
+}
+
+TEST(RegistryTest, StepsForPhaseReturnsMutateConflictError)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step formatStep;
+    formatStep.name = "cpp:format";
+    formatStep.phase = "compile";
+    formatStep.scope = "cpp";
+    formatStep.shellRun = "echo format";
+    formatStep.mutate = {"src/**/*.cpp"};
+    registry.registerStep(std::move(formatStep));
+
+    beez::core::Step lintStep;
+    lintStep.name = "cpp:lint";
+    lintStep.phase = "compile";
+    lintStep.scope = "cpp";
+    lintStep.shellRun = "echo lint";
+    lintStep.mutate = {"src/**/*.cpp"};
+    registry.registerStep(std::move(lintStep));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_FALSE(Ordered.hasValue());
+    EXPECT_EQ(Ordered.error().kind, beez::core::StepOrderErrorKind::MutateConflict);
+}
+
+TEST(RegistryTest, RegisterStepOrderResolvesMutateConflict)
+{
+    beez::core::Registry registry;
+    registry.registerStepOrder("cpp:lint", "cpp:format");
+
+    beez::core::Step formatStep;
+    formatStep.name = "cpp:format";
+    formatStep.phase = "compile";
+    formatStep.scope = "cpp";
+    formatStep.shellRun = "echo format";
+    formatStep.mutate = {"src/**/*.cpp"};
+    registry.registerStep(std::move(formatStep));
+
+    beez::core::Step lintStep;
+    lintStep.name = "cpp:lint";
+    lintStep.phase = "compile";
+    lintStep.scope = "cpp";
+    lintStep.shellRun = "echo lint";
+    lintStep.mutate = {"src/**/*.cpp"};
+    registry.registerStep(std::move(lintStep));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_TRUE(Ordered.hasValue());
+    ASSERT_EQ(Ordered.value().size(), 2U);
+    EXPECT_EQ(Ordered.value()[0].name, "cpp:lint");
+    EXPECT_EQ(Ordered.value()[1].name, "cpp:format");
 }

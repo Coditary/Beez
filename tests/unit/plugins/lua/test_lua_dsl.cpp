@@ -396,3 +396,172 @@ task("broken", { phase = "generate", scope = "docs", run = "true" })
     EXPECT_FALSE(loadScript(Project, registry));
     EXPECT_FALSE(registry.findTask("broken").has_value());
 }
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity) -- raw string literals inflate metric
+TEST(LuaDslTest, LoadsStepArtifactFields)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "cpp",
+    input = { "src/**/*.cpp" },
+    output = { "build/**/*.o" },
+    run = "echo compile",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("compile");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_EQ(Found->input.size(), 1U);
+    EXPECT_EQ(Found->input[0], "src/**/*.cpp");
+    ASSERT_EQ(Found->output.size(), 1U);
+    EXPECT_EQ(Found->output[0], "build/**/*.o");
+    EXPECT_TRUE(Found->mutate.empty());
+}
+
+TEST(LuaDslTest, LoadsStepMutateField)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "cpp:format",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo format",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("cpp:format");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_EQ(Found->mutate.size(), 1U);
+    EXPECT_EQ(Found->mutate[0], "src/**/*.cpp");
+}
+
+TEST(LuaDslTest, LoadsOrderDeclaration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+order("cpp:lint", "cpp:format")
+step({
+    name = "cpp:format",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo format",
+})
+step({
+    name = "cpp:lint",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo lint",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_TRUE(Ordered.hasValue());
+    ASSERT_EQ(Ordered.value().size(), 2U);
+    EXPECT_EQ(Ordered.value()[0].name, "cpp:lint");
+    EXPECT_EQ(Ordered.value()[1].name, "cpp:format");
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenArtifactFieldIsNotTable)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "broken",
+    phase = "compile",
+    scope = "cpp",
+    input = "src/**/*.cpp",
+    run = "echo broken",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("broken").has_value());
+}
+
+TEST(LuaDslTest, LoadsBuildScriptWithoutBeezEnvWhenDotEnvMissing)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("hello", "echo no-env-overhead")
+)");
+
+    beez::core::Registry registry;
+    EXPECT_TRUE(loadScript(Project, registry));
+}
+
+TEST(LuaDslTest, BeezEnvReadsValueFromDotEnvFile)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("MY_ENV=secret-value\n");
+    Project.writeBuildLua(R"(
+task("show-env", "echo " .. beez.env("MY_ENV"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "show-env");
+    ASSERT_TRUE(Found.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    beez::test::expectShellCommand(*Found, 0, "echo secret-value");
+}
+
+TEST(LuaDslTest, BeezEnvReturnsNilWhenVariableIsMissing)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("OTHER=value\n");
+    Project.writeBuildLua(R"(
+step({
+    name = "check-env",
+    phase = "test",
+    scope = "code",
+    run = function()
+        if beez.env("MISSING_ENV") ~= nil then
+            error("expected nil for missing env variable")
+        end
+        return 0
+    end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+    ASSERT_TRUE(registry.findStep("check-env").has_value());
+}
+
+TEST(LuaDslTest, BeezEnvDoesNotReadDotEnvUntilCalled)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("this is not valid dotenv {{{\n");
+    Project.writeBuildLua(R"(
+task("hello", "echo without env access")
+)");
+
+    beez::core::Registry registry;
+    EXPECT_TRUE(loadScript(Project, registry));
+}
