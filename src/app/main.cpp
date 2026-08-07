@@ -50,11 +50,11 @@ int main(int argc, const char* argv[])
             std::cout << "Removed Beez cache: " << CachePath << '\n';
         }
 
-        const bool hasRunTarget =
+        const bool HasRunTarget =
             Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
             Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value();
 
-        if (!hasRunTarget)
+        if (!HasRunTarget)
         {
             return 0;
         }

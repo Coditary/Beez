@@ -2,6 +2,12 @@
 --
 --   beez build              Conan + CMake configure, compile, run all test suites
 --   beez quality            format-check, clang-tidy lint, analyze, security
+--   beez all                full QS pipeline (build + quality + coverage + sanitize + fuzz)
+--   beez debug              Debug configure + build
+--   beez coverage           Coverage configure, build, tests, HTML report
+--   beez sanitize           ASan/UBSan configure, build, tests
+--   beez fuzzer_smoke       Build fuzzer + short fuzz run (FUZZER_TIME, default 30s)
+--   beez fuzzer_corpus      Build fuzzer + longer corpus run (60s)
 --   beez clean              remove build/, report/, .cache/
 --   beez format             apply clang-format + cmake-format (incremental)
 --   beez clang_tidy         clang-tidy only (same as qa:lint step)
@@ -24,6 +30,10 @@ local BUILD_TYPE = env_or("BUILD_TYPE", "Release")
 local CONAN_PROFILE = env_or("CONAN_PROFILE", "clang-release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
 local CMAKE_PRESET = (BUILD_TYPE == "Debug") and "conan-debug" or "conan-release"
+local DEBUG_BUILD_TREE = "build/build/Debug"
+local REPORTS_DIR = env_or("REPORTS_DIR", "report")
+local FUZZER_TIME = env_or("FUZZER_TIME", "30")
+local FUZZER_BIN = DEBUG_BUILD_TREE .. "/fuzz/fuzz_lua_dsl"
 
 local CXX_SOURCE_PATTERNS = {
     "src/**/*.cpp",
@@ -139,6 +149,18 @@ task("clang_tidy", {
 task("format", {
     { name = "format:apply" },
 })
+
+task("debug", {
+    { name = "configure:debug" },
+    { name = "build:debug" },
+})
+
+task("fuzzer", {
+    { name = "configure:fuzzer" },
+    { name = "build:fuzzer" },
+})
+
+task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
 -- ── Configure + build ────────────────────────────────────────────────────────
 
@@ -455,6 +477,254 @@ step({
 
 order("qa:cppcheck-security", "qa:security-tidy")
 
+-- ── Debug build ──────────────────────────────────────────────────────────────
+
+step({
+    name = "configure:debug",
+    phase = "configure",
+    scope = "debug",
+    input = {
+        "conanfile.py",
+        "CMakeLists.txt",
+        "CMakePresets.json",
+        "cmake/**",
+        "conan/**",
+        "src/**/CMakeLists.txt",
+        "tests/**/CMakeLists.txt",
+    },
+    output = {
+        DEBUG_BUILD_TREE .. "/compile_commands.json",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    description = "Conan install + CMake configure (Debug)",
+    run = "conan install . --output-folder=build --build=missing " ..
+        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON",
+})
+
+step({
+    name = "build:debug",
+    phase = "build",
+    scope = "debug",
+    input = {
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "tests/**/*.cpp",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    output = { DEBUG_BUILD_TREE .. "/bin/beez" },
+    description = "CMake Debug build",
+    run = "cmake --build --preset conan-debug",
+})
+
+order("configure:debug", "build:debug")
+
+-- ── Coverage ─────────────────────────────────────────────────────────────────
+
+step({
+    name = "configure:coverage",
+    phase = "configure",
+    scope = "coverage",
+    input = {
+        "conanfile.py",
+        "CMakeLists.txt",
+        "cmake/**",
+        "src/**/CMakeLists.txt",
+        "tests/**/CMakeLists.txt",
+    },
+    output = {
+        DEBUG_BUILD_TREE .. "/compile_commands.json",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    description = "CMake configure with coverage instrumentation",
+    run = "conan install . --output-folder=build --build=missing " ..
+        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
+        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=ON " ..
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF",
+})
+
+step({
+    name = "build:coverage",
+    phase = "build",
+    scope = "coverage",
+    input = {
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "tests/**/*.cpp",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
+    description = "Build Debug with coverage flags",
+    run = "cmake --build --preset conan-debug",
+})
+
+step({
+    name = "test:coverage",
+    phase = "test",
+    scope = "coverage",
+    input = {
+        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
+        "src/**/*.cpp",
+        "tests/**/*.cpp",
+    },
+    output = { REPORTS_DIR .. "/test/coverage-test-report.ok" },
+    description = "Run tests and capture coverage test report",
+    run = "mkdir -p " .. REPORTS_DIR .. "/test && cd " .. DEBUG_BUILD_TREE ..
+        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
+        "/test/coverage-test-report.txt && touch ../../../" .. REPORTS_DIR ..
+        "/test/coverage-test-report.ok",
+})
+
+step({
+    name = "report:coverage",
+    phase = "report",
+    scope = "coverage",
+    input = {
+        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
+        "src/**/*.cpp",
+    },
+    output = { REPORTS_DIR .. "/coverage/index.html" },
+    description = "Generate HTML coverage report (gcovr)",
+    run = "mkdir -p " .. REPORTS_DIR .. "/coverage && cd " .. DEBUG_BUILD_TREE ..
+        " && gcovr --gcov-executable 'llvm-cov gcov' --root ../../.. " ..
+        "--filter ../../../src/ --filter ../../../tests/ " ..
+        "--html-details ../../../" .. REPORTS_DIR .. "/coverage/index.html .",
+})
+
+order("configure:coverage", "build:coverage")
+order("build:coverage", "test:coverage")
+order("test:coverage", "report:coverage")
+
+-- ── Sanitizer ────────────────────────────────────────────────────────────────
+
+step({
+    name = "configure:sanitize",
+    phase = "configure",
+    scope = "sanitize",
+    input = {
+        "conanfile.py",
+        "CMakeLists.txt",
+        "cmake/**",
+        "src/**/CMakeLists.txt",
+        "tests/**/CMakeLists.txt",
+    },
+    output = {
+        DEBUG_BUILD_TREE .. "/compile_commands.json",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    description = "CMake configure with ASan/UBSan",
+    run = "conan install . --output-folder=build --build=missing " ..
+        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
+        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON",
+})
+
+step({
+    name = "build:sanitize",
+    phase = "build",
+    scope = "sanitize",
+    input = {
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "tests/**/*.cpp",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
+    description = "Build Debug with sanitizers",
+    run = "cmake --build --preset conan-debug",
+})
+
+step({
+    name = "test:sanitize",
+    phase = "test",
+    scope = "sanitize",
+    input = {
+        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
+        "src/**/*.cpp",
+        "tests/**/*.cpp",
+    },
+    output = { REPORTS_DIR .. "/sanitize/sanitize-report.ok" },
+    description = "Run tests under ASan/UBSan",
+    run = "mkdir -p " .. REPORTS_DIR .. "/sanitize && cd " .. DEBUG_BUILD_TREE ..
+        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
+        "/sanitize/sanitize-report.txt && touch ../../../" .. REPORTS_DIR ..
+        "/sanitize/sanitize-report.ok",
+})
+
+order("configure:sanitize", "build:sanitize")
+order("build:sanitize", "test:sanitize")
+
+-- ── Fuzzer ───────────────────────────────────────────────────────────────────
+
+step({
+    name = "configure:fuzzer",
+    phase = "configure",
+    scope = "fuzz",
+    input = {
+        "conanfile.py",
+        "CMakeLists.txt",
+        "tests/fuzz/**",
+        "cmake/**",
+    },
+    output = {
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    description = "CMake configure for fuzzer target",
+    run = "conan install . --output-folder=build --build=missing " ..
+        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
+        " && cmake --preset conan-debug -DBUILD_TESTING=OFF -DBUILD_CACHE=ON " ..
+        "&& cmake --preset conan-debug -DBUILD_TESTING=OFF -DBUILD_COVERAGE=OFF " ..
+        "-DBUILD_FUZZER=ON -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF",
+})
+
+step({
+    name = "build:fuzzer",
+    phase = "build",
+    scope = "fuzz",
+    input = {
+        "tests/fuzz/**",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    output = { FUZZER_BIN },
+    description = "Build fuzz_lua_dsl",
+    run = "cmake --build --preset conan-debug --target fuzz_lua_dsl",
+})
+
+step({
+    name = "fuzz:smoke",
+    phase = "fuzz",
+    scope = "smoke",
+    input = {
+        FUZZER_BIN,
+        "tests/fuzz/corpus/lua_dsl/*.lua",
+        "tests/fuzz/lua_dsl.dict",
+    },
+    output = { REPORTS_DIR .. "/fuzz/fuzz-smoke-report.txt" },
+    description = "Short fuzz run (" .. FUZZER_TIME .. "s default)",
+    run = "FUZZER_TIME=" .. FUZZER_TIME .. " REPORTS_DIR=" .. REPORTS_DIR ..
+        " scripts/fuzz-smoke.sh build",
+})
+
+step({
+    name = "fuzz:corpus",
+    phase = "fuzz",
+    scope = "corpus",
+    input = {
+        FUZZER_BIN,
+        "tests/fuzz/corpus/lua_dsl/*.lua",
+        "tests/fuzz/lua_dsl.dict",
+    },
+    output = { REPORTS_DIR .. "/fuzz/fuzz-corpus-report.txt" },
+    description = "Longer fuzz run for corpus collection (60s)",
+    run = "FUZZER_TIME=60 REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-corpus.sh build",
+})
+
+order("configure:fuzzer", "build:fuzzer")
+order("build:fuzzer", "fuzz:smoke")
+order("build:fuzzer", "fuzz:corpus")
+
 -- ── Clean ────────────────────────────────────────────────────────────────────
 
 step({
@@ -462,7 +732,7 @@ step({
     phase = "clean",
     scope = "project",
     description = "Remove build tree, reports, and caches",
-    run = "rm -rf build report .cache",
+    run = "rm -rf build " .. REPORTS_DIR .. " .cache",
 })
 
 -- ── Workflows ────────────────────────────────────────────────────────────────
@@ -481,6 +751,59 @@ workflow("quality", {
     { phase = "qa", scope = "lint" },
     { phase = "qa", scope = "analyze" },
     { phase = "qa", scope = "security" },
+})
+
+workflow("debug", {
+    { phase = "configure", scope = "debug" },
+    { phase = "build", scope = "debug" },
+})
+
+workflow("coverage", {
+    { phase = "configure", scope = "coverage" },
+    { phase = "build", scope = "coverage" },
+    { phase = "test", scope = "coverage" },
+    { phase = "report", scope = "coverage" },
+})
+
+workflow("sanitize", {
+    { phase = "configure", scope = "sanitize" },
+    { phase = "build", scope = "sanitize" },
+    { phase = "test", scope = "sanitize" },
+})
+
+workflow("fuzzer_smoke", {
+    { phase = "configure", scope = "fuzz" },
+    { phase = "build", scope = "fuzz" },
+    { phase = "fuzz", scope = "smoke" },
+})
+
+workflow("fuzzer_corpus", {
+    { phase = "configure", scope = "fuzz" },
+    { phase = "build", scope = "fuzz" },
+    { phase = "fuzz", scope = "corpus" },
+})
+
+workflow("all", {
+    { phase = "configure", scope = "project" },
+    { phase = "build", scope = "project" },
+    { phase = "test", scope = "unit" },
+    { phase = "test", scope = "integration" },
+    { phase = "test", scope = "system" },
+    { phase = "test", scope = "performance" },
+    { phase = "qa", scope = "format" },
+    { phase = "qa", scope = "lint" },
+    { phase = "qa", scope = "analyze" },
+    { phase = "qa", scope = "security" },
+    { phase = "configure", scope = "coverage" },
+    { phase = "build", scope = "coverage" },
+    { phase = "test", scope = "coverage" },
+    { phase = "report", scope = "coverage" },
+    { phase = "configure", scope = "sanitize" },
+    { phase = "build", scope = "sanitize" },
+    { phase = "test", scope = "sanitize" },
+    { phase = "configure", scope = "fuzz" },
+    { phase = "build", scope = "fuzz" },
+    { phase = "fuzz", scope = "smoke" },
 })
 
 workflow("clean", {

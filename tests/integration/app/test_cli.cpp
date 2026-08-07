@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 TEST(CliTest, MissingArgumentsShowsUsage)
@@ -254,8 +255,7 @@ TEST(CliTest, CleanCacheRemovesCacheDirectory)
         stream << "cached\n";
     }
 
-    const beez::test::ProcessResult Result =
-        beez::test::runBeez(Project.path(), {"--clean-cache"});
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"--clean-cache"});
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_FALSE(std::filesystem::exists(CachePath));
     EXPECT_NE(Result.output.find("Removed Beez cache"), std::string::npos);

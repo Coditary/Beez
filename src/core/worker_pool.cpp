@@ -3,6 +3,7 @@
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
+#include "beez/core/step_config.hpp"
 
 #include <cstddef>
 #include <filesystem>

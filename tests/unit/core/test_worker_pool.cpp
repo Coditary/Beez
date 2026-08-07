@@ -231,10 +231,11 @@ TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
         beez::test::makeTestConfig("tool-v2"),
         false);
 
-    const auto ConfigChangedHandle = poolV2.spawn({.name = "compile_main",
-                                                     .commands = {"g++ -c src/main.cpp -o build/main.o"},
-                                                     .inputs = {"src/main.cpp"},
-                                                     .outputs = {"build/main.o"}});
+    const auto ConfigChangedHandle =
+        poolV2.spawn({.name = "compile_main",
+                      .commands = {"g++ -c src/main.cpp -o build/main.o"},
+                      .inputs = {"src/main.cpp"},
+                      .outputs = {"build/main.o"}});
     EXPECT_EQ(poolV2.wait(ConfigChangedHandle), 0);
     EXPECT_EQ(executed, 2);
 }
