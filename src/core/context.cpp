@@ -1,5 +1,6 @@
 #include "beez/core/context.h"
 #include "beez/core/step_config.hpp"
+#include "beez/core/worker_pool.hpp"
 
 #include <filesystem>
 #include <utility>
@@ -32,6 +33,16 @@ StepConfigPtr Context::getConfig() const
     }
 
     return stepConfigAccessor_();
+}
+
+void Context::setWorkerPool(WorkerPool* pool)
+{
+    workerPool_ = pool;
+}
+
+void Context::clearWorkerPool()
+{
+    workerPool_ = nullptr;
 }
 
 }  // namespace beez::core

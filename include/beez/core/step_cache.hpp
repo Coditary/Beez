@@ -80,9 +80,10 @@ class OutputTracker
     [[nodiscard]] std::vector<std::string>
     resolveOutputs(const Step& step, const std::vector<std::string>& snapshotDiff) const;
 
+    [[nodiscard]] static bool hasExplicitArtifactPatterns(const Step& step);
     [[nodiscard]] std::vector<std::filesystem::path> watchDirectories(const Step& step) const;
     [[nodiscard]] std::unordered_map<std::string, FileStamp>
-    snapshot(const std::vector<std::filesystem::path>& directories) const;
+    snapshotDirectories(const std::vector<std::filesystem::path>& directories) const;
 
     std::filesystem::path projectRoot_;
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed matcher
@@ -97,7 +98,8 @@ class StepCache
     StepCache(const std::filesystem::path& cacheRoot, const IGlobMatcher& matcher);
     StepCache(std::unique_ptr<ICacheKeyStrategy> keyStrategy,
               std::unique_ptr<ICacheStore> store,
-              const IGlobMatcher& matcher);
+              const IGlobMatcher& matcher,
+              std::filesystem::path indexRoot = {});
 
     [[nodiscard]] CacheLookupResult lookup(const Step& step,
                                            const std::filesystem::path& projectRoot,
@@ -118,6 +120,18 @@ class StepCache
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed matcher
     const IGlobMatcher& matcher_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
+    std::filesystem::path indexRoot_;
+
+    [[nodiscard]] std::optional<CacheLookupResult>
+    lookupViaIndex(const Step& step,
+                   const std::filesystem::path& projectRoot,
+                   const StepConfigPtr& config) const;
+
+    void writeIndex(const Step& step,
+                    const std::filesystem::path& projectRoot,
+                    const StepConfigPtr& config,
+                    const std::string& key,
+                    const std::vector<std::string>& outputs) const;
 };
 
 [[nodiscard]] std::unique_ptr<ICacheKeyStrategy> makeContentAddressedCacheKeyStrategy();

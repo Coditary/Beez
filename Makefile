@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -53,9 +53,16 @@ test: ## Tests ausführen (BUILD_TYPE=Release|Debug)
 run: ## Beez ausführen (z.B. make run ARGS=clean)
 	$(BEEZ_BIN) $(ARGS)
 
-lint: ## clang-tidy + cmake-format check
+lint: ## clang-tidy + cmake-format check (full)
 	@mkdir -p $(REPORTS_DIR)/lint
 	bash -o pipefail -c './scripts/lint.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/lint/lint-report.txt'
+
+lint-stale: ## Incremental lint (only changed or previously failed files)
+	@mkdir -p $(REPORTS_DIR)/lint
+	bash -o pipefail -c 'LINT_BUILD_TYPE=$(BUILD_TYPE) ./scripts/lint-stale.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/lint/lint-stale-report.txt'
+
+lint-stale-clean: ## Clear incremental lint cache
+	rm -rf $(REPORTS_DIR)/lint/stale
 
 format: ## Alles formatieren
 	clang-format -i $(CXX_FILES)

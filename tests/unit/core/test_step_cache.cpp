@@ -139,6 +139,68 @@ TEST_F(StepCacheTest, MissWhenConfigFingerprintChanges)
     EXPECT_FALSE(Result.skip);
 }
 
+TEST_F(StepCacheTest, CreatesIndexEntryOnStore)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    cache->store(Step, root, nullptr, {"build/main.o"});
+
+    const auto IndexPath = cacheDir / "index" / "compile__compile__cpp.index";
+    EXPECT_TRUE(std::filesystem::exists(IndexPath));
+}
+
+TEST_F(StepCacheTest, HitViaIndexOnRepeatedLookup)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    cache->store(Step, root, nullptr, {"build/main.o"});
+
+    const auto First = cache->lookup(Step, root, nullptr);
+    const auto Second = cache->lookup(Step, root, nullptr);
+
+    ASSERT_TRUE(First.skip);
+    ASSERT_TRUE(Second.skip);
+    EXPECT_EQ(First.key, Second.key);
+}
+
+TEST_F(StepCacheTest, MissViaIndexWhenInputSizeChanges)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    cache->store(Step, root, nullptr, {"build/main.o"});
+
+    writeFile(root / "src" / "main.cpp", "int main() { return 1; }\n");
+
+    const auto Result = cache->lookup(Step, root, nullptr);
+    EXPECT_FALSE(Result.skip);
+}
+
+TEST_F(StepCacheTest, TracksOnlyExplicitOutputPaths)
+{
+    writeFile(root / "build" / "a.o", "a\n");
+    writeFile(root / "build" / "noise.bin", "noise\n");
+
+    beez::core::Step step;
+    step.name = "compile_a";
+    step.phase = "compile";
+    step.scope = "cpp";
+    step.shellRun = "touch build/a.o";
+    step.output = {"build/a.o"};
+
+    beez::core::OutputTracker tracker(root, *matcher);
+    tracker.begin(step);
+    const auto Outputs = tracker.end(step);
+
+    ASSERT_EQ(Outputs.size(), 1U);
+    EXPECT_EQ(Outputs.front(), "build/a.o");
+}
+
 TEST_F(StepCacheTest, CapturesBuildDirectoryOutputsWhenNoOutputPatterns)
 {
     writeFile(root / "src" / "main.cpp", "int main() {}\n");
