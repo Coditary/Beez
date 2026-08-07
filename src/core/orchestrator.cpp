@@ -329,6 +329,7 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                               stepCache,
                               stepCache != nullptr ? stepCache->matcher() : defaultGlobMatcher(),
                               step.name,
+                              step.config,
                               runOptions_.dryRun);
         context_.setWorkerPool(&workerPool);
 

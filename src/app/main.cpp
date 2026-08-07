@@ -12,8 +12,10 @@
 #include "beez/plugin/shell/shell_executor.h"
 
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <memory>
+#include <system_error>
 
 int main(int argc, const char* argv[])
 {
@@ -39,6 +41,24 @@ int main(int argc, const char* argv[])
         }
 
         beez::core::Context context;
+
+        if (Parsed.options.cleanCache)
+        {
+            const auto CachePath = context.projectRoot() / ".cache";
+            std::error_code errorCode;
+            std::filesystem::remove_all(CachePath, errorCode);
+            std::cout << "Removed Beez cache: " << CachePath << '\n';
+        }
+
+        const bool hasRunTarget =
+            Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
+            Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value();
+
+        if (!hasRunTarget)
+        {
+            return 0;
+        }
+
         beez::core::Registry registry;
         beez::plugin::PluginHost pluginHost;
 

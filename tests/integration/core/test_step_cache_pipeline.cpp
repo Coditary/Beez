@@ -103,3 +103,35 @@ step({
     ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
     EXPECT_EQ(countLines(Project.path() / "build" / "runs.txt"), 2U);
 }
+
+TEST(OrchestratorPipelineTest, WorkerCacheSkipsRepeatedSpawnInStep)
+{
+    const beez::test::TempProject Project;
+    writeProjectFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
+    Project.writeBuildLua(R"(
+step({
+    name = "work",
+    phase = "work",
+    scope = "demo",
+    run = function(ctx)
+        ctx:spawn({
+            name = "worker",
+            cmd = "mkdir -p build && echo run >> build/worker_runs.txt && echo ok > build/worker.out",
+            inputs = { "src/main.cpp" },
+            outputs = { "build/worker.out" },
+        })
+        return ctx:wait_all()
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("work").hasValue());
+    EXPECT_EQ(countLines(Project.path() / "build" / "worker_runs.txt"), 1U);
+
+    ASSERT_TRUE(orchestrator.runStep("work").hasValue());
+    EXPECT_EQ(countLines(Project.path() / "build" / "worker_runs.txt"), 1U);
+}

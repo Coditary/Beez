@@ -3,6 +3,7 @@
 #include "beez/core/worker_pool.hpp"
 
 #include "helpers/temp_project.hpp"
+#include "helpers/test_step_config.hpp"
 
 #include <gtest/gtest.h>
 
@@ -36,6 +37,7 @@ TEST(WorkerPoolTest, SpawnAndWaitExecutesCommand)
         nullptr,
         beez::core::defaultGlobMatcher(),
         "parent",
+        nullptr,
         false);
 
     const auto Handle = pool.spawn({.name = "compile_main",
@@ -61,6 +63,7 @@ TEST(WorkerPoolTest, WaitAllExecutesMultipleWorkersSequentially)
         nullptr,
         beez::core::defaultGlobMatcher(),
         "parent",
+        nullptr,
         false);
 
     const auto First = pool.spawn({.name = "a", .commands = {"cmd-a"}});
@@ -85,6 +88,7 @@ TEST(WorkerPoolTest, WorkerExecutesMultipleCommandsInOrder)
         nullptr,
         beez::core::defaultGlobMatcher(),
         "parent",
+        nullptr,
         false);
 
     const auto Handle = pool.spawn(
@@ -108,6 +112,7 @@ TEST(WorkerPoolTest, DrainAllExecutesRemainingWorkers)
         nullptr,
         beez::core::defaultGlobMatcher(),
         "parent",
+        nullptr,
         false);
 
     (void)pool.spawn({.name = "a", .commands = {"cmd-a"}});
@@ -125,6 +130,7 @@ TEST(WorkerPoolTest, FailedWorkerReturnsNonZeroExitCode)
         nullptr,
         beez::core::defaultGlobMatcher(),
         "parent",
+        nullptr,
         false);
 
     const auto Handle = pool.spawn({.name = "fail", .commands = {"false"}});
@@ -149,6 +155,7 @@ TEST(WorkerPoolTest, CachedWorkerSkipsExecutionWhenOutputsExist)
         &Cache,
         Cache.matcher(),
         "compile",
+        nullptr,
         false);
 
     const auto FirstHandle = pool.spawn({.name = "compile_main",
@@ -172,5 +179,62 @@ TEST(WorkerPoolTest, CachedWorkerSkipsExecutionWhenOutputsExist)
                                          .inputs = {"src/main.cpp"},
                                          .outputs = {"build/main.o"}});
     EXPECT_EQ(pool.wait(ThirdHandle), 0);
+    EXPECT_EQ(executed, 2);
+}
+
+TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
+{
+    const beez::test::TempProject Project;
+    writeFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
+
+    int executed = 0;
+    const beez::core::StepCache Cache(Project.path() / ".cache", beez::core::defaultGlobMatcher());
+    beez::core::WorkerPool poolV1(
+        Project.path(),
+        [&executed, &Project](const std::string& /*command*/) -> int
+        {
+            ++executed;
+            writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
+            return 0;
+        },
+        &Cache,
+        Cache.matcher(),
+        "compile",
+        beez::test::makeTestConfig("tool-v1"),
+        false);
+
+    const auto FirstHandle = poolV1.spawn({.name = "compile_main",
+                                           .commands = {"g++ -c src/main.cpp -o build/main.o"},
+                                           .inputs = {"src/main.cpp"},
+                                           .outputs = {"build/main.o"}});
+    EXPECT_EQ(poolV1.wait(FirstHandle), 0);
+    EXPECT_EQ(executed, 1);
+
+    const auto CachedHandle = poolV1.spawn({.name = "compile_main",
+                                            .commands = {"g++ -c src/main.cpp -o build/main.o"},
+                                            .inputs = {"src/main.cpp"},
+                                            .outputs = {"build/main.o"}});
+    EXPECT_EQ(poolV1.wait(CachedHandle), 0);
+    EXPECT_EQ(executed, 1);
+
+    beez::core::WorkerPool poolV2(
+        Project.path(),
+        [&executed, &Project](const std::string& /*command*/) -> int
+        {
+            ++executed;
+            writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
+            return 0;
+        },
+        &Cache,
+        Cache.matcher(),
+        "compile",
+        beez::test::makeTestConfig("tool-v2"),
+        false);
+
+    const auto ConfigChangedHandle = poolV2.spawn({.name = "compile_main",
+                                                     .commands = {"g++ -c src/main.cpp -o build/main.o"},
+                                                     .inputs = {"src/main.cpp"},
+                                                     .outputs = {"build/main.o"}});
+    EXPECT_EQ(poolV2.wait(ConfigChangedHandle), 0);
     EXPECT_EQ(executed, 2);
 }

@@ -242,3 +242,21 @@ step({
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".step-ran"));
 }
+
+TEST(CliTest, CleanCacheRemovesCacheDirectory)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua("task(\"noop\", \"true\")\n");
+    const auto CachePath = Project.path() / ".cache";
+    std::filesystem::create_directories(CachePath / "entries");
+    {
+        std::ofstream stream(CachePath / "entries" / "marker.txt");
+        stream << "cached\n";
+    }
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--clean-cache"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_FALSE(std::filesystem::exists(CachePath));
+    EXPECT_NE(Result.output.find("Removed Beez cache"), std::string::npos);
+}
