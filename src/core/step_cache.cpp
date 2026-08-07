@@ -8,6 +8,8 @@
 #include "beez/version.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -201,7 +203,7 @@ struct InputStamp
 {
     std::string path;
     std::uintmax_t size = 0;
-    std::filesystem::file_time_type modified {};
+    std::filesystem::file_time_type modified;
 };
 
 struct CacheIndexEntry
@@ -216,18 +218,15 @@ struct CacheIndexEntry
 
 [[nodiscard]] std::string sanitizeIndexComponent(std::string value)
 {
-    for (char& character : value)
-    {
-        if (character == '/' || character == ':' || character == '\\')
-        {
-            character = '_';
-        }
-    }
+    std::ranges::replace_if(value,
+                            [](const char Character)
+                            { return Character == '/' || Character == ':' || Character == '\\'; },
+                            '_');
     return value;
 }
 
 [[nodiscard]] std::filesystem::path indexPathForStep(const std::filesystem::path& indexRoot,
-                                                    const Step& step)
+                                                     const Step& step)
 {
     const std::string FileName = sanitizeIndexComponent(step.name) + "__" +
                                  sanitizeIndexComponent(step.phase) + "__" +
@@ -268,10 +267,11 @@ struct CacheIndexEntry
             continue;
         }
 
-        stamps.push_back(InputStamp {.path = relativePath,
-                                     .size = std::filesystem::file_size(Absolute, errorCode),
-                                     .modified = std::filesystem::last_write_time(Absolute,
-                                                                                  errorCode)});
+        stamps.push_back(InputStamp {
+            .path = relativePath,
+            .size = std::filesystem::file_size(Absolute, errorCode),
+            .modified = std::filesystem::last_write_time(Absolute, errorCode),
+        });
     }
 
     std::ranges::sort(stamps,
@@ -290,8 +290,9 @@ struct CacheIndexEntry
 
     for (std::size_t index = 0; index < expected.size(); ++index)
     {
-        if (expected[index].path != actual[index].path || expected[index].size != actual[index].size ||
-            expected[index].modified != actual[index].modified)
+        if (expected.at(index).path != actual.at(index).path ||
+            expected.at(index).size != actual.at(index).size ||
+            expected.at(index).modified != actual.at(index).modified)
         {
             return false;
         }
@@ -300,8 +301,7 @@ struct CacheIndexEntry
     return true;
 }
 
-[[nodiscard]] std::optional<CacheIndexEntry>
-readCacheIndex(const std::filesystem::path& indexPath)
+[[nodiscard]] std::optional<CacheIndexEntry> readCacheIndex(const std::filesystem::path& indexPath)
 {
     if (!std::filesystem::exists(indexPath))
     {
@@ -353,10 +353,11 @@ readCacheIndex(const std::filesystem::path& indexPath)
 
             InputStamp stamp;
             stamp.path = Value.substr(0, FirstSeparator);
-            stamp.size = static_cast<std::uintmax_t>(
-                std::stoull(Value.substr(FirstSeparator + 1, SecondSeparator - FirstSeparator - 1)));
-            stamp.modified = std::filesystem::file_time_type(
-                std::filesystem::file_time_type::duration(std::stoll(Value.substr(SecondSeparator + 1))));
+            stamp.size = static_cast<std::uintmax_t>(std::stoull(
+                Value.substr(FirstSeparator + 1, SecondSeparator - FirstSeparator - 1)));
+            stamp.modified =
+                std::filesystem::file_time_type(std::filesystem::file_time_type::duration(
+                    std::stoll(Value.substr(SecondSeparator + 1))));
             entry.inputs.push_back(std::move(stamp));
         }
         else if (Field == "output")
@@ -595,10 +596,9 @@ void StepCache::store(const Step& step,
     }
 }
 
-std::optional<CacheLookupResult>
-StepCache::lookupViaIndex(const Step& step,
-                          const std::filesystem::path& projectRoot,
-                          const StepConfigPtr& config) const
+std::optional<CacheLookupResult> StepCache::lookupViaIndex(const Step& step,
+                                                           const std::filesystem::path& projectRoot,
+                                                           const StepConfigPtr& config) const
 {
     const auto IndexPath = indexPathForStep(indexRoot_, step);
     const auto IndexEntry = readCacheIndex(IndexPath);
