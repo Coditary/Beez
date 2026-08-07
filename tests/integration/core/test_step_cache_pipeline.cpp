@@ -6,8 +6,10 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <string>
 
 namespace
@@ -18,6 +20,18 @@ void writeProjectFile(const std::filesystem::path& path, const std::string& cont
     std::filesystem::create_directories(path.parent_path());
     std::ofstream stream(path);
     stream << content;
+}
+
+std::size_t countLines(const std::filesystem::path& path)
+{
+    std::ifstream stream(path);
+    std::size_t count = 0;
+    std::string line;
+    while (std::getline(stream, line))
+    {
+        ++count;
+    }
+    return count;
 }
 
 }  // namespace
@@ -51,4 +65,41 @@ step({
 
     ASSERT_TRUE(orchestrator.runPhase(Request).hasValue());
     EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "main.o"));
+}
+
+TEST(OrchestratorPipelineTest, StepCacheInvalidatesWhenBuildLuaChanges)
+{
+    const beez::test::TempProject Project;
+    writeProjectFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "cpp",
+    input = { "src/**/*.cpp" },
+    output = { "build/out.txt" },
+    run = function(ctx)
+        local job = ctx:spawn({
+            name = "write_out",
+            cmd = "mkdir -p build && echo ok > build/out.txt && echo run >> build/runs.txt",
+        })
+        return ctx:wait(job)
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_EQ(countLines(Project.path() / "build" / "runs.txt"), 1U);
+
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_EQ(countLines(Project.path() / "build" / "runs.txt"), 1U);
+
+    std::ofstream(Project.path() / "build.lua", std::ios::app) << "-- cache bust\n";
+
+    ASSERT_TRUE(orchestrator.runStep("compile").hasValue());
+    EXPECT_EQ(countLines(Project.path() / "build" / "runs.txt"), 2U);
 }

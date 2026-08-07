@@ -1,4 +1,5 @@
 #include "beez/core/orchestrator.h"
+#include "beez/core/run_options.hpp"
 
 #include "helpers/beez_runtime.hpp"
 #include "helpers/temp_project.hpp"
@@ -127,4 +128,32 @@ step({
     ASSERT_TRUE(orchestrator.runStep("lint").hasValue());
     ASSERT_TRUE(orchestrator.runStep("lint").hasValue());
     EXPECT_EQ(countLines(Project.path() / "miss_count.txt"), 2U);
+}
+
+TEST(OrchestratorPipelineTest, SuccessCacheNoOpWhenCacheDisabled)
+{
+    const beez::test::TempProject Project;
+    writeProjectFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
+    Project.writeBuildLua(R"(
+step({
+    name = "lint",
+    phase = "lint",
+    scope = "cpp",
+    input = { "src/**/*.cpp" },
+    run = function(ctx)
+        local file = "src/main.cpp"
+        ctx.cache_file_success(file)
+        ctx.record_file_cache_miss(file)
+        return 0
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    beez::core::RunOptions options;
+    options.enableCache = false;
+    auto orchestrator = runtime.orchestrator(options);
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("lint").hasValue());
 }

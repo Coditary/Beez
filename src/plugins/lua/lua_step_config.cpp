@@ -465,7 +465,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
         core::SuccessCacheSession* session = context.successCacheSession();
         if (session == nullptr)
         {
-            throw std::runtime_error("success cache is not available in this step context");
+            return;
         }
 
         session->cacheSuccess(key);
@@ -476,7 +476,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
         core::SuccessCacheSession* session = context.successCacheSession();
         if (session == nullptr)
         {
-            throw std::runtime_error("success cache is not available in this step context");
+            return;
         }
 
         session->cacheFileSuccess(relativePath);
@@ -487,7 +487,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
         core::SuccessCacheSession* session = context.successCacheSession();
         if (session == nullptr)
         {
-            throw std::runtime_error("success cache is not available in this step context");
+            return;
         }
 
         session->recordCacheMiss(key);
@@ -498,7 +498,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
         core::SuccessCacheSession* session = context.successCacheSession();
         if (session == nullptr)
         {
-            throw std::runtime_error("success cache is not available in this step context");
+            return;
         }
 
         session->recordFileCacheMiss(relativePath);

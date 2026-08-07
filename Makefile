@@ -51,8 +51,8 @@ test: ## Tests ausführen (BUILD_TYPE=Release|Debug)
 	@mkdir -p $(REPORTS_DIR)/test
 	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure --verbose 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/test-report.txt'
 
-run: ## Beez ausführen (z.B. make run ARGS=clean)
-	$(BEEZ_BIN) $(ARGS)
+run: ## Beez ausführen (z.B. make run ARGS=build BUILD_TYPE=Debug)
+	BUILD_TYPE=$(BUILD_TYPE) CONAN_PROFILE=$(CONAN_PROFILE) $(BEEZ_BIN) $(ARGS)
 
 install-beez: ## Symlink beez nach ~/.local/bin (danach: beez im Terminal)
 	@test -x $(BEEZ_BIN) || (echo "Run make build first." && exit 1)
