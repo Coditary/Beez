@@ -11,6 +11,7 @@
 #include "beez/core/step_config.hpp"
 #include "beez/core/step_order.hpp"
 #include "beez/core/stream_capture.hpp"
+#include "beez/core/success_cache.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/task_action.hpp"
 #include "beez/core/worker_pool.hpp"
@@ -80,6 +81,13 @@ Orchestrator::Orchestrator(Registry& registry,
         ownedStepCache_ =
             std::make_unique<StepCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
         runOptions_.stepCache = ownedStepCache_.get();
+    }
+
+    if (runOptions_.enableCache && runOptions_.successCache == nullptr)
+    {
+        ownedSuccessCache_ =
+            std::make_unique<SuccessCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
+        runOptions_.successCache = ownedSuccessCache_.get();
     }
 }
 
@@ -293,6 +301,17 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
     {
         context_.setStepConfigAccessor([config = step.config]() -> StepConfigPtr
                                        { return config; });
+        const StepIdentity Identity {.name = step.name, .phase = step.phase, .scope = step.scope};
+        context_.setStepIdentity(Identity);
+
+        std::optional<SuccessCacheSession> successCacheSession;
+        const SuccessCache* successCache = runOptions_.successCache;
+        if (successCache != nullptr && !runOptions_.dryRun)
+        {
+            successCacheSession.emplace(
+                successCache->openSession(Identity, context_.projectRoot(), step.config));
+            context_.setSuccessCacheSession(&successCacheSession.value());
+        }
 
         WorkerPool::ExecuteFn executeWorkerCommand = [this](const std::string& command) -> int
         {
@@ -313,27 +332,50 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                               runOptions_.dryRun);
         context_.setWorkerPool(&workerPool);
 
-        const auto Captured = captureProcessOutput(
-            [this, &step, &workerPool]() -> int
-            {
-                const int CallbackExitCode = step.callback(context_);
-                if (CallbackExitCode != 0)
-                {
-                    return CallbackExitCode;
-                }
-
-                return workerPool.drainAll();
-            });
-        context_.clearWorkerPool();
-        context_.clearStepConfigAccessor();
-
-        if (runOptions_.outputMode == logging::OutputMode::Verbose &&
-            runOptions_.logger != nullptr && !Captured.output.empty())
+        int exitCode = 0;
+        std::string capturedOutput;
+        if (runOptions_.outputMode == logging::OutputMode::Verbose)
         {
-            runOptions_.logger->logCommandOutput({}, Captured.output);
+            exitCode = step.callback(context_);
+            if (exitCode == 0)
+            {
+                exitCode = workerPool.drainAll();
+            }
+        }
+        else
+        {
+            const auto Captured = captureProcessOutput(
+                [this, &step, &workerPool]() -> int
+                {
+                    const int CallbackExitCode = step.callback(context_);
+                    if (CallbackExitCode != 0)
+                    {
+                        return CallbackExitCode;
+                    }
+
+                    return workerPool.drainAll();
+                });
+            exitCode = Captured.exitCode;
+            capturedOutput = Captured.output;
         }
 
-        if (Captured.exitCode != 0)
+        context_.clearWorkerPool();
+        context_.clearStepConfigAccessor();
+        context_.clearStepIdentity();
+        context_.clearSuccessCacheSession();
+
+        if (successCacheSession.has_value())
+        {
+            successCacheSession->finish();
+        }
+
+        if (runOptions_.outputMode == logging::OutputMode::Verbose &&
+            runOptions_.logger != nullptr && !capturedOutput.empty())
+        {
+            runOptions_.logger->logCommandOutput({}, capturedOutput);
+        }
+
+        if (exitCode != 0)
         {
             return OrchestratorError::ExecutionFailed;
         }
@@ -343,7 +385,7 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             stepCache->store(step, context_.projectRoot(), step.config, outputTracker->end(step));
         }
 
-        return Captured.exitCode;
+        return exitCode;
     }
 
     return OrchestratorError::ExecutionFailed;

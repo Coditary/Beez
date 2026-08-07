@@ -218,10 +218,11 @@ struct CacheIndexEntry
 
 [[nodiscard]] std::string sanitizeIndexComponent(std::string value)
 {
-    std::ranges::replace_if(value,
-                            [](const char Character)
-                            { return Character == '/' || Character == ':' || Character == '\\'; },
-                            '_');
+    std::ranges::replace_if(
+        value,
+        [](const char Character)
+        { return Character == '/' || Character == ':' || Character == '\\'; },
+        '_');
     return value;
 }
 

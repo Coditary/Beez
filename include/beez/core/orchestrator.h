@@ -99,6 +99,7 @@ class Orchestrator
     plugin::PluginHost& pluginHost_;
     RunOptions runOptions_;
     std::unique_ptr<StepCache> ownedStepCache_;
+    std::unique_ptr<SuccessCache> ownedSuccessCache_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 };
 

@@ -11,6 +11,7 @@ namespace beez::core
 {
 
 class StepCache;
+class SuccessCache;
 
 struct RunOptions
 {
@@ -19,6 +20,7 @@ struct RunOptions
     logging::OutputMode outputMode = logging::OutputMode::Clean;
     logging::ILogger* logger = nullptr;
     StepCache* stepCache = nullptr;
+    SuccessCache* successCache = nullptr;
 };
 
 }  // namespace beez::core
