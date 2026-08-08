@@ -73,6 +73,16 @@ TEST(ConfigSchemaTest, CompressionLevelShowsBoundedInteger)
     EXPECT_NE(Output.find("Default: 6"), std::string::npos);
 }
 
+TEST(ConfigSchemaTest, CompressionModeListsAllowedValues)
+{
+    const std::string Output = requireFormattedOptions("cache.compress.mode");
+    EXPECT_NE(Output.find("=== cache.compress.mode ==="), std::string::npos);
+    EXPECT_NE(Output.find("Kind: enum"), std::string::npos);
+    EXPECT_NE(Output.find("never"), std::string::npos);
+    EXPECT_NE(Output.find("always"), std::string::npos);
+    EXPECT_NE(Output.find("auto"), std::string::npos);
+}
+
 TEST(ConfigSchemaTest, UnknownPathReturnsNullopt)
 {
     EXPECT_FALSE(beez::core::formatConfigOptions("cache.unknown").has_value());

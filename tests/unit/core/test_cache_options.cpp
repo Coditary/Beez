@@ -39,6 +39,22 @@ TEST(CacheOptionsTest, ParsesCompressionAlgorithms)
               beez::core::CacheCompressionAlgorithm::Deflate);
 }
 
+TEST(CacheOptionsTest, ParsesCompressionModes)
+{
+    EXPECT_EQ(beez::core::parseCacheCompressionMode("never"),
+              beez::core::CacheCompressionMode::Never);
+    EXPECT_EQ(beez::core::parseCacheCompressionMode("always"),
+              beez::core::CacheCompressionMode::Always);
+    EXPECT_EQ(beez::core::parseCacheCompressionMode("auto"),
+              beez::core::CacheCompressionMode::Auto);
+}
+
+TEST(CacheOptionsTest, RejectsUnknownCompressionMode)
+{
+    EXPECT_THROW(static_cast<void>(beez::core::parseCacheCompressionMode("sometimes")),
+                 std::runtime_error);
+}
+
 TEST(CacheOptionsTest, NormalizesCompressionLevel)
 {
     beez::core::CacheCompressionSettings settings;

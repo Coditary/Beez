@@ -64,6 +64,7 @@ TEST(CacheStorageTest, WriteAndReadRoundTripWithCompression)
     beez::core::CacheOptions options;
     options.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
     options.compress.level = 6;
+    options.compress.mode = beez::core::CacheCompressionMode::Always;
 
     const std::string Payload = "step=lint\noutput=report/lint.ok\n";
     beez::core::writeCacheFile(FilePath, Payload, options);
@@ -80,6 +81,7 @@ TEST(CacheStorageTest, ReadUsesEnvelopeAlgorithmNotCurrentConfig)
     beez::core::CacheOptions writeOptions;
     writeOptions.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
     writeOptions.compress.level = 6;
+    writeOptions.compress.mode = beez::core::CacheCompressionMode::Always;
 
     const std::string Payload = "step=lint\noutput=report/lint.ok\n";
     beez::core::writeCacheFile(FilePath, Payload, writeOptions);
@@ -101,6 +103,7 @@ TEST(CacheStorageTest, MigratesCompressedFilesWhenCompressionConfigChanges)
     options.root = Directory;
     options.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
     options.compress.level = 6;
+    options.compress.mode = beez::core::CacheCompressionMode::Always;
 
     const std::string Payload = "step=format\noutput=src/main.cpp\n";
     beez::core::writeCacheFile(FilePath, Payload, options);
@@ -128,6 +131,7 @@ TEST(CacheStorageTest, SkipsMigrationWhenCompressionConfigUnchanged)
     options.root = Directory;
     options.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
     options.compress.level = 6;
+    options.compress.mode = beez::core::CacheCompressionMode::Always;
 
     beez::core::writeCacheFile(FilePath, "step=lint\n", options);
     beez::core::updateCacheStorage(options);
@@ -146,4 +150,125 @@ TEST(CacheStorageTest, ReadFailsForMissingFile)
     EXPECT_THROW(
         static_cast<void>(beez::core::readCacheFile("/tmp/does-not-exist-beez-cache", Options)),
         std::runtime_error);
+}
+
+TEST(CacheStorageTest, AutoModeKeepsTinyPayloadPlain)
+{
+    const auto Directory = std::filesystem::temp_directory_path() / "beez_cache_auto_plain_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    beez::core::CacheOptions options;
+    options.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
+    options.compress.level = 6;
+    options.compress.mode = beez::core::CacheCompressionMode::Auto;
+
+    const std::string Payload = "step=qa:security-tidy\n";
+    beez::core::writeCacheFile(FilePath, Payload, options);
+    EXPECT_EQ(readFile(FilePath), Payload);
+    EXPECT_EQ(beez::core::readCacheFile(FilePath, options), Payload);
+
+    std::filesystem::remove_all(Directory);
+}
+
+TEST(CacheStorageTest, MigratesPlainFilesWhenEnablingCompression)
+{
+    const auto Directory =
+        std::filesystem::temp_directory_path() / "beez_cache_plain_to_compressed_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    const std::string Payload = "step=format\noutput=src/main.cpp\n";
+    writeFile(FilePath, Payload);
+
+    beez::core::CacheOptions options;
+    options.root = Directory;
+    options.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
+    options.compress.level = 6;
+    options.compress.mode = beez::core::CacheCompressionMode::Always;
+
+    const std::size_t MigratedFiles = beez::core::updateCacheStorage(options);
+    EXPECT_EQ(MigratedFiles, 1U);
+
+    const std::string OnDisk = readFile(FilePath);
+    EXPECT_NE(OnDisk.find("algorithm=gzip"), std::string::npos);
+    EXPECT_NE(OnDisk.find("\n---\n"), std::string::npos);
+    EXPECT_EQ(beez::core::readCacheFile(FilePath, options), Payload);
+
+    std::filesystem::remove_all(Directory);
+}
+
+TEST(CacheStorageTest, AutoModeMigratesCompressedFilesToPlainWhenNotBeneficial)
+{
+    const auto Directory = std::filesystem::temp_directory_path() / "beez_cache_auto_to_plain_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    beez::core::CacheOptions writeOptions;
+    writeOptions.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
+    writeOptions.compress.level = 6;
+    writeOptions.compress.mode = beez::core::CacheCompressionMode::Always;
+
+    const std::string Payload = "step=qa:security-tidy\n";
+    beez::core::writeCacheFile(FilePath, Payload, writeOptions);
+    EXPECT_NE(readFile(FilePath).find("algorithm=gzip"), std::string::npos);
+
+    beez::core::CacheOptions updateOptions;
+    updateOptions.root = Directory;
+    updateOptions.compress = writeOptions.compress;
+    updateOptions.compress.mode = beez::core::CacheCompressionMode::Auto;
+
+    const std::size_t MigratedFiles = beez::core::updateCacheStorage(updateOptions);
+    EXPECT_EQ(MigratedFiles, 1U);
+    EXPECT_EQ(readFile(FilePath), Payload);
+
+    std::filesystem::remove_all(Directory);
+}
+
+TEST(CacheStorageTest, ReadPlainEnvelopeWithLeadingSeparator)
+{
+    const auto Directory =
+        std::filesystem::temp_directory_path() / "beez_cache_plain_envelope_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    const std::string Payload = "step=lint\noutput=report/lint.ok\n";
+    writeFile(FilePath, "---\n" + Payload);
+
+    const beez::core::CacheOptions Options;
+    EXPECT_EQ(beez::core::readCacheFile(FilePath, Options), Payload);
+
+    std::filesystem::remove_all(Directory);
+}
+
+TEST(CacheStorageTest, RejectsLegacyBeezCache1Envelope)
+{
+    const auto Directory = std::filesystem::temp_directory_path() / "beez_cache_legacy_reject_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    writeFile(FilePath, "BEEZCACHE1\nalgorithm=gzip\nlevel=6\nmode=always\n---\nnot-valid\n");
+
+    const beez::core::CacheOptions Options;
+    EXPECT_THROW(static_cast<void>(beez::core::readCacheFile(FilePath, Options)),
+                 std::runtime_error);
+
+    std::filesystem::remove_all(Directory);
+}
+
+TEST(CacheStorageTest, CompressedEnvelopeUsesConfigBeforeSeparator)
+{
+    const auto Directory =
+        std::filesystem::temp_directory_path() / "beez_cache_config_separator_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    beez::core::CacheOptions options;
+    options.compress.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
+    options.compress.level = 6;
+    options.compress.mode = beez::core::CacheCompressionMode::Always;
+
+    const std::string Payload = "step=lint\noutput=report/lint.ok\n";
+    beez::core::writeCacheFile(FilePath, Payload, options);
+
+    const std::string OnDisk = readFile(FilePath);
+    EXPECT_TRUE(OnDisk.starts_with("algorithm=gzip\n"));
+    EXPECT_NE(OnDisk.find("\nmode=always\n---\n"), std::string::npos);
+    EXPECT_EQ(beez::core::readCacheFile(FilePath, options), Payload);
+
+    std::filesystem::remove_all(Directory);
 }

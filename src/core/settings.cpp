@@ -69,6 +69,10 @@ void mergeOptionalValue(std::optional<T>& target, const std::optional<T>& overla
     {
         settings.level = *cache.compress.level;
     }
+    if (cache.compress.mode.has_value())
+    {
+        settings.mode = parseCacheCompressionMode(*cache.compress.mode);
+    }
     return normalizeCacheCompressionSettings(settings);
 }
 
@@ -84,6 +88,7 @@ void BeezSettings::merge(const BeezSettings& overlay)
     mergeOptionalValue(cache.hash.seed, overlay.cache.hash.seed);
     mergeOptionalString(cache.compress.algorithm, overlay.cache.compress.algorithm);
     mergeOptionalValue(cache.compress.level, overlay.cache.compress.level);
+    mergeOptionalString(cache.compress.mode, overlay.cache.compress.mode);
     mergeOptionalValue(ui.outputMode, overlay.ui.outputMode);
     mergeOptionalPath(paths.envFile, overlay.paths.envFile);
     mergeOptionalString(paths.buildScript, overlay.paths.buildScript);

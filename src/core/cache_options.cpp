@@ -125,6 +125,44 @@ std::vector<const char*> cacheCompressionAlgorithmNames()
     return {"none", "gzip", "zlib", "rle", "deflate"};
 }
 
+CacheCompressionMode parseCacheCompressionMode(const std::string& value)
+{
+    const std::string Normalized = toLower(value);
+    if (Normalized == "never")
+    {
+        return CacheCompressionMode::Never;
+    }
+    if (Normalized == "always")
+    {
+        return CacheCompressionMode::Always;
+    }
+    if (Normalized == "auto")
+    {
+        return CacheCompressionMode::Auto;
+    }
+
+    throw std::runtime_error("cache.compress.mode must be one of: never, always, auto");
+}
+
+const char* toString(CacheCompressionMode mode)
+{
+    switch (mode)
+    {
+    case CacheCompressionMode::Never:
+        return "never";
+    case CacheCompressionMode::Always:
+        return "always";
+    case CacheCompressionMode::Auto:
+        return "auto";
+    }
+    return "auto";
+}
+
+std::vector<const char*> cacheCompressionModeNames()
+{
+    return {"never", "always", "auto"};
+}
+
 ContentHashSettings normalizeContentHashSettings(ContentHashSettings settings)
 {
     return settings;

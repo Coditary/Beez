@@ -150,6 +150,7 @@ void readCacheSettings(const sol::table& cacheTable, core::BeezSettings& overlay
         const sol::table CompressTable = CompressValue.as<sol::table>();
         readOptionalString(CompressTable, "algorithm", overlay.cache.compress.algorithm);
         readOptionalNumber(CompressTable, "level", overlay.cache.compress.level);
+        readOptionalString(CompressTable, "mode", overlay.cache.compress.mode);
     }
 }
 

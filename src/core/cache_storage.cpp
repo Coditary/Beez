@@ -9,12 +9,12 @@
 #include <fstream>
 #include <ios>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <utility>
 
 namespace beez::core
 {
@@ -22,9 +22,14 @@ namespace beez::core
 namespace
 {
 
-constexpr std::string_view CacheMagic = "BEEZCACHE1\n";
 constexpr std::string_view CacheSeparator = "\n---\n";
 constexpr std::string_view CompressionMetaFileName = "beez-compress.meta";
+
+struct CacheEnvelopeParts
+{
+    std::string_view header;
+    std::string_view body;
+};
 
 [[nodiscard]] std::filesystem::path compressionMetaPath(const std::filesystem::path& cacheRoot)
 {
@@ -54,10 +59,86 @@ void writeBinaryFile(const std::filesystem::path& path, const std::string& conte
     stream.write(content.data(), static_cast<std::streamsize>(content.size()));
 }
 
-[[nodiscard]] bool compressionSettingsEqual(const CacheCompressionSettings& left,
-                                            const CacheCompressionSettings& right)
+[[nodiscard]] std::optional<CacheEnvelopeParts> trySplitCacheEnvelope(std::string_view payload)
 {
-    return left.algorithm == right.algorithm && left.level == right.level;
+    std::size_t lineStart = 0;
+    while (lineStart < payload.size())
+    {
+        const auto LineEnd = payload.find('\n', lineStart);
+        const std::string_view Line = payload.substr(
+            lineStart,
+            LineEnd == std::string_view::npos ? std::string_view::npos : LineEnd - lineStart);
+        if (Line == "---")
+        {
+            const std::size_t BodyStart =
+                LineEnd == std::string_view::npos ? payload.size() : LineEnd + 1;
+            return CacheEnvelopeParts {
+                .header = payload.substr(0, lineStart),
+                .body = payload.substr(BodyStart),
+            };
+        }
+
+        if (LineEnd == std::string_view::npos)
+        {
+            break;
+        }
+
+        lineStart = LineEnd + 1;
+    }
+
+    return std::nullopt;
+}
+
+[[nodiscard]] std::string buildCompressedEnvelope(const std::string& content,
+                                                  const CacheCompressionSettings& settings)
+{
+    const auto Compressor = makeCacheCompressor(settings);
+    std::string payload;
+    payload.reserve(content.size());
+    payload.append("algorithm=");
+    payload.append(toString(settings.algorithm));
+    payload.push_back('\n');
+    payload.append("level=");
+    payload.append(std::to_string(settings.level));
+    payload.push_back('\n');
+    payload.append("mode=");
+    payload.append(toString(settings.mode));
+    payload.append(CacheSeparator);
+    payload.append(Compressor->compress(content));
+    return payload;
+}
+
+[[nodiscard]] bool shouldStoreCompressed(const std::string& content,
+                                         const CacheCompressionSettings& settings)
+{
+    if (settings.algorithm == CacheCompressionAlgorithm::None)
+    {
+        return false;
+    }
+
+    switch (settings.mode)
+    {
+    case CacheCompressionMode::Never:
+        return false;
+    case CacheCompressionMode::Always:
+        return true;
+    case CacheCompressionMode::Auto:
+        return buildCompressedEnvelope(content, settings).size() < content.size();
+    }
+
+    return false;
+}
+
+[[nodiscard]] std::string buildCachePayload(const std::string& content,
+                                            const CacheCompressionSettings& settings)
+{
+    const auto Target = normalizeCacheCompressionSettings(settings);
+    if (!shouldStoreCompressed(content, Target))
+    {
+        return content;
+    }
+
+    return buildCompressedEnvelope(content, Target);
 }
 
 [[nodiscard]] CacheCompressionSettings parseCompressionHeader(std::string_view header)
@@ -87,6 +168,10 @@ void writeBinaryFile(const std::filesystem::path& path, const std::string& conte
                     settings.level = level;
                 }
             }
+            else if (Key == "mode")
+            {
+                settings.mode = parseCacheCompressionMode(std::string(Value));
+            }
         }
 
         if (LineEnd == std::string_view::npos)
@@ -100,40 +185,21 @@ void writeBinaryFile(const std::filesystem::path& path, const std::string& conte
     return normalizeCacheCompressionSettings(settings);
 }
 
-[[nodiscard]] std::string_view compressedPayload(std::string_view payload)
+[[nodiscard]] std::string decodeEnvelopeBody(const CacheEnvelopeParts& envelope)
 {
-    const auto PayloadStart = payload.find(CacheSeparator);
-    if (PayloadStart == std::string_view::npos)
+    if (envelope.header.empty())
     {
-        throw std::runtime_error("invalid compressed cache payload");
+        return std::string(envelope.body);
     }
 
-    return payload.substr(PayloadStart + CacheSeparator.size());
-}
-
-[[nodiscard]] CacheCompressionSettings compressionSettingsFromPayload(std::string_view payload)
-{
-    if (!payload.starts_with(CacheMagic))
+    const auto Settings = parseCompressionHeader(envelope.header);
+    if (Settings.algorithm == CacheCompressionAlgorithm::None)
     {
-        throw std::runtime_error("invalid compressed cache envelope");
+        return std::string(envelope.body);
     }
 
-    const auto HeaderEnd = payload.find(CacheSeparator);
-    if (HeaderEnd == std::string_view::npos)
-    {
-        throw std::runtime_error("invalid compressed cache payload");
-    }
-
-    const std::string_view Header =
-        payload.substr(CacheMagic.size(), HeaderEnd - CacheMagic.size());
-    return parseCompressionHeader(Header);
-}
-
-[[nodiscard]] std::string decompressPayload(std::string_view payload)
-{
-    const auto Settings = compressionSettingsFromPayload(payload);
     const auto Compressor = makeCacheCompressor(Settings);
-    return Compressor->decompress(compressedPayload(payload));
+    return Compressor->decompress(envelope.body);
 }
 
 void writeCompressionMeta(const std::filesystem::path& metaPath,
@@ -142,32 +208,25 @@ void writeCompressionMeta(const std::filesystem::path& metaPath,
     std::ostringstream stream;
     stream << "algorithm=" << toString(settings.algorithm) << '\n';
     stream << "level=" << settings.level << '\n';
+    stream << "mode=" << toString(settings.mode) << '\n';
     writeBinaryFile(metaPath, stream.str());
-}
-
-[[nodiscard]] CacheCompressionSettings readCompressionMeta(const std::filesystem::path& metaPath)
-{
-    return parseCompressionHeader(readBinaryFile(metaPath));
 }
 
 [[nodiscard]] bool migrateCacheFileCompression(const std::filesystem::path& path,
                                                const CacheOptions& options)
 {
-    const std::string Payload = readBinaryFile(path);
-    if (!Payload.starts_with(CacheMagic))
+    const std::string CurrentOnDisk = readBinaryFile(path);
+    const std::string Content = readCacheFile(path, options);
+    const std::string Desired =
+        buildCachePayload(Content, normalizeCacheCompressionSettings(options.compress));
+    if (CurrentOnDisk == Desired)
     {
         return false;
     }
 
-    const auto Stored = compressionSettingsFromPayload(Payload);
-    const auto Target = normalizeCacheCompressionSettings(options.compress);
-    if (compressionSettingsEqual(Stored, Target))
-    {
-        return false;
-    }
-
-    const std::string Content = decompressPayload(Payload);
-    writeCacheFile(path, Content, options);
+    prepareCacheFileForWrite(path, options.protect);
+    writeBinaryFile(path, Desired);
+    applyCacheFileProtection(path, options.protect);
     return true;
 }
 
@@ -202,31 +261,11 @@ void applyCacheFileProtection(const std::filesystem::path& path, bool protect)
 }
 
 void writeCacheFile(const std::filesystem::path& path,
-                    std::string content,
+                    const std::string& content,
                     const CacheOptions& options)
 {
     prepareCacheFileForWrite(path, options.protect);
-
-    const auto Compressor = makeCacheCompressor(options.compress);
-    std::string payload;
-    if (options.compress.algorithm == CacheCompressionAlgorithm::None)
-    {
-        payload = std::move(content);
-    }
-    else
-    {
-        payload.reserve(CacheMagic.size() + content.size());
-        payload.append(CacheMagic);
-        payload.append("algorithm=");
-        payload.append(toString(options.compress.algorithm));
-        payload.push_back('\n');
-        payload.append("level=");
-        payload.append(std::to_string(options.compress.level));
-        payload.append(CacheSeparator);
-        payload.append(Compressor->compress(content));
-    }
-
-    writeBinaryFile(path, payload);
+    writeBinaryFile(path, buildCachePayload(content, options.compress));
     applyCacheFileProtection(path, options.protect);
 }
 
@@ -239,12 +278,19 @@ std::string readCacheFile(const std::filesystem::path& path, const CacheOptions&
     }
 
     std::string payload = readBinaryFile(path);
-    if (!payload.starts_with(CacheMagic))
+    if (payload.starts_with("BEEZCACHE1"))
+    {
+        throw std::runtime_error(
+            "unsupported legacy cache envelope (BEEZCACHE1); run beez --clean-cache");
+    }
+
+    const auto Envelope = trySplitCacheEnvelope(payload);
+    if (!Envelope.has_value())
     {
         return payload;
     }
 
-    return decompressPayload(payload);
+    return decodeEnvelopeBody(*Envelope);
 }
 
 std::size_t updateCacheStorage(const CacheOptions& options)
@@ -263,15 +309,6 @@ std::size_t updateCacheStorage(const CacheOptions& options)
         std::filesystem::create_directories(options.root, errorCode);
         writeCompressionMeta(MetaPath, Target);
         return 0;
-    }
-
-    if (std::filesystem::exists(MetaPath, errorCode))
-    {
-        const auto Stored = readCompressionMeta(MetaPath);
-        if (compressionSettingsEqual(Stored, Target))
-        {
-            return 0;
-        }
     }
 
     std::size_t migratedFiles = 0;

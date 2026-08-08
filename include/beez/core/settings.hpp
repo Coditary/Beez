@@ -39,6 +39,7 @@ struct BeezSettings
     {
         std::optional<std::string> algorithm;
         std::optional<int> level;
+        std::optional<std::string> mode;
     };
 
     struct Cache

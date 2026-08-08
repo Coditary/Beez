@@ -267,6 +267,17 @@ void appendCacheRows(const SettingsReportInput& input, std::vector<ConfigRow>& r
                                     input.globalConfigPath,
                                     input.context),
     });
+
+    rows.push_back(ConfigRow {
+        .key = "cache.compress.mode",
+        .value = formatQuoted(toString(Resolved.compress.mode)),
+        .origin = originForOptional(global.cache.compress.mode,
+                                    project.cache.compress.mode,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
 }
 
 void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)

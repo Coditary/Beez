@@ -29,6 +29,13 @@ enum class CacheCompressionAlgorithm : std::uint8_t
     Deflate,
 };
 
+enum class CacheCompressionMode : std::uint8_t
+{
+    Never,
+    Always,
+    Auto,
+};
+
 struct ContentHashSettings
 {
     ContentHashAlgorithm algorithm = ContentHashAlgorithm::Fnv1a64;
@@ -39,6 +46,7 @@ struct CacheCompressionSettings
 {
     CacheCompressionAlgorithm algorithm = CacheCompressionAlgorithm::None;
     int level = DefaultCacheCompressionLevel;
+    CacheCompressionMode mode = CacheCompressionMode::Auto;
 };
 
 struct CacheOptions
@@ -57,6 +65,10 @@ struct CacheOptions
 [[nodiscard]] CacheCompressionAlgorithm parseCacheCompressionAlgorithm(const std::string& value);
 [[nodiscard]] const char* toString(CacheCompressionAlgorithm algorithm);
 [[nodiscard]] std::vector<const char*> cacheCompressionAlgorithmNames();
+
+[[nodiscard]] CacheCompressionMode parseCacheCompressionMode(const std::string& value);
+[[nodiscard]] const char* toString(CacheCompressionMode mode);
+[[nodiscard]] std::vector<const char*> cacheCompressionModeNames();
 
 [[nodiscard]] ContentHashSettings normalizeContentHashSettings(ContentHashSettings settings);
 [[nodiscard]] CacheCompressionSettings

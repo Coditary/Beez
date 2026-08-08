@@ -158,6 +158,7 @@ struct ConfigSchemaNode
                         .storage = "integer",
                         .defaultValue = std::to_string(DefaultCacheCompressionLevel),
                     }));
+                compress.children.emplace("mode", makeEnumNode(cacheCompressionModeNames()));
                 cache.children.emplace("compress", std::move(compress));
 
                 return cache;

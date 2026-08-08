@@ -171,7 +171,8 @@ int main(int argc, const char* argv[])
             }
             std::cout << " recompressed to "
                       << beez::core::toString(CacheOptions.compress.algorithm) << ", level "
-                      << CacheOptions.compress.level << ")\n";
+                      << CacheOptions.compress.level << ", mode "
+                      << beez::core::toString(CacheOptions.compress.mode) << ")\n";
         }
 
         const bool ShouldRunTarget =

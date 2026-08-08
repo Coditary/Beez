@@ -10,7 +10,7 @@ namespace beez::core
 {
 
 void writeCacheFile(const std::filesystem::path& path,
-                    std::string content,
+                    const std::string& content,
                     const CacheOptions& options);
 
 [[nodiscard]] std::string readCacheFile(const std::filesystem::path& path,

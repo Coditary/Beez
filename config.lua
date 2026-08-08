@@ -12,8 +12,9 @@ return {
             seed = 0,
         },
         compress = {
-            -- algorithm = "zlib",
-            -- level = 1,
+            algorithm = "gzip",
+            level = 6,
+            mode = "always",
         },
     },
 

@@ -50,6 +50,7 @@ TEST(BeezSettingsTest, ResolveCacheOptionsAppliesHashCompressAndProtect)
     settings.cache.hash.seed = 9U;
     settings.cache.compress.algorithm = "gzip";
     settings.cache.compress.level = 4;
+    settings.cache.compress.mode = "always";
 
     const auto Options = settings.resolveCacheOptions(Context);
 
@@ -59,6 +60,7 @@ TEST(BeezSettingsTest, ResolveCacheOptionsAppliesHashCompressAndProtect)
     EXPECT_EQ(Options.hash.seed, 9U);
     EXPECT_EQ(Options.compress.algorithm, beez::core::CacheCompressionAlgorithm::Gzip);
     EXPECT_EQ(Options.compress.level, 4);
+    EXPECT_EQ(Options.compress.mode, beez::core::CacheCompressionMode::Always);
 }
 
 TEST(BeezSettingsTest, CacheEnabledFallsBackToEngineEnableCache)
