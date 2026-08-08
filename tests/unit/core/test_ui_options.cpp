@@ -422,7 +422,7 @@ TEST(UiOptionsTest, FormatsCompactFailedRunEndSummary)
         beez::logging::RunSummary {.cacheHitsSkipped = 0,
                                    .totalSteps = 1,
                                    .peakWorkers = 2,
-                                   .segments = {{.name = "qa:format",
+                                   .segments = {{.name = "qa:code",
                                                  .success = false,
                                                  .durationSeconds = 0.06,
                                                  .cacheHits = 0,
@@ -431,7 +431,7 @@ TEST(UiOptionsTest, FormatsCompactFailedRunEndSummary)
     expectContains(Output, "BUILD FAILED");
     expectMissing(Output, "BEEZ");
     expectContains(Output, "Time    failed after 0.06s");
-    expectContains(Output, "Phase   qa:format");
+    expectContains(Output, "Phase   qa:code");
     expectContains(Output, "Cache   0/1 cached (0%)");
     expectContains(Output, "Peak    2 workers");
 }

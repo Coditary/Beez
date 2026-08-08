@@ -17,6 +17,14 @@
 -- Build/test steps use step cache (.cache/) keyed on inputs/outputs.
 -- Bump lint_rev / analyze_rev / security_rev in configure_step after toolchain changes.
 -- BUILD_TYPE / CONAN_PROFILE: process env or .env (default Release / clang-release).
+--
+-- Scopes group steps for workflow/CLI selection (phase + scope), not file domains.
+--   code     — programming: configure (Release), build, test, qa, format:apply
+--   debug    — Debug configure + build (isolated from Release configure)
+--   coverage / sanitize / fuzz — specialized code toolchains (own configure tree)
+--   smoke / corpus         — fuzz run variants (phase fuzz, separate workflow targets)
+--   repo                   — repository-wide clean (future: book, docs, …)
+-- Steps in the same phase+scope are ordered via order(); independent steps run in parallel.
 
 beez.config(require("config"))
 
@@ -180,7 +188,7 @@ task("clean_reports", "rm -rf " .. REPORTS_DIR)
 step({
     name = "configure:setup",
     phase = "configure",
-    scope = "project",
+    scope = "code",
     input = {
         "conanfile.py",
         "CMakeLists.txt",
@@ -203,7 +211,7 @@ step({
 step({
     name = "build:compile",
     phase = "build",
-    scope = "project",
+    scope = "code",
     input = {
         "src/**/*.cpp",
         "include/**/*.hpp",
@@ -228,7 +236,7 @@ order("configure:setup", "build:compile")
 
 -- ── Tests (ctest per suite, step cache on binaries + sources) ────────────────
 
-local function make_test_step(name, scope, ctest_args, binary, extra_inputs, report_marker)
+local function make_test_step(stepName, scope, suite, ctest_args, binary, extra_inputs, report_marker)
     local inputs = {
         binary,
         "src/**/*.cpp",
@@ -239,12 +247,12 @@ local function make_test_step(name, scope, ctest_args, binary, extra_inputs, rep
     end
 
     step({
-        name = name,
+        name = stepName,
         phase = "test",
         scope = scope,
         input = inputs,
         output = { report_marker },
-        description = "Run " .. scope .. " tests via ctest",
+        description = "Run " .. suite .. " tests via ctest",
         run = "mkdir -p report/test && cd " .. BUILD_TREE .. " && ctest " .. ctest_args ..
             " --output-on-failure && touch ../../../" .. report_marker,
     })
@@ -252,6 +260,7 @@ end
 
 make_test_step(
     "test:unit",
+    "code",
     "unit",
     "-R beez_tests",
     BUILD_TREE .. "/tests/unit/beez_tests",
@@ -261,6 +270,7 @@ make_test_step(
 
 make_test_step(
     "test:integration",
+    "code",
     "integration",
     "-R beez_integration_tests",
     BUILD_TREE .. "/tests/integration/beez_integration_tests",
@@ -270,6 +280,7 @@ make_test_step(
 
 make_test_step(
     "test:system",
+    "code",
     "system",
     "-L system",
     BUILD_TREE .. "/tests/system/beez_system_tests",
@@ -279,6 +290,7 @@ make_test_step(
 
 make_test_step(
     "test:performance",
+    "code",
     "performance",
     "-L performance",
     BUILD_TREE .. "/tests/performance/beez_perf_tests",
@@ -302,7 +314,7 @@ configure_step("qa:format-check", {
 step({
     name = "qa:format-check",
     phase = "qa",
-    scope = "format",
+    scope = "code",
     input = CXX_SOURCE_PATTERNS,
     description = "clang-format + cmake-format check (incremental)",
     run = function(ctx)
@@ -339,7 +351,7 @@ configure_step("format:apply", {
 step({
     name = "format:apply",
     phase = "format",
-    scope = "project",
+    scope = "code",
     mutate = CXX_SOURCE_PATTERNS,
     description = "Apply clang-format + cmake-format (incremental)",
     run = function(ctx)
@@ -380,7 +392,7 @@ configure_step("qa:lint", {
 step({
     name = "qa:lint",
     phase = "qa",
-    scope = "lint",
+    scope = "code",
     input = CXX_SOURCE_PATTERNS,
     description = "clang-tidy + cmake-format check (incremental)",
     run = function(ctx)
@@ -414,7 +426,7 @@ step({
 step({
     name = "qa:cppcheck-analyze",
     phase = "qa",
-    scope = "analyze",
+    scope = "code",
     input = {
         "src/**/*.cpp",
         "include/**/*.hpp",
@@ -434,7 +446,7 @@ configure_step("qa:analyze-tidy", {
 step({
     name = "qa:analyze-tidy",
     phase = "qa",
-    scope = "analyze",
+    scope = "code",
     input = SRC_CPP_PATTERNS,
     description = "clang-tidy analyzer checks on src/ (incremental)",
     run = function(ctx)
@@ -449,14 +461,12 @@ step({
     end,
 })
 
-order("qa:cppcheck-analyze", "qa:analyze-tidy")
-
 -- ── Security ─────────────────────────────────────────────────────────────────
 
 step({
     name = "qa:cppcheck-security",
     phase = "qa",
-    scope = "security",
+    scope = "code",
     input = SECURITY_SOURCE_PATTERNS,
     output = { "report/security/cppcheck.ok" },
     description = "cppcheck security scan (step cache)",
@@ -473,7 +483,7 @@ configure_step("qa:security-tidy", {
 step({
     name = "qa:security-tidy",
     phase = "qa",
-    scope = "security",
+    scope = "code",
     input = SECURITY_SOURCE_PATTERNS,
     description = "clang-tidy security checks (incremental)",
     run = function(ctx)
@@ -488,7 +498,11 @@ step({
     end,
 })
 
-order("qa:cppcheck-security", "qa:security-tidy")
+-- Lua callback steps share one interpreter — serialize them; shell steps stay parallel.
+-- TODO: remove these orders once parallel Lua step execution is thread-safe.
+order("qa:format-check", "qa:lint")
+order("qa:lint", "qa:analyze-tidy")
+order("qa:analyze-tidy", "qa:security-tidy")
 
 -- ── Debug build ──────────────────────────────────────────────────────────────
 
@@ -743,7 +757,7 @@ order("build:fuzzer", "fuzz:corpus")
 step({
     name = "clean:artifacts",
     phase = "clean",
-    scope = "project",
+    scope = "repo",
     description = "Remove build tree, reports, and caches",
     run = "rm -rf build " .. REPORTS_DIR .. " .cache",
 })
@@ -751,19 +765,13 @@ step({
 -- ── Workflows ────────────────────────────────────────────────────────────────
 
 workflow("build", {
-    { phase = "configure", scope = "project" },
-    { phase = "build", scope = "project" },
-    { phase = "test", scope = "unit" },
-    { phase = "test", scope = "integration" },
-    { phase = "test", scope = "system" },
-    { phase = "test", scope = "performance" },
+    { phase = "configure", scope = "code" },
+    { phase = "build", scope = "code" },
+    { phase = "test", scope = "code" },
 })
 
 workflow("quality", {
-    { phase = "qa", scope = "format" },
-    { phase = "qa", scope = "lint" },
-    { phase = "qa", scope = "analyze" },
-    { phase = "qa", scope = "security" },
+    { phase = "qa", scope = "code" },
 })
 
 workflow("debug", {
@@ -797,16 +805,10 @@ workflow("fuzzer_corpus", {
 })
 
 workflow("all", {
-    { phase = "configure", scope = "project" },
-    { phase = "build", scope = "project" },
-    { phase = "test", scope = "unit" },
-    { phase = "test", scope = "integration" },
-    { phase = "test", scope = "system" },
-    { phase = "test", scope = "performance" },
-    { phase = "qa", scope = "format" },
-    { phase = "qa", scope = "lint" },
-    { phase = "qa", scope = "analyze" },
-    { phase = "qa", scope = "security" },
+    { phase = "configure", scope = "code" },
+    { phase = "build", scope = "code" },
+    { phase = "test", scope = "code" },
+    { phase = "qa", scope = "code" },
     { phase = "configure", scope = "coverage" },
     { phase = "build", scope = "coverage" },
     { phase = "test", scope = "coverage" },
@@ -820,5 +822,5 @@ workflow("all", {
 })
 
 workflow("clean", {
-    { phase = "clean", scope = "project" },
+    { phase = "clean", scope = "repo" },
 })
