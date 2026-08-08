@@ -45,7 +45,6 @@ class SuccessCacheSession
     [[nodiscard]] std::string entryKey(const std::string& kind, const std::string& value) const;
     [[nodiscard]] std::filesystem::path missesPath() const;
     [[nodiscard]] std::filesystem::path entryManifestPath(const std::string& key) const;
-    [[nodiscard]] bool entryMatchesCurrentContext(const std::filesystem::path& manifestPath) const;
 
     StepIdentity identity_;
     std::filesystem::path projectRoot_;

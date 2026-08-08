@@ -97,9 +97,17 @@ CacheCompressionAlgorithm parseCacheCompressionAlgorithm(const std::string& valu
     {
         return CacheCompressionAlgorithm::Deflate;
     }
+    if (Normalized == "delta")
+    {
+        return CacheCompressionAlgorithm::Delta;
+    }
+    if (Normalized == "vbyte")
+    {
+        return CacheCompressionAlgorithm::VByte;
+    }
 
     throw std::runtime_error(
-        "cache.compress.algorithm must be one of: none, gzip, zlib, rle, deflate");
+        "cache.compress.algorithm must be one of: none, gzip, zlib, rle, deflate, delta, vbyte");
 }
 
 const char* toString(CacheCompressionAlgorithm algorithm)
@@ -116,13 +124,17 @@ const char* toString(CacheCompressionAlgorithm algorithm)
         return "rle";
     case CacheCompressionAlgorithm::Deflate:
         return "deflate";
+    case CacheCompressionAlgorithm::Delta:
+        return "delta";
+    case CacheCompressionAlgorithm::VByte:
+        return "vbyte";
     }
     return "none";
 }
 
 std::vector<const char*> cacheCompressionAlgorithmNames()
 {
-    return {"none", "gzip", "zlib", "rle", "deflate"};
+    return {"none", "gzip", "zlib", "rle", "deflate", "delta", "vbyte"};
 }
 
 CacheCompressionMode parseCacheCompressionMode(const std::string& value)

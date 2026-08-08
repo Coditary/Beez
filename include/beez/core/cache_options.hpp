@@ -27,6 +27,8 @@ enum class CacheCompressionAlgorithm : std::uint8_t
     Zlib,
     Rle,
     Deflate,
+    Delta,
+    VByte,
 };
 
 enum class CacheCompressionMode : std::uint8_t

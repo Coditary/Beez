@@ -251,6 +251,23 @@ TEST(CacheStorageTest, RejectsLegacyBeezCache1Envelope)
     std::filesystem::remove_all(Directory);
 }
 
+TEST(CacheStorageTest, AutoModeSkipsVbyteTrialForTinyPayload)
+{
+    const auto Directory =
+        std::filesystem::temp_directory_path() / "beez_cache_auto_vbyte_skip_test";
+    const auto FilePath = Directory / "entry.manifest";
+
+    beez::core::CacheOptions options;
+    options.compress.algorithm = beez::core::CacheCompressionAlgorithm::VByte;
+    options.compress.mode = beez::core::CacheCompressionMode::Auto;
+
+    const std::string Payload = "step=qa:security-tidy\n";
+    beez::core::writeCacheFile(FilePath, Payload, options);
+    EXPECT_EQ(readFile(FilePath), Payload);
+
+    std::filesystem::remove_all(Directory);
+}
+
 TEST(CacheStorageTest, CompressedEnvelopeUsesConfigBeforeSeparator)
 {
     const auto Directory =

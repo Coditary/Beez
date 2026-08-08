@@ -37,6 +37,10 @@ TEST(CacheOptionsTest, ParsesCompressionAlgorithms)
               beez::core::CacheCompressionAlgorithm::Rle);
     EXPECT_EQ(beez::core::parseCacheCompressionAlgorithm("deflate"),
               beez::core::CacheCompressionAlgorithm::Deflate);
+    EXPECT_EQ(beez::core::parseCacheCompressionAlgorithm("delta"),
+              beez::core::CacheCompressionAlgorithm::Delta);
+    EXPECT_EQ(beez::core::parseCacheCompressionAlgorithm("vbyte"),
+              beez::core::CacheCompressionAlgorithm::VByte);
 }
 
 TEST(CacheOptionsTest, ParsesCompressionModes)

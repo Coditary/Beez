@@ -2,7 +2,9 @@
 
 #include "beez/core/cache_options.hpp"
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -26,5 +28,13 @@ class ICacheCompressor
 
 [[nodiscard]] std::unique_ptr<ICacheCompressor>
 makeCacheCompressor(const CacheCompressionSettings& settings);
+
+// Exact compressed-body size for non-zlib algorithms. Returns nullopt when a trial
+// compression is required (gzip/zlib/deflate).
+[[nodiscard]] std::optional<std::size_t>
+estimateCacheCompressedBodySize(CacheCompressionAlgorithm algorithm, std::string_view data);
+
+// Cheap pre-check for zlib-family auto mode before running deflate.
+[[nodiscard]] bool zlibCompressionMightHelp(std::string_view data, std::size_t envelopeHeaderSize);
 
 }  // namespace beez::core

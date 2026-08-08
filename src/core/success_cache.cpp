@@ -10,10 +10,16 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
+#include <ios>
+#include <iterator>
+#include <optional>
 #include <ranges>  // NOLINT(misc-include-cleaner) -- std::ranges algorithms for container mutation
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -22,6 +28,28 @@ namespace beez::core
 
 namespace
 {
+
+struct ManifestFields
+{
+    [[nodiscard]] std::string field(std::string_view name) const
+    {
+        const auto Found = values_.find(std::string(name));
+        if (Found == values_.end())
+        {
+            return {};
+        }
+
+        return Found->second;
+    }
+
+    void setField(std::string key, std::string value)
+    {
+        values_.emplace(std::move(key), std::move(value));
+    }
+
+  private:
+    std::unordered_map<std::string, std::string> values_;
+};
 
 [[nodiscard]] std::string sanitizePathComponent(std::string value)
 {
@@ -42,17 +70,21 @@ namespace
     return config->cacheFingerprint();
 }
 
-[[nodiscard]] std::string readManifestField(const std::filesystem::path& manifestPath,
-                                            const std::string& fieldName,
-                                            const CacheOptions& cacheOptions)
+[[nodiscard]] std::string readPlainTextFile(const std::filesystem::path& path)
 {
-    if (!std::filesystem::exists(manifestPath))
+    std::ifstream stream(path, std::ios::binary);
+    if (!stream.is_open())
     {
         return {};
     }
 
-    const std::string Manifest = readCacheFile(manifestPath, cacheOptions);
-    std::istringstream stream(Manifest);
+    return {std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
+}
+
+[[nodiscard]] ManifestFields parseManifestFields(const std::string& manifest)
+{
+    ManifestFields fields;
+    std::istringstream stream(manifest);
     std::string line;
     while (std::getline(stream, line))
     {
@@ -62,24 +94,33 @@ namespace
             continue;
         }
 
-        if (line.substr(0, Equals) == fieldName)
-        {
-            return line.substr(Equals + 1);
-        }
+        fields.setField(line.substr(0, Equals), line.substr(Equals + 1));
     }
 
-    return {};
+    return fields;
+}
+
+[[nodiscard]] std::optional<ManifestFields>
+readManifestFields(const std::filesystem::path& manifestPath, const CacheOptions& cacheOptions)
+{
+    if (!std::filesystem::exists(manifestPath))
+    {
+        return std::nullopt;
+    }
+
+    return parseManifestFields(readCacheFile(manifestPath, cacheOptions));
 }
 
 [[nodiscard]] std::vector<std::string> loadMissesFile(const std::filesystem::path& missesPath,
                                                       const CacheOptions& cacheOptions)
 {
+    (void)cacheOptions;
     if (!std::filesystem::exists(missesPath))
     {
         return {};
     }
 
-    const std::string Manifest = readCacheFile(missesPath, cacheOptions);
+    const std::string Manifest = readPlainTextFile(missesPath);
     std::istringstream stream(Manifest);
     std::vector<std::string> misses;
     std::string line;
@@ -136,7 +177,7 @@ void writeMissesFile(const std::filesystem::path& missesPath,
         return true;
     }
 
-    const std::string Manifest = readCacheFile(missesPath, cacheOptions);
+    const std::string Manifest = readPlainTextFile(missesPath);
     std::istringstream stream(Manifest);
     std::string line;
     std::string storedConfigHash;
@@ -195,6 +236,19 @@ void addMiss(std::vector<std::string>& misses, const std::string& key)
     }
 }
 
+[[nodiscard]] bool entryMatchesCurrentContext(const ManifestFields& manifest,
+                                              const StepIdentity& identity,
+                                              const StepConfigPtr& config,
+                                              const CacheOptions& cacheOptions)
+{
+    const std::string ConfigHash =
+        hashConfigFingerprint(configFingerprint(config), cacheOptions.hash);
+    return manifest.field("step") == identity.name && manifest.field("phase") == identity.phase &&
+           manifest.field("scope") == identity.scope &&
+           manifest.field("config_hash") == ConfigHash &&
+           manifest.field("version") == version::VersionString;
+}
+
 }  // namespace
 
 SuccessCacheSession::SuccessCacheSession(StepIdentity identity,
@@ -244,50 +298,39 @@ std::filesystem::path SuccessCacheSession::entryManifestPath(const std::string& 
     return successRoot_ / "entries" / (key + ".manifest");
 }
 
-bool SuccessCacheSession::entryMatchesCurrentContext(
-    const std::filesystem::path& manifestPath) const
-{
-    if (!std::filesystem::exists(manifestPath))
-    {
-        return false;
-    }
-
-    const std::string StoredStep = readManifestField(manifestPath, "step", cacheOptions_);
-    const std::string StoredPhase = readManifestField(manifestPath, "phase", cacheOptions_);
-    const std::string StoredScope = readManifestField(manifestPath, "scope", cacheOptions_);
-    const std::string StoredConfigHash =
-        readManifestField(manifestPath, "config_hash", cacheOptions_);
-    const std::string StoredVersion = readManifestField(manifestPath, "version", cacheOptions_);
-
-    return StoredStep == identity_.name && StoredPhase == identity_.phase &&
-           StoredScope == identity_.scope &&
-           StoredConfigHash == hashConfigFingerprint(configFingerprint(), cacheOptions_.hash) &&
-           StoredVersion == version::VersionString;
-}
-
 bool SuccessCacheSession::successCached(const std::string& key) const
 {
-    const auto ManifestPath = entryManifestPath(entryKey("string", key));
-    if (!entryMatchesCurrentContext(ManifestPath))
+    const auto Manifest =
+        readManifestFields(entryManifestPath(entryKey("string", key)), cacheOptions_);
+    if (!Manifest.has_value())
     {
         return false;
     }
 
-    return readManifestField(ManifestPath, "kind", cacheOptions_) == "string" &&
-           readManifestField(ManifestPath, "key", cacheOptions_) == key;
+    if (!entryMatchesCurrentContext(*Manifest, identity_, config_, cacheOptions_))
+    {
+        return false;
+    }
+
+    return Manifest->field("kind") == "string" && Manifest->field("key") == key;
 }
 
 bool SuccessCacheSession::fileSuccessCached(const std::filesystem::path& relativePath) const
 {
     const std::string NormalizedPath = relativePath.generic_string();
-    const auto ManifestPath = entryManifestPath(entryKey("file", NormalizedPath));
-    if (!entryMatchesCurrentContext(ManifestPath))
+    const auto Manifest =
+        readManifestFields(entryManifestPath(entryKey("file", NormalizedPath)), cacheOptions_);
+    if (!Manifest.has_value())
     {
         return false;
     }
 
-    if (readManifestField(ManifestPath, "kind", cacheOptions_) != "file" ||
-        readManifestField(ManifestPath, "key", cacheOptions_) != NormalizedPath)
+    if (!entryMatchesCurrentContext(*Manifest, identity_, config_, cacheOptions_))
+    {
+        return false;
+    }
+
+    if (Manifest->field("kind") != "file" || Manifest->field("key") != NormalizedPath)
     {
         return false;
     }
@@ -302,8 +345,8 @@ bool SuccessCacheSession::fileSuccessCached(const std::filesystem::path& relativ
     const auto Hasher = makeContentHasher(cacheOptions_.hash);
     const std::string CurrentHash = Hasher->hashFile(Absolute);
     const std::string CurrentInputsHash = includeTreeFingerprint(Absolute, projectRoot_, *Hasher);
-    return readManifestField(ManifestPath, "file_hash", cacheOptions_) == CurrentHash &&
-           readManifestField(ManifestPath, "inputs_hash", cacheOptions_) == CurrentInputsHash;
+    return Manifest->field("file_hash") == CurrentHash &&
+           Manifest->field("inputs_hash") == CurrentInputsHash;
 }
 
 void SuccessCacheSession::cacheSuccess(const std::string& key)

@@ -89,12 +89,26 @@ void writeBinaryFile(const std::filesystem::path& path, const std::string& conte
     return std::nullopt;
 }
 
-[[nodiscard]] std::string buildCompressedEnvelope(const std::string& content,
-                                                  const CacheCompressionSettings& settings)
+[[nodiscard]] std::size_t cacheEnvelopeHeaderSize(const CacheCompressionSettings& settings)
 {
-    const auto Compressor = makeCacheCompressor(settings);
+    std::string header;
+    header.append("algorithm=");
+    header.append(toString(settings.algorithm));
+    header.push_back('\n');
+    header.append("level=");
+    header.append(std::to_string(settings.level));
+    header.push_back('\n');
+    header.append("mode=");
+    header.append(toString(settings.mode));
+    header.append(CacheSeparator);
+    return header.size();
+}
+
+[[nodiscard]] std::string buildCompressedEnvelope(const CacheCompressionSettings& settings,
+                                                  const std::string& compressedBody)
+{
     std::string payload;
-    payload.reserve(content.size());
+    payload.reserve(cacheEnvelopeHeaderSize(settings) + compressedBody.size());
     payload.append("algorithm=");
     payload.append(toString(settings.algorithm));
     payload.push_back('\n');
@@ -104,41 +118,57 @@ void writeBinaryFile(const std::filesystem::path& path, const std::string& conte
     payload.append("mode=");
     payload.append(toString(settings.mode));
     payload.append(CacheSeparator);
-    payload.append(Compressor->compress(content));
+    payload.append(compressedBody);
     return payload;
 }
 
-[[nodiscard]] bool shouldStoreCompressed(const std::string& content,
-                                         const CacheCompressionSettings& settings)
+[[nodiscard]] std::string buildCompressedEnvelope(const std::string& content,
+                                                  const CacheCompressionSettings& settings)
 {
-    if (settings.algorithm == CacheCompressionAlgorithm::None)
-    {
-        return false;
-    }
-
-    switch (settings.mode)
-    {
-    case CacheCompressionMode::Never:
-        return false;
-    case CacheCompressionMode::Always:
-        return true;
-    case CacheCompressionMode::Auto:
-        return buildCompressedEnvelope(content, settings).size() < content.size();
-    }
-
-    return false;
+    const auto Compressor = makeCacheCompressor(settings);
+    return buildCompressedEnvelope(settings, Compressor->compress(content));
 }
 
 [[nodiscard]] std::string buildCachePayload(const std::string& content,
                                             const CacheCompressionSettings& settings)
 {
     const auto Target = normalizeCacheCompressionSettings(settings);
-    if (!shouldStoreCompressed(content, Target))
+    if (Target.algorithm == CacheCompressionAlgorithm::None ||
+        Target.mode == CacheCompressionMode::Never)
     {
         return content;
     }
 
-    return buildCompressedEnvelope(content, Target);
+    if (Target.mode == CacheCompressionMode::Always)
+    {
+        return buildCompressedEnvelope(content, Target);
+    }
+
+    const std::size_t HeaderSize = cacheEnvelopeHeaderSize(Target);
+    if (const auto BodySize = estimateCacheCompressedBodySize(Target.algorithm, content))
+    {
+        if (HeaderSize + *BodySize >= content.size())
+        {
+            return content;
+        }
+
+        const auto Compressor = makeCacheCompressor(Target);
+        return buildCompressedEnvelope(Target, Compressor->compress(content));
+    }
+
+    if (!zlibCompressionMightHelp(content, HeaderSize))
+    {
+        return content;
+    }
+
+    const auto Compressor = makeCacheCompressor(Target);
+    std::string envelope = buildCompressedEnvelope(Target, Compressor->compress(content));
+    if (envelope.size() < content.size())
+    {
+        return envelope;
+    }
+
+    return content;
 }
 
 [[nodiscard]] CacheCompressionSettings parseCompressionHeader(std::string_view header)

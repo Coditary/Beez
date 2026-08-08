@@ -83,3 +83,53 @@ TEST(CacheCompressTest, DeflateRoundTripsTextPayload)
     const std::string Payload = "kind=file\nkey=src/main.cpp\n";
     EXPECT_EQ(roundTrip(settings, Payload), Payload);
 }
+
+TEST(CacheCompressTest, DeltaRoundTripsMonotonicPayload)
+{
+    beez::core::CacheCompressionSettings settings;
+    settings.algorithm = beez::core::CacheCompressionAlgorithm::Delta;
+
+    std::string payload;
+    for (int value = 0; value < 256; ++value)
+    {
+        payload.push_back(static_cast<char>(value));
+    }
+
+    EXPECT_EQ(roundTrip(settings, payload), payload);
+}
+
+TEST(CacheCompressTest, VByteRoundTripsTextPayload)
+{
+    beez::core::CacheCompressionSettings settings;
+    settings.algorithm = beez::core::CacheCompressionAlgorithm::VByte;
+
+    const std::string Payload = "step=compile\noutput=build/app.o\n";
+    EXPECT_EQ(roundTrip(settings, Payload), Payload);
+}
+
+TEST(CacheCompressTest, VByteRoundTripsEmptyPayload)
+{
+    beez::core::CacheCompressionSettings settings;
+    settings.algorithm = beez::core::CacheCompressionAlgorithm::VByte;
+
+    EXPECT_TRUE(roundTrip(settings, "").empty());
+}
+
+TEST(CacheCompressTest, EstimateMatchesActualForRle)
+{
+    beez::core::CacheCompressionSettings settings;
+    settings.algorithm = beez::core::CacheCompressionAlgorithm::Rle;
+
+    const std::string Payload(128, 'a');
+    const auto Compressor = beez::core::makeCacheCompressor(settings);
+    const auto Estimate = beez::core::estimateCacheCompressedBodySize(settings.algorithm, Payload);
+    ASSERT_TRUE(Estimate.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- gtest ASSERT_TRUE does not propagate
+    EXPECT_EQ(Estimate.value(), Compressor->compress(Payload).size());
+}
+
+TEST(CacheCompressTest, ZlibMightHelpRejectsTinyPayload)
+{
+    const std::string Payload = "step=qa:security-tidy\n";
+    EXPECT_FALSE(beez::core::zlibCompressionMightHelp(Payload, 40U));
+}
