@@ -893,7 +893,10 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
 
     if (!StepLevels.hasValue())
     {
-        std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
+        if (logging::writesCliErrorsToConsole(runOptions_.outputMode))
+        {
+            std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
+        }
         flushBufferedCacheWritesForPhase();
         return OrchestratorError::StepOrderingFailed;
     }

@@ -6,6 +6,7 @@
 #include "beez/core/expected.hpp"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
+#include "beez/logging/output_mode.hpp"
 
 #include <iostream>
 #include <string>
@@ -16,24 +17,37 @@ namespace beez::cli
 namespace
 {
 
-void printOrchestratorError(core::OrchestratorError error)
+void printOrchestratorError(core::OrchestratorError error, logging::OutputMode outputMode)
 {
+    if (!logging::writesCliErrorsToConsole(outputMode))
+    {
+        return;
+    }
+
     std::cerr << "Error: " << core::toString(error) << '\n';
 }
 
-void printTargetNotFoundHint(const core::Registry& registry, const std::string& target)
+void printTargetNotFoundHint(const core::Registry& registry,
+                             const std::string& target,
+                             logging::OutputMode outputMode)
 {
+    if (!logging::writesCliErrorsToConsole(outputMode))
+    {
+        return;
+    }
+
     if (const auto Suggestion = suggestSimilarName(target, collectRunnableNames(registry)))
     {
         std::cerr << formatDidYouMean(*Suggestion) << '\n';
     }
 }
 
-[[nodiscard]] int finishRunResult(const Expected<int, core::OrchestratorError>& result)
+[[nodiscard]] int finishRunResult(const Expected<int, core::OrchestratorError>& result,
+                                  logging::OutputMode outputMode)
 {
     if (!result)
     {
-        printOrchestratorError(result.error());
+        printOrchestratorError(result.error(), outputMode);
         return 1;
     }
 
@@ -44,7 +58,8 @@ void printTargetNotFoundHint(const core::Registry& registry, const std::string& 
 
 int runParsedInvocation(core::Orchestrator& orchestrator,
                         const core::Registry& registry,
-                        const ParsedOptions& options)
+                        const ParsedOptions& options,
+                        logging::OutputMode outputMode)
 {
     if (options.listKind.has_value())
     {
@@ -54,12 +69,12 @@ int runParsedInvocation(core::Orchestrator& orchestrator,
 
     if (options.stepName.has_value())
     {
-        return finishRunResult(orchestrator.runStep(*options.stepName));
+        return finishRunResult(orchestrator.runStep(*options.stepName), outputMode);
     }
 
     if (options.phaseRequest.has_value())
     {
-        return finishRunResult(orchestrator.runPhase(*options.phaseRequest));
+        return finishRunResult(orchestrator.runPhase(*options.phaseRequest), outputMode);
     }
 
     if (!options.target.has_value())
@@ -70,10 +85,10 @@ int runParsedInvocation(core::Orchestrator& orchestrator,
     const auto RunResult = orchestrator.run(*options.target);
     if (!RunResult)
     {
-        printOrchestratorError(RunResult.error());
+        printOrchestratorError(RunResult.error(), outputMode);
         if (RunResult.error() == core::OrchestratorError::NotFound)
         {
-            printTargetNotFoundHint(registry, *options.target);
+            printTargetNotFoundHint(registry, *options.target, outputMode);
         }
         return 1;
     }

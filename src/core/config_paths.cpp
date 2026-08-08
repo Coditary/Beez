@@ -34,15 +34,4 @@ std::filesystem::path globalBeezConfigPath()
     return ConfigDirectory / "config.lua";
 }
 
-std::filesystem::path resolveProjectRelativePath(const std::filesystem::path& projectRoot,
-                                                 const std::filesystem::path& path)
-{
-    if (path.is_absolute())
-    {
-        return path;
-    }
-
-    return std::filesystem::absolute(projectRoot / path);
-}
-
 }  // namespace beez::core

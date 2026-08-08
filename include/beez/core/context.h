@@ -31,7 +31,6 @@ class Context
 
     [[nodiscard]] std::filesystem::path buildScriptPath() const;
 
-    void setBuildScriptPath(std::filesystem::path path);
     void setBuildScriptFileName(std::string fileName);
     void setEnvFilePath(std::filesystem::path envFilePath);
 
@@ -84,7 +83,6 @@ class Context
 
   private:
     std::filesystem::path projectRoot_;
-    std::optional<std::filesystem::path> buildScriptPathOverride_;
     std::optional<std::string> buildScriptFileName_;
     std::optional<std::filesystem::path> envFilePath_;
     StepConfigAccessor stepConfigAccessor_;

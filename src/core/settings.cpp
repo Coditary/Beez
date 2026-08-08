@@ -144,7 +144,15 @@ void BeezSettings::applyEnvironment(const Context& context) const
 
 void BeezSettings::applyCliOverrides(const cli::ParsedOptions& options)
 {
-    if (options.verbose)
+    if (options.silent)
+    {
+        ui.outputMode = logging::OutputMode::Silent;
+    }
+    else if (options.errorsOnly)
+    {
+        ui.outputMode = logging::OutputMode::Errors;
+    }
+    else if (options.verbose)
     {
         ui.outputMode = logging::OutputMode::Verbose;
     }

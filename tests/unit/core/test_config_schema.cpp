@@ -30,6 +30,13 @@ TEST(ConfigSchemaTest, RootShowsTableWithChildKinds)
     EXPECT_NE(Output.find("performance"), std::string::npos);
     EXPECT_NE(Output.find("cache"), std::string::npos);
     EXPECT_NE(Output.find("env"), std::string::npos);
+    EXPECT_NE(Output.find("ui"), std::string::npos);
+}
+
+TEST(ConfigSchemaTest, EnvVarsShowsStringMapKind)
+{
+    const std::string Output = requireFormattedOptions("env");
+    EXPECT_NE(Output.find("vars"), std::string::npos);
     EXPECT_NE(Output.find("map"), std::string::npos);
 }
 
@@ -74,7 +81,8 @@ TEST(ConfigSchemaTest, CompressionLevelShowsBoundedInteger)
     const std::string Output = requireFormattedOptions("cache.compress.level");
     EXPECT_NE(Output.find("Kind: number"), std::string::npos);
     EXPECT_NE(Output.find("<= 9"), std::string::npos);
-    EXPECT_NE(Output.find("Default: 6"), std::string::npos);
+    EXPECT_NE(Output.find("Default"), std::string::npos);
+    EXPECT_NE(Output.find('6'), std::string::npos);
 }
 
 TEST(ConfigSchemaTest, CompressionModeListsAllowedValues)

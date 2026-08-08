@@ -1,4 +1,3 @@
-#include "beez/core/config_paths.hpp"
 #include "beez/core/context.h"
 #include "beez/core/step_config.hpp"
 
@@ -15,23 +14,6 @@ TEST(ContextTest, BuildScriptPathIsUnderProjectRoot)
     const beez::core::Context Ctx(ProjectRoot);
 
     EXPECT_EQ(Ctx.buildScriptPath(), ProjectRoot / "build.lua");
-}
-
-TEST(ContextTest, ResolveProjectRelativePathKeepsAbsolutePaths)
-{
-    const std::filesystem::path ProjectRoot = "/tmp/my-project";
-    const auto Resolved =
-        beez::core::resolveProjectRelativePath(ProjectRoot, "/tmp/custom/build.lua");
-    EXPECT_EQ(Resolved, std::filesystem::path("/tmp/custom/build.lua"));
-}
-
-TEST(ContextTest, BuildScriptPathUsesOverrideWhenSet)
-{
-    const std::filesystem::path ProjectRoot = "/tmp/my-project";
-    beez::core::Context context(ProjectRoot);
-    context.setBuildScriptPath("/tmp/custom/build.lua");
-
-    EXPECT_EQ(context.buildScriptPath(), std::filesystem::path("/tmp/custom/build.lua"));
 }
 
 TEST(ContextTest, ExposesProjectRoot)

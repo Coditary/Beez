@@ -86,8 +86,9 @@ class SpdlogLogger final : public ILogger
 
     void beginRun(const std::string& runKind, const std::string& name) override
     {
-        writeRunLine("Starting " + runKind + ": " + name);
-        writeRunLine("============================================================");
+        writeRunLine("Starting " + runKind + ": " + name, writesProgressToConsole(mode_));
+        writeRunLine("============================================================",
+                     writesProgressToConsole(mode_));
     }
 
     void logProgress(const ExecutionProgress& progress) override
@@ -105,7 +106,10 @@ class SpdlogLogger final : public ILogger
         }
 
         const std::string Line = core::formatProgressLine(ui_, progress, progress.cached);
-        consoleLogger_->info("{}", Line);
+        if (writesProgressToConsole(mode_))
+        {
+            consoleLogger_->info("{}", Line);
+        }
         if (loggingSettings_.logSteps)
         {
             writeFileLine(Line);
@@ -131,19 +135,20 @@ class SpdlogLogger final : public ILogger
             return;
         }
 
-        appendOutput(channel, output, true, true);
+        appendOutput(channel, output, writesFailureOutputToConsole(mode_), true);
     }
 
     void endRun(bool success, double durationSeconds, const RunSummary& summary) override
     {
         progressSpinner_.stop();
-        flushChannelBuffers(true, true);
+        flushChannelBuffers(writesFailureOutputToConsole(mode_), true);
 
         const std::vector<std::string> Lines =
             core::formatRunEndMessage(ui_, success, durationSeconds, summary);
+        const bool WriteSummaryToConsole = writesRunSummaryToConsole(mode_, success);
         for (const auto& line : Lines)
         {
-            writeRunLine(line);
+            writeRunLine(line, WriteSummaryToConsole);
         }
     }
 
@@ -165,9 +170,12 @@ class SpdlogLogger final : public ILogger
     }
 
   private:
-    void writeRunLine(const std::string& line)
+    void writeRunLine(const std::string& line, bool toConsole)
     {
-        consoleLogger_->info("{}", line);
+        if (toConsole)
+        {
+            consoleLogger_->info("{}", line);
+        }
         if (fileLogger_ != nullptr)
         {
             fileLogger_->info("{}", line);

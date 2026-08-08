@@ -38,7 +38,17 @@ namespace
         return logging::OutputMode::Clean;
     }
 
-    throw std::runtime_error("ui.output_mode must be 'clean' or 'verbose'");
+    if (value == "errors")
+    {
+        return logging::OutputMode::Errors;
+    }
+
+    if (value == "silent")
+    {
+        return logging::OutputMode::Silent;
+    }
+
+    throw std::runtime_error("ui.output_mode must be 'clean', 'verbose', 'errors', or 'silent'");
 }
 
 template <typename T>

@@ -1,5 +1,6 @@
 #include "beez/core/settings_report.hpp"
 
+#include "beez/cli/parsed_options.hpp"
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
 #include "beez/core/env_settings.hpp"
@@ -17,6 +18,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace beez::core
@@ -77,15 +79,27 @@ struct ConfigRow
 
 [[nodiscard]] std::string outputModeLabel(logging::OutputMode mode)
 {
-    switch (mode)
+    return logging::outputModeToString(mode);
+}
+
+[[nodiscard]] std::pair<bool, std::string> outputModeCliOrigin(const cli::ParsedOptions& cli)
+{
+    if (cli.silent)
     {
-    case logging::OutputMode::Verbose:
-        return "verbose";
-    case logging::OutputMode::Clean:
-        return "clean";
+        return {true, "CLI --silent"};
     }
 
-    return "clean";
+    if (cli.errorsOnly)
+    {
+        return {true, "CLI --error"};
+    }
+
+    if (cli.verbose)
+    {
+        return {true, "CLI --verbose"};
+    }
+
+    return {false, {}};
 }
 
 [[nodiscard]] std::string defaultOriginLabel()
@@ -355,14 +369,15 @@ void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows
     const logging::OutputMode ResolvedOutputMode =
         active.ui.outputMode.value_or(logging::OutputMode::Clean);
     const UiSettings ResolvedUi = active.resolveUiSettings();
+    const auto [OutputModeCliOverride, OutputModeCliLabel] = outputModeCliOrigin(cli);
 
     rows.push_back(ConfigRow {
         .key = "ui.output_mode",
         .value = formatQuoted(outputModeLabel(ResolvedOutputMode)),
         .origin = originForOptional(global.ui.outputMode,
                                     project.ui.outputMode,
-                                    cli.verbose,
-                                    "CLI --verbose",
+                                    OutputModeCliOverride,
+                                    OutputModeCliLabel,
                                     input.globalConfigPath,
                                     input.context),
     });

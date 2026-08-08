@@ -74,6 +74,43 @@ TEST(BeezSettingsTest, CacheEnabledUsesCacheSectionOnly)
     EXPECT_FALSE(settings.resolveCacheOptions(Context).enabled);
 }
 
+TEST(BeezSettingsTest, CliSilentAndErrorOverrideOutputMode)
+{
+    beez::core::BeezSettings settings;
+    settings.ui.outputMode = beez::logging::OutputMode::Verbose;
+
+    beez::cli::ParsedOptions silentOptions;
+    silentOptions.silent = true;
+    settings.applyCliOverrides(silentOptions);
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Silent);
+
+    beez::cli::ParsedOptions errorOptions;
+    errorOptions.errorsOnly = true;
+    settings.applyCliOverrides(errorOptions);
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Errors);
+
+    beez::cli::ParsedOptions verboseOptions;
+    verboseOptions.verbose = true;
+    settings.applyCliOverrides(verboseOptions);
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Verbose);
+}
+
+TEST(BeezSettingsTest, CliSilentTakesPriorityOverVerbose)
+{
+    beez::core::BeezSettings settings;
+    beez::cli::ParsedOptions options;
+    options.silent = true;
+    options.verbose = true;
+    settings.applyCliOverrides(options);
+
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Silent);
+}
+
 TEST(BeezSettingsTest, CliOverridesProjectSettings)
 {
     beez::core::BeezSettings settings;

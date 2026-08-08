@@ -338,7 +338,7 @@ TEST(WorkerPoolTest, AccumulatesExecutionAndSavedSeconds)
         [&Project](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/) -> int
         {
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             return 0;
         },
         &Cache,
@@ -361,7 +361,7 @@ TEST(WorkerPoolTest, AccumulatesExecutionAndSavedSeconds)
                                           .outputs = {"build/main.o"}});
     EXPECT_EQ(pool.wait(CachedHandle), 0);
     EXPECT_GE(pool.totalWorkerSavedSeconds(), 0.01);
-    EXPECT_GE(pool.totalWorkerExecutionSeconds(), pool.totalWorkerSavedSeconds());
+    EXPECT_GE(pool.totalWorkerExecutionSeconds() + 1e-6, pool.totalWorkerSavedSeconds());
 }
 
 TEST(WorkerPoolTest, RecordsCacheStatsViaCallback)

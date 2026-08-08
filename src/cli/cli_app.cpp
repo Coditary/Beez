@@ -41,6 +41,8 @@ std::string CliApp::helpText()
     stream << "  -h, --help       Display this help and exit\n";
     stream << "  -v, --version    Display the installed Beez and Lua version\n";
     stream << "      --verbose    Enable verbose logging (Ninja-style)\n";
+    stream << "      --silent     Suppress all run output (exit code only)\n";
+    stream << "      --error      Print errors only, no progress or success summary\n";
     stream << "      --log-file PATH  Write run log to PATH (default: .cache/logs/latest.log)\n";
     stream << "      --no-log-file    Disable run log file output\n";
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
@@ -54,8 +56,6 @@ std::string CliApp::helpText()
     stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";
     stream << "\nConfiguration:\n";
     stream << "  User defaults: ~/.config/beez/config.lua (return a settings table)\n";
-    stream << "      --config PATH  Load settings from PATH instead of the user config file\n";
-    stream << "      --build-file PATH  Load the build script from PATH (default: ./build.lua)\n";
     stream << "  Project overrides: beez.config({ ... }) in build.lua\n";
     stream << "  CLI flags override both.\n";
     stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";
@@ -95,20 +95,22 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     bool showConfig = false;
     bool noLogFile = false;
     std::string logFile;
-    std::string configFile;
-    std::string buildFile;
     std::string configOptionsPath;
     std::string completeConfigOptionsPrefix;
     std::string dumpCompletionShell;
 
-    app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
+    auto* verboseFlag =
+        app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
+    auto* silentFlag =
+        app.add_flag("--silent", options.silent, "Suppress all run output (exit code only)");
+    auto* errorFlag = app.add_flag(
+        "--error", options.errorsOnly, "Print errors only, no progress or success summary");
+    verboseFlag->excludes(silentFlag);
+    verboseFlag->excludes(errorFlag);
+    silentFlag->excludes(errorFlag);
     app.add_option(
         "--log-file", logFile, "Write run log to PATH (default: .cache/logs/latest.log)");
     app.add_flag("--no-log-file", noLogFile, "Disable run log file output");
-    app.add_option(
-        "--config", configFile, "Load settings from PATH instead of ~/.config/beez/config.lua");
-    app.add_option(
-        "--build-file", buildFile, "Load the build script from PATH (default: ./build.lua)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
     app.add_flag("--no-cache", disableCache, "Disable step and success caching");
     app.add_flag("--show-config", showConfig, "Show merged active configuration and exit");
@@ -221,14 +223,6 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     if (!logFile.empty())
     {
         options.logFile = logFile;
-    }
-    if (!configFile.empty())
-    {
-        options.configFile = configFile;
-    }
-    if (!buildFile.empty())
-    {
-        options.buildFile = buildFile;
     }
 
     return {.reason = CliExitReason::Continue, .options = std::move(options), .exitCode = 0};

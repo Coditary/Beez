@@ -185,7 +185,8 @@ struct ConfigSchemaNode
             {
                 ConfigSchemaNode uiSettings;
                 uiSettings.kind = ConfigSchemaKind::Object;
-                uiSettings.children.emplace("output_mode", makeEnumNode({"clean", "verbose"}));
+                uiSettings.children.emplace("output_mode",
+                                            makeEnumNode({"clean", "verbose", "errors", "silent"}));
                 uiSettings.children.emplace("colors", makeBooleanNode());
                 uiSettings.children.emplace("truecolor", makeBooleanNode());
                 uiSettings.children.emplace("theme", makeStringNode());

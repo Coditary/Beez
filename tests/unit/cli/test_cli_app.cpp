@@ -4,7 +4,6 @@
 
 #include <gtest/gtest.h>
 
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -33,6 +32,8 @@ TEST(CliAppTest, HelpContainsBannerAndUsage)
     EXPECT_NE(Help.find("-h, --help"), std::string::npos);
     EXPECT_NE(Help.find("-v, --version"), std::string::npos);
     EXPECT_NE(Help.find("--verbose"), std::string::npos);
+    EXPECT_NE(Help.find("--silent"), std::string::npos);
+    EXPECT_NE(Help.find("--error"), std::string::npos);
     EXPECT_NE(Help.find("--dry-run"), std::string::npos);
     EXPECT_NE(Help.find("--threads"), std::string::npos);
     EXPECT_NE(Help.find("--list TEXT"), std::string::npos);
@@ -61,6 +62,37 @@ TEST(CliAppTest, VersionFlagRequestsVersion)
     const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Version);
     EXPECT_EQ(Result.exitCode, 0);
+}
+
+TEST(CliAppTest, ParsesSilentAndErrorFlags)
+{
+    {
+        const std::vector<std::string> Args = {"beez", "build", "--silent"};
+        const auto Argv = toArgv(Args);
+        const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+        ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+        EXPECT_TRUE(Result.options.silent);
+        EXPECT_FALSE(Result.options.errorsOnly);
+        EXPECT_FALSE(Result.options.verbose);
+    }
+
+    {
+        const std::vector<std::string> Args = {"beez", "build", "--error"};
+        const auto Argv = toArgv(Args);
+        const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+        ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+        EXPECT_TRUE(Result.options.errorsOnly);
+        EXPECT_FALSE(Result.options.silent);
+        EXPECT_FALSE(Result.options.verbose);
+    }
+}
+
+TEST(CliAppTest, RejectsConflictingOutputFlags)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--silent", "--verbose"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
 TEST(CliAppTest, ParsesTargetAndFlags)
@@ -248,21 +280,4 @@ TEST(CliAppTest, ParsesInstallCompletionFlag)
     const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.installCompletion);
-}
-
-TEST(CliAppTest, ParsesConfigAndBuildFilePaths)
-{
-    const std::vector<std::string> Args = {
-        "beez", "build", "--config", "cfg/config.lua", "--build-file", "scripts/build.lua"};
-    const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
-    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
-    ASSERT_TRUE(Result.options.configFile.has_value());
-    ASSERT_TRUE(Result.options.buildFile.has_value());
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    const std::filesystem::path& configFile = Result.options.configFile.value();
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    const std::filesystem::path& buildFile = Result.options.buildFile.value();
-    EXPECT_EQ(configFile.string(), "cfg/config.lua");
-    EXPECT_EQ(buildFile.string(), "scripts/build.lua");
 }

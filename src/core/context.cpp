@@ -14,17 +14,7 @@ Context::Context(std::filesystem::path projectRoot) : projectRoot_(std::move(pro
 
 std::filesystem::path Context::buildScriptPath() const
 {
-    if (buildScriptPathOverride_.has_value())
-    {
-        return *buildScriptPathOverride_;
-    }
-
     return projectRoot_ / buildScriptFileName_.value_or("build.lua");
-}
-
-void Context::setBuildScriptPath(std::filesystem::path path)
-{
-    buildScriptPathOverride_ = std::move(path);
 }
 
 void Context::setBuildScriptFileName(std::string fileName)
