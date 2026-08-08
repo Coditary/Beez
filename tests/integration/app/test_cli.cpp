@@ -169,6 +169,18 @@ TEST(CliTest, UnknownTaskExitsWithError)
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"missing"});
     EXPECT_NE(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("name not found in registry"), std::string::npos);
+    EXPECT_EQ(Result.output.find("Did you mean"), std::string::npos);
+}
+
+TEST(CliTest, MisspelledTaskShowsDidYouMean)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua("task(\"build\", \"true\")\n");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"biuld"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_NE(Result.output.find("name not found in registry"), std::string::npos);
+    EXPECT_NE(Result.output.find("Did you mean 'build'?"), std::string::npos);
 }
 
 TEST(CliTest, WorkflowInvocationRunsMatchingSteps)

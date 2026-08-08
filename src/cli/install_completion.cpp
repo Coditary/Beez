@@ -198,10 +198,10 @@ readConfigValue(const std::filesystem::path& path, const std::string& key)
 [[nodiscard]] int runInstallFromCompletionsDir(const std::filesystem::path& completionsSource)
 {
     const auto InstallLib = completionsSource / "install-lib.sh";
-    const std::string command = "bash -c 'source \"" + InstallLib.string() + "\" && " +
+    const std::string Command = "bash -c 'source \"" + InstallLib.string() + "\" && " +
                                 "install_beez_completion_files \"" + completionsSource.string() +
                                 "\" && install_beez_completion_hooks'";
-    return runShellCommand(command);
+    return runShellCommand(Command);
 }
 
 [[nodiscard]] int runEmbeddedInstallCompletion()

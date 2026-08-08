@@ -1,7 +1,7 @@
 #include "beez/cli/cli_app.hpp"
 #include "beez/cli/install_completion.hpp"
-#include "beez/cli/list_formatter.hpp"
 #include "beez/cli/parsed_options.hpp"
+#include "beez/cli/run_target.hpp"
 #include "beez/core/context.h"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
@@ -94,51 +94,7 @@ int main(int argc, const char* argv[])
             return 1;
         }
 
-        if (Parsed.options.listKind.has_value())
-        {
-            const auto Names = beez::cli::collectEntityNames(registry, *Parsed.options.listKind);
-            std::cout << beez::cli::formatEntityList(*Parsed.options.listKind, Names);
-            return 0;
-        }
-
-        if (Parsed.options.stepName)
-        {
-            const auto RunResult = orchestrator.runStep(*Parsed.options.stepName);
-            if (!RunResult)
-            {
-                std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';
-                return 1;
-            }
-
-            return RunResult.value();
-        }
-
-        if (Parsed.options.phaseRequest)
-        {
-            const auto RunResult = orchestrator.runPhase(*Parsed.options.phaseRequest);
-            if (!RunResult)
-            {
-                std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';
-                return 1;
-            }
-
-            return RunResult.value();
-        }
-
-        if (!Parsed.options.target.has_value())
-        {
-            std::cerr << beez::cli::CliApp::helpText();
-            return 1;
-        }
-
-        const auto RunResult = orchestrator.run(*Parsed.options.target);
-        if (!RunResult)
-        {
-            std::cerr << "Error: " << beez::core::toString(RunResult.error()) << '\n';
-            return 1;
-        }
-
-        return RunResult.value();
+        return beez::cli::runParsedInvocation(orchestrator, registry, Parsed.options);
     }
     catch (const std::exception& error)
     {

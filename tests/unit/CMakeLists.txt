@@ -8,6 +8,8 @@ add_executable(
     logging/test_logger.cpp
     cli/test_cli_app.cpp
     cli/test_list_formatter.cpp
+    cli/test_name_suggestion.cpp
+    cli/test_run_target.cpp
     core/test_registry.cpp
     core/test_content_hash.cpp
     core/test_glob_expand.cpp

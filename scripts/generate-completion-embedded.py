@@ -86,7 +86,7 @@ def main() -> int:
         [
             "} // namespace",
             "",
-            "std::array<EmbeddedCompletionFile, 5> embeddedCompletionFiles()",
+            "std::array<EmbeddedCompletionFile, EmbeddedCompletionFileCount> embeddedCompletionFiles()",
             "{",
             "    return {",
         ]
