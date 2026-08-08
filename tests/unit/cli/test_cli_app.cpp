@@ -163,6 +163,15 @@ TEST(CliAppTest, RejectsZeroThreads)
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
+TEST(CliAppTest, ParsesShowConfigFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--show-config"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.showConfig);
+}
+
 TEST(CliAppTest, ParsesCleanCacheFlag)
 {
     const std::vector<std::string> Args = {"beez", "--clean-cache"};

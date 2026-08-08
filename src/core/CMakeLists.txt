@@ -17,6 +17,7 @@ add_library(
     phase_argument_parser.cpp
     plugin_host.cpp
     settings.cpp
+    settings_report.cpp
     step_cache.cpp
     success_cache.cpp
     thread_pool.cpp

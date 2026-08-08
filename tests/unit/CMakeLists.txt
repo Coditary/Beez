@@ -27,6 +27,7 @@ add_executable(
     core/test_workflow.cpp
     core/test_context.cpp
     core/test_settings.cpp
+    core/test_settings_report.cpp
     core/test_orchestrator.cpp
     core/test_stream_capture.cpp
     core/test_progress_detail.cpp

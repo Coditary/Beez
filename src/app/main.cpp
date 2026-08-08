@@ -2,11 +2,13 @@
 #include "beez/cli/install_completion.hpp"
 #include "beez/cli/parsed_options.hpp"
 #include "beez/cli/run_target.hpp"
+#include "beez/core/config_paths.hpp"
 #include "beez/core/context.h"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
 #include "beez/core/run_options.hpp"
 #include "beez/core/settings.hpp"
+#include "beez/core/settings_report.hpp"
 #include "beez/logging/output_mode.hpp"
 #include "beez/logging/spdlog_backend.hpp"
 #include "beez/plugin/lua/lua_dsl.h"
@@ -66,17 +68,19 @@ int main(int argc, const char* argv[])
             return beez::cli::runInstallCompletion(argc > 0 ? argv[0] : nullptr);
         }
 
-        beez::core::BeezSettings settings;
-        beez::plugin::lua::tryLoadGlobalBeezSettings(settings);
+        beez::core::BeezSettings globalSettings;
+        beez::plugin::lua::tryLoadGlobalBeezSettings(globalSettings);
+
+        beez::core::BeezSettings settings = globalSettings;
         settings.applyEnvironment();
 
         beez::core::Context context;
         settings.applyToContext(context);
 
-        const bool HasRunTarget = Parsed.options.target.has_value() ||
-                                  Parsed.options.phaseRequest.has_value() ||
-                                  Parsed.options.stepName.has_value() ||
-                                  Parsed.options.listKind.has_value() || Parsed.options.cleanCache;
+        const bool HasRunTarget =
+            Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
+            Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value() ||
+            Parsed.options.cleanCache || Parsed.options.showConfig;
 
         if (!HasRunTarget)
         {
@@ -110,8 +114,23 @@ int main(int argc, const char* argv[])
         }
 
         settings.merge(luaLoader->buildSettings());
+        const beez::core::BeezSettings ProjectSettings = luaLoader->buildSettings();
         settings.applyToContext(context);
         settings.applyCliOverrides(Parsed.options);
+
+        if (Parsed.options.showConfig)
+        {
+            const beez::core::SettingsReportInput ReportInput {
+                .globalSettings = globalSettings,
+                .globalConfigPath = beez::core::globalBeezConfigPath(),
+                .projectSettings = ProjectSettings,
+                .activeSettings = settings,
+                .cliOptions = Parsed.options,
+                .context = context,
+            };
+            std::cout << beez::core::formatActiveConfiguration(ReportInput) << '\n';
+            return 0;
+        }
 
         if (Parsed.options.cleanCache)
         {

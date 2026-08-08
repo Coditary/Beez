@@ -43,6 +43,7 @@ std::string CliApp::helpText()
     stream << "      --verbose    Enable verbose logging (Ninja-style)\n";
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
     stream << "      --no-cache   Disable step and success caching\n";
+    stream << "      --show-config Show merged active configuration and exit\n";
     stream << "      --clean-cache Remove .cache/ before running\n";
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
@@ -85,11 +86,13 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     bool disableCache = false;
     bool cleanCache = false;
     bool installCompletion = false;
+    bool showConfig = false;
     std::size_t threadCount = 0;
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
     app.add_flag("--no-cache", disableCache, "Disable step and success caching");
+    app.add_flag("--show-config", showConfig, "Show merged active configuration and exit");
     app.add_flag("--clean-cache", cleanCache, "Remove .cache/ before running");
     app.add_flag("--install-completion",
                  installCompletion,
@@ -154,7 +157,7 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
                               options.stepName.has_value() || options.listKind.has_value() ||
-                              cleanCache || installCompletion;
+                              cleanCache || installCompletion || showConfig;
 
     if (!HasRunTarget)
     {
@@ -163,6 +166,7 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     options.cleanCache = cleanCache;
     options.installCompletion = installCompletion;
+    options.showConfig = showConfig;
     options.enableCache = !disableCache;
     if (threadCount > 0)
     {
