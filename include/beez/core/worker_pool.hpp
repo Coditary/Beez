@@ -3,6 +3,7 @@
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
+#include "beez/core/step_config.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -43,6 +44,7 @@ class WorkerPool
                const StepCache* stepCache,
                const IGlobMatcher& matcher,
                std::string parentStepName,
+               StepConfigPtr parentStepConfig,
                bool dryRun);
 
     [[nodiscard]] WorkerHandle spawn(WorkerSpec spec);
@@ -73,6 +75,7 @@ class WorkerPool
     const IGlobMatcher& matcher_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
     std::string parentStepName_;
+    StepConfigPtr parentStepConfig_;
     bool dryRun_;
     std::vector<WorkerEntry> workers_;
 };

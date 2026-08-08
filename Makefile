@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -6,6 +6,7 @@ CONAN_PROFILE ?= clang-release
 REPORTS_DIR ?= report
 ARGS ?=
 BEEZ_BIN := $(BUILD_DIR)/build/$(BUILD_TYPE)/bin/beez
+BEEZ_INSTALL_DIR ?= $(HOME)/.local/bin
 FUZZER_BIN := $(BUILD_DIR)/build/Debug/fuzz/fuzz_lua_dsl
 FUZZER_TIME ?= 30
 FUZZER_CORPUS_DIR := $(REPORTS_DIR)/fuzz/corpus/lua_dsl
@@ -50,8 +51,15 @@ test: ## Tests ausführen (BUILD_TYPE=Release|Debug)
 	@mkdir -p $(REPORTS_DIR)/test
 	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure --verbose 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/test-report.txt'
 
-run: ## Beez ausführen (z.B. make run ARGS=clean)
-	$(BEEZ_BIN) $(ARGS)
+run: ## Beez ausführen (z.B. make run ARGS=build BUILD_TYPE=Debug)
+	BUILD_TYPE=$(BUILD_TYPE) CONAN_PROFILE=$(CONAN_PROFILE) $(BEEZ_BIN) $(ARGS)
+
+install-beez: ## Symlink beez nach ~/.local/bin (danach: beez im Terminal)
+	@test -x $(BEEZ_BIN) || (echo "Run make build first." && exit 1)
+	BEEZ_INSTALL_DIR=$(BEEZ_INSTALL_DIR) BUILD_TYPE=$(BUILD_TYPE) ./scripts/install-beez.sh
+
+uninstall-beez: ## beez-Symlink aus ~/.local/bin entfernen
+	BEEZ_INSTALL_DIR=$(BEEZ_INSTALL_DIR) ./scripts/uninstall-beez.sh
 
 lint: ## clang-tidy + cmake-format check (full)
 	@mkdir -p $(REPORTS_DIR)/lint

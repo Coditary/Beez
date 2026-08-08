@@ -1,7 +1,10 @@
 #include "lua_step_config.hpp"
 
 #include "beez/core/context.h"
+#include "beez/core/glob_expand.hpp"
+#include "beez/core/glob_pattern.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/success_cache.hpp"
 #include "beez/core/worker_pool.hpp"
 
 #include <algorithm>
@@ -41,6 +44,33 @@ sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
     return merged;
 }
 
+[[nodiscard]] std::string serializeArrayTable(const sol::table& table)
+{
+    std::vector<std::string> items;
+    table.for_each(
+        [&items](const sol::object& /*key*/, const sol::object& value)
+        {
+            if (value.is<std::string>())
+            {
+                items.push_back(value.as<std::string>());
+            }
+        });
+
+    std::ranges::sort(items);
+    std::ostringstream stream;
+    stream << '[';
+    for (std::size_t index = 0; index < items.size(); ++index)
+    {
+        if (index > 0)
+        {
+            stream << ',';
+        }
+        stream << items.at(index);
+    }
+    stream << ']';
+    return stream.str();
+}
+
 [[nodiscard]] std::string serializeTable(const sol::table& table)
 {
     std::vector<std::string> entries;
@@ -64,6 +94,10 @@ sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
             else if (value.is<double>())
             {
                 stream << value.as<double>();
+            }
+            else if (value.is<sol::table>())
+            {
+                stream << serializeArrayTable(value.as<sol::table>());
             }
             else
             {
@@ -300,6 +334,7 @@ core::StepConfigPtr makeLuaStepConfig(const std::shared_ptr<sol::state>& luaStat
                                            { return shallowCopyTable(luaState, configTable); });
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity) -- step context API surface
 sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                            const core::Context& context)
 {
@@ -320,6 +355,30 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
         }
 
         return luaConfig->materialize();
+    };
+
+    stepContext["glob"] = [&context, luaState](const sol::table& patternsTable) -> sol::table
+    {
+        std::vector<std::string> patterns;
+        patternsTable.for_each(
+            [&patterns](const sol::object& /*key*/, const sol::object& value)
+            {
+                if (value.is<std::string>())
+                {
+                    patterns.push_back(value.as<std::string>());
+                }
+            });
+
+        const std::vector<std::string> Files =
+            core::expandGlobPatterns(patterns, context.projectRoot(), core::defaultGlobMatcher());
+
+        sol::table files = luaState->create_table();
+        for (std::size_t index = 0; index < Files.size(); ++index)
+        {
+            files.set(static_cast<int>(index + 1), Files.at(index));
+        }
+
+        return files;
     };
 
     stepContext.set_function(
@@ -378,6 +437,90 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
 
             return pool->waitAll(Handles);
         });
+
+    stepContext["success_cached"] = [&context](const std::string& key) -> bool
+    {
+        const core::SuccessCacheSession* session = context.successCacheSession();
+        if (session == nullptr)
+        {
+            return false;
+        }
+
+        return session->successCached(key);
+    };
+
+    stepContext["file_success_cached"] = [&context](const std::string& relativePath) -> bool
+    {
+        const core::SuccessCacheSession* session = context.successCacheSession();
+        if (session == nullptr)
+        {
+            return false;
+        }
+
+        return session->fileSuccessCached(relativePath);
+    };
+
+    stepContext["cache_success"] = [&context](const std::string& key)
+    {
+        core::SuccessCacheSession* session = context.successCacheSession();
+        if (session == nullptr)
+        {
+            return;
+        }
+
+        session->cacheSuccess(key);
+    };
+
+    stepContext["cache_file_success"] = [&context](const std::string& relativePath)
+    {
+        core::SuccessCacheSession* session = context.successCacheSession();
+        if (session == nullptr)
+        {
+            return;
+        }
+
+        session->cacheFileSuccess(relativePath);
+    };
+
+    stepContext["record_cache_miss"] = [&context](const std::string& key)
+    {
+        core::SuccessCacheSession* session = context.successCacheSession();
+        if (session == nullptr)
+        {
+            return;
+        }
+
+        session->recordCacheMiss(key);
+    };
+
+    stepContext["record_file_cache_miss"] = [&context](const std::string& relativePath)
+    {
+        core::SuccessCacheSession* session = context.successCacheSession();
+        if (session == nullptr)
+        {
+            return;
+        }
+
+        session->recordFileCacheMiss(relativePath);
+    };
+
+    stepContext["get_cache_misses"] = [&context, luaState]() -> sol::table
+    {
+        const core::SuccessCacheSession* session = context.successCacheSession();
+        sol::table misses = luaState->create_table();
+        if (session == nullptr)
+        {
+            return misses;
+        }
+
+        const std::vector<std::string> Values = session->getCacheMisses();
+        for (std::size_t index = 0; index < Values.size(); ++index)
+        {
+            misses.set(static_cast<int>(index + 1), Values.at(index));
+        }
+
+        return misses;
+    };
 
     return stepContext;
 }

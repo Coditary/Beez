@@ -51,5 +51,3 @@ oom-*
 tests/fuzz/corpus/**/*
 !tests/fuzz/corpus/**/
 !tests/fuzz/corpus/**/*.lua
-
-build.lua

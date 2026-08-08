@@ -39,7 +39,8 @@ std::string CliApp::helpText()
     stream << "  -v, --version    Display the installed Beez and Lua version\n";
     stream << "      --verbose    Enable verbose logging (Ninja-style)\n";
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
-    stream << "      --no-cache   Disable step output caching\n";
+    stream << "      --no-cache   Disable step and success caching\n";
+    stream << "      --clean-cache Remove .cache/ before running\n";
     stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";
     stream << "  -p, --phase TEXT Run a phase (phase[:scope1,scope2] or phase[\"scope\"])\n";
     stream << "  -s, --step TEXT  Run a single step by name\n";
@@ -71,10 +72,12 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     app.add_flag_callback("-v,--version", []() {}, "Display the installed Beez and Lua version");
 
     bool disableCache = false;
+    bool cleanCache = false;
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
-    app.add_flag("--no-cache", disableCache, "Disable step output caching");
+    app.add_flag("--no-cache", disableCache, "Disable step and success caching");
+    app.add_flag("--clean-cache", cleanCache, "Remove .cache/ before running");
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -132,13 +135,15 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     }
 
     const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
-                              options.stepName.has_value() || options.listKind.has_value();
+                              options.stepName.has_value() || options.listKind.has_value() ||
+                              cleanCache;
 
     if (!HasRunTarget)
     {
         return {.reason = CliExitReason::Help, .exitCode = 1};
     }
 
+    options.cleanCache = cleanCache;
     options.enableCache = !disableCache;
 
     return {.reason = CliExitReason::Continue, .options = std::move(options), .exitCode = 0};

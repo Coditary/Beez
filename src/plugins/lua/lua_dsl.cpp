@@ -12,6 +12,7 @@
 #include "beez/plugin/plugin_host.h"
 #include "lua_step_config.hpp"
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -329,6 +330,12 @@ class BeezDslEnv
 
     sol::object env(sol::this_state lua, const std::string& key) const
     {
+        // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c) -- process env lookup for build DSL
+        if (const char* processValue = std::getenv(key.c_str()))
+        {
+            return sol::make_object(lua, std::string(processValue));
+        }
+
         if (!envFile_.has_value())
         {
             envFile_.emplace(envFilePath_);

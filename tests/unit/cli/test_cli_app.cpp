@@ -111,3 +111,21 @@ TEST(CliAppTest, RejectsUnknownListKind)
     const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
+
+TEST(CliAppTest, NoCacheDisablesCaching)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--no-cache"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_FALSE(Result.options.enableCache);
+}
+
+TEST(CliAppTest, ParsesCleanCacheFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--clean-cache"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.cleanCache);
+}

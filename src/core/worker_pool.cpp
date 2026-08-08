@@ -3,6 +3,7 @@
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
+#include "beez/core/step_config.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -45,9 +46,11 @@ WorkerPool::WorkerPool(std::filesystem::path projectRoot,
                        const StepCache* stepCache,
                        const IGlobMatcher& matcher,
                        std::string parentStepName,
+                       StepConfigPtr parentStepConfig,
                        bool dryRun)
     : projectRoot_(std::move(projectRoot)), execute_(std::move(execute)), stepCache_(stepCache),
-      matcher_(matcher), parentStepName_(std::move(parentStepName)), dryRun_(dryRun)
+      matcher_(matcher), parentStepName_(std::move(parentStepName)),
+      parentStepConfig_(std::move(parentStepConfig)), dryRun_(dryRun)
 {
 }
 
@@ -136,7 +139,7 @@ int WorkerPool::executeWorker(std::size_t workerId)
     std::optional<OutputTracker> outputTracker;
     if (stepCache_ != nullptr && isWorkerCacheable(entry.spec))
     {
-        const auto Lookup = stepCache_->lookup(AsStep, projectRoot_, nullptr);
+        const auto Lookup = stepCache_->lookup(AsStep, projectRoot_, parentStepConfig_);
         if (Lookup.skip)
         {
             entry.done = true;
@@ -163,7 +166,7 @@ int WorkerPool::executeWorker(std::size_t workerId)
 
     if (exitCode == 0 && outputTracker.has_value() && stepCache_ != nullptr)
     {
-        stepCache_->store(AsStep, projectRoot_, nullptr, outputTracker->end(AsStep));
+        stepCache_->store(AsStep, projectRoot_, parentStepConfig_, outputTracker->end(AsStep));
     }
 
     return exitCode;

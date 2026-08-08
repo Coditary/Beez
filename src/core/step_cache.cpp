@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -80,6 +81,35 @@ namespace
     return patterns;
 }
 
+[[nodiscard]] std::string buildScriptFingerprint(const Step& step,
+                                                 const std::filesystem::path& projectRoot,
+                                                 const IContentHasher& hasher)
+{
+    if (!step.hasCallback())
+    {
+        return {};
+    }
+
+    return hasher.hashFile(projectRoot / "build.lua");
+}
+
+[[nodiscard]] std::string stepCommandFingerprint(const Step& step,
+                                                 const std::filesystem::path& projectRoot,
+                                                 const IContentHasher& hasher)
+{
+    if (step.shellRun.has_value())
+    {
+        return *step.shellRun;
+    }
+
+    if (step.hasCallback())
+    {
+        return std::string("<callback>:") + buildScriptFingerprint(step, projectRoot, hasher);
+    }
+
+    return {};
+}
+
 class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
 {
   public:
@@ -110,6 +140,7 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
         }
 
         return hasher_->combine({stepExecutionIdentity(step),
+                                 buildScriptFingerprint(step, projectRoot, *hasher_),
                                  fileStream.str(),
                                  configFingerprint(config),
                                  version::VersionString});
@@ -218,10 +249,11 @@ struct CacheIndexEntry
 
 [[nodiscard]] std::string sanitizeIndexComponent(std::string value)
 {
-    std::ranges::replace_if(value,
-                            [](const char Character)
-                            { return Character == '/' || Character == ':' || Character == '\\'; },
-                            '_');
+    std::ranges::replace_if(
+        value,
+        [](const char Character)
+        { return Character == '/' || Character == ':' || Character == '\\'; },
+        '_');
     return value;
 }
 
@@ -232,21 +264,6 @@ struct CacheIndexEntry
                                  sanitizeIndexComponent(step.phase) + "__" +
                                  sanitizeIndexComponent(step.scope) + ".index";
     return indexRoot / FileName;
-}
-
-[[nodiscard]] std::string stepCommandFingerprint(const Step& step)
-{
-    if (step.shellRun.has_value())
-    {
-        return *step.shellRun;
-    }
-
-    if (step.hasCallback())
-    {
-        return "<callback>";
-    }
-
-    return {};
 }
 
 [[nodiscard]] std::vector<InputStamp> collectInputStamps(const Step& step,
@@ -607,7 +624,7 @@ std::optional<CacheLookupResult> StepCache::lookupViaIndex(const Step& step,
         return std::nullopt;
     }
 
-    if (IndexEntry->command != stepCommandFingerprint(step) ||
+    if (IndexEntry->command != stepCommandFingerprint(step, projectRoot, *makeSha256Hasher()) ||
         IndexEntry->config != configFingerprint(config) ||
         IndexEntry->version != version::VersionString)
     {
@@ -639,7 +656,7 @@ void StepCache::writeIndex(const Step& step,
 {
     CacheIndexEntry indexEntry;
     indexEntry.key = key;
-    indexEntry.command = stepCommandFingerprint(step);
+    indexEntry.command = stepCommandFingerprint(step, projectRoot, *makeSha256Hasher());
     indexEntry.config = configFingerprint(config);
     indexEntry.version = version::VersionString;
     indexEntry.inputs = collectInputStamps(step, projectRoot, matcher_);
