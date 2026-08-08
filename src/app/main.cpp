@@ -93,6 +93,37 @@ findLuaDslLoader(beez::plugin::PluginHost& pluginHost)
     return std::nullopt;
 }
 
+[[nodiscard]] std::optional<int> loadStartupSettings(const beez::cli::ParsedOptions& options,
+                                                     beez::core::Context& context,
+                                                     beez::core::BeezSettings& globalSettings,
+                                                     std::filesystem::path& configPath)
+{
+    if (options.buildFile.has_value())
+    {
+        context.setBuildScriptPath(
+            beez::core::resolveProjectRelativePath(context.projectRoot(), *options.buildFile));
+    }
+
+    configPath =
+        options.configFile.has_value()
+            ? beez::core::resolveProjectRelativePath(context.projectRoot(), *options.configFile)
+            : beez::core::globalBeezConfigPath();
+    if (options.configFile.has_value())
+    {
+        if (!std::filesystem::exists(configPath))
+        {
+            std::cerr << "Error: config file not found: " << configPath << '\n';
+            return 1;
+        }
+
+        static_cast<void>(beez::plugin::lua::loadSettingsFromLuaFile(configPath, globalSettings));
+        return std::nullopt;
+    }
+
+    beez::plugin::lua::tryLoadGlobalBeezSettings(globalSettings);
+    return std::nullopt;
+}
+
 }  // namespace
 
 int main(int argc, const char* argv[])
@@ -130,11 +161,16 @@ int main(int argc, const char* argv[])
             return *EarlyExit;
         }
 
+        beez::core::Context context;
         beez::core::BeezSettings globalSettings;
-        beez::plugin::lua::tryLoadGlobalBeezSettings(globalSettings);
+        std::filesystem::path configPath;
+        if (const auto StartupError =
+                loadStartupSettings(Parsed.options, context, globalSettings, configPath))
+        {
+            return *StartupError;
+        }
 
         beez::core::BeezSettings settings = globalSettings;
-        beez::core::Context context;
         settings.applyEnvironment(context);
 
         const bool HasRunTarget =
@@ -164,13 +200,14 @@ int main(int argc, const char* argv[])
 
         if (!std::filesystem::exists(context.buildScriptPath()))
         {
-            std::cerr << "Error: build.lua not found\n";
+            std::cerr << "Error: build script not found: " << context.buildScriptPath() << '\n';
             return 1;
         }
 
         if (!luaLoader->load(context, registry))
         {
-            std::cerr << "Error: failed to load build.lua\n";
+            std::cerr << "Error: failed to load build script: " << context.buildScriptPath()
+                      << '\n';
             return 1;
         }
 
@@ -183,7 +220,7 @@ int main(int argc, const char* argv[])
         {
             const beez::core::SettingsReportInput ReportInput {
                 .globalSettings = globalSettings,
-                .globalConfigPath = beez::core::globalBeezConfigPath(),
+                .globalConfigPath = configPath,
                 .projectSettings = ProjectSettings,
                 .activeSettings = settings,
                 .cliOptions = Parsed.options,

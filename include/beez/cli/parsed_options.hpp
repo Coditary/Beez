@@ -34,6 +34,8 @@ struct ParsedOptions
     std::optional<std::size_t> maxThreads;
     std::optional<std::filesystem::path> logFile;
     bool noLogFile = false;
+    std::optional<std::filesystem::path> configFile;
+    std::optional<std::filesystem::path> buildFile;
     std::vector<std::string> userOptions;
 };
 
