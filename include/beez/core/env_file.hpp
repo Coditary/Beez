@@ -16,8 +16,8 @@ class EnvFile
 
     [[nodiscard]] std::optional<std::string> lookup(const std::string& key) const;
 
-    void forEachEntry(const std::function<void(const std::string&, const std::string&)>& visitor)
-        const;
+    void
+    forEachEntry(const std::function<void(const std::string&, const std::string&)>& visitor) const;
 
   private:
     void ensureLoaded() const;

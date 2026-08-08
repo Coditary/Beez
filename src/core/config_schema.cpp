@@ -214,7 +214,8 @@ struct ConfigSchemaNode
                                   ConfigSchemaNode env;
                                   env.kind = ConfigSchemaKind::Object;
                                   env.children.emplace("load_dotenv", makeBooleanNode());
-                                  env.children.emplace("dotenv_overrides_system", makeBooleanNode());
+                                  env.children.emplace("dotenv_overrides_system",
+                                                       makeBooleanNode());
                                   env.children.emplace("files", makePathNode());
                                   env.children.emplace("vars", makeStringMapNode());
                                   env.children.emplace("hash_vars", makeStringNode());

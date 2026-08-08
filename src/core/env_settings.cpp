@@ -4,9 +4,12 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <filesystem>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace beez::core
 {
@@ -50,7 +53,7 @@ namespace
 }
 
 [[nodiscard]] std::filesystem::path resolveEnvFilePath(const std::filesystem::path& projectRoot,
-                                                         const std::filesystem::path& path)
+                                                       const std::filesystem::path& path)
 {
     if (path.is_absolute())
     {
@@ -76,6 +79,19 @@ void applyEnvEntries(const std::unordered_map<std::string, std::string>& entries
 
         // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c,misc-include-cleaner)
         setenv(key.c_str(), value.c_str(), 1);
+    }
+}
+
+void appendResolvedEnvFilePath(const std::filesystem::path& projectRoot,
+                               const std::filesystem::path& path,
+                               std::unordered_set<std::string>& seen,
+                               std::vector<std::filesystem::path>& paths)
+{
+    const auto Resolved = resolveEnvFilePath(projectRoot, path);
+    const std::string Key = Resolved.lexically_normal().string();
+    if (seen.insert(Key).second)
+    {
+        paths.push_back(Resolved);
     }
 }
 
@@ -127,36 +143,25 @@ EnvSettings resolveEnvSettings(const EnvSettingsOverlay& overlay)
     resolved.ignoreVarsForHashing = overlay.ignoreVarsForHashing.empty()
                                         ? defaultIgnoreVarsForHashing()
                                         : overlay.ignoreVarsForHashing;
-    resolved.maskSecrets =
-        overlay.maskSecrets.empty() ? defaultMaskSecrets() : overlay.maskSecrets;
+    resolved.maskSecrets = overlay.maskSecrets.empty() ? defaultMaskSecrets() : overlay.maskSecrets;
     return resolved;
 }
 
-std::vector<std::filesystem::path>
-resolveEnvFilePaths(const EnvSettings& env, const std::filesystem::path& projectRoot)
+std::vector<std::filesystem::path> resolveEnvFilePaths(const EnvSettings& env,
+                                                       const std::filesystem::path& projectRoot)
 {
     std::vector<std::filesystem::path> paths;
     paths.reserve(env.files.size() + 1U);
 
     std::unordered_set<std::string> seen;
-    const auto appendPath = [&](const std::filesystem::path& path)
-    {
-        const auto Resolved = resolveEnvFilePath(projectRoot, path);
-        const std::string Key = Resolved.lexically_normal().string();
-        if (seen.insert(Key).second)
-        {
-            paths.push_back(Resolved);
-        }
-    };
-
     for (const auto& file : env.files)
     {
-        appendPath(file);
+        appendResolvedEnvFilePath(projectRoot, file, seen, paths);
     }
 
     if (env.loadDotenv)
     {
-        appendPath(".env");
+        appendResolvedEnvFilePath(projectRoot, ".env", seen, paths);
     }
 
     return paths;
@@ -166,8 +171,8 @@ void applyEnvSettings(const EnvSettings& env, const std::filesystem::path& proje
 {
     for (const auto& file : resolveEnvFilePaths(env, projectRoot))
     {
-        EnvFile envFile(file);
-        envFile.forEachEntry(
+        const EnvFile EnvFileInstance(file);
+        EnvFileInstance.forEachEntry(
             [&](const std::string& key, const std::string& value)
             {
                 if (!env.dotenvOverridesSystem)

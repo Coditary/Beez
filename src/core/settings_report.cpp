@@ -1,7 +1,8 @@
 #include "beez/core/settings_report.hpp"
 
-#include "beez/core/env_settings.hpp"
+#include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/env_settings.hpp"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
 #include "beez/core/thread_pool.hpp"
@@ -515,6 +516,24 @@ void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows
     return defaultOriginLabel();
 }
 
+[[nodiscard]] std::string originForProjectOrGlobal(bool inProject,
+                                                   bool inGlobal,
+                                                   const std::filesystem::path& globalConfigPath,
+                                                   const Context& context)
+{
+    if (inProject)
+    {
+        return projectOriginLabel(context);
+    }
+
+    if (inGlobal)
+    {
+        return globalOriginLabel(globalConfigPath);
+    }
+
+    return defaultOriginLabel();
+}
+
 void appendEnvRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)
 {
     const auto& global = input.globalSettings;
@@ -545,35 +564,34 @@ void appendEnvRows(const SettingsReportInput& input, std::vector<ConfigRow>& row
     rows.push_back(ConfigRow {
         .key = "env.files",
         .value = formatPathList(ResolvedEnv.files),
-        .origin = !project.env.files.empty() ? projectOriginLabel(input.context)
-                                             : (!global.env.files.empty()
-                                                    ? globalOriginLabel(input.globalConfigPath)
-                                                    : defaultOriginLabel()),
+        .origin = originForProjectOrGlobal(!project.env.files.empty(),
+                                           !global.env.files.empty(),
+                                           input.globalConfigPath,
+                                           input.context),
     });
     rows.push_back(ConfigRow {
         .key = "env.hash_vars",
         .value = formatStringList(ResolvedEnv.hashVars),
-        .origin = !project.env.hashVars.empty() ? projectOriginLabel(input.context)
-                                                : (!global.env.hashVars.empty()
-                                                       ? globalOriginLabel(input.globalConfigPath)
-                                                       : defaultOriginLabel()),
+        .origin = originForProjectOrGlobal(!project.env.hashVars.empty(),
+                                           !global.env.hashVars.empty(),
+                                           input.globalConfigPath,
+                                           input.context),
     });
     rows.push_back(ConfigRow {
         .key = "env.ignore_vars_for_hashing",
         .value = formatStringList(ResolvedEnv.ignoreVarsForHashing),
-        .origin = !project.env.ignoreVarsForHashing.empty()
-                      ? projectOriginLabel(input.context)
-                      : (!global.env.ignoreVarsForHashing.empty()
-                             ? globalOriginLabel(input.globalConfigPath)
-                             : defaultOriginLabel()),
+        .origin = originForProjectOrGlobal(!project.env.ignoreVarsForHashing.empty(),
+                                           !global.env.ignoreVarsForHashing.empty(),
+                                           input.globalConfigPath,
+                                           input.context),
     });
     rows.push_back(ConfigRow {
         .key = "env.mask_secrets",
         .value = formatStringList(ResolvedEnv.maskSecrets),
-        .origin = !project.env.maskSecrets.empty() ? projectOriginLabel(input.context)
-                                                   : (!global.env.maskSecrets.empty()
-                                                          ? globalOriginLabel(input.globalConfigPath)
-                                                          : defaultOriginLabel()),
+        .origin = originForProjectOrGlobal(!project.env.maskSecrets.empty(),
+                                           !global.env.maskSecrets.empty(),
+                                           input.globalConfigPath,
+                                           input.context),
     });
 
     std::vector<std::string> keys;

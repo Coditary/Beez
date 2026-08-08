@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <filesystem>
 
 TEST(BeezSettingsTest, MergePrefersOverlayValues)
@@ -113,7 +114,8 @@ TEST(BeezSettingsTest, CliDryRunSetsDryRunFlag)
     settings.applyCliOverrides(options);
 
     ASSERT_TRUE(settings.dryRun.has_value());
-    EXPECT_TRUE(*settings.dryRun);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- gtest ASSERT_TRUE does not propagate
+    EXPECT_EQ(settings.dryRun.value(), true);
     EXPECT_TRUE(settings.toRunOptions(nullptr, beez::core::Context()).dryRun);
 }
 

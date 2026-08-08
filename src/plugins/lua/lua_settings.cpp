@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <stdexcept>
@@ -158,10 +159,10 @@ void readEnvFilePaths(const sol::object& value, std::vector<std::filesystem::pat
     }
 
     const auto Paths = readStringArray(value.as<sol::table>());
-    for (const auto& path : Paths)
-    {
-        target.emplace_back(path);
-    }
+    target.reserve(target.size() + Paths.size());
+    std::ranges::transform(Paths,
+                           std::back_inserter(target),
+                           [](const std::string& path) { return std::filesystem::path(path); });
 }
 
 void readEnvSettings(const sol::table& envTable, core::EnvSettingsOverlay& env)

@@ -117,8 +117,7 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
     ContentAddressedCacheKeyStrategy(const ContentHashSettings& settings,
                                      std::string envHashFingerprint,
                                      GlobMetadataCache* globMetadataCache)
-        : hasher_(makeContentHasher(settings)),
-          envHashFingerprint_(std::move(envHashFingerprint)),
+        : hasher_(makeContentHasher(settings)), envHashFingerprint_(std::move(envHashFingerprint)),
           globMetadataCache_(globMetadataCache)
     {
     }
