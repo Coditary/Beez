@@ -7,6 +7,7 @@
 #include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/core/ui_options.hpp"
+#include "beez/logging/logging_settings.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
@@ -84,6 +85,8 @@ struct BeezSettings
     [[nodiscard]] PerformanceSettings resolvePerformanceSettings() const;
 
     [[nodiscard]] UiSettings resolveUiSettings() const;
+
+    [[nodiscard]] logging::LoggingSettings resolveLoggingSettings(const Context& context) const;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "beez/logging/logger.hpp"
+#include "beez/logging/logging_settings.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -119,6 +120,7 @@ struct UiSettingsOverlay
     std::optional<std::string> workerPrefixFormat;
     std::optional<bool> showTimeSaved;
     std::optional<std::string> summary;
+    std::optional<logging::LoggingSettingsOverlay> logging;
 };
 
 struct UiSettings

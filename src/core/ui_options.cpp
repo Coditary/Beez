@@ -2,6 +2,7 @@
 #include "beez/core/ui_options.hpp"
 
 #include "beez/logging/logger.hpp"
+#include "beez/logging/logging_settings.hpp"
 
 #include "beez/core/text_table.hpp"
 
@@ -742,6 +743,17 @@ void mergeUiSettingsOverlay(UiSettingsOverlay& target, const UiSettingsOverlay& 
     if (overlay.summary.has_value())
     {
         target.summary = overlay.summary;
+    }
+    if (overlay.logging.has_value())
+    {
+        if (!target.logging.has_value())
+        {
+            target.logging = overlay.logging;
+        }
+        else
+        {
+            logging::mergeLoggingSettingsOverlay(*target.logging, *overlay.logging);
+        }
     }
 }
 

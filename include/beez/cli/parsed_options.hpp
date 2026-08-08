@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -31,6 +32,8 @@ struct ParsedOptions
     std::string dumpCompletionShell;
     bool enableCache = true;
     std::optional<std::size_t> maxThreads;
+    std::optional<std::filesystem::path> logFile;
+    bool noLogFile = false;
     std::vector<std::string> userOptions;
 };
 

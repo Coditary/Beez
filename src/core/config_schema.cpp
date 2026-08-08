@@ -4,6 +4,7 @@
 #include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
 #include "beez/core/ui_options.hpp"
+#include "beez/logging/logging_settings.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -206,6 +207,16 @@ struct ConfigSchemaNode
                 uiSettings.children.emplace("prefix_format", makeStringNode());
                 uiSettings.children.emplace("show_time_saved", makeBooleanNode());
                 uiSettings.children.emplace("summary", makeEnumNode(runSummaryStyleNames()));
+
+                ConfigSchemaNode logging;
+                logging.kind = ConfigSchemaKind::Object;
+                logging.children.emplace("run_log", makeBooleanNode());
+                logging.children.emplace("run_log_file", makePathNode());
+                logging.children.emplace("log_steps", makeBooleanNode());
+                logging.children.emplace("workers", makeEnumNode(logging::workerLogModeNames()));
+                logging.children.emplace("workers_dir", makePathNode());
+                uiSettings.children.emplace("logging", std::move(logging));
+
                 return uiSettings;
             }());
 

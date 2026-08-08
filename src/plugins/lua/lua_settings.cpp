@@ -4,6 +4,7 @@
 #include "beez/core/env_settings.hpp"
 #include "beez/core/settings.hpp"
 #include "beez/core/ui_options.hpp"
+#include "beez/logging/logging_settings.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <algorithm>
@@ -481,6 +482,21 @@ void readAnimationSettings(const sol::table& animationTable, core::UiAnimationOv
     }
 }
 
+void readLoggingSettings(const sol::table& loggingTable, core::BeezSettings& overlay)
+{
+    if (!overlay.ui.options.logging.has_value())
+    {
+        overlay.ui.options.logging = logging::LoggingSettingsOverlay {};
+    }
+
+    logging::LoggingSettingsOverlay& logging = *overlay.ui.options.logging;
+    readOptionalBool(loggingTable, "run_log", logging.runLog);
+    readOptionalStringPath(loggingTable, "run_log_file", logging.runLogFile);
+    readOptionalBool(loggingTable, "log_steps", logging.logSteps);
+    readOptionalString(loggingTable, "workers", logging.workers);
+    readOptionalStringPath(loggingTable, "workers_dir", logging.workersDir);
+}
+
 void readUiSettings(const sol::table& uiTable, core::BeezSettings& overlay)
 {
     readOptionalBool(uiTable, "colors", overlay.ui.options.colors);
@@ -492,6 +508,16 @@ void readUiSettings(const sol::table& uiTable, core::BeezSettings& overlay)
     readOptionalString(uiTable, "prefix_format", overlay.ui.options.workerPrefixFormat);
     readOptionalBool(uiTable, "show_time_saved", overlay.ui.options.showTimeSaved);
     readOptionalString(uiTable, "summary", overlay.ui.options.summary);
+
+    if (const sol::object LoggingValue = uiTable["logging"]; LoggingValue.valid())
+    {
+        if (!LoggingValue.is<sol::table>())
+        {
+            throw std::runtime_error("ui.logging must be a table");
+        }
+
+        readLoggingSettings(LoggingValue.as<sol::table>(), overlay);
+    }
 
     if (const sol::object ThemesValue = uiTable["themes"]; ThemesValue.valid())
     {

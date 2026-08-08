@@ -47,6 +47,13 @@ return {
         prefix_format = "[Worker {id}]",
         show_time_saved = true,
         summary = "simple", -- minimal, simple, compact, or data
+        logging = {
+            run_log = true,
+            run_log_file = ".cache/logs/latest.log",
+            log_steps = false,
+            workers = "on_failure", -- off, on_failure, or always
+            workers_dir = ".cache/logs/workers",
+        },
     },
 
     env = {

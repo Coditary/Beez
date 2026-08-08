@@ -7,6 +7,7 @@
 #include "beez/core/text_table.hpp"
 #include "beez/core/thread_pool.hpp"
 #include "beez/core/ui_options.hpp"
+#include "beez/logging/logging_settings.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <algorithm>
@@ -459,6 +460,73 @@ void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows
                                     {},
                                     input.globalConfigPath,
                                     input.context),
+    });
+
+    const logging::LoggingSettings ResolvedLogging = active.resolveLoggingSettings(input.context);
+    rows.push_back(ConfigRow {
+        .key = "ui.logging.run_log",
+        .value = formatBool(ResolvedLogging.runLog),
+        .origin = originForOptional(
+            global.ui.options.logging.has_value() ? global.ui.options.logging->runLog
+                                                  : std::optional<bool> {},
+            project.ui.options.logging.has_value() ? project.ui.options.logging->runLog
+                                                   : std::optional<bool> {},
+            false,
+            {},
+            input.globalConfigPath,
+            input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.logging.run_log_file",
+        .value = formatQuoted(ResolvedLogging.runLogFile.string()),
+        .origin = originForOptional(
+            global.ui.options.logging.has_value() ? global.ui.options.logging->runLogFile
+                                                  : std::optional<std::filesystem::path> {},
+            project.ui.options.logging.has_value() ? project.ui.options.logging->runLogFile
+                                                   : std::optional<std::filesystem::path> {},
+            false,
+            {},
+            input.globalConfigPath,
+            input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.logging.log_steps",
+        .value = formatBool(ResolvedLogging.logSteps),
+        .origin = originForOptional(
+            global.ui.options.logging.has_value() ? global.ui.options.logging->logSteps
+                                                  : std::optional<bool> {},
+            project.ui.options.logging.has_value() ? project.ui.options.logging->logSteps
+                                                   : std::optional<bool> {},
+            false,
+            {},
+            input.globalConfigPath,
+            input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.logging.workers",
+        .value = formatQuoted(logging::toString(ResolvedLogging.workers)),
+        .origin = originForOptional(
+            global.ui.options.logging.has_value() ? global.ui.options.logging->workers
+                                                  : std::optional<std::string> {},
+            project.ui.options.logging.has_value() ? project.ui.options.logging->workers
+                                                   : std::optional<std::string> {},
+            false,
+            {},
+            input.globalConfigPath,
+            input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.logging.workers_dir",
+        .value = formatQuoted(ResolvedLogging.workersDir.string()),
+        .origin = originForOptional(
+            global.ui.options.logging.has_value() ? global.ui.options.logging->workersDir
+                                                  : std::optional<std::filesystem::path> {},
+            project.ui.options.logging.has_value() ? project.ui.options.logging->workersDir
+                                                   : std::optional<std::filesystem::path> {},
+            false,
+            {},
+            input.globalConfigPath,
+            input.context),
     });
 }
 

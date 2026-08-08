@@ -7,6 +7,7 @@
 #include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/core/ui_options.hpp"
+#include "beez/logging/logging_settings.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <filesystem>
@@ -162,6 +163,24 @@ void BeezSettings::applyCliOverrides(const cli::ParsedOptions& options)
     {
         performance.maxThreads = options.maxThreads;
     }
+
+    if (options.noLogFile)
+    {
+        if (!ui.options.logging.has_value())
+        {
+            ui.options.logging = logging::LoggingSettingsOverlay {};
+        }
+        ui.options.logging->runLog = false;
+    }
+    else if (options.logFile.has_value())
+    {
+        if (!ui.options.logging.has_value())
+        {
+            ui.options.logging = logging::LoggingSettingsOverlay {};
+        }
+        ui.options.logging->runLog = true;
+        ui.options.logging->runLogFile = *options.logFile;
+    }
 }
 
 EnvSettings BeezSettings::resolveEnvSettings() const
@@ -208,6 +227,12 @@ UiSettings BeezSettings::resolveUiSettings() const
     return ::beez::core::resolveUiSettings(ui.options);
 }
 
+logging::LoggingSettings BeezSettings::resolveLoggingSettings(const Context& context) const
+{
+    return logging::resolveLoggingSettings(
+        ui.options.logging.value_or(logging::LoggingSettingsOverlay {}), context.projectRoot());
+}
+
 RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& context) const
 {
     const CacheOptions Cache = resolveCacheOptions(context);
@@ -220,6 +245,7 @@ RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& c
         .cache = Cache,
         .performance = buildPerformanceSettings(*this),
         .ui = resolveUiSettings(),
+        .logging = resolveLoggingSettings(context),
     };
 }
 

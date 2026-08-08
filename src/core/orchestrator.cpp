@@ -532,6 +532,12 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
 
     std::string capturedOutput;
     const int ExitCode = executor->execute(command, context_, &capturedOutput);
+    if (runOptions_.runLogWriter != nullptr &&
+        runOptions_.runLogWriter->shouldPersistWorkerOutput(ExitCode) && !capturedOutput.empty())
+    {
+        runOptions_.runLogWriter->writeWorkerOutput(
+            label.detail, "shell", capturedOutput, ExitCode);
+    }
     if (runOptions_.logger != nullptr && !capturedOutput.empty())
     {
         if (runOptions_.outputMode == logging::OutputMode::Verbose)
@@ -681,7 +687,7 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         std::mutex workerFailureOutputMutex;
 
         WorkerPool::ExecuteFn executeWorkerCommand =
-            [this, &workerFailureOutputs, &workerFailureOutputMutex](
+            [this, step, &workerFailureOutputs, &workerFailureOutputMutex](
                 const std::string& command, const WorkerSpec& worker) -> int
         {
             auto* executor = pluginHost_.executor();
@@ -697,6 +703,13 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
 
             std::string capturedOutput;
             const int ExitCode = executor->execute(command, context_, &capturedOutput);
+            if (runOptions_.runLogWriter != nullptr &&
+                runOptions_.runLogWriter->shouldPersistWorkerOutput(ExitCode) &&
+                !capturedOutput.empty())
+            {
+                runOptions_.runLogWriter->writeWorkerOutput(
+                    step.name, worker.name, capturedOutput, ExitCode);
+            }
             if (ExitCode != 0 && !capturedOutput.empty())
             {
                 const std::scoped_lock Lock(workerFailureOutputMutex);

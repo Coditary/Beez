@@ -12,7 +12,9 @@
 #include "beez/core/run_options.hpp"
 #include "beez/core/settings.hpp"
 #include "beez/core/settings_report.hpp"
+#include "beez/logging/logging_settings.hpp"
 #include "beez/logging/output_mode.hpp"
+#include "beez/logging/run_log_writer.hpp"
 #include "beez/logging/spdlog_backend.hpp"
 #include "beez/plugin/lua/lua_dsl.h"
 #include "beez/plugin/lua/lua_settings.hpp"
@@ -225,11 +227,19 @@ int main(int argc, const char* argv[])
 
         const auto OutputMode = settings.ui.outputMode.value_or(beez::logging::OutputMode::Clean);
         const auto UiSettings = settings.resolveUiSettings();
-        auto logger = beez::logging::createSpdlogLogger(OutputMode, UiSettings);
+        const auto LoggingSettings = settings.resolveLoggingSettings(context);
+        auto logger = beez::logging::createSpdlogLogger(OutputMode, UiSettings, LoggingSettings);
 
-        const beez::core::RunOptions Options = settings.toRunOptions(logger.get(), context);
+        std::unique_ptr<beez::logging::RunLogWriter> runLogWriter;
+        if (LoggingSettings.workers != beez::logging::WorkerLogMode::Off)
+        {
+            runLogWriter = std::make_unique<beez::logging::RunLogWriter>(LoggingSettings);
+        }
 
-        beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+        beez::core::RunOptions runOptions = settings.toRunOptions(logger.get(), context);
+        runOptions.runLogWriter = runLogWriter.get();
+
+        beez::core::Orchestrator orchestrator(registry, context, pluginHost, runOptions);
 
         return beez::cli::runParsedInvocation(orchestrator, registry, Parsed.options);
     }

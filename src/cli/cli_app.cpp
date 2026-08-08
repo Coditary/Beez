@@ -41,6 +41,8 @@ std::string CliApp::helpText()
     stream << "  -h, --help       Display this help and exit\n";
     stream << "  -v, --version    Display the installed Beez and Lua version\n";
     stream << "      --verbose    Enable verbose logging (Ninja-style)\n";
+    stream << "      --log-file PATH  Write run log to PATH (default: .cache/logs/latest.log)\n";
+    stream << "      --no-log-file    Disable run log file output\n";
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
     stream << "      --no-cache   Disable step and success caching\n";
     stream << "      --show-config Show merged active configuration and exit\n";
@@ -89,11 +91,16 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     bool updateCache = false;
     bool installCompletion = false;
     bool showConfig = false;
+    bool noLogFile = false;
+    std::string logFile;
     std::string configOptionsPath;
     std::string completeConfigOptionsPrefix;
     std::string dumpCompletionShell;
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
+    app.add_option(
+        "--log-file", logFile, "Write run log to PATH (default: .cache/logs/latest.log)");
+    app.add_flag("--no-log-file", noLogFile, "Disable run log file output");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
     app.add_flag("--no-cache", disableCache, "Disable step and success caching");
     app.add_flag("--show-config", showConfig, "Show merged active configuration and exit");
@@ -200,6 +207,12 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     if (threadCount > 0)
     {
         options.maxThreads = threadCount;
+    }
+
+    options.noLogFile = noLogFile;
+    if (!logFile.empty())
+    {
+        options.logFile = logFile;
     }
 
     return {.reason = CliExitReason::Continue, .options = std::move(options), .exitCode = 0};

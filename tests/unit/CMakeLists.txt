@@ -6,6 +6,7 @@ add_executable(
     beez_tests
     version/test_version.cpp
     logging/test_logger.cpp
+    logging/test_logging_settings.cpp
     logging/test_worker_output_format.cpp
     cli/test_cli_app.cpp
     cli/test_list_formatter.cpp
