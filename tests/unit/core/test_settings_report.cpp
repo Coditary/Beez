@@ -38,9 +38,9 @@ TEST(SettingsReportTest, ShowsCliAndProjectOrigins)
     EXPECT_NE(Report.find("=== Beez Active Configuration ==="), std::string::npos);
     EXPECT_NE(Report.find("[Performance]"), std::string::npos);
     EXPECT_NE(Report.find("performance.max_threads"), std::string::npos);
-    EXPECT_NE(Report.find("(Origin: CLI --threads)"), std::string::npos);
-    EXPECT_NE(Report.find("(Origin: CLI --verbose)"), std::string::npos);
-    EXPECT_NE(Report.find("(Origin: build.lua)"), std::string::npos);
+    EXPECT_NE(Report.find("CLI --threads"), std::string::npos);
+    EXPECT_NE(Report.find("CLI --verbose"), std::string::npos);
+    EXPECT_NE(Report.find("build.lua"), std::string::npos);
     EXPECT_NE(Report.find("cache.hash.algorithm"), std::string::npos);
     EXPECT_NE(Report.find("\"crc32\""), std::string::npos);
 }
@@ -59,7 +59,7 @@ TEST(SettingsReportTest, ShowsDefaultOriginWhenUnset)
                                          .cliOptions = CliOptions,
                                          .context = Context});
 
-    EXPECT_NE(Report.find("(Origin: Default)"), std::string::npos);
+    EXPECT_NE(Report.find("Default"), std::string::npos);
     EXPECT_NE(Report.find("ui.output_mode"), std::string::npos);
     EXPECT_NE(Report.find("\"clean\""), std::string::npos);
 }

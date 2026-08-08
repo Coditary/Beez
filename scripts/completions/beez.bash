@@ -34,7 +34,21 @@ _beez_list_names() {
 
     (
         cd "$root" && "$beez_cmd" --list "$kind" 2>/dev/null
-    ) | sed -n 's/^  //p'
+    ) | awk '/^-/{sep=1; next} sep && NF { print $1 }'
+}
+
+_beez_phase_scopes() {
+    local root="$1"
+    local beez_cmd
+
+    beez_cmd="$(_beez_cmd)"
+    if [[ -z "$beez_cmd" ]]; then
+        return 0
+    fi
+
+    (
+        cd "$root" && "$beez_cmd" --list steps 2>/dev/null
+    ) | awk '/^-/{sep=1; next} sep && NF>=3 { print $2 ":" $3 }' | sort -u
 }
 
 _beez_targets() {
@@ -55,13 +69,13 @@ _beez() {
 
     case "$prev" in
         --list)
-            COMPREPLY=($(compgen -W 'tasks workflows steps phases phase-scopes' -- "$cur"))
+            COMPREPLY=($(compgen -W 'tasks workflows steps phases' -- "$cur"))
             return 0
             ;;
         -p | --phase)
             if _beez_find_root >/dev/null; then
                 root="$(_beez_find_root)"
-                COMPREPLY=($(compgen -W "$(_beez_list_names phase-scopes "$root")" -- "$cur"))
+                COMPREPLY=($(compgen -W "$(_beez_phase_scopes "$root")" -- "$cur"))
             fi
             return 0
             ;;

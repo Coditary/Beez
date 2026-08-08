@@ -1,5 +1,7 @@
 #pragma once
 
+#include "beez/core/text_table.hpp"
+
 #include <chrono>
 #include <cstddef>
 #include <filesystem>
@@ -53,24 +55,46 @@ class TimingReport
         std::filesystem::create_directories(reportPath.parent_path(), errorCode);
 
         std::ostringstream stream;
-        stream << std::fixed << std::setprecision(3);
         stream << "Beez performance throughput report\n";
         stream << "==================================\n\n";
-        stream << std::left << std::setw(12) << "scenario" << std::setw(10) << "files"
-               << std::setw(12) << "materialized" << std::setw(8) << "steps" << std::setw(14)
-               << "order_ms" << std::setw(14) << "registry_ms" << std::setw(16) << "orchestrator_ms"
-               << "suite\n";
-        stream << std::string(96, '-') << '\n';
 
+        core::TextTable table({"scenario",
+                               "files",
+                               "materialized",
+                               "steps",
+                               "order_ms",
+                               "registry_ms",
+                               "orchestrator_ms",
+                               "suite"});
         for (const auto& sample : samples_)
         {
-            stream << std::setw(12) << sample.scenario << std::setw(10) << sample.virtualFiles
-                   << std::setw(12) << sample.materializedFiles << std::setw(8) << sample.steps
-                   << std::setw(14) << sample.orderMs << std::setw(14) << sample.registryMs
-                   << std::setw(16) << sample.orchestratorMs << sample.suite << '\n';
+            std::ostringstream timing;
+            timing << std::fixed << std::setprecision(3);
+            timing << sample.orderMs;
+            const std::string OrderMs = timing.str();
+
+            timing.str({});
+            timing.clear();
+            timing << sample.registryMs;
+            const std::string RegistryMs = timing.str();
+
+            timing.str({});
+            timing.clear();
+            timing << sample.orchestratorMs;
+            const std::string OrchestratorMs = timing.str();
+
+            table.addRow({sample.scenario,
+                          std::to_string(sample.virtualFiles),
+                          std::to_string(sample.materializedFiles),
+                          std::to_string(sample.steps),
+                          OrderMs,
+                          RegistryMs,
+                          OrchestratorMs,
+                          sample.suite});
         }
 
-        stream << "\nNotes:\n";
+        stream << table.format();
+        stream << "\n\nNotes:\n";
         stream << "- Virtual files are catalogued paths; only small scenarios materialize files on "
                   "disk.\n";
         stream << "- DAG resolution uses glob-pattern overlap (no directory traversal).\n";

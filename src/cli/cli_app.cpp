@@ -53,8 +53,7 @@ std::string CliApp::helpText()
     stream << "  User defaults: ~/.config/beez/config.lua (return a settings table)\n";
     stream << "  Project overrides: beez.config({ ... }) in build.lua\n";
     stream << "  CLI flags override both.\n";
-    stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases, "
-              "phase-scopes)\n";
+    stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";
     stream << "  -p, --phase TEXT Run a phase (phase[:scope1,scope2] or phase[\"scope\"])\n";
     stream << "  -s, --step TEXT  Run a single step by name\n";
     return stream.str();
@@ -107,7 +106,7 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
         ->check(CLI::Range(1, MaxThreadCount));
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
-        ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases", "phase-scopes"}));
+        ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
         "-p,--phase", phaseArgument, "Run a phase (phase[:scope1,scope2] or phase[\"scope\"])");
     app.add_option("-s,--step", stepName, "Run a single step by name");

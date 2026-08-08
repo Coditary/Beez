@@ -32,7 +32,21 @@ _beez_list_names() {
         return 0
     fi
 
-    cd "$root" && "$beez_cmd" --list "$kind" 2>/dev/null | sed -n 's/^  //p'
+    cd "$root" && "$beez_cmd" --list "$kind" 2>/dev/null | awk '/^-/{sep=1; next} sep && NF { print $1 }'
+}
+
+_beez_phase_scopes() {
+    local root=$1
+    local beez_cmd
+
+    beez_cmd=$(_beez_cmd)
+    if [[ -z $beez_cmd ]]; then
+        return 0
+    fi
+
+    cd "$root" && "$beez_cmd" --list steps 2>/dev/null \
+        | awk '/^-/{sep=1; next} sep && NF>=3 { print $2 ":" $3 }' \
+        | sort -u
 }
 
 _beez_targets() {
@@ -55,7 +69,7 @@ _beez() {
         '--clean-cache[Remove .cache/ before running]' \
         '(-j --threads)-j[Maximum worker threads]' \
         '(-j --threads)--threads[Maximum worker threads]:threads:' \
-        '--list[List registered entities]:kind:(tasks workflows steps phases phase-scopes)' \
+        '--list[List registered entities]:kind:(tasks workflows steps phases)' \
         '(-p --phase)-p[Run a phase]:phase:->phase' \
         '(-p --phase)--phase[Run a phase]:phase:->phase' \
         '(-s --step)-s[Run a single step]:step:->step' \
@@ -71,7 +85,7 @@ _beez() {
             ;;
         phase)
             if root=$(_beez_find_root); then
-                items=("${(@f)$(_beez_list_names phase-scopes "$root")}")
+                items=("${(@f)$(_beez_phase_scopes "$root")}")
                 _describe -t phases 'beez phases' items
             fi
             ;;

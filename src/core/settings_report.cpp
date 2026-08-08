@@ -2,6 +2,7 @@
 
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/text_table.hpp"
 #include "beez/core/thread_pool.hpp"
 #include "beez/logging/output_mode.hpp"
 
@@ -9,8 +10,6 @@
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
-#include <iomanip>
-#include <ios>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -21,9 +20,6 @@ namespace beez::core
 
 namespace
 {
-
-constexpr int KeyColumnWidth = 30;
-constexpr int ValueColumnWidth = 28;
 
 struct ConfigRow
 {
@@ -145,26 +141,14 @@ void appendSection(std::ostringstream& stream,
     }
 
     stream << '[' << title << "]\n";
+
+    TextTable table({"Setting", "Value", "Origin"});
     for (const auto& row : rows)
     {
-        std::ostringstream line;
-        line << std::left << std::setw(KeyColumnWidth) << (row.key + " =") << row.value;
-
-        std::string formatted = line.str();
-        const std::size_t MinimumWidth = KeyColumnWidth + ValueColumnWidth;
-        if (formatted.size() < MinimumWidth)
-        {
-            formatted.append(MinimumWidth - formatted.size(), ' ');
-        }
-        else
-        {
-            formatted.append(2, ' ');
-        }
-
-        stream << formatted << "(Origin: " << row.origin << ")\n";
+        table.addRow({row.key, row.value, row.origin});
     }
 
-    stream << '\n';
+    stream << table.format() << "\n\n";
 }
 
 void appendPerformanceRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)

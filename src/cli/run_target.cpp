@@ -48,8 +48,7 @@ int runParsedInvocation(core::Orchestrator& orchestrator,
 {
     if (options.listKind.has_value())
     {
-        const auto Names = collectEntityNames(registry, *options.listKind);
-        std::cout << formatEntityList(*options.listKind, Names);
+        std::cout << formatEntityList(registry, *options.listKind);
         return 0;
     }
 
