@@ -1,6 +1,6 @@
 find_package(spdlog REQUIRED)
 
-add_library(beez_logging STATIC recording_logger.cpp spdlog_backend.cpp)
+add_library(beez_logging STATIC recording_logger.cpp spdlog_backend.cpp worker_output_format.cpp)
 
 target_include_directories(beez_logging PUBLIC ${CMAKE_SOURCE_DIR}/include)
 

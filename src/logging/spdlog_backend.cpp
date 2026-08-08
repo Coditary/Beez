@@ -2,9 +2,12 @@
 
 #include "beez/logging/logger.hpp"
 #include "beez/logging/output_mode.hpp"
+#include "beez/logging/worker_output_format.hpp"
 
 #include <spdlog/logger.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
+#include <unistd.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -91,6 +94,15 @@ class SpdlogLogger final : public ILogger
     }
 
   private:
+    void logWorkerLine(const std::string& line)
+    {
+        const std::size_t TerminalWidth = isatty(STDOUT_FILENO) != 0 ? stdoutTerminalWidth() : 0;
+        for (const std::string_view Segment : splitWorkerOutputLine(line, TerminalWidth))
+        {
+            logger_->info("{}{}", WorkerOutputPrefix, Segment);
+        }
+    }
+
     void appendOutput(LogChannelId channel, std::string_view output)
     {
         const std::scoped_lock Lock(mutex_);
@@ -103,7 +115,7 @@ class SpdlogLogger final : public ILogger
             const std::string Line = buffer.substr(0, newlinePosition);
             if (!Line.empty())
             {
-                logger_->info("  | {}", Line);
+                logWorkerLine(Line);
             }
             buffer.erase(0, newlinePosition + 1);
         }
@@ -115,7 +127,7 @@ class SpdlogLogger final : public ILogger
         {
             if (!buffer.empty())
             {
-                logger_->info("  | {}", buffer);
+                logWorkerLine(buffer);
             }
             (void)channelId;
         }
@@ -130,7 +142,7 @@ class SpdlogLogger final : public ILogger
             return;
         }
 
-        logger_->info("  | {}", Found->second);
+        logWorkerLine(Found->second);
         Found->second.clear();
     }
 
