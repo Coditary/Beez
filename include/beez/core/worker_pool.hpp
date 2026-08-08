@@ -9,11 +9,14 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <mutex>
 #include <string>
 #include <vector>
 
 namespace beez::core
 {
+
+using CacheStatsRecorder = std::function<void(bool hit, double savedSeconds)>;
 
 struct WorkerSpec
 {
@@ -47,7 +50,8 @@ class WorkerPool
                std::string parentStepName,
                StepConfigPtr parentStepConfig,
                bool dryRun,
-               const ThreadPool* threadPool = nullptr);
+               const ThreadPool* threadPool = nullptr,
+               CacheStatsRecorder statsRecorder = nullptr);
 
     [[nodiscard]] WorkerHandle spawn(WorkerSpec spec);
     [[nodiscard]] int wait(WorkerHandle handle);
@@ -59,12 +63,20 @@ class WorkerPool
         return workers_.size();
     }
 
+    [[nodiscard]] double workerDuration(std::size_t workerId) const;
+
+    [[nodiscard]] double totalWorkerExecutionSeconds() const;
+    [[nodiscard]] double totalWorkerSavedSeconds() const;
+    [[nodiscard]] std::size_t cacheHitCount() const;
+    [[nodiscard]] std::size_t cacheMissCount() const;
+
   private:
     struct WorkerEntry
     {
         WorkerSpec spec;
         bool done = false;
         int exitCode = 0;
+        double lastDurationSeconds = 0.0;
     };
 
     [[nodiscard]] int executeWorker(std::size_t workerId);
@@ -80,7 +92,13 @@ class WorkerPool
     StepConfigPtr parentStepConfig_;
     bool dryRun_;
     const ThreadPool* threadPool_;
+    CacheStatsRecorder statsRecorder_;
     std::vector<WorkerEntry> workers_;
+    mutable std::mutex timingMutex_;
+    double totalWorkerExecutionSeconds_ = 0.0;
+    double totalWorkerSavedSeconds_ = 0.0;
+    std::size_t cacheHitCount_ = 0;
+    std::size_t cacheMissCount_ = 0;
 };
 
 }  // namespace beez::core

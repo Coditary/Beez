@@ -29,24 +29,11 @@ return {
 
     ui = {
         output_mode = "clean", -- "clean" or "verbose"
-        colors = true,
-        truecolor = true,
-        themes = {
-            gruvbox = {
-                text = "#ebdbb2",
-                muted = "#928374",
-                success = "#b8bb26",
-                warning = "#fabd2f",
-                error = "#fb4934",
-                info = "#83a598",
-                accent = "#fe8019",
-                progress_fill = "#b8bb26",
-                progress_empty = "#665c54",
-                cache_hit = "#8ec07c",
-                worker_prefix = "#83a598",
-            },
-        },
-        theme = "gruvbox", -- name from ui.themes
+        colors = true, -- uses built-in default palette when no theme is set
+        -- truecolor defaults to colors; set explicitly to force 16-color ANSI mapping
+        -- truecolor = true,
+        -- themes = { gruvbox = { ... } },
+        -- theme = "gruvbox", -- optional; omit to use the default palette
         icons = true,
         animation = {
             progress = "minimal", -- minimal, lines, blocks, or custom table
@@ -59,6 +46,7 @@ return {
         prefix = false,
         prefix_format = "[Worker {id}]",
         show_time_saved = true,
+        summary = "simple", -- minimal, simple, compact, or data
     },
 
     env = {

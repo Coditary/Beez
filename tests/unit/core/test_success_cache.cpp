@@ -93,6 +93,20 @@ TEST_F(SuccessCacheTest, HitAfterCacheFileSuccess)
     EXPECT_TRUE(nextSession.fileSuccessCached("src/main.cpp"));
 }
 
+TEST_F(SuccessCacheTest, LookupReturnsStoredFileDurationSeconds)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+
+    auto session = openSession();
+    constexpr double KDuration = 0.42;
+    session.cacheFileSuccess("src/main.cpp", KDuration);
+    session.finish();
+
+    auto nextSession = openSession();
+    ASSERT_TRUE(nextSession.fileSuccessCached("src/main.cpp"));
+    EXPECT_DOUBLE_EQ(nextSession.fileSavedDurationSeconds("src/main.cpp"), KDuration);
+}
+
 TEST_F(SuccessCacheTest, MissWhenFileContentChanges)
 {
     writeFile(root / "src" / "main.cpp", "int main() {}\n");

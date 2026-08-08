@@ -22,6 +22,7 @@ struct CacheLookupResult
 {
     bool skip = false;
     std::string key;
+    double savedDurationSeconds = 0.0;
 };
 
 struct CacheEntry
@@ -117,7 +118,8 @@ class StepCache
     void store(const Step& step,
                const std::filesystem::path& projectRoot,
                const StepConfigPtr& config,
-               const std::vector<std::string>& outputs) const;
+               const std::vector<std::string>& outputs,
+               double durationSeconds = 0.0) const;
 
     [[nodiscard]] const IGlobMatcher& matcher() const
     {
@@ -143,7 +145,8 @@ class StepCache
                     const std::filesystem::path& projectRoot,
                     const StepConfigPtr& config,
                     const std::string& key,
-                    const std::vector<std::string>& outputs) const;
+                    const std::vector<std::string>& outputs,
+                    double durationSeconds = 0.0) const;
 };
 
 [[nodiscard]] std::unique_ptr<ICacheKeyStrategy>

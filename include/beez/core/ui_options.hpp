@@ -97,6 +97,14 @@ struct UiAnimationOverlay
     std::optional<std::vector<std::string>> customSpinnerFrames;
 };
 
+enum class RunSummaryStyle : std::uint8_t
+{
+    Minimal,
+    Simple,
+    Compact,
+    Data,
+};
+
 struct UiSettingsOverlay
 {
     std::optional<bool> colors;
@@ -110,6 +118,7 @@ struct UiSettingsOverlay
     std::optional<bool> workerPrefix;
     std::optional<std::string> workerPrefixFormat;
     std::optional<bool> showTimeSaved;
+    std::optional<std::string> summary;
 };
 
 struct UiSettings
@@ -124,23 +133,29 @@ struct UiSettings
     bool workerPrefixEnabled = false;
     std::string workerPrefixFormat = "[Worker {id}]";
     bool showTimeSaved = true;
+    RunSummaryStyle summaryStyle = RunSummaryStyle::Simple;
 };
 
 [[nodiscard]] ProgressDisplayStyle parseProgressDisplayStyle(const std::string& value);
 [[nodiscard]] ProgressIndicatorStyle parseProgressIndicatorStyle(const std::string& value);
 [[nodiscard]] UiLogLevel parseUiLogLevel(const std::string& value);
+[[nodiscard]] RunSummaryStyle parseRunSummaryStyle(const std::string& value);
 
 [[nodiscard]] const char* toString(ProgressDisplayStyle style);
 [[nodiscard]] const char* toString(ProgressIndicatorStyle indicator);
 [[nodiscard]] const char* toString(UiLogLevel level);
+[[nodiscard]] const char* toString(RunSummaryStyle style);
 
 [[nodiscard]] std::vector<const char*> progressDisplayStyleNames();
 [[nodiscard]] std::vector<const char*> progressIndicatorStyleNames();
 [[nodiscard]] std::vector<const char*> uiLogLevelNames();
+[[nodiscard]] std::vector<const char*> runSummaryStyleNames();
 
 [[nodiscard]] bool isSpinnerIndicatorStyle(ProgressIndicatorStyle indicator);
 [[nodiscard]] bool isBarProgressStyle(ProgressDisplayStyle style);
 [[nodiscard]] bool usesAnimatedProgressSpinner(const UiSettings& settings);
+
+[[nodiscard]] UiColorPalette defaultColorPalette();
 
 [[nodiscard]] UiColorPalette
 resolveThemePalette(const std::optional<std::string>& themeName,
@@ -164,5 +179,10 @@ formatProgressLine(const UiSettings& settings,
 
 [[nodiscard]] std::string formatRunSummaryLine(const UiSettings& settings,
                                                const logging::RunSummary& summary);
+
+[[nodiscard]] std::vector<std::string> formatRunEndMessage(const UiSettings& settings,
+                                                           bool success,
+                                                           double durationSeconds,
+                                                           const logging::RunSummary& summary);
 
 }  // namespace beez::core

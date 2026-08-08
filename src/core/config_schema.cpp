@@ -205,6 +205,7 @@ struct ConfigSchemaNode
                 uiSettings.children.emplace("prefix", makeBooleanNode());
                 uiSettings.children.emplace("prefix_format", makeStringNode());
                 uiSettings.children.emplace("show_time_saved", makeBooleanNode());
+                uiSettings.children.emplace("summary", makeEnumNode(runSummaryStyleNames()));
                 return uiSettings;
             }());
 

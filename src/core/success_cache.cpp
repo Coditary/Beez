@@ -249,6 +249,17 @@ void addMiss(std::vector<std::string>& misses, const std::string& key)
            manifest.field("version") == version::VersionString;
 }
 
+[[nodiscard]] double manifestDurationSeconds(const ManifestFields& manifest)
+{
+    const std::string Value = manifest.field("duration");
+    if (Value.empty())
+    {
+        return 0.0;
+    }
+
+    return std::stod(Value);
+}
+
 }  // namespace
 
 SuccessCacheSession::SuccessCacheSession(StepIdentity identity,
@@ -349,6 +360,20 @@ bool SuccessCacheSession::fileSuccessCached(const std::filesystem::path& relativ
            Manifest->field("inputs_hash") == CurrentInputsHash;
 }
 
+double
+SuccessCacheSession::fileSavedDurationSeconds(const std::filesystem::path& relativePath) const
+{
+    const std::string NormalizedPath = relativePath.generic_string();
+    const auto Manifest =
+        readManifestFields(entryManifestPath(entryKey("file", NormalizedPath)), cacheOptions_);
+    if (!Manifest.has_value())
+    {
+        return 0.0;
+    }
+
+    return manifestDurationSeconds(*Manifest);
+}
+
 void SuccessCacheSession::cacheSuccess(const std::string& key)
 {
     const auto Key = entryKey("string", key);
@@ -367,7 +392,10 @@ void SuccessCacheSession::cacheSuccess(const std::string& key)
     removeMiss(currentMisses_, key);
 }
 
-void SuccessCacheSession::cacheFileSuccess(const std::filesystem::path& relativePath)
+// NOLINTNEXTLINE(readability-identifier-naming)
+void SuccessCacheSession::cacheFileSuccess(const std::filesystem::path& relativePath,
+                                           // NOLINTNEXTLINE(readability-identifier-naming)
+                                           const double durationSeconds)
 {
     const std::string NormalizedPath = relativePath.generic_string();
     const auto Absolute = projectRoot_ / relativePath;
@@ -388,6 +416,10 @@ void SuccessCacheSession::cacheFileSuccess(const std::filesystem::path& relative
     stream << "key=" << NormalizedPath << '\n';
     stream << "file_hash=" << FileHash << '\n';
     stream << "inputs_hash=" << InputsHash << '\n';
+    if (durationSeconds > 0.0)
+    {
+        stream << "duration=" << durationSeconds << '\n';
+    }
     writeCacheFile(ManifestPath, stream.str(), cacheOptions_);
 
     removeMiss(currentMisses_, NormalizedPath);

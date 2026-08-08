@@ -29,9 +29,10 @@ class SuccessCacheSession
 
     [[nodiscard]] bool successCached(const std::string& key) const;
     [[nodiscard]] bool fileSuccessCached(const std::filesystem::path& relativePath) const;
+    [[nodiscard]] double fileSavedDurationSeconds(const std::filesystem::path& relativePath) const;
 
     void cacheSuccess(const std::string& key);
-    void cacheFileSuccess(const std::filesystem::path& relativePath);
+    void cacheFileSuccess(const std::filesystem::path& relativePath, double durationSeconds = 0.0);
 
     void recordCacheMiss(const std::string& key);
     void recordFileCacheMiss(const std::filesystem::path& relativePath);

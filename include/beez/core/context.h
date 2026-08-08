@@ -15,6 +15,8 @@ class GlobMetadataCache;
 class WorkerPool;
 class SuccessCacheSession;
 
+using CacheStatsRecorder = std::function<void(bool hit, double savedSeconds)>;
+
 class Context
 {
   public:
@@ -71,6 +73,14 @@ class Context
         return globMetadataCache_;
     }
 
+    void setCacheStatsRecorder(CacheStatsRecorder recorder);
+    void clearCacheStatsRecorder();
+
+    void recordCacheUnit(bool hit, double savedSeconds = 0.0) const;
+
+    void setPendingWorkerDuration(double durationSeconds) const;
+    [[nodiscard]] double consumePendingWorkerDuration() const;
+
   private:
     std::filesystem::path projectRoot_;
     std::optional<std::string> buildScriptFileName_;
@@ -80,6 +90,8 @@ class Context
     SuccessCacheSession* successCacheSession_ = nullptr;
     WorkerPool* workerPool_ = nullptr;
     GlobMetadataCache* globMetadataCache_ = nullptr;
+    CacheStatsRecorder cacheStatsRecorder_;
+    mutable std::optional<double> pendingWorkerDuration_;
 };
 
 }  // namespace beez::core

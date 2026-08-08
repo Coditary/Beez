@@ -102,4 +102,41 @@ void Context::clearGlobMetadataCache()
     globMetadataCache_ = nullptr;
 }
 
+void Context::setCacheStatsRecorder(CacheStatsRecorder recorder)
+{
+    cacheStatsRecorder_ = std::move(recorder);
+}
+
+void Context::clearCacheStatsRecorder()
+{
+    cacheStatsRecorder_ = nullptr;
+}
+
+// NOLINTNEXTLINE(readability-identifier-naming)
+void Context::recordCacheUnit(const bool hit, const double savedSeconds) const
+{
+    if (cacheStatsRecorder_ != nullptr)
+    {
+        cacheStatsRecorder_(hit, savedSeconds);
+    }
+}
+
+// NOLINTNEXTLINE(readability-identifier-naming)
+void Context::setPendingWorkerDuration(const double durationSeconds) const
+{
+    pendingWorkerDuration_ = durationSeconds;
+}
+
+double Context::consumePendingWorkerDuration() const
+{
+    if (!pendingWorkerDuration_.has_value())
+    {
+        return 0.0;
+    }
+
+    const double Duration = *pendingWorkerDuration_;
+    pendingWorkerDuration_.reset();
+    return Duration;
+}
+
 }  // namespace beez::core

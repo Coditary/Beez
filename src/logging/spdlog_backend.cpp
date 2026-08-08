@@ -103,20 +103,12 @@ class SpdlogLogger final : public ILogger
         progressSpinner_.stop();
         flushChannelBuffers();
 
-        const std::string SummaryLine = core::formatRunSummaryLine(ui_, summary);
-        if (!SummaryLine.empty())
+        const std::vector<std::string> Lines =
+            core::formatRunEndMessage(ui_, success, durationSeconds, summary);
+        for (const auto& line : Lines)
         {
-            logger_->info("{}", SummaryLine);
+            logger_->info("{}", line);
         }
-
-        logger_->info("============================================================");
-        if (success)
-        {
-            logger_->info("Build successful in {:.2f}s!", durationSeconds);
-            return;
-        }
-
-        logger_->info("Build failed after {:.2f}s.", durationSeconds);
     }
 
     LogChannelId openChannel(const std::string& label) override

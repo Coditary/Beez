@@ -90,7 +90,7 @@ task("slow", "sleep 0.2")
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"slow"});
     EXPECT_EQ(Result.exitCode, 0);
-    EXPECT_EQ(Result.output.find("Build successful in 0.00s!"), std::string::npos);
+    EXPECT_EQ(Result.output.find("Build finished in 0.00s"), std::string::npos);
 }
 
 TEST(CliTest, CleanModeSuppressesCommandOutput)

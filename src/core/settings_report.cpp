@@ -450,6 +450,16 @@ void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows
                                     input.globalConfigPath,
                                     input.context),
     });
+    rows.push_back(ConfigRow {
+        .key = "ui.summary",
+        .value = formatQuoted(toString(ResolvedUi.summaryStyle)),
+        .origin = originForOptional(global.ui.options.summary,
+                                    project.ui.options.summary,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
 }
 
 [[nodiscard]] std::string formatStringList(const std::vector<std::string>& values)

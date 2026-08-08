@@ -6,6 +6,35 @@
 
 #include <map>
 #include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace
+{
+
+std::string joinMessageLines(const std::vector<std::string>& lines)
+{
+    std::string joined;
+    for (const auto& line : lines)
+    {
+        joined += line;
+        joined += '\n';
+    }
+
+    return joined;
+}
+
+void expectContains(const std::string& haystack, const std::string& needle)
+{
+    EXPECT_NE(haystack.find(needle), std::string::npos) << needle;
+}
+
+void expectMissing(const std::string& haystack, const std::string& needle)
+{
+    EXPECT_EQ(haystack.find(needle), std::string::npos) << needle;
+}
+
+}  // namespace
 
 TEST(UiOptionsTest, ParsesProgressAndIndicatorStyles)
 {
@@ -35,11 +64,44 @@ TEST(UiOptionsTest, ResolvesNamedThemeFromThemesTable)
     EXPECT_EQ(Settings.palette.accent, "#ff0000");
 }
 
-TEST(UiOptionsTest, UsesEmptyPaletteWhenNoThemeSelected)
+TEST(UiOptionsTest, UsesDefaultPaletteWhenColorsEnabledAndNoTheme)
 {
-    const beez::core::UiSettings Settings = beez::core::resolveUiSettings({});
+    beez::core::UiSettingsOverlay overlay;
+    overlay.colors = true;
+
+    const beez::core::UiSettings Settings = beez::core::resolveUiSettings(overlay);
+    EXPECT_EQ(Settings.palette.text, beez::core::defaultColorPalette().text);
+    EXPECT_EQ(Settings.palette.success, beez::core::defaultColorPalette().success);
+    EXPECT_TRUE(Settings.truecolor);
+}
+
+TEST(UiOptionsTest, UsesEmptyPaletteWhenColorsDisabledAndNoTheme)
+{
+    beez::core::UiSettingsOverlay overlay;
+    overlay.colors = false;
+
+    const beez::core::UiSettings Settings = beez::core::resolveUiSettings(overlay);
     EXPECT_TRUE(Settings.palette.text.empty());
     EXPECT_TRUE(Settings.palette.accent.empty());
+    EXPECT_FALSE(Settings.truecolor);
+}
+
+TEST(UiOptionsTest, EnablesTruecolorAutomaticallyWhenColorsEnabled)
+{
+    const beez::core::UiSettings Settings = beez::core::resolveUiSettings({});
+    EXPECT_TRUE(Settings.colors);
+    EXPECT_TRUE(Settings.truecolor);
+}
+
+TEST(UiOptionsTest, RespectsExplicitTruecolorOverride)
+{
+    beez::core::UiSettingsOverlay overlay;
+    overlay.colors = true;
+    overlay.truecolor = false;
+
+    const beez::core::UiSettings Settings = beez::core::resolveUiSettings(overlay);
+    EXPECT_TRUE(Settings.colors);
+    EXPECT_FALSE(Settings.truecolor);
 }
 
 TEST(UiOptionsTest, FormatsMinimalProgressLine)
@@ -246,13 +308,132 @@ TEST(UiOptionsTest, FormatsRunSummaryWhenEnabled)
 {
     beez::core::UiSettings settings;
     settings.colors = false;
+    settings.summaryStyle = beez::core::RunSummaryStyle::Minimal;
     settings.showTimeSaved = true;
     settings.palette.cacheHit = "#8ec07c";
 
     const std::string Line = beez::core::formatRunSummaryLine(
         settings, beez::logging::RunSummary {.cacheHitsSkipped = 3});
     EXPECT_NE(Line.find('3'), std::string::npos);
-    EXPECT_NE(Line.find("cached steps"), std::string::npos);
+    EXPECT_NE(Line.find("cache hits"), std::string::npos);
+}
+
+TEST(UiOptionsTest, FormatsSimpleRunEndSummary)
+{
+    beez::core::UiSettings settings;
+    settings.colors = false;
+    settings.icons = false;
+    settings.summaryStyle = beez::core::RunSummaryStyle::Simple;
+    settings.showTimeSaved = true;
+
+    const auto Lines = beez::core::formatRunEndMessage(
+        settings,
+        true,
+        0.12,
+        beez::logging::RunSummary {.cacheHitsSkipped = 142,
+                                   .totalSteps = 150,
+                                   .workerThreads = 8,
+                                   .estimatedTimeSavedSeconds = 134.0});
+
+    ASSERT_FALSE(Lines.empty());
+    const std::string& summaryLine = Lines.back();
+    EXPECT_NE(summaryLine.find("Build finished in 0.12s"), std::string::npos);
+    EXPECT_NE(summaryLine.find("142/150 cached (94%)"), std::string::npos);
+    EXPECT_NE(summaryLine.find("8 workers"), std::string::npos);
+    EXPECT_NE(summaryLine.find("saved ~2m 14s"), std::string::npos);
+}
+
+TEST(UiOptionsTest, FormatsFullyCachedRunEndWithSavedTime)
+{
+    beez::core::UiSettings settings;
+    settings.colors = false;
+    settings.icons = false;
+    settings.summaryStyle = beez::core::RunSummaryStyle::Simple;
+    settings.showTimeSaved = true;
+
+    const auto Lines = beez::core::formatRunEndMessage(
+        settings,
+        true,
+        0.01,
+        beez::logging::RunSummary {.cacheHitsSkipped = 188,
+                                   .totalSteps = 188,
+                                   .workerThreads = 16,
+                                   .estimatedTimeSavedSeconds = 0.47});
+
+    ASSERT_FALSE(Lines.empty());
+    const std::string& summaryLine = Lines.back();
+    EXPECT_NE(summaryLine.find("188/188 cached (100%)"), std::string::npos);
+    EXPECT_NE(summaryLine.find("saved ~0.47s"), std::string::npos);
+}
+
+TEST(UiOptionsTest, FormatsFailedSimpleRunEndSummary)
+{
+    beez::core::UiSettings settings;
+    settings.colors = false;
+    settings.icons = false;
+    settings.summaryStyle = beez::core::RunSummaryStyle::Simple;
+
+    const auto Lines = beez::core::formatRunEndMessage(
+        settings, false, 0.12, beez::logging::RunSummary {.workerThreads = 4});
+
+    ASSERT_FALSE(Lines.empty());
+    EXPECT_NE(Lines.back().find("Build failed after 0.12s"), std::string::npos);
+}
+
+TEST(UiOptionsTest, FormatsCompactRunEndSummary)
+{
+    beez::core::UiSettings settings;
+    settings.colors = false;
+    settings.icons = true;
+    settings.summaryStyle = beez::core::RunSummaryStyle::Compact;
+    settings.showTimeSaved = true;
+
+    const std::string Output = joinMessageLines(beez::core::formatRunEndMessage(
+        settings,
+        true,
+        0.13,
+        beez::logging::RunSummary {.cacheHitsSkipped = 2,
+                                   .totalSteps = 6,
+                                   .peakWorkers = 8,
+                                   .estimatedTimeSavedSeconds = 1.18}));
+
+    expectContains(Output, "BUILD SUCCESSFUL");
+    expectMissing(Output, "BEEZ");
+    expectContains(Output, "Time    finished in 0.13s");
+    expectContains(Output, "Saved   ~1.18s");
+    expectContains(Output, "Cache   2/6 cached (33%)");
+    expectContains(Output, "Peak    8 workers");
+    expectMissing(Output, "Saved approx");
+    expectMissing(Output, "active threads");
+}
+
+TEST(UiOptionsTest, FormatsCompactFailedRunEndSummary)
+{
+    beez::core::UiSettings settings;
+    settings.colors = false;
+    settings.icons = true;
+    settings.summaryStyle = beez::core::RunSummaryStyle::Compact;
+    settings.showTimeSaved = true;
+
+    const std::string Output = joinMessageLines(beez::core::formatRunEndMessage(
+        settings,
+        false,
+        0.06,
+        beez::logging::RunSummary {.cacheHitsSkipped = 0,
+                                   .totalSteps = 1,
+                                   .peakWorkers = 2,
+                                   .segments = {{.name = "qa:format",
+                                                 .success = false,
+                                                 .durationSeconds = 0.06,
+                                                 .cacheHits = 0,
+                                                 .totalSteps = 1}}}));
+
+    expectContains(Output, "BUILD FAILED");
+    expectMissing(Output, "BEEZ");
+    expectContains(Output, "Time    failed after 0.06s");
+    expectContains(Output, "Phase   qa:format");
+    expectContains(Output, "Cache   0/1 cached (0%)");
+    expectContains(Output, "Peak    2 workers");
 }
 
 TEST(UiOptionsTest, RejectsUnknownThemeName)

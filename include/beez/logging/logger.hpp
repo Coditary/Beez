@@ -18,9 +18,23 @@ struct ExecutionProgress
     bool cached = false;
 };
 
+struct SegmentSummary
+{
+    std::string name;
+    bool success = true;
+    double durationSeconds = 0.0;
+    std::size_t cacheHits = 0;
+    std::size_t totalSteps = 0;
+};
+
 struct RunSummary
 {
     std::size_t cacheHitsSkipped = 0;
+    std::size_t totalSteps = 0;
+    std::size_t peakWorkers = 0;
+    std::size_t workerThreads = 0;
+    double estimatedTimeSavedSeconds = 0.0;
+    std::vector<SegmentSummary> segments;
 };
 
 // Identifies a scoped output channel for parallel execution contexts.

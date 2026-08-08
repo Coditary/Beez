@@ -491,6 +491,7 @@ void readUiSettings(const sol::table& uiTable, core::BeezSettings& overlay)
     readOptionalBool(uiTable, "prefix", overlay.ui.options.workerPrefix);
     readOptionalString(uiTable, "prefix_format", overlay.ui.options.workerPrefixFormat);
     readOptionalBool(uiTable, "show_time_saved", overlay.ui.options.showTimeSaved);
+    readOptionalString(uiTable, "summary", overlay.ui.options.summary);
 
     if (const sol::object ThemesValue = uiTable["themes"]; ThemesValue.valid())
     {

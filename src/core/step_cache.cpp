@@ -252,6 +252,7 @@ struct CacheIndexEntry
     std::string command;
     std::string config;
     std::string version;
+    double durationSeconds = 0.0;
     std::vector<InputStamp> inputs;
     std::vector<std::string> outputs;
 };
@@ -366,6 +367,10 @@ struct CacheIndexEntry
         {
             entry.version = Value;
         }
+        else if (Field == "duration")
+        {
+            entry.durationSeconds = std::stod(Value);
+        }
         else if (Field == "input")
         {
             const auto FirstSeparator = Value.find('\t');
@@ -410,6 +415,10 @@ void writeCacheIndex(const std::filesystem::path& indexPath,
     stream << "command=" << entry.command << '\n';
     stream << "config=" << entry.config << '\n';
     stream << "version=" << entry.version << '\n';
+    if (entry.durationSeconds > 0.0)
+    {
+        stream << "duration=" << entry.durationSeconds << '\n';
+    }
     for (const auto& stamp : entry.inputs)
     {
         stream << "input=" << stamp.path << '\t' << stamp.size << '\t'
@@ -604,7 +613,11 @@ CacheLookupResult StepCache::lookup(const Step& step,
     result.skip = outputsExist(Entry->outputs, projectRoot);
     if (result.skip && !indexRoot_.empty())
     {
-        writeIndex(step, projectRoot, config, result.key, Entry->outputs);
+        const auto IndexPath = indexPathForStep(indexRoot_, step);
+        const auto ExistingIndex = readCacheIndex(IndexPath, cacheOptions_);
+        const double PreservedDuration =
+            ExistingIndex.has_value() ? ExistingIndex->durationSeconds : 0.0;
+        writeIndex(step, projectRoot, config, result.key, Entry->outputs, PreservedDuration);
     }
 
     return result;
@@ -613,7 +626,8 @@ CacheLookupResult StepCache::lookup(const Step& step,
 void StepCache::store(const Step& step,
                       const std::filesystem::path& projectRoot,
                       const StepConfigPtr& config,
-                      const std::vector<std::string>& outputs) const
+                      const std::vector<std::string>& outputs,
+                      const double DurationSeconds) const
 {
     if (!isStepCacheable(step))
     {
@@ -628,7 +642,7 @@ void StepCache::store(const Step& step,
 
     if (!indexRoot_.empty())
     {
-        writeIndex(step, projectRoot, config, entry.key, outputs);
+        writeIndex(step, projectRoot, config, entry.key, outputs, DurationSeconds);
     }
 }
 
@@ -665,6 +679,7 @@ std::optional<CacheLookupResult> StepCache::lookupViaIndex(const Step& step,
     CacheLookupResult result;
     result.key = IndexEntry->key;
     result.skip = true;
+    result.savedDurationSeconds = IndexEntry->durationSeconds;
     return result;
 }
 
@@ -672,7 +687,8 @@ void StepCache::writeIndex(const Step& step,
                            const std::filesystem::path& projectRoot,
                            const StepConfigPtr& config,
                            const std::string& key,
-                           const std::vector<std::string>& outputs) const
+                           const std::vector<std::string>& outputs,
+                           const double DurationSeconds) const
 {
     CacheIndexEntry indexEntry;
     indexEntry.key = key;
@@ -680,6 +696,7 @@ void StepCache::writeIndex(const Step& step,
         stepCommandFingerprint(step, projectRoot, *makeContentHasher(cacheOptions_.hash));
     indexEntry.config = configFingerprint(config);
     indexEntry.version = version::VersionString;
+    indexEntry.durationSeconds = DurationSeconds;
     indexEntry.inputs = collectInputStamps(step, projectRoot, matcher_, globMetadataCache_);
     indexEntry.outputs = outputs;
     writeCacheIndex(indexPathForStep(indexRoot_, step), indexEntry, cacheOptions_);

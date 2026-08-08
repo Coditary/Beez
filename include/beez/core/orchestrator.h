@@ -9,17 +9,21 @@
 #include "beez/core/registry.h"
 #include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
+#include "beez/core/step_cache.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/thread_pool.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
 #include "beez/logging/logger.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include <atomic>
 
@@ -108,13 +112,44 @@ class Orchestrator
     void logProgress(ProgressState& progress,
                      const std::string& category,
                      const std::string& detail,
-                     bool isCached = false) const;
+                     bool isCached = false,
+                     double savedSeconds = 0.0,
+                     bool updateCacheStats = true);
     [[nodiscard]] std::size_t countWorkflowSteps(const Workflow& workflow) const;
     [[nodiscard]] std::size_t countPhaseInvocationSteps(const PhaseInvocation& invocation) const;
     [[nodiscard]] std::size_t countPhaseRequestSteps(const PhaseRequest& request) const;
 
     void flushBufferedCacheWrites();
     void flushBufferedCacheWritesForPhase();
+
+    void resetRunStats();
+    void beginRunSegment(std::string label);
+    void endRunSegment(bool success);
+    void recordRunStep(bool cached);
+    void recordCacheUnit(bool hit, double savedSeconds = 0.0);
+    void recordCacheBulk(std::size_t totalUnits, std::size_t hits, double savedSeconds = 0.0);
+    void recordStepCacheSkip(const Step& step,
+                             const CacheLookupResult& lookup,
+                             ProgressState& progress,
+                             const std::string& category,
+                             const std::string& detail);
+    void recordPeakWorkers(std::size_t workerCount);
+    [[nodiscard]] logging::RunSummary buildRunSummary(double durationSeconds) const;
+
+    struct ActiveRunSegment
+    {
+        std::string label;
+        std::chrono::steady_clock::time_point started;
+        std::size_t steps = 0;
+        std::size_t cacheHits = 0;
+    };
+
+    std::size_t cacheHitsSkipped_ = 0;
+    std::size_t runTotalSteps_ = 0;
+    std::size_t peakWorkers_ = 0;
+    double cachedTimeSavedSeconds_ = 0.0;
+    std::vector<logging::SegmentSummary> runSegments_;
+    std::optional<ActiveRunSegment> activeRunSegment_;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel
     // dependencies
@@ -127,13 +162,7 @@ class Orchestrator
     ThreadPool threadPool_;
     std::unique_ptr<StepCache> ownedStepCache_;
     std::unique_ptr<SuccessCache> ownedSuccessCache_;
-    std::size_t cacheHitsSkipped_ = 0;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
-
-    [[nodiscard]] logging::RunSummary runSummary() const
-    {
-        return logging::RunSummary {.cacheHitsSkipped = cacheHitsSkipped_};
-    }
 };
 
 }  // namespace beez::core
