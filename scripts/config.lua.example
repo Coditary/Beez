@@ -7,9 +7,17 @@ return {
     },
 
     cache = {
-        -- Use a RAM-backed cache on Linux, for example:
-        -- directory = "/dev/shm/beez-cache",
-        directory = ".cache",
+        path = ".cache",
+        enabled = true,
+        protect = false,
+        hash = {
+            algorithm = "fnv1a64",
+            seed = 0,
+        },
+        compress = {
+            algorithm = "none",
+            level = 6,
+        },
     },
 
     ui = {

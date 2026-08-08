@@ -115,7 +115,7 @@ int main(int argc, const char* argv[])
 
         if (Parsed.options.cleanCache)
         {
-            const auto CachePath = settings.resolveCacheDirectory(context);
+            const auto CachePath = settings.resolveCacheOptions(context).root;
             std::error_code errorCode;
             std::filesystem::remove_all(CachePath, errorCode);
             std::cout << "Removed Beez cache: " << CachePath << '\n';

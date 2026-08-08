@@ -4,7 +4,17 @@ return {
     },
 
     cache = {
-        directory = ".cache",
+        path = ".cache",
+        enabled = true,
+        protect = true,
+        hash = {
+            algorithm = "fnv1a64",
+            seed = 0,
+        },
+        compress = {
+            algorithm = "gzip",
+            level = 6,
+        },
     },
 
     ui = {

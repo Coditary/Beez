@@ -1,6 +1,7 @@
 #include "beez/core/settings.hpp"
 
 #include "beez/cli/parsed_options.hpp"
+#include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
 #include "beez/core/run_options.hpp"
 #include "beez/logging/output_mode.hpp"
@@ -43,12 +44,46 @@ void mergeOptionalValue(std::optional<T>& target, const std::optional<T>& overla
     }
 }
 
+[[nodiscard]] ContentHashSettings resolveHashSettings(const BeezSettings::Cache& cache)
+{
+    ContentHashSettings settings;
+    if (cache.hash.algorithm.has_value())
+    {
+        settings.algorithm = parseContentHashAlgorithm(*cache.hash.algorithm);
+    }
+    if (cache.hash.seed.has_value())
+    {
+        settings.seed = *cache.hash.seed;
+    }
+    return normalizeContentHashSettings(settings);
+}
+
+[[nodiscard]] CacheCompressionSettings resolveCompressionSettings(const BeezSettings::Cache& cache)
+{
+    CacheCompressionSettings settings;
+    if (cache.compress.algorithm.has_value())
+    {
+        settings.algorithm = parseCacheCompressionAlgorithm(*cache.compress.algorithm);
+    }
+    if (cache.compress.level.has_value())
+    {
+        settings.level = *cache.compress.level;
+    }
+    return normalizeCacheCompressionSettings(settings);
+}
+
 }  // namespace
 
 void BeezSettings::merge(const BeezSettings& overlay)
 {
     mergeOptionalValue(performance.maxThreads, overlay.performance.maxThreads);
-    mergeOptionalPath(cache.directory, overlay.cache.directory);
+    mergeOptionalPath(cache.path, overlay.cache.path);
+    mergeOptionalValue(cache.enabled, overlay.cache.enabled);
+    mergeOptionalValue(cache.protect, overlay.cache.protect);
+    mergeOptionalString(cache.hash.algorithm, overlay.cache.hash.algorithm);
+    mergeOptionalValue(cache.hash.seed, overlay.cache.hash.seed);
+    mergeOptionalString(cache.compress.algorithm, overlay.cache.compress.algorithm);
+    mergeOptionalValue(cache.compress.level, overlay.cache.compress.level);
     mergeOptionalValue(ui.outputMode, overlay.ui.outputMode);
     mergeOptionalPath(paths.envFile, overlay.paths.envFile);
     mergeOptionalString(paths.buildScript, overlay.paths.buildScript);
@@ -84,6 +119,7 @@ void BeezSettings::applyCliOverrides(const cli::ParsedOptions& options)
 
     if (!options.enableCache)
     {
+        cache.enabled = false;
         engine.enableCache = false;
     }
 
@@ -106,31 +142,41 @@ void BeezSettings::applyToContext(Context& context) const
     }
 }
 
+CacheOptions BeezSettings::resolveCacheOptions(const Context& context) const
+{
+    CacheOptions options;
+    options.enabled = cache.enabled.value_or(engine.enableCache.value_or(true));
+    options.protect = cache.protect.value_or(false);
+    options.hash = resolveHashSettings(cache);
+    options.compress = resolveCompressionSettings(cache);
+
+    if (!cache.path.has_value() || cache.path->empty())
+    {
+        options.root = context.projectRoot() / ".cache";
+    }
+    else if (cache.path->is_absolute())
+    {
+        options.root = *cache.path;
+    }
+    else
+    {
+        options.root = context.projectRoot() / *cache.path;
+    }
+
+    return options;
+}
+
 RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& context) const
 {
+    const CacheOptions Cache = resolveCacheOptions(context);
     return RunOptions {
         .dryRun = engine.dryRun.value_or(false),
-        .enableCache = engine.enableCache.value_or(true),
+        .enableCache = Cache.enabled,
         .maxThreads = performance.maxThreads,
         .outputMode = ui.outputMode.value_or(logging::OutputMode::Clean),
         .logger = logger,
-        .cacheRoot = resolveCacheDirectory(context),
+        .cache = Cache,
     };
-}
-
-std::filesystem::path BeezSettings::resolveCacheDirectory(const Context& context) const
-{
-    if (!cache.directory.has_value() || cache.directory->empty())
-    {
-        return context.projectRoot() / ".cache";
-    }
-
-    if (cache.directory->is_absolute())
-    {
-        return *cache.directory;
-    }
-
-    return context.projectRoot() / *cache.directory;
 }
 
 }  // namespace beez::core

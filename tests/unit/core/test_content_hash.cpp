@@ -1,3 +1,4 @@
+#include "beez/core/cache_options.hpp"
 #include "beez/core/content_hash.hpp"
 
 #include <gtest/gtest.h>
@@ -49,4 +50,30 @@ TEST(ContentHashTest, HashFileReflectsContent)
 
     EXPECT_EQ(First.size(), 16U);
     EXPECT_NE(First, Second);
+}
+
+TEST(ContentHashTest, AlgorithmsProduceDifferentDigests)
+{
+    beez::core::ContentHashSettings base;
+    base.algorithm = beez::core::ContentHashAlgorithm::Fnv1a64;
+    const auto FnvHasher = beez::core::makeContentHasher(base);
+
+    base.algorithm = beez::core::ContentHashAlgorithm::Crc32;
+    const auto CrcHasher = beez::core::makeContentHasher(base);
+
+    const std::string Digest = FnvHasher->hashBytes("beez");
+    EXPECT_NE(Digest, CrcHasher->hashBytes("beez"));
+}
+
+TEST(ContentHashTest, SeedChangesDigest)
+{
+    beez::core::ContentHashSettings settings;
+    settings.algorithm = beez::core::ContentHashAlgorithm::Fnv1a64;
+    settings.seed = 0U;
+    const auto DefaultHasher = beez::core::makeContentHasher(settings);
+
+    settings.seed = 7U;
+    const auto SeededHasher = beez::core::makeContentHasher(settings);
+
+    EXPECT_NE(DefaultHasher->hashBytes("beez"), SeededHasher->hashBytes("beez"));
 }

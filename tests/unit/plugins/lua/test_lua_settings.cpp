@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/lua_settings.hpp"
 
+#include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
 #include "beez/core/registry.h"
 #include "beez/core/settings.hpp"
@@ -11,6 +12,46 @@
 
 #include <filesystem>
 #include <fstream>
+
+TEST(LuaSettingsTest, LoadsCacheSettingsFromFile)
+{
+    const beez::test::TempProject Project;
+    const auto ConfigPath = Project.path() / "config.lua";
+    {
+        std::ofstream stream(ConfigPath);
+        stream << R"(
+return {
+    cache = {
+        path = "custom-cache",
+        enabled = true,
+        protect = true,
+        hash = {
+            algorithm = "crc32",
+            seed = 3,
+        },
+        compress = {
+            algorithm = "gzip",
+            level = 5,
+        },
+    },
+}
+)";
+    }
+
+    beez::core::BeezSettings settings;
+    ASSERT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(ConfigPath, settings));
+
+    const beez::core::Context Context(Project.path());
+    const auto Options = settings.resolveCacheOptions(Context);
+
+    EXPECT_EQ(Options.root, Project.path() / "custom-cache");
+    EXPECT_TRUE(Options.enabled);
+    EXPECT_TRUE(Options.protect);
+    EXPECT_EQ(Options.hash.algorithm, beez::core::ContentHashAlgorithm::Crc32);
+    EXPECT_EQ(Options.hash.seed, 3U);
+    EXPECT_EQ(Options.compress.algorithm, beez::core::CacheCompressionAlgorithm::Gzip);
+    EXPECT_EQ(Options.compress.level, 5);
+}
 
 TEST(LuaSettingsTest, LoadsSettingsTableFromFile)
 {

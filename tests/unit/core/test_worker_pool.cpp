@@ -1,3 +1,4 @@
+#include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step_cache.hpp"
 #include "beez/core/thread_pool.hpp"
@@ -147,7 +148,9 @@ TEST(WorkerPoolTest, CachedWorkerSkipsExecutionWhenOutputsExist)
     writeFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
 
     int executed = 0;
-    const beez::core::StepCache Cache(Project.path() / ".cache", beez::core::defaultGlobMatcher());
+    beez::core::CacheOptions cacheOptions;
+    cacheOptions.root = Project.path() / ".cache";
+    const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool pool(
         Project.path(),
         [&executed, &Project](const std::string& /*command*/) -> int
@@ -256,7 +259,9 @@ TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
     writeFile(Project.path() / "src" / "main.cpp", "int main() {}\n");
 
     int executed = 0;
-    const beez::core::StepCache Cache(Project.path() / ".cache", beez::core::defaultGlobMatcher());
+    beez::core::CacheOptions cacheOptions;
+    cacheOptions.root = Project.path() / ".cache";
+    const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool poolV1(
         Project.path(),
         [&executed, &Project](const std::string& /*command*/) -> int

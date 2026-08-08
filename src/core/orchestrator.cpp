@@ -83,16 +83,28 @@ Orchestrator::Orchestrator(Registry& registry,
 {
     if (runOptions_.enableCache && runOptions_.stepCache == nullptr)
     {
-        const auto CacheRoot = runOptions_.cacheRoot.value_or(context.projectRoot() / ".cache");
-        ownedStepCache_ = std::make_unique<StepCache>(CacheRoot, defaultGlobMatcher());
+        auto cacheOptions = runOptions_.cache;
+        if (cacheOptions.root.empty())
+        {
+            cacheOptions.root = context.projectRoot() / ".cache";
+        }
+
+        ownedStepCache_ = std::make_unique<StepCache>(cacheOptions, defaultGlobMatcher());
         runOptions_.stepCache = ownedStepCache_.get();
+        runOptions_.cache = cacheOptions;
     }
 
     if (runOptions_.enableCache && runOptions_.successCache == nullptr)
     {
-        const auto CacheRoot = runOptions_.cacheRoot.value_or(context.projectRoot() / ".cache");
-        ownedSuccessCache_ = std::make_unique<SuccessCache>(CacheRoot, defaultGlobMatcher());
+        auto cacheOptions = runOptions_.cache;
+        if (cacheOptions.root.empty())
+        {
+            cacheOptions.root = context.projectRoot() / ".cache";
+        }
+
+        ownedSuccessCache_ = std::make_unique<SuccessCache>(cacheOptions, defaultGlobMatcher());
         runOptions_.successCache = ownedSuccessCache_.get();
+        runOptions_.cache = cacheOptions;
     }
 }
 

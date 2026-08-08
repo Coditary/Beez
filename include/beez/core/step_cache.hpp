@@ -1,5 +1,6 @@
 #pragma once
 
+#include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
@@ -95,11 +96,12 @@ class OutputTracker
 class StepCache
 {
   public:
-    StepCache(const std::filesystem::path& cacheRoot, const IGlobMatcher& matcher);
+    StepCache(const CacheOptions& options, const IGlobMatcher& matcher);
     StepCache(std::unique_ptr<ICacheKeyStrategy> keyStrategy,
               std::unique_ptr<ICacheStore> store,
               const IGlobMatcher& matcher,
-              std::filesystem::path indexRoot = {});
+              std::filesystem::path indexRoot = {},
+              CacheOptions cacheOptions = {});
 
     [[nodiscard]] CacheLookupResult lookup(const Step& step,
                                            const std::filesystem::path& projectRoot,
@@ -121,6 +123,7 @@ class StepCache
     const IGlobMatcher& matcher_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
     std::filesystem::path indexRoot_;
+    CacheOptions cacheOptions_;
 
     [[nodiscard]] std::optional<CacheLookupResult>
     lookupViaIndex(const Step& step,
@@ -134,8 +137,8 @@ class StepCache
                     const std::vector<std::string>& outputs) const;
 };
 
-[[nodiscard]] std::unique_ptr<ICacheKeyStrategy> makeContentAddressedCacheKeyStrategy();
-[[nodiscard]] std::unique_ptr<ICacheStore>
-makeFileSystemCacheStore(const std::filesystem::path& cacheRoot);
+[[nodiscard]] std::unique_ptr<ICacheKeyStrategy>
+makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings);
+[[nodiscard]] std::unique_ptr<ICacheStore> makeFileSystemCacheStore(const CacheOptions& options);
 
 }  // namespace beez::core

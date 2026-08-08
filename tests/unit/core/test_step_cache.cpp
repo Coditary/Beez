@@ -1,3 +1,4 @@
+#include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
@@ -45,7 +46,9 @@ class StepCacheTest : public ::testing::Test
         std::filesystem::create_directories(root);
         cacheDir = root / ".cache";
         matcher = beez::core::makeSimpleGlobMatcher();
-        cache = std::make_unique<beez::core::StepCache>(cacheDir, *matcher);
+        beez::core::CacheOptions cacheOptions;
+        cacheOptions.root = cacheDir;
+        cache = std::make_unique<beez::core::StepCache>(cacheOptions, *matcher);
     }
 
     void TearDown() override

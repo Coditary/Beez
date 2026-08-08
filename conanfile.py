@@ -26,6 +26,7 @@ class BeezConan(ConanFile):
         self.requires("cli11/2.6.2")
         self.requires("spdlog/1.15.3")
         self.requires("onetbb/2022.0.0")
+        self.requires("zlib/1.3.1")
 
     def layout(self):
         cmake_layout(self)

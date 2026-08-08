@@ -1,9 +1,9 @@
 #pragma once
 
+#include "beez/core/cache_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
-#include <filesystem>
 #include <optional>
 
 namespace beez::logging
@@ -26,7 +26,7 @@ struct RunOptions
     logging::ILogger* logger = nullptr;
     StepCache* stepCache = nullptr;
     SuccessCache* successCache = nullptr;
-    std::optional<std::filesystem::path> cacheRoot;
+    CacheOptions cache;
 };
 
 }  // namespace beez::core

@@ -122,6 +122,37 @@ void readEnvironmentTable(const sol::table& table, core::BeezSettings& settings)
         });
 }
 
+void readCacheSettings(const sol::table& cacheTable, core::BeezSettings& overlay)
+{
+    readOptionalStringPath(cacheTable, "path", overlay.cache.path);
+    readOptionalBool(cacheTable, "enabled", overlay.cache.enabled);
+    readOptionalBool(cacheTable, "protect", overlay.cache.protect);
+
+    if (const sol::object HashValue = cacheTable["hash"]; HashValue.valid())
+    {
+        if (!HashValue.is<sol::table>())
+        {
+            throw std::runtime_error("cache.hash must be a table");
+        }
+
+        const sol::table HashTable = HashValue.as<sol::table>();
+        readOptionalString(HashTable, "algorithm", overlay.cache.hash.algorithm);
+        readOptionalNumber(HashTable, "seed", overlay.cache.hash.seed);
+    }
+
+    if (const sol::object CompressValue = cacheTable["compress"]; CompressValue.valid())
+    {
+        if (!CompressValue.is<sol::table>())
+        {
+            throw std::runtime_error("cache.compress must be a table");
+        }
+
+        const sol::table CompressTable = CompressValue.as<sol::table>();
+        readOptionalString(CompressTable, "algorithm", overlay.cache.compress.algorithm);
+        readOptionalNumber(CompressTable, "level", overlay.cache.compress.level);
+    }
+}
+
 }  // namespace
 
 void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& settings)
@@ -147,7 +178,7 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
         }
 
         const sol::table CacheTable = CacheValue.as<sol::table>();
-        readOptionalStringPath(CacheTable, "directory", overlay.cache.directory);
+        readCacheSettings(CacheTable, overlay);
     }
 
     if (const sol::object UiValue = table["ui"]; UiValue.valid())

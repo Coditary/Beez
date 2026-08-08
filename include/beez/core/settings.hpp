@@ -1,11 +1,13 @@
 #pragma once
 
 #include "beez/cli/parsed_options.hpp"
+#include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
 #include "beez/core/run_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -27,9 +29,25 @@ struct BeezSettings
         std::optional<std::size_t> maxThreads;
     } performance;
 
+    struct CacheHash
+    {
+        std::optional<std::string> algorithm;
+        std::optional<std::uint32_t> seed;
+    };
+
+    struct CacheCompress
+    {
+        std::optional<std::string> algorithm;
+        std::optional<int> level;
+    };
+
     struct Cache
     {
-        std::optional<std::filesystem::path> directory;
+        std::optional<std::filesystem::path> path;
+        std::optional<bool> enabled;
+        std::optional<bool> protect;
+        CacheHash hash;
+        CacheCompress compress;
     } cache;
 
     struct Ui
@@ -61,7 +79,7 @@ struct BeezSettings
 
     [[nodiscard]] RunOptions toRunOptions(logging::ILogger* logger, const Context& context) const;
 
-    [[nodiscard]] std::filesystem::path resolveCacheDirectory(const Context& context) const;
+    [[nodiscard]] CacheOptions resolveCacheOptions(const Context& context) const;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 

@@ -12,6 +12,10 @@ add_executable(
     cli/test_run_target.cpp
     core/test_registry.cpp
     core/test_content_hash.cpp
+    core/test_include_fingerprint.cpp
+    core/test_cache_options.cpp
+    core/test_cache_compress.cpp
+    core/test_cache_storage.cpp
     core/test_glob_expand.cpp
     core/test_step_cache.cpp
     core/test_success_cache.cpp
