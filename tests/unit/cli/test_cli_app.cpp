@@ -1,4 +1,5 @@
 #include "beez/cli/cli_app.hpp"
+#include "beez/cli/install_completion.hpp"
 #include "beez/cli/parsed_options.hpp"
 
 #include <gtest/gtest.h>
@@ -181,6 +182,35 @@ TEST(CliAppTest, ParsesConfigOptionsWithoutPath)
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.configOptions);
     EXPECT_TRUE(Result.options.configOptionsPath.empty());
+}
+
+TEST(CliAppTest, ParsesCompleteConfigOptionsFlag)
+{
+    const std::vector<std::string> Args = {
+        "beez", "--complete-config-options", "performance.cache"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.completeConfigOptions);
+    EXPECT_EQ(Result.options.completeConfigOptionsPrefix, "performance.cache");
+}
+
+TEST(CliAppTest, ParsesDumpCompletionFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--dump-completion", "zsh"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.dumpCompletion);
+    EXPECT_EQ(Result.options.dumpCompletionShell, "zsh");
+}
+
+TEST(CliAppTest, DumpCompletionScriptContainsConfigOptions)
+{
+    const std::string Content = std::string(beez::cli::dumpCompletionScript("zsh").value_or(""));
+    ASSERT_FALSE(Content.empty());
+    EXPECT_NE(Content.find("--config-options"), std::string::npos);
+    EXPECT_NE(Content.find("--complete-config-options"), std::string::npos);
 }
 
 TEST(CliAppTest, ParsesShowConfigFlag)

@@ -90,6 +90,24 @@ assert_not_contains() {
 
     mapfile -t step_suggestions < <(run_completion beez -s gen)
     assert_contains gen-code "${step_suggestions[@]}"
+
+    mapfile -t config_root_suggestions < <(run_completion beez --config-options "")
+    assert_contains performance "${config_root_suggestions[@]}"
+    assert_contains cache "${config_root_suggestions[@]}"
+
+    mapfile -t config_nested_suggestions < <(run_completion beez --config-options performance.cache)
+    assert_contains performance.cache_write_strategy "${config_nested_suggestions[@]}"
+    assert_contains performance.cache_fs_metadata "${config_nested_suggestions[@]}"
+
+    mapfile -t config_object_suggestions < <(run_completion beez --config-options performance)
+    assert_contains performance.cache_write_strategy "${config_object_suggestions[@]}"
+    assert_contains performance.max_threads "${config_object_suggestions[@]}"
+
+    mapfile -t flag_suggestions < <(run_completion beez --conf)
+    assert_contains --config-options "${flag_suggestions[@]}"
+
+    mapfile -t first_arg_suggestions < <(run_completion beez "")
+    assert_contains --config-options "${first_arg_suggestions[@]}"
 )
 
 echo "bash completion tests passed"

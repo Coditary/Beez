@@ -57,13 +57,51 @@ _beez_targets() {
     _beez_list_names workflows "$root"
 }
 
+_beez_core_flags() {
+    printf '%s\n' \
+        --help --version --verbose --dry-run --no-cache --show-config --config-options \
+        --clean-cache --update --threads --list --phase --step --install-completion \
+        -h -v -j -p -s
+}
+
+_beez_config_option_completions() {
+    local prefix="$1"
+    local beez_cmd
+
+    beez_cmd="$(_beez_cmd)"
+    if [[ -z "$beez_cmd" ]]; then
+        return 0
+    fi
+
+    "$beez_cmd" --complete-config-options "$prefix" 2>/dev/null
+}
+
+_beez_first_argument_suggestions() {
+    local cur="$1"
+    local root
+
+    _beez_core_flags
+    if _beez_find_root >/dev/null; then
+        root="$(_beez_find_root)"
+        _beez_targets "$root"
+    fi
+}
+
 _beez() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
     local prev="${COMP_WORDS[COMP_CWORD - 1]}"
     local root
+    local index
+
+    for ((index = 1; index < COMP_CWORD; ++index)); do
+        if [[ "${COMP_WORDS[index]}" == "--config-options" ]]; then
+            mapfile -t COMPREPLY < <(compgen -W "$(_beez_config_option_completions "$cur")" -- "$cur")
+            return 0
+        fi
+    done
 
     if [[ "$cur" == -* ]]; then
-        COMPREPLY=($(compgen -W '--help --version --verbose --dry-run --no-cache --clean-cache --update --threads --list --phase --step -h -v -j -p -s' -- "$cur"))
+        mapfile -t COMPREPLY < <(compgen -W "$(_beez_core_flags)" -- "$cur")
         return 0
     fi
 
@@ -88,9 +126,8 @@ _beez() {
             ;;
     esac
 
-    if [[ $COMP_CWORD -eq 1 ]] && _beez_find_root >/dev/null; then
-        root="$(_beez_find_root)"
-        COMPREPLY=($(compgen -W "$(_beez_targets "$root")" -- "$cur"))
+    if [[ $COMP_CWORD -eq 1 ]]; then
+        mapfile -t COMPREPLY < <(compgen -W "$(_beez_first_argument_suggestions "$cur")" -- "$cur")
     fi
 }
 

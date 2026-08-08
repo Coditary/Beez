@@ -2,12 +2,14 @@
 #include "beez/cli/install_completion.hpp"
 #include "beez/cli/completion_embedded.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <sys/wait.h>
 #include <system_error>
 #include <unistd.h>
@@ -233,6 +235,34 @@ int runInstallCompletion(const char* argv0)
     }
 
     return runEmbeddedInstallCompletion();
+}
+
+std::optional<std::string_view> embeddedCompletionContent(const char* name)
+{
+    const auto Files = embeddedCompletionFiles();
+    const auto* const Found = std::ranges::find_if(
+        Files, [name](const EmbeddedCompletionFile& file) { return file.name == name; });
+    if (Found == Files.end())
+    {
+        return std::nullopt;
+    }
+
+    return Found->content;
+}
+
+std::optional<std::string_view> dumpCompletionScript(const std::string& shell)
+{
+    if (shell == "bash")
+    {
+        return embeddedCompletionContent("beez.bash");
+    }
+
+    if (shell == "zsh")
+    {
+        return embeddedCompletionContent("beez.zsh");
+    }
+
+    return std::nullopt;
 }
 
 }  // namespace beez::cli

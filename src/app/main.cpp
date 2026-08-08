@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <system_error>
 
 namespace
@@ -39,6 +40,55 @@ findLuaDslLoader(beez::plugin::PluginHost& pluginHost)
     }
 
     return dynamic_cast<beez::plugin::lua::LuaDslLoader*>(loader);
+}
+
+[[nodiscard]] std::optional<int> handleEarlyCliRequests(const beez::cli::ParsedOptions& options,
+                                                        const char* argv0)
+{
+    if (options.installCompletion)
+    {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        return beez::cli::runInstallCompletion(argv0 != nullptr ? argv0 : nullptr);
+    }
+
+    if (options.completeConfigOptions)
+    {
+        for (const auto& path :
+             beez::core::listConfigOptionCompletions(options.completeConfigOptionsPrefix))
+        {
+            std::cout << path << '\n';
+        }
+        return 0;
+    }
+
+    if (options.dumpCompletion)
+    {
+        const auto Script = beez::cli::dumpCompletionScript(options.dumpCompletionShell);
+        if (!Script.has_value())
+        {
+            std::cerr << "Error: unknown shell for --dump-completion: "
+                      << options.dumpCompletionShell << '\n';
+            return 1;
+        }
+
+        std::cout << *Script;
+        return 0;
+    }
+
+    if (options.configOptions)
+    {
+        const auto Output = beez::core::formatConfigOptions(options.configOptionsPath);
+        if (!Output.has_value())
+        {
+            std::cerr << "Error: unknown config option path: " << options.configOptionsPath << '\n';
+            return 1;
+        }
+
+        std::cout << *Output << '\n';
+        return 0;
+    }
+
+    return std::nullopt;
 }
 
 }  // namespace
@@ -66,24 +116,16 @@ int main(int argc, const char* argv[])
             return Parsed.exitCode != 0 ? Parsed.exitCode : 1;
         }
 
-        if (Parsed.options.installCompletion)
+        const char* programPath = nullptr;
+        if (argc > 0)
         {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            return beez::cli::runInstallCompletion(argc > 0 ? argv[0] : nullptr);
+            programPath = argv[0];
         }
 
-        if (Parsed.options.configOptions)
+        if (const auto EarlyExit = handleEarlyCliRequests(Parsed.options, programPath))
         {
-            const auto Output = beez::core::formatConfigOptions(Parsed.options.configOptionsPath);
-            if (!Output.has_value())
-            {
-                std::cerr << "Error: unknown config option path: "
-                          << Parsed.options.configOptionsPath << '\n';
-                return 1;
-            }
-
-            std::cout << *Output << '\n';
-            return 0;
+            return *EarlyExit;
         }
 
         beez::core::BeezSettings globalSettings;

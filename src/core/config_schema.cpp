@@ -359,59 +359,84 @@ void appendObjectListing(std::ostringstream& stream, const ConfigSchemaNode& nod
 
 void appendEnumValues(std::ostringstream& stream, const ConfigSchemaNode& node)
 {
-    stream << "\nValues:\n";
+    if (node.enumValues.empty())
+    {
+        return;
+    }
+
+    TextTable table({"Value"});
     for (const auto& value : node.enumValues)
     {
-        stream << "  " << value << '\n';
+        table.addRow({value});
     }
+
+    stream << '\n' << table.format();
 }
 
 void appendScalarDetails(std::ostringstream& stream, const ConfigSchemaNode& node)
 {
-    stream << '\n';
+    std::vector<std::pair<std::string, std::string>> rows;
+
     switch (node.kind)
     {
     case ConfigSchemaKind::Boolean:
-        stream << "Values: true, false\n";
-        stream << "Default: true\n";
+        rows.emplace_back("Allowed", "true, false");
+        rows.emplace_back("Default", "true");
         break;
     case ConfigSchemaKind::Number:
         if (node.number.has_value())
         {
-            stream << "Type: " << node.number->storage << '\n';
+            rows.emplace_back("Type", node.number->storage);
             if (node.number->min.has_value() || node.number->max.has_value())
             {
-                stream << "Range:";
+                std::ostringstream range;
                 if (node.number->min.has_value())
                 {
-                    stream << " >= " << *node.number->min;
+                    range << ">= " << *node.number->min;
                 }
                 if (node.number->max.has_value())
                 {
-                    stream << " <= " << *node.number->max;
+                    if (!range.str().empty())
+                    {
+                        range << ", ";
+                    }
+                    range << "<= " << *node.number->max;
                 }
-                stream << '\n';
+                rows.emplace_back("Range", range.str());
             }
             if (node.number->defaultValue.has_value())
             {
-                stream << "Default: " << *node.number->defaultValue << '\n';
+                rows.emplace_back("Default", *node.number->defaultValue);
             }
         }
         break;
     case ConfigSchemaKind::String:
-        stream << "Format: free-form string\n";
+        rows.emplace_back("Format", "free-form string");
         break;
     case ConfigSchemaKind::Path:
-        stream << "Format: filesystem path (relative to project root or absolute)\n";
+        rows.emplace_back("Format", "filesystem path (relative to project root or absolute)");
         break;
     case ConfigSchemaKind::StringMap:
-        stream << "Keys: arbitrary string names\n";
-        stream << "Values: string\n";
+        rows.emplace_back("Keys", "arbitrary string names");
+        rows.emplace_back("Values", "string");
         break;
     case ConfigSchemaKind::Object:
     case ConfigSchemaKind::Enum:
         break;
     }
+
+    if (rows.empty())
+    {
+        return;
+    }
+
+    TextTable table({"Property", "Value"});
+    for (const auto& [property, value] : rows)
+    {
+        table.addRow({property, value});
+    }
+
+    stream << '\n' << table.format();
 }
 
 [[nodiscard]] std::string formatNodeOptions(const std::string& dottedPath,
@@ -446,6 +471,21 @@ void appendScalarDetails(std::ostringstream& stream, const ConfigSchemaNode& nod
     return output;
 }
 
+[[nodiscard]] std::vector<std::string> listObjectChildPaths(const ConfigSchemaNode& node,
+                                                            const std::string& basePath)
+{
+    std::vector<std::string> completions;
+    completions.reserve(node.children.size());
+    for (const auto& [key, child] : node.children)
+    {
+        (void)child;
+        completions.push_back(basePath + key);
+    }
+
+    std::ranges::sort(completions);
+    return completions;
+}
+
 }  // namespace
 
 std::optional<std::string> formatConfigOptions(const std::string& dottedPath)
@@ -458,6 +498,71 @@ std::optional<std::string> formatConfigOptions(const std::string& dottedPath)
     }
 
     return formatNodeOptions(dottedPath, *node);
+}
+
+std::vector<std::string> listConfigOptionCompletions(const std::string& prefix)
+{
+    const ConfigSchemaNode& root = rootConfigSchema();
+
+    if (prefix.empty())
+    {
+        return listObjectChildPaths(root, "");
+    }
+
+    if (prefix.ends_with('.'))
+    {
+        const std::string ParentPath = prefix.substr(0, prefix.size() - 1);
+        const ConfigSchemaNode* node = resolveSchemaNode(root, splitDottedPath(ParentPath));
+        if (node != nullptr && node->kind == ConfigSchemaKind::Object)
+        {
+            return listObjectChildPaths(*node, prefix);
+        }
+        return {};
+    }
+
+    const ConfigSchemaNode* exactNode = resolveSchemaNode(root, splitDottedPath(prefix));
+    if (exactNode != nullptr && exactNode->kind == ConfigSchemaKind::Object)
+    {
+        return listObjectChildPaths(*exactNode, prefix + '.');
+    }
+
+    std::string_view parentPath;
+    std::string_view partial;
+    const auto LastDot = prefix.rfind('.');
+    if (LastDot == std::string::npos)
+    {
+        parentPath = {};
+        partial = prefix;
+    }
+    else
+    {
+        parentPath = std::string_view(prefix).substr(0, LastDot);
+        partial = std::string_view(prefix).substr(LastDot + 1);
+    }
+
+    const ConfigSchemaNode* node = resolveSchemaNode(root, splitDottedPath(parentPath));
+    if (node == nullptr || node->kind != ConfigSchemaKind::Object)
+    {
+        return {};
+    }
+
+    const std::string Base = parentPath.empty() ? std::string {} : std::string(parentPath) + '.';
+
+    std::vector<std::string> completions;
+    completions.reserve(node->children.size());
+    for (const auto& [key, child] : node->children)
+    {
+        (void)child;
+        if (!partial.empty() && !key.starts_with(partial))
+        {
+            continue;
+        }
+
+        completions.push_back(Base + key);
+    }
+
+    std::ranges::sort(completions);
+    return completions;
 }
 
 }  // namespace beez::core

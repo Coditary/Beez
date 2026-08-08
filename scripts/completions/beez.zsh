@@ -55,6 +55,45 @@ _beez_targets() {
     _beez_list_names workflows "$root"
 }
 
+_beez_config_option_completions() {
+    local prefix=$1
+    local beez_cmd
+
+    beez_cmd=$(_beez_cmd)
+    if [[ -z $beez_cmd ]]; then
+        return 0
+    fi
+
+    "$beez_cmd" --complete-config-options "$prefix" 2>/dev/null
+}
+
+_beez_config_options() {
+    local -a items
+    local prefix=${words[CURRENT]:-}
+
+    items=("${(@f)$(_beez_config_option_completions "$prefix")}")
+    _describe -t config-options 'config options' items
+}
+
+_beez_first_argument() {
+    local -a items flags targets
+    local root
+
+    flags=(
+        --help --version --verbose --dry-run --no-cache --show-config --config-options
+        --clean-cache --update --threads --list --phase --step --install-completion
+        -h -v -j -p -s
+    )
+    _describe -t flags 'beez options' flags
+
+    if root=$(_beez_find_root); then
+        targets=("${(@f)$(_beez_targets "$root")}")
+        if (( ${#targets} )); then
+            _describe -t targets 'beez targets' targets
+        fi
+    fi
+}
+
 _beez() {
     local context state line
     local root
@@ -66,8 +105,11 @@ _beez() {
         '--verbose[Enable verbose logging]' \
         '--dry-run[Build the graph without executing]' \
         '--no-cache[Disable caching]' \
+        '--show-config[Show merged active configuration]' \
+        '--config-options[List config keys or allowed values]:config path:->config_options' \
         '--clean-cache[Remove .cache/ before running]' \
         '--update[Apply cache storage updates for the active configuration]' \
+        '--install-completion[Register shell tab completion]' \
         '(-j --threads)-j[Maximum worker threads]' \
         '(-j --threads)--threads[Maximum worker threads]:threads:' \
         '--list[List registered entities]:kind:(tasks workflows steps phases)' \
@@ -75,14 +117,14 @@ _beez() {
         '(-p --phase)--phase[Run a phase]:phase:->phase' \
         '(-s --step)-s[Run a single step]:step:->step' \
         '(-s --step)--step[Run a single step]:step:->step' \
-        '1:target:->target' && return 0
+        '1: :->first' && return 0
 
     case $state in
-        target)
-            if root=$(_beez_find_root); then
-                items=("${(@f)$(_beez_targets "$root")}")
-                _describe -t targets 'beez targets' items
-            fi
+        config_options)
+            _beez_config_options
+            ;;
+        first)
+            _beez_first_argument
             ;;
         phase)
             if root=$(_beez_find_root); then

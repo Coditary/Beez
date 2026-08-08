@@ -90,6 +90,8 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     bool installCompletion = false;
     bool showConfig = false;
     std::string configOptionsPath;
+    std::string completeConfigOptionsPrefix;
+    std::string dumpCompletionShell;
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
@@ -100,6 +102,14 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
                        configOptionsPath,
                        "List config keys or allowed values for a dotted path");
     configOptionsOption->expected(0, 1);
+    auto* completeConfigOptionsOption =
+        app.add_option("--complete-config-options",
+                       completeConfigOptionsPrefix,
+                       "List config option paths for shell tab completion");
+    completeConfigOptionsOption->expected(0, 1);
+    app.add_option(
+           "--dump-completion", dumpCompletionShell, "Print shell completion script (bash or zsh)")
+        ->check(CLI::IsMember({"bash", "zsh"}));
     app.add_flag("--clean-cache", cleanCache, "Remove .cache/ before running");
     app.add_flag(
         "--update", updateCache, "Apply cache storage updates for the active configuration");
@@ -165,10 +175,11 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
         options.userOptions.assign(Separator + 1, remaining.end());
     }
 
-    const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
-                              options.stepName.has_value() || options.listKind.has_value() ||
-                              cleanCache || updateCache || installCompletion || showConfig ||
-                              app.count("--config-options") > 0;
+    const bool HasRunTarget =
+        options.target.has_value() || options.phaseRequest.has_value() ||
+        options.stepName.has_value() || options.listKind.has_value() || cleanCache || updateCache ||
+        installCompletion || showConfig || app.count("--config-options") > 0 ||
+        app.count("--complete-config-options") > 0 || app.count("--dump-completion") > 0;
 
     if (!HasRunTarget)
     {
@@ -181,6 +192,10 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     options.showConfig = showConfig;
     options.configOptions = app.count("--config-options") > 0;
     options.configOptionsPath = configOptionsPath;
+    options.completeConfigOptions = app.count("--complete-config-options") > 0;
+    options.completeConfigOptionsPrefix = completeConfigOptionsPrefix;
+    options.dumpCompletion = app.count("--dump-completion") > 0;
+    options.dumpCompletionShell = dumpCompletionShell;
     options.enableCache = !disableCache;
     if (threadCount > 0)
     {
