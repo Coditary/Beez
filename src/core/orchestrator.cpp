@@ -831,6 +831,7 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
                                    buildRunSummary(elapsedSeconds(Start)));
     }
 
+    flushBufferedCacheWritesForPhase();
     if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
     {
         flushBufferedCacheWrites();
