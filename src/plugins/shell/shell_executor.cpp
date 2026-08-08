@@ -67,7 +67,7 @@ int executeWithoutCapture(const std::string& command)
 
 int executeWithCapture(const std::string& command, std::string& capturedOutput)
 {
-    const std::string ShellCommand = command + " 2>&1";
+    const std::string ShellCommand = "(" + command + ") 2>&1";
     // NOLINTNEXTLINE(bugprone-command-processor,cert-env33-c,concurrency-mt-unsafe,misc-include-cleaner)
     FILE* pipe = popen(ShellCommand.c_str(), "r");
     if (pipe == nullptr)

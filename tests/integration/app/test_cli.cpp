@@ -106,6 +106,46 @@ task("echo-task", "echo beez-clean-hidden-output")
     EXPECT_EQ(Result.output.find("  | beez-clean-hidden-output"), std::string::npos);
 }
 
+TEST(CliTest, CleanModeShowsCommandOutputOnFailure)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("fail-task", "echo beez-clean-failure-output >&2; exit 1")
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"fail-task"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_NE(Result.output.find("beez-clean-failure-output"), std::string::npos);
+}
+
+TEST(CliTest, CleanModeShowsOnlyFailedWorkerOutput)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "qa-fail",
+    phase = "qa",
+    scope = "cli-fail",
+    run = function(ctx)
+        print("[status] skip (cached): noise-a")
+        print("[status] skip (cached): noise-b")
+        local job = ctx:spawn({
+            name = "bad",
+            cmd = "echo worker-failure-output >&2; exit 1",
+        })
+        return ctx:wait(job)
+    end,
+})
+task("fail-worker", { { name = "qa-fail" } })
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"fail-worker"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_NE(Result.output.find("worker-failure-output"), std::string::npos);
+    EXPECT_EQ(Result.output.find("noise-a"), std::string::npos);
+    EXPECT_EQ(Result.output.find("noise-b"), std::string::npos);
+}
+
 TEST(CliTest, CleanModeShowsCommandInProgressLine)
 {
     const beez::test::TempProject Project;

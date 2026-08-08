@@ -31,6 +31,14 @@ void RecordingLogger::logCommandOutput(LogChannelId channel, std::string_view ou
     });
 }
 
+void RecordingLogger::logFailureOutput(std::string_view output)
+{
+    lines_.push_back(RecordedLine {
+        .kind = RecordedLine::Kind::FailureOutput,
+        .text = std::string(output),
+    });
+}
+
 void RecordingLogger::endRun(bool success, double durationSeconds)
 {
     lines_.push_back(RecordedLine {

@@ -18,3 +18,13 @@ TEST(ShellExecutorTest, FalseCommandReturnsOne)
 
     EXPECT_EQ(executor.execute("false", Ctx), 1);
 }
+
+TEST(ShellExecutorTest, CapturesStderrWhenRequested)
+{
+    const beez::core::Context Ctx;
+    beez::plugin::shell::ShellExecutor executor;
+
+    std::string capturedOutput;
+    EXPECT_EQ(executor.execute("echo stderr-output >&2; exit 1", Ctx, &capturedOutput), 1);
+    EXPECT_NE(capturedOutput.find("stderr-output"), std::string::npos);
+}

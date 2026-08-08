@@ -36,6 +36,7 @@ class ILogger
     virtual void beginRun(const std::string& runKind, const std::string& name) = 0;
     virtual void logProgress(const ExecutionProgress& progress) = 0;
     virtual void logCommandOutput(LogChannelId channel, std::string_view output) = 0;
+    virtual void logFailureOutput(std::string_view output) = 0;
     virtual void endRun(bool success, double durationSeconds) = 0;
 
     // Future TUI: each channel represents a stack frame (workflow / phase / thread).
@@ -49,6 +50,7 @@ class NullLogger : public ILogger
     void beginRun(const std::string& /*runKind*/, const std::string& /*name*/) override {}
     void logProgress(const ExecutionProgress& /*progress*/) override {}
     void logCommandOutput(LogChannelId /*channel*/, std::string_view /*output*/) override {}
+    void logFailureOutput(std::string_view /*output*/) override {}
     void endRun(bool /*success*/, double /*durationSeconds*/) override {}
     LogChannelId openChannel(const std::string& /*label*/) override
     {
@@ -64,6 +66,7 @@ struct RecordedLine
         BeginRun,
         Progress,
         CommandOutput,
+        FailureOutput,
         EndRun,
         OpenChannel,
         CloseChannel,
@@ -83,6 +86,7 @@ class RecordingLogger : public ILogger
     void beginRun(const std::string& runKind, const std::string& name) override;
     void logProgress(const ExecutionProgress& progress) override;
     void logCommandOutput(LogChannelId channel, std::string_view output) override;
+    void logFailureOutput(std::string_view output) override;
     void endRun(bool success, double durationSeconds) override;
     LogChannelId openChannel(const std::string& label) override;
     void closeChannel(LogChannelId channel) override;

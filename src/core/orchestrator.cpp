@@ -196,10 +196,16 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
 
     std::string capturedOutput;
     const int ExitCode = executor->execute(command, context_, &capturedOutput);
-    if (runOptions_.outputMode == logging::OutputMode::Verbose && runOptions_.logger != nullptr &&
-        !capturedOutput.empty())
+    if (runOptions_.logger != nullptr && !capturedOutput.empty())
     {
-        runOptions_.logger->logCommandOutput(channel, capturedOutput);
+        if (runOptions_.outputMode == logging::OutputMode::Verbose)
+        {
+            runOptions_.logger->logCommandOutput(channel, capturedOutput);
+        }
+        else if (ExitCode != 0)
+        {
+            runOptions_.logger->logFailureOutput(capturedOutput);
+        }
     }
 
     if (ExitCode != 0)
@@ -318,7 +324,12 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             context_.setSuccessCacheSession(&successCacheSession.value());
         }
 
-        WorkerPool::ExecuteFn executeWorkerCommand = [this](const std::string& command) -> int
+        std::vector<std::string> workerFailureOutputs;
+        std::mutex workerFailureOutputMutex;
+
+        WorkerPool::ExecuteFn executeWorkerCommand =
+            [this, &workerFailureOutputs, &workerFailureOutputMutex](
+                const std::string& command) -> int
         {
             auto* executor = pluginHost_.executor();
             if (executor == nullptr)
@@ -326,7 +337,20 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                 return -1;
             }
 
-            return executor->execute(command, context_, nullptr);
+            if (runOptions_.outputMode == logging::OutputMode::Verbose)
+            {
+                return executor->execute(command, context_, nullptr);
+            }
+
+            std::string capturedOutput;
+            const int ExitCode = executor->execute(command, context_, &capturedOutput);
+            if (ExitCode != 0 && !capturedOutput.empty())
+            {
+                const std::scoped_lock Lock(workerFailureOutputMutex);
+                workerFailureOutputs.push_back(std::move(capturedOutput));
+            }
+
+            return ExitCode;
         };
 
         WorkerPool workerPool(context_.projectRoot(),
@@ -358,6 +382,13 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         else
         {
             exitCode = discardProcessOutput(RunCallbackWithWorkers);
+            if (exitCode != 0 && runOptions_.logger != nullptr)
+            {
+                for (const auto& output : workerFailureOutputs)
+                {
+                    runOptions_.logger->logFailureOutput(output);
+                }
+            }
         }
 
         context_.clearWorkerPool();
