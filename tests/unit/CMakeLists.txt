@@ -14,6 +14,8 @@ add_executable(
     core/test_content_hash.cpp
     core/test_include_fingerprint.cpp
     core/test_cache_options.cpp
+    core/test_config_schema.cpp
+    core/test_text_table.cpp
     core/test_cache_compress.cpp
     core/test_cache_storage.cpp
     core/test_glob_expand.cpp

@@ -163,6 +163,26 @@ TEST(CliAppTest, RejectsZeroThreads)
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
+TEST(CliAppTest, ParsesConfigOptionsFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--config-options", "cache.hash"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.configOptions);
+    EXPECT_EQ(Result.options.configOptionsPath, "cache.hash");
+}
+
+TEST(CliAppTest, ParsesConfigOptionsWithoutPath)
+{
+    const std::vector<std::string> Args = {"beez", "--config-options"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.configOptions);
+    EXPECT_TRUE(Result.options.configOptionsPath.empty());
+}
+
 TEST(CliAppTest, ParsesShowConfigFlag)
 {
     const std::vector<std::string> Args = {"beez", "--show-config"};

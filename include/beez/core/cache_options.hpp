@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace beez::core
 {
@@ -51,9 +52,11 @@ struct CacheOptions
 
 [[nodiscard]] ContentHashAlgorithm parseContentHashAlgorithm(const std::string& value);
 [[nodiscard]] const char* toString(ContentHashAlgorithm algorithm);
+[[nodiscard]] std::vector<const char*> contentHashAlgorithmNames();
 
 [[nodiscard]] CacheCompressionAlgorithm parseCacheCompressionAlgorithm(const std::string& value);
 [[nodiscard]] const char* toString(CacheCompressionAlgorithm algorithm);
+[[nodiscard]] std::vector<const char*> cacheCompressionAlgorithmNames();
 
 [[nodiscard]] ContentHashSettings normalizeContentHashSettings(ContentHashSettings settings);
 [[nodiscard]] CacheCompressionSettings

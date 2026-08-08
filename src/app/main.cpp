@@ -3,6 +3,7 @@
 #include "beez/cli/parsed_options.hpp"
 #include "beez/cli/run_target.hpp"
 #include "beez/core/config_paths.hpp"
+#include "beez/core/config_schema.hpp"
 #include "beez/core/context.h"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
@@ -68,6 +69,20 @@ int main(int argc, const char* argv[])
             return beez::cli::runInstallCompletion(argc > 0 ? argv[0] : nullptr);
         }
 
+        if (Parsed.options.configOptions)
+        {
+            const auto Output = beez::core::formatConfigOptions(Parsed.options.configOptionsPath);
+            if (!Output.has_value())
+            {
+                std::cerr << "Error: unknown config option path: "
+                          << Parsed.options.configOptionsPath << '\n';
+                return 1;
+            }
+
+            std::cout << *Output << '\n';
+            return 0;
+        }
+
         beez::core::BeezSettings globalSettings;
         beez::plugin::lua::tryLoadGlobalBeezSettings(globalSettings);
 
@@ -80,7 +95,7 @@ int main(int argc, const char* argv[])
         const bool HasRunTarget =
             Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
             Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value() ||
-            Parsed.options.cleanCache || Parsed.options.showConfig;
+            Parsed.options.cleanCache || Parsed.options.showConfig || Parsed.options.configOptions;
 
         if (!HasRunTarget)
         {

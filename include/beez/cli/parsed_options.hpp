@@ -22,6 +22,8 @@ struct ParsedOptions
     bool cleanCache = false;
     bool installCompletion = false;
     bool showConfig = false;
+    bool configOptions = false;
+    std::string configOptionsPath;
     bool enableCache = true;
     std::optional<std::size_t> maxThreads;
     std::vector<std::string> userOptions;

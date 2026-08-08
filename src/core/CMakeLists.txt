@@ -18,8 +18,10 @@ add_library(
     plugin_host.cpp
     settings.cpp
     settings_report.cpp
+    config_schema.cpp
     step_cache.cpp
     success_cache.cpp
+    text_table.cpp
     thread_pool.cpp
     worker_pool.cpp
     step_config.cpp

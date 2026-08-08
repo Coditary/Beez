@@ -44,6 +44,7 @@ std::string CliApp::helpText()
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
     stream << "      --no-cache   Disable step and success caching\n";
     stream << "      --show-config Show merged active configuration and exit\n";
+    stream << "      --config-options [PATH]  List config keys or allowed values for PATH\n";
     stream << "      --clean-cache Remove .cache/ before running\n";
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
@@ -87,16 +88,22 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     bool cleanCache = false;
     bool installCompletion = false;
     bool showConfig = false;
-    std::size_t threadCount = 0;
+    std::string configOptionsPath;
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
     app.add_flag("--no-cache", disableCache, "Disable step and success caching");
     app.add_flag("--show-config", showConfig, "Show merged active configuration and exit");
+    auto* configOptionsOption =
+        app.add_option("--config-options",
+                       configOptionsPath,
+                       "List config keys or allowed values for a dotted path");
+    configOptionsOption->expected(0, 1);
     app.add_flag("--clean-cache", cleanCache, "Remove .cache/ before running");
     app.add_flag("--install-completion",
                  installCompletion,
                  "Register shell tab completion in ~/.zshrc / ~/.bashrc");
+    std::size_t threadCount = 0;
     app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
         ->check(CLI::Range(1, MaxThreadCount));
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
@@ -157,7 +164,8 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
                               options.stepName.has_value() || options.listKind.has_value() ||
-                              cleanCache || installCompletion || showConfig;
+                              cleanCache || installCompletion || showConfig ||
+                              app.count("--config-options") > 0;
 
     if (!HasRunTarget)
     {
@@ -167,6 +175,8 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     options.cleanCache = cleanCache;
     options.installCompletion = installCompletion;
     options.showConfig = showConfig;
+    options.configOptions = app.count("--config-options") > 0;
+    options.configOptionsPath = configOptionsPath;
     options.enableCache = !disableCache;
     if (threadCount > 0)
     {

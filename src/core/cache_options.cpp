@@ -4,6 +4,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace beez::core
 {
@@ -68,6 +69,11 @@ const char* toString(ContentHashAlgorithm algorithm)
     return "fnv1a64";
 }
 
+std::vector<const char*> contentHashAlgorithmNames()
+{
+    return {"fnv1a64", "fnv1a32", "crc32", "djb2", "sdbm"};
+}
+
 CacheCompressionAlgorithm parseCacheCompressionAlgorithm(const std::string& value)
 {
     const std::string Normalized = toLower(value);
@@ -112,6 +118,11 @@ const char* toString(CacheCompressionAlgorithm algorithm)
         return "deflate";
     }
     return "none";
+}
+
+std::vector<const char*> cacheCompressionAlgorithmNames()
+{
+    return {"none", "gzip", "zlib", "rle", "deflate"};
 }
 
 ContentHashSettings normalizeContentHashSettings(ContentHashSettings settings)
