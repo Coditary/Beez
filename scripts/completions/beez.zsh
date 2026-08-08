@@ -67,6 +67,7 @@ _beez() {
         '--dry-run[Build the graph without executing]' \
         '--no-cache[Disable caching]' \
         '--clean-cache[Remove .cache/ before running]' \
+        '--update[Apply cache storage updates for the active configuration]' \
         '(-j --threads)-j[Maximum worker threads]' \
         '(-j --threads)--threads[Maximum worker threads]:threads:' \
         '--list[List registered entities]:kind:(tasks workflows steps phases)' \

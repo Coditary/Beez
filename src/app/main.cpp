@@ -2,6 +2,8 @@
 #include "beez/cli/install_completion.hpp"
 #include "beez/cli/parsed_options.hpp"
 #include "beez/cli/run_target.hpp"
+#include "beez/core/cache_options.hpp"
+#include "beez/core/cache_storage.hpp"
 #include "beez/core/config_paths.hpp"
 #include "beez/core/config_schema.hpp"
 #include "beez/core/context.h"
@@ -17,6 +19,7 @@
 #include "beez/plugin/plugin_host.h"
 #include "beez/plugin/shell/shell_executor.h"
 
+#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -95,7 +98,8 @@ int main(int argc, const char* argv[])
         const bool HasRunTarget =
             Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
             Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value() ||
-            Parsed.options.cleanCache || Parsed.options.showConfig || Parsed.options.configOptions;
+            Parsed.options.cleanCache || Parsed.options.updateCache || Parsed.options.showConfig ||
+            Parsed.options.configOptions;
 
         if (!HasRunTarget)
         {
@@ -153,6 +157,21 @@ int main(int argc, const char* argv[])
             std::error_code errorCode;
             std::filesystem::remove_all(CachePath, errorCode);
             std::cout << "Removed Beez cache: " << CachePath << '\n';
+        }
+
+        if (Parsed.options.updateCache)
+        {
+            const auto CacheOptions = settings.resolveCacheOptions(context);
+            const std::size_t MigratedFiles = beez::core::updateCacheStorage(CacheOptions);
+            std::cout << "Updated Beez cache: " << CacheOptions.root << " (";
+            std::cout << MigratedFiles << " file";
+            if (MigratedFiles != 1U)
+            {
+                std::cout << 's';
+            }
+            std::cout << " recompressed to "
+                      << beez::core::toString(CacheOptions.compress.algorithm) << ", level "
+                      << CacheOptions.compress.level << ")\n";
         }
 
         const bool ShouldRunTarget =

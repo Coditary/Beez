@@ -20,6 +20,7 @@ struct ParsedOptions
     bool verbose = false;
     bool dryRun = false;
     bool cleanCache = false;
+    bool updateCache = false;
     bool installCompletion = false;
     bool showConfig = false;
     bool configOptions = false;

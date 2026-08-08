@@ -1,5 +1,6 @@
 #include "beez/core/orchestrator.h"
 
+#include "beez/core/cache_options.hpp"
 #include "beez/core/expected.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/phase_invocation.hpp"
@@ -81,7 +82,7 @@ Orchestrator::Orchestrator(Registry& registry,
     : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions),
       threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads})
 {
-    if (runOptions_.enableCache && runOptions_.stepCache == nullptr)
+    if (runOptions_.enableCache)
     {
         auto cacheOptions = runOptions_.cache;
         if (cacheOptions.root.empty())
@@ -89,22 +90,19 @@ Orchestrator::Orchestrator(Registry& registry,
             cacheOptions.root = context.projectRoot() / ".cache";
         }
 
-        ownedStepCache_ = std::make_unique<StepCache>(cacheOptions, defaultGlobMatcher());
-        runOptions_.stepCache = ownedStepCache_.get();
         runOptions_.cache = cacheOptions;
-    }
 
-    if (runOptions_.enableCache && runOptions_.successCache == nullptr)
-    {
-        auto cacheOptions = runOptions_.cache;
-        if (cacheOptions.root.empty())
+        if (runOptions_.stepCache == nullptr)
         {
-            cacheOptions.root = context.projectRoot() / ".cache";
+            ownedStepCache_ = std::make_unique<StepCache>(cacheOptions, defaultGlobMatcher());
+            runOptions_.stepCache = ownedStepCache_.get();
         }
 
-        ownedSuccessCache_ = std::make_unique<SuccessCache>(cacheOptions, defaultGlobMatcher());
-        runOptions_.successCache = ownedSuccessCache_.get();
-        runOptions_.cache = cacheOptions;
+        if (runOptions_.successCache == nullptr)
+        {
+            ownedSuccessCache_ = std::make_unique<SuccessCache>(cacheOptions, defaultGlobMatcher());
+            runOptions_.successCache = ownedSuccessCache_.get();
+        }
     }
 }
 

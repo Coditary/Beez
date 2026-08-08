@@ -2,6 +2,7 @@
 
 #include "beez/core/cache_options.hpp"
 
+#include <cstddef>
 #include <filesystem>
 #include <string>
 
@@ -18,5 +19,8 @@ void writeCacheFile(const std::filesystem::path& path,
 void prepareCacheFileForWrite(const std::filesystem::path& path, bool protect);
 
 void applyCacheFileProtection(const std::filesystem::path& path, bool protect);
+
+// Applies configuration-driven cache storage updates (e.g. recompress on-disk envelopes).
+[[nodiscard]] std::size_t updateCacheStorage(const CacheOptions& options);
 
 }  // namespace beez::core

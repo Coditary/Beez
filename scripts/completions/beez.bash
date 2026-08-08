@@ -63,7 +63,7 @@ _beez() {
     local root
 
     if [[ "$cur" == -* ]]; then
-        COMPREPLY=($(compgen -W '--help --version --verbose --dry-run --no-cache --clean-cache --threads --list --phase --step -h -v -j -p -s' -- "$cur"))
+        COMPREPLY=($(compgen -W '--help --version --verbose --dry-run --no-cache --clean-cache --update --threads --list --phase --step -h -v -j -p -s' -- "$cur"))
         return 0
     fi
 

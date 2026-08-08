@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <string>
 
 namespace
@@ -45,6 +46,22 @@ TEST(CacheCompressTest, GzipRoundTripsTextPayload)
 
     const std::string Payload = "step=compile\noutput=build/app.o\n";
     EXPECT_EQ(roundTrip(settings, Payload), Payload);
+}
+
+TEST(CacheCompressTest, GzipRoundTripsLargePayload)
+{
+    beez::core::CacheCompressionSettings settings;
+    settings.algorithm = beez::core::CacheCompressionAlgorithm::Gzip;
+    settings.level = 6;
+
+    std::string payload;
+    payload.reserve(20'000U);
+    for (std::size_t index = 0; index < 200U; ++index)
+    {
+        payload += "input=src/file_" + std::to_string(index) + ".cpp\t12345\t67890\n";
+    }
+
+    EXPECT_EQ(roundTrip(settings, payload), payload);
 }
 
 TEST(CacheCompressTest, ZlibRoundTripsTextPayload)

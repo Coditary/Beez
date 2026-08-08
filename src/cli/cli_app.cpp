@@ -8,7 +8,6 @@
 
 #include <lua.h>
 
-
 #include <algorithm>
 #include <cstddef>
 #include <sstream>
@@ -47,6 +46,7 @@ std::string CliApp::helpText()
     stream << "      --show-config Show merged active configuration and exit\n";
     stream << "      --config-options [PATH]  List config keys or allowed values for PATH\n";
     stream << "      --clean-cache Remove .cache/ before running\n";
+    stream << "      --update      Apply cache storage updates for the active configuration\n";
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
     stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";
@@ -86,6 +86,7 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     bool disableCache = false;
     bool cleanCache = false;
+    bool updateCache = false;
     bool installCompletion = false;
     bool showConfig = false;
     std::string configOptionsPath;
@@ -100,6 +101,8 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
                        "List config keys or allowed values for a dotted path");
     configOptionsOption->expected(0, 1);
     app.add_flag("--clean-cache", cleanCache, "Remove .cache/ before running");
+    app.add_flag(
+        "--update", updateCache, "Apply cache storage updates for the active configuration");
     app.add_flag("--install-completion",
                  installCompletion,
                  "Register shell tab completion in ~/.zshrc / ~/.bashrc");
@@ -164,7 +167,7 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
                               options.stepName.has_value() || options.listKind.has_value() ||
-                              cleanCache || installCompletion || showConfig ||
+                              cleanCache || updateCache || installCompletion || showConfig ||
                               app.count("--config-options") > 0;
 
     if (!HasRunTarget)
@@ -173,6 +176,7 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
     }
 
     options.cleanCache = cleanCache;
+    options.updateCache = updateCache;
     options.installCompletion = installCompletion;
     options.showConfig = showConfig;
     options.configOptions = app.count("--config-options") > 0;

@@ -201,6 +201,15 @@ TEST(CliAppTest, ParsesCleanCacheFlag)
     EXPECT_TRUE(Result.options.cleanCache);
 }
 
+TEST(CliAppTest, ParsesUpdateFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--update"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.updateCache);
+}
+
 TEST(CliAppTest, ParsesInstallCompletionFlag)
 {
     const std::vector<std::string> Args = {"beez", "--install-completion"};

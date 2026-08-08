@@ -159,9 +159,6 @@ class ZlibCompressor final : public ICacheCompressor
 
     [[nodiscard]] static std::string decompressWithWindowBits(std::string_view data, int windowBits)
     {
-        std::string output;
-        output.resize(std::max<std::size_t>(data.size() * 4U, MinCompressionBufferSize));
-
         z_stream stream {};
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(data.data()));
@@ -172,27 +169,32 @@ class ZlibCompressor final : public ICacheCompressor
             throw std::runtime_error("cache decompression init failed");
         }
 
-        int result = Z_OK;
-        while (result == Z_OK)
+        std::string output;
+        output.reserve(std::max(data.size() * 4U, MinCompressionBufferSize));
+        std::vector<unsigned char> buffer(
+            std::max<std::size_t>(data.size(), MinCompressionBufferSize));
+
+        while (true)
         {
-            if (stream.total_out >= output.size())
+            stream.next_out = buffer.data();
+            stream.avail_out = static_cast<uInt>(buffer.size());
+            const int Result = inflate(&stream, Z_NO_FLUSH);
+            output.append(reinterpret_cast<const char*>(buffer.data()),
+                          buffer.size() - stream.avail_out);
+
+            if (Result == Z_STREAM_END)
             {
-                output.resize(output.size() * 2U);
+                break;
             }
 
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-            stream.next_out = reinterpret_cast<Bytef*>(output.data() + stream.total_out);
-            stream.avail_out = static_cast<uInt>(output.size() - stream.total_out);
-            result = inflate(&stream, Z_FINISH);
+            if (Result != Z_OK)
+            {
+                inflateEnd(&stream);
+                throw std::runtime_error("cache decompression failed");
+            }
         }
 
         inflateEnd(&stream);
-        if (result != Z_STREAM_END)
-        {
-            throw std::runtime_error("cache decompression failed");
-        }
-
-        output.resize(stream.total_out);
         return output;
     }
 
