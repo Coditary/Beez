@@ -14,6 +14,7 @@
 #include "beez/core/success_cache.hpp"
 #include "beez/core/task.hpp"
 #include "beez/core/task_action.hpp"
+#include "beez/core/thread_pool.hpp"
 #include "beez/core/worker_pool.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
@@ -21,18 +22,21 @@
 #include "beez/logging/output_mode.hpp"
 #include "beez/plugin/plugin_host.h"
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <filesystem>
-#include <future>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <numeric>
 #include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include <oneapi/tbb/flow_graph.h>
 
 namespace beez::core
 {
@@ -74,7 +78,8 @@ Orchestrator::Orchestrator(Registry& registry,
                            Context& context,
                            plugin::PluginHost& pluginHost,
                            RunOptions runOptions)  // cppcheck-suppress passedByValue
-    : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions)
+    : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions),
+      threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads})
 {
     if (runOptions_.enableCache && runOptions_.stepCache == nullptr)
     {
@@ -330,7 +335,8 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                               stepCache != nullptr ? stepCache->matcher() : defaultGlobMatcher(),
                               step.name,
                               step.config,
-                              runOptions_.dryRun);
+                              runOptions_.dryRun,
+                              &threadPool_);
         context_.setWorkerPool(&workerPool);
 
         int exitCode = 0;
@@ -540,55 +546,142 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     return 0;
 }
 
+void Orchestrator::recordWorkflowFailure(WorkflowExecutionState& executionState,
+                                         OrchestratorError error)
+{
+    executionState.failed.store(true);
+    const std::scoped_lock Lock(executionState.errorMutex);
+    executionState.error = error;
+}
+
+void Orchestrator::runParallelWorkflowStep(const WorkflowStep& step,
+                                           ProgressState& progress,
+                                           WorkflowExecutionState& executionState)
+{
+    std::vector<logging::LogChannelId> channels(step.invocations.size());
+    for (std::size_t index = 0; index < step.invocations.size(); ++index)
+    {
+        if (runOptions_.logger != nullptr)
+        {
+            const auto& invocation = step.invocations.at(index);
+            channels.at(index) =
+                runOptions_.logger->openChannel(invocation.phase + ":" + invocation.scope);
+        }
+    }
+
+    std::atomic<bool> stepFailed {false};
+    OrchestratorError stepError = OrchestratorError::ExecutionFailed;
+
+    threadPool_.parallelFor(step.invocations.size(),
+                            [&](std::size_t index)
+                            {
+                                if (stepFailed.load())
+                                {
+                                    return;
+                                }
+
+                                const auto Result =
+                                    runPhaseInvocation(step.invocations.at(index), progress);
+                                if (runOptions_.logger != nullptr)
+                                {
+                                    runOptions_.logger->closeChannel(channels.at(index));
+                                }
+
+                                if (!Result)
+                                {
+                                    stepFailed.store(true);
+                                    stepError = Result.error();
+                                }
+                            });
+
+    if (stepFailed.load())
+    {
+        recordWorkflowFailure(executionState, stepError);
+    }
+}
+
+void Orchestrator::runSequentialWorkflowStep(const WorkflowStep& step,
+                                             ProgressState& progress,
+                                             WorkflowExecutionState& executionState)
+{
+    logging::LogChannelId channel {};
+    if (runOptions_.logger != nullptr)
+    {
+        const auto& invocation = step.invocations.front();
+        channel = runOptions_.logger->openChannel(invocation.phase + ":" + invocation.scope);
+    }
+
+    const auto Result = runPhaseInvocation(step.invocations.front(), progress);
+    if (runOptions_.logger != nullptr)
+    {
+        runOptions_.logger->closeChannel(channel);
+    }
+
+    if (!Result)
+    {
+        recordWorkflowFailure(executionState, Result.error());
+    }
+}
+
 Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workflow)
 {
-    ProgressState progress {.total = countWorkflowSteps(workflow)};
-
-    for (const auto& step : workflow.steps)
+    if (workflow.steps.empty())
     {
-        if (step.isParallel())
+        return 0;
+    }
+
+    ProgressState progress {.total = countWorkflowSteps(workflow)};
+    WorkflowExecutionState executionState;
+
+    tbb::flow::graph graph;
+    using WorkflowNode = tbb::flow::continue_node<tbb::flow::continue_msg>;
+    std::vector<std::unique_ptr<WorkflowNode>> nodes;
+    nodes.reserve(workflow.steps.size());
+
+    WorkflowNode* predecessor = nullptr;
+    for (const auto& workflowStep : workflow.steps)
+    {
+        auto node = std::make_unique<WorkflowNode>(
+            graph,
+            [this, step = workflowStep, &progress, &executionState](
+                const tbb::flow::continue_msg&) -> tbb::flow::continue_msg
+            {
+                if (executionState.failed.load())
+                {
+                    return {};
+                }
+
+                if (step.isParallel())
+                {
+                    runParallelWorkflowStep(step, progress, executionState);
+                }
+                else
+                {
+                    runSequentialWorkflowStep(step, progress, executionState);
+                }
+
+                return {};
+            });
+
+        if (predecessor != nullptr)
         {
-            std::vector<std::future<Expected<int, OrchestratorError>>> futures;
-            futures.reserve(step.invocations.size());
-            std::vector<logging::LogChannelId> channels;
-            channels.reserve(step.invocations.size());
-
-            for (const auto& invocation : step.invocations)
-            {
-                logging::LogChannelId channel {};
-                if (runOptions_.logger != nullptr)
-                {
-                    channel =
-                        runOptions_.logger->openChannel(invocation.phase + ":" + invocation.scope);
-                }
-                channels.push_back(channel);
-
-                futures.push_back(std::async(std::launch::async,
-                                             [this, invocation, channel, &progress]()
-                                             { return runPhaseInvocation(invocation, progress); }));
-            }
-
-            for (std::size_t index = 0; index < futures.size(); ++index)
-            {
-                const auto Result = futures.at(index).get();
-                if (runOptions_.logger != nullptr)
-                {
-                    runOptions_.logger->closeChannel(channels.at(index));
-                }
-                if (!Result)
-                {
-                    return Result.error();
-                }
-            }
-
-            continue;
+            tbb::flow::make_edge(*predecessor, *node);
         }
 
-        const auto Result = runPhaseInvocation(step.invocations.front(), progress);
-        if (!Result)
+        predecessor = node.get();
+        nodes.push_back(std::move(node));
+    }
+
+    threadPool_.execute(
+        [&]
         {
-            return Result.error();
-        }
+            nodes.front()->try_put(tbb::flow::continue_msg {});
+            graph.wait_for_all();
+        });
+
+    if (executionState.failed.load())
+    {
+        return executionState.error;
     }
 
     return 0;

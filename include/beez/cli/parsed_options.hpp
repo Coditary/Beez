@@ -2,6 +2,7 @@
 
 #include "beez/core/phase_request.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -20,6 +21,7 @@ struct ParsedOptions
     bool dryRun = false;
     bool cleanCache = false;
     bool enableCache = true;
+    std::optional<std::size_t> maxThreads;
     std::vector<std::string> userOptions;
 };
 

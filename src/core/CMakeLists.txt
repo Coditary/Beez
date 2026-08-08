@@ -1,3 +1,5 @@
+find_package(TBB REQUIRED)
+
 add_library(
     beez_core STATIC
     context.cpp
@@ -10,6 +12,7 @@ add_library(
     plugin_host.cpp
     step_cache.cpp
     success_cache.cpp
+    thread_pool.cpp
     worker_pool.cpp
     step_config.cpp
     env_file.cpp
@@ -20,6 +23,6 @@ add_library(
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-target_link_libraries(beez_core PUBLIC beez_logging)
+target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb)
 
 target_compile_features(beez_core PUBLIC cxx_std_20)

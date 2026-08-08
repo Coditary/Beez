@@ -105,6 +105,8 @@ local function run_per_file_success_cache(ctx, opts)
     local failed = 0
     local prefix = opts.log_prefix
     local worker_prefix = opts.worker_prefix
+    local pending_jobs = {}
+    local pending_paths = {}
 
     for index, source_path in ipairs(files) do
         if ctx.file_success_cached(source_path) then
@@ -115,10 +117,19 @@ local function run_per_file_success_cache(ctx, opts)
             checked = checked + 1
 
             local cmd = opts.command_fn(config, source_path)
-            local job = ctx:spawn({
+            pending_jobs[#pending_jobs + 1] = ctx:spawn({
                 name = worker_prefix .. index,
                 cmd = cmd,
             })
+            pending_paths[#pending_paths + 1] = source_path
+        end
+    end
+
+    if #pending_jobs > 0 then
+        ctx:wait_all(pending_jobs)
+
+        for job_index, job in ipairs(pending_jobs) do
+            local source_path = pending_paths[job_index]
             local code = ctx:wait(job)
 
             if code ~= 0 then

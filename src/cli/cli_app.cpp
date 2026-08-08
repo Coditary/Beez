@@ -9,6 +9,7 @@
 #include <lua.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -19,6 +20,8 @@ namespace beez::cli
 
 namespace
 {
+
+constexpr int MaxThreadCount = 1024;
 
 [[nodiscard]] std::string luaVersionString()
 {
@@ -41,6 +44,7 @@ std::string CliApp::helpText()
     stream << "      --dry-run    Build the graph without executing Lua scripts\n";
     stream << "      --no-cache   Disable step and success caching\n";
     stream << "      --clean-cache Remove .cache/ before running\n";
+    stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";
     stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";
     stream << "  -p, --phase TEXT Run a phase (phase[:scope1,scope2] or phase[\"scope\"])\n";
     stream << "  -s, --step TEXT  Run a single step by name\n";
@@ -73,11 +77,14 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     bool disableCache = false;
     bool cleanCache = false;
+    std::size_t threadCount = 0;
 
     app.add_flag("--verbose", options.verbose, "Enable verbose logging (Ninja-style)");
     app.add_flag("--dry-run", options.dryRun, "Build the graph without executing Lua scripts");
     app.add_flag("--no-cache", disableCache, "Disable step and success caching");
     app.add_flag("--clean-cache", cleanCache, "Remove .cache/ before running");
+    app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
+        ->check(CLI::Range(1, MaxThreadCount));
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -145,6 +152,10 @@ CliParseResult CliApp::parse(int argc, const char* const* argv)
 
     options.cleanCache = cleanCache;
     options.enableCache = !disableCache;
+    if (threadCount > 0)
+    {
+        options.maxThreads = threadCount;
+    }
 
     return {.reason = CliExitReason::Continue, .options = std::move(options), .exitCode = 0};
 }

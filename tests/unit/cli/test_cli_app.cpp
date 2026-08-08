@@ -32,6 +32,7 @@ TEST(CliAppTest, HelpContainsBannerAndUsage)
     EXPECT_NE(Help.find("-v, --version"), std::string::npos);
     EXPECT_NE(Help.find("--verbose"), std::string::npos);
     EXPECT_NE(Help.find("--dry-run"), std::string::npos);
+    EXPECT_NE(Help.find("--threads"), std::string::npos);
     EXPECT_NE(Help.find("--list TEXT"), std::string::npos);
 }
 
@@ -119,6 +120,36 @@ TEST(CliAppTest, NoCacheDisablesCaching)
     const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_FALSE(Result.options.enableCache);
+}
+
+TEST(CliAppTest, ParsesThreadsFlag)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--threads", "4"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.maxThreads.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.maxThreads.value(), 4U);
+}
+
+TEST(CliAppTest, ParsesJobsAlias)
+{
+    const std::vector<std::string> Args = {"beez", "build", "-j", "2"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.maxThreads.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.maxThreads.value(), 2U);
+}
+
+TEST(CliAppTest, RejectsZeroThreads)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--threads", "0"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
 TEST(CliAppTest, ParsesCleanCacheFlag)

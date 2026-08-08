@@ -4,9 +4,11 @@
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/thread_pool.hpp"
 
 #include <cstddef>
 #include <filesystem>
+#include <mutex>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -47,10 +49,11 @@ WorkerPool::WorkerPool(std::filesystem::path projectRoot,
                        const IGlobMatcher& matcher,
                        std::string parentStepName,
                        StepConfigPtr parentStepConfig,
-                       bool dryRun)
+                       bool dryRun,
+                       const ThreadPool* threadPool)
     : projectRoot_(std::move(projectRoot)), execute_(std::move(execute)), stepCache_(stepCache),
       matcher_(matcher), parentStepName_(std::move(parentStepName)),
-      parentStepConfig_(std::move(parentStepConfig)), dryRun_(dryRun)
+      parentStepConfig_(std::move(parentStepConfig)), dryRun_(dryRun), threadPool_(threadPool)
 {
 }
 
@@ -77,29 +80,73 @@ int WorkerPool::wait(WorkerHandle handle)
 
 int WorkerPool::waitAll(const std::vector<WorkerHandle>& handles)
 {
-    int lastExitCode = 0;
-    for (const auto& handle : handles)
+    if (handles.empty())
     {
-        const int ExitCode = executeWorker(handle.id);
-        if (ExitCode != 0)
-        {
-            lastExitCode = ExitCode;
-        }
+        return 0;
     }
+
+    if (threadPool_ == nullptr || threadPool_->isSequential() || handles.size() == 1)
+    {
+        int lastExitCode = 0;
+        for (const auto& handle : handles)
+        {
+            const int ExitCode = executeWorker(handle.id);
+            if (ExitCode != 0)
+            {
+                lastExitCode = ExitCode;
+            }
+        }
+        return lastExitCode;
+    }
+
+    int lastExitCode = 0;
+    std::mutex exitCodeMutex;
+    threadPool_->parallelFor(handles.size(),
+                             [&](std::size_t index)
+                             {
+                                 const int ExitCode = executeWorker(handles.at(index).id);
+                                 if (ExitCode != 0)
+                                 {
+                                     const std::scoped_lock Lock(exitCodeMutex);
+                                     lastExitCode = ExitCode;
+                                 }
+                             });
     return lastExitCode;
 }
 
 int WorkerPool::drainAll()
 {
-    int lastExitCode = 0;
-    for (std::size_t index = 0; index < workers_.size(); ++index)
+    if (workers_.empty())
     {
-        const int ExitCode = executeWorker(index);
-        if (ExitCode != 0)
-        {
-            lastExitCode = ExitCode;
-        }
+        return 0;
     }
+
+    if (threadPool_ == nullptr || threadPool_->isSequential())
+    {
+        int lastExitCode = 0;
+        for (std::size_t index = 0; index < workers_.size(); ++index)
+        {
+            const int ExitCode = executeWorker(index);
+            if (ExitCode != 0)
+            {
+                lastExitCode = ExitCode;
+            }
+        }
+        return lastExitCode;
+    }
+
+    int lastExitCode = 0;
+    std::mutex exitCodeMutex;
+    threadPool_->parallelFor(workers_.size(),
+                             [&](std::size_t index)
+                             {
+                                 const int ExitCode = executeWorker(index);
+                                 if (ExitCode != 0)
+                                 {
+                                     const std::scoped_lock Lock(exitCodeMutex);
+                                     lastExitCode = ExitCode;
+                                 }
+                             });
     return lastExitCode;
 }
 

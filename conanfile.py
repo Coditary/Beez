@@ -17,11 +17,15 @@ class BeezConan(ConanFile):
 
     generators = "CMakeDeps", "CMakeToolchain"
 
+    def configure(self):
+        self.options["hwloc"].shared = True
+
     def requirements(self):
         self.requires("gtest/1.14.0")
         self.requires("lua/5.4.6")
         self.requires("cli11/2.6.2")
         self.requires("spdlog/1.15.3")
+        self.requires("onetbb/2022.0.0")
 
     def layout(self):
         cmake_layout(self)

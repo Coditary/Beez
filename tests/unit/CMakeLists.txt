@@ -1,5 +1,6 @@
 find_package(GTest REQUIRED)
 find_package(CLI11 REQUIRED)
+find_package(TBB REQUIRED)
 
 add_executable(
     beez_tests
@@ -12,6 +13,7 @@ add_executable(
     core/test_glob_expand.cpp
     core/test_step_cache.cpp
     core/test_success_cache.cpp
+    core/test_thread_pool.cpp
     core/test_worker_pool.cpp
     core/test_env_file.cpp
     core/test_glob_pattern.cpp
