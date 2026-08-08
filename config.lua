@@ -57,22 +57,37 @@ return {
 	    --    show_time_saved = true,
     },
 
-    paths = {
-        env_file = ".env",
-        build_script = "build.lua",
-    },
-
-    engine = {
-        dry_run = false,
-        enable_cache = true,
-    },
-
-    environment = {
-        BUILD_TYPE = "Release",
-        CONAN_PROFILE = "conan/profiles/clang-release",
-        REPORTS_DIR = "report",
-        FUZZER_TIME = "30",
-        CC = "clang",
-        CXX = "clang++",
+    env = {
+        load_dotenv = true,
+        dotenv_overrides_system = false,
+        files = ".env",
+        vars = {
+            BUILD_TYPE = "Release",
+            CONAN_PROFILE = "conan/profiles/clang-release",
+            REPORTS_DIR = "report",
+            FUZZER_TIME = "30",
+            CC = "clang",
+            CXX = "clang++",
+        },
+        hash_vars = {
+            "CC",
+            "CXX",
+            "CFLAGS",
+            "CXXFLAGS",
+            "LDFLAGS",
+            "BUILD_TYPE",
+        },
+        ignore_vars_for_hashing = {
+            "TERM",
+            "COLORTERM",
+            "PWD",
+            "SESSION_ID",
+        },
+        mask_secrets = {
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "GITHUB_TOKEN",
+            "NPM_AUTH_TOKEN",
+        },
     },
 }

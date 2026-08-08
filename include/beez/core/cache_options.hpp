@@ -64,6 +64,7 @@ struct CacheOptions
     bool protect = false;
     ContentHashSettings hash;
     CacheCompressionSettings compress;
+    std::string envHashFingerprint;
     CacheWriteCoordinator* writeCoordinator = nullptr;
 };
 

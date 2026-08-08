@@ -30,6 +30,7 @@ add_library(
     worker_pool.cpp
     step_config.cpp
     env_file.cpp
+    env_settings.cpp
     step_order.cpp
     stream_capture.cpp
     progress_detail.cpp

@@ -145,4 +145,15 @@ std::optional<std::string> EnvFile::lookup(const std::string& key) const
     return readProcessEnvironment(key);
 }
 
+void EnvFile::forEachEntry(
+    const std::function<void(const std::string&, const std::string&)>& visitor) const
+{
+    ensureLoaded();
+
+    for (const auto& [key, value] : values_)
+    {
+        visitor(key, value);
+    }
+}
+
 }  // namespace beez::core

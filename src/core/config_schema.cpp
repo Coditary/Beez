@@ -208,27 +208,20 @@ struct ConfigSchemaNode
                 return uiSettings;
             }());
 
-        root.children.emplace("paths",
+        root.children.emplace("env",
                               []()
                               {
-                                  ConfigSchemaNode paths;
-                                  paths.kind = ConfigSchemaKind::Object;
-                                  paths.children.emplace("env_file", makePathNode());
-                                  paths.children.emplace("build_script", makeStringNode());
-                                  return paths;
+                                  ConfigSchemaNode env;
+                                  env.kind = ConfigSchemaKind::Object;
+                                  env.children.emplace("load_dotenv", makeBooleanNode());
+                                  env.children.emplace("dotenv_overrides_system", makeBooleanNode());
+                                  env.children.emplace("files", makePathNode());
+                                  env.children.emplace("vars", makeStringMapNode());
+                                  env.children.emplace("hash_vars", makeStringNode());
+                                  env.children.emplace("ignore_vars_for_hashing", makeStringNode());
+                                  env.children.emplace("mask_secrets", makeStringNode());
+                                  return env;
                               }());
-
-        root.children.emplace("engine",
-                              []()
-                              {
-                                  ConfigSchemaNode engine;
-                                  engine.kind = ConfigSchemaKind::Object;
-                                  engine.children.emplace("dry_run", makeBooleanNode());
-                                  engine.children.emplace("enable_cache", makeBooleanNode());
-                                  return engine;
-                              }());
-
-        root.children.emplace("environment", makeStringMapNode());
         return root;
     }();
 

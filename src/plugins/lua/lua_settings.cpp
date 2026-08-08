@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/lua_settings.hpp"
 
 #include "beez/core/config_paths.hpp"
+#include "beez/core/env_settings.hpp"
 #include "beez/core/settings.hpp"
 #include "beez/core/ui_options.hpp"
 #include "beez/logging/output_mode.hpp"
@@ -20,6 +21,8 @@ namespace beez::plugin::lua
 
 namespace
 {
+
+[[nodiscard]] std::vector<std::string> readStringArray(const sol::table& table);
 
 [[nodiscard]] std::optional<logging::OutputMode> parseOutputMode(const std::string& value)
 {
@@ -111,18 +114,92 @@ void readOptionalBool(const sol::table& table, const char* key, std::optional<bo
     target = Value.as<bool>();
 }
 
-void readEnvironmentTable(const sol::table& table, core::BeezSettings& settings)
+void readVarsTable(const sol::table& table, std::unordered_map<std::string, std::string>& target)
 {
     table.for_each(
-        [&settings](const sol::object& key, const sol::object& value)
+        [&target](const sol::object& key, const sol::object& value)
         {
             if (!key.is<std::string>() || !value.is<std::string>())
             {
-                throw std::runtime_error("environment entries must be string keys and values");
+                throw std::runtime_error("env.vars entries must be string keys and values");
             }
 
-            settings.environment[key.as<std::string>()] = value.as<std::string>();
+            target[key.as<std::string>()] = value.as<std::string>();
         });
+}
+
+[[nodiscard]] std::vector<std::string> readStringListValue(const sol::object& value,
+                                                           const char* key)
+{
+    if (value.is<std::string>())
+    {
+        return {value.as<std::string>()};
+    }
+
+    if (!value.is<sol::table>())
+    {
+        throw std::runtime_error(std::string(key) + " must be a string or list of strings");
+    }
+
+    return readStringArray(value.as<sol::table>());
+}
+
+void readEnvFilePaths(const sol::object& value, std::vector<std::filesystem::path>& target)
+{
+    if (value.is<std::string>())
+    {
+        target.emplace_back(value.as<std::string>());
+        return;
+    }
+
+    if (!value.is<sol::table>())
+    {
+        throw std::runtime_error("env.files must be a string or list of strings");
+    }
+
+    const auto Paths = readStringArray(value.as<sol::table>());
+    for (const auto& path : Paths)
+    {
+        target.emplace_back(path);
+    }
+}
+
+void readEnvSettings(const sol::table& envTable, core::EnvSettingsOverlay& env)
+{
+    readOptionalBool(envTable, "load_dotenv", env.loadDotenv);
+    readOptionalBool(envTable, "dotenv_overrides_system", env.dotenvOverridesSystem);
+
+    if (const sol::object FilesValue = envTable["files"]; FilesValue.valid())
+    {
+        readEnvFilePaths(FilesValue, env.files);
+    }
+
+    if (const sol::object VarsValue = envTable["vars"]; VarsValue.valid())
+    {
+        if (!VarsValue.is<sol::table>())
+        {
+            throw std::runtime_error("env.vars must be a table");
+        }
+
+        readVarsTable(VarsValue.as<sol::table>(), env.vars);
+    }
+
+    if (const sol::object HashVarsValue = envTable["hash_vars"]; HashVarsValue.valid())
+    {
+        env.hashVars = readStringListValue(HashVarsValue, "env.hash_vars");
+    }
+
+    if (const sol::object IgnoreVarsValue = envTable["ignore_vars_for_hashing"];
+        IgnoreVarsValue.valid())
+    {
+        env.ignoreVarsForHashing =
+            readStringListValue(IgnoreVarsValue, "env.ignore_vars_for_hashing");
+    }
+
+    if (const sol::object MaskSecretsValue = envTable["mask_secrets"]; MaskSecretsValue.valid())
+    {
+        env.maskSecrets = readStringListValue(MaskSecretsValue, "env.mask_secrets");
+    }
 }
 
 void readCacheSettings(const sol::table& cacheTable, core::BeezSettings& overlay)
@@ -514,38 +591,14 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
         readUiSettings(UiTable, overlay);
     }
 
-    if (const sol::object PathsValue = table["paths"]; PathsValue.valid())
+    if (const sol::object EnvValue = table["env"]; EnvValue.valid())
     {
-        if (!PathsValue.is<sol::table>())
+        if (!EnvValue.is<sol::table>())
         {
-            throw std::runtime_error("paths must be a table");
+            throw std::runtime_error("env must be a table");
         }
 
-        const sol::table PathsTable = PathsValue.as<sol::table>();
-        readOptionalStringPath(PathsTable, "env_file", overlay.paths.envFile);
-        readOptionalString(PathsTable, "build_script", overlay.paths.buildScript);
-    }
-
-    if (const sol::object EngineValue = table["engine"]; EngineValue.valid())
-    {
-        if (!EngineValue.is<sol::table>())
-        {
-            throw std::runtime_error("engine must be a table");
-        }
-
-        const sol::table EngineTable = EngineValue.as<sol::table>();
-        readOptionalBool(EngineTable, "dry_run", overlay.engine.dryRun);
-        readOptionalBool(EngineTable, "enable_cache", overlay.engine.enableCache);
-    }
-
-    if (const sol::object EnvironmentValue = table["environment"]; EnvironmentValue.valid())
-    {
-        if (!EnvironmentValue.is<sol::table>())
-        {
-            throw std::runtime_error("environment must be a table");
-        }
-
-        readEnvironmentTable(EnvironmentValue.as<sol::table>(), overlay);
+        readEnvSettings(EnvValue.as<sol::table>(), overlay.env);
     }
 
     settings.merge(overlay);

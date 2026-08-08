@@ -64,15 +64,15 @@ TEST(SettingsReportTest, ShowsDefaultOriginWhenUnset)
     EXPECT_NE(Report.find("\"clean\""), std::string::npos);
 }
 
-TEST(SettingsReportTest, EnvironmentUsesProjectOverrideOrigin)
+TEST(SettingsReportTest, EnvUsesProjectOverrideOrigin)
 {
     const beez::core::Context Context;
     beez::core::BeezSettings globalSettings;
-    globalSettings.environment["BUILD_TYPE"] = "Debug";
+    globalSettings.env.vars["BUILD_TYPE"] = "Debug";
 
     beez::core::BeezSettings projectSettings;
-    projectSettings.environment["BUILD_TYPE"] = "Release";
-    projectSettings.environment["CC"] = "clang";
+    projectSettings.env.vars["BUILD_TYPE"] = "Release";
+    projectSettings.env.vars["CC"] = "clang";
 
     beez::core::BeezSettings activeSettings = globalSettings;
     activeSettings.merge(projectSettings);
@@ -85,8 +85,8 @@ TEST(SettingsReportTest, EnvironmentUsesProjectOverrideOrigin)
                                          .cliOptions = {},
                                          .context = Context});
 
-    EXPECT_NE(Report.find("[Environment]"), std::string::npos);
-    EXPECT_NE(Report.find("environment.BUILD_TYPE"), std::string::npos);
+    EXPECT_NE(Report.find("[Env]"), std::string::npos);
+    EXPECT_NE(Report.find("env.vars.BUILD_TYPE"), std::string::npos);
     EXPECT_NE(Report.find("\"Release\""), std::string::npos);
-    EXPECT_NE(Report.find("environment.CC"), std::string::npos);
+    EXPECT_NE(Report.find("env.vars.CC"), std::string::npos);
 }

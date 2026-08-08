@@ -1,6 +1,7 @@
 #include "beez/cli/parsed_options.hpp"
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/env_settings.hpp"
 #include "beez/core/settings.hpp"
 #include "beez/logging/output_mode.hpp"
 
@@ -12,19 +13,19 @@ TEST(BeezSettingsTest, MergePrefersOverlayValues)
 {
     beez::core::BeezSettings base;
     base.performance.maxThreads = 4;
-    base.environment["FOO"] = "global";
+    base.env.vars["FOO"] = "global";
 
     beez::core::BeezSettings overlay;
     overlay.performance.maxThreads = 8;
-    overlay.environment["FOO"] = "project";
-    overlay.environment["BAR"] = "added";
+    overlay.env.vars["FOO"] = "project";
+    overlay.env.vars["BAR"] = "added";
 
     base.merge(overlay);
 
     ASSERT_TRUE(base.performance.maxThreads.has_value());
     EXPECT_EQ(*base.performance.maxThreads, 8U);
-    EXPECT_EQ(base.environment.at("FOO"), "project");
-    EXPECT_EQ(base.environment.at("BAR"), "added");
+    EXPECT_EQ(base.env.vars.at("FOO"), "project");
+    EXPECT_EQ(base.env.vars.at("BAR"), "added");
 }
 
 TEST(BeezSettingsTest, ResolveCacheOptionsSupportsRelativeAndAbsolutePaths)
@@ -63,11 +64,11 @@ TEST(BeezSettingsTest, ResolveCacheOptionsAppliesHashCompressAndProtect)
     EXPECT_EQ(Options.compress.mode, beez::core::CacheCompressionMode::Always);
 }
 
-TEST(BeezSettingsTest, CacheEnabledFallsBackToEngineEnableCache)
+TEST(BeezSettingsTest, CacheEnabledUsesCacheSectionOnly)
 {
     const beez::core::Context Context;
     beez::core::BeezSettings settings;
-    settings.engine.enableCache = false;
+    settings.cache.enabled = false;
 
     EXPECT_FALSE(settings.resolveCacheOptions(Context).enabled);
 }
@@ -103,17 +104,31 @@ TEST(BeezSettingsTest, CliNoCacheDisablesCacheSection)
     EXPECT_FALSE(*settings.cache.enabled);
 }
 
-TEST(BeezSettingsTest, ApplyToContextUpdatesPaths)
+TEST(BeezSettingsTest, CliDryRunSetsDryRunFlag)
 {
-    beez::core::Context context;
     beez::core::BeezSettings settings;
-    settings.paths.buildScript = "custom-build.lua";
-    settings.paths.envFile = "config/.env";
+    beez::cli::ParsedOptions options;
+    options.dryRun = true;
 
-    settings.applyToContext(context);
+    settings.applyCliOverrides(options);
 
-    EXPECT_EQ(context.buildScriptPath().filename(), "custom-build.lua");
-    EXPECT_EQ(context.envFilePath(), context.projectRoot() / "config/.env");
+    ASSERT_TRUE(settings.dryRun.has_value());
+    EXPECT_TRUE(*settings.dryRun);
+    EXPECT_TRUE(settings.toRunOptions(nullptr, beez::core::Context()).dryRun);
+}
+
+TEST(BeezSettingsTest, ApplyEnvironmentSetsVars)
+{
+    const beez::core::Context Context;
+    beez::core::BeezSettings settings;
+    settings.env.vars["BEEZ_TEST_ENV_VAR"] = "configured";
+
+    settings.applyEnvironment(Context);
+
+    // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
+    const char* value = std::getenv("BEEZ_TEST_ENV_VAR");
+    ASSERT_NE(value, nullptr);
+    EXPECT_STREQ(value, "configured");
 }
 
 TEST(BeezSettingsTest, ToRunOptionsPassesResolvedCache)
@@ -128,4 +143,14 @@ TEST(BeezSettingsTest, ToRunOptionsPassesResolvedCache)
     EXPECT_TRUE(Options.enableCache);
     EXPECT_EQ(Options.cache.root, Context.projectRoot() / "runtime-cache");
     EXPECT_TRUE(Options.cache.protect);
+}
+
+TEST(EnvSettingsTest, ResolveUsesDefaultsForHashLists)
+{
+    const beez::core::EnvSettings Resolved = beez::core::resolveEnvSettings({});
+    EXPECT_TRUE(Resolved.loadDotenv);
+    EXPECT_FALSE(Resolved.dotenvOverridesSystem);
+    EXPECT_FALSE(Resolved.hashVars.empty());
+    EXPECT_FALSE(Resolved.ignoreVarsForHashing.empty());
+    EXPECT_FALSE(Resolved.maskSecrets.empty());
 }

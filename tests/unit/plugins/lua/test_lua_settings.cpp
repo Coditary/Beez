@@ -69,8 +69,10 @@ return {
     ui = {
         output_mode = "verbose",
     },
-    environment = {
-        BEEZ_TEST_CONFIG = "loaded",
+    env = {
+        vars = {
+            BEEZ_TEST_CONFIG = "loaded",
+        },
     },
 }
 )";
@@ -85,7 +87,7 @@ return {
     ASSERT_TRUE(settings.ui.outputMode.has_value());
     EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Verbose);
     // NOLINTEND(bugprone-unchecked-optional-access)
-    EXPECT_EQ(settings.environment.at("BEEZ_TEST_CONFIG"), "loaded");
+    EXPECT_EQ(settings.env.vars.at("BEEZ_TEST_CONFIG"), "loaded");
 }
 
 TEST(LuaSettingsTest, BuildLuaConfigOverridesGlobalSettings)
@@ -96,8 +98,10 @@ beez.config({
     performance = {
         max_threads = 3,
     },
-    environment = {
-        BEEZ_TEST_CONFIG = "build",
+    env = {
+        vars = {
+            BEEZ_TEST_CONFIG = "build",
+        },
     },
 })
 task("noop", "true")
@@ -105,7 +109,7 @@ task("noop", "true")
 
     beez::core::BeezSettings settings;
     settings.performance.maxThreads = 12;
-    settings.environment["BEEZ_TEST_CONFIG"] = "global";
+    settings.env.vars["BEEZ_TEST_CONFIG"] = "global";
 
     const beez::core::Context Context(Project.path());
     beez::core::Registry registry;
@@ -118,7 +122,7 @@ task("noop", "true")
     ASSERT_TRUE(settings.performance.maxThreads.has_value());
     EXPECT_EQ(*settings.performance.maxThreads, 3U);
     // NOLINTEND(bugprone-unchecked-optional-access)
-    EXPECT_EQ(settings.environment.at("BEEZ_TEST_CONFIG"), "build");
+    EXPECT_EQ(settings.env.vars.at("BEEZ_TEST_CONFIG"), "build");
 }
 
 TEST(LuaSettingsTest, LoadsBlocksProgressStyleFromConfig)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -14,6 +15,9 @@ class EnvFile
     explicit EnvFile(std::filesystem::path path);
 
     [[nodiscard]] std::optional<std::string> lookup(const std::string& key) const;
+
+    void forEachEntry(const std::function<void(const std::string&, const std::string&)>& visitor)
+        const;
 
   private:
     void ensureLoaded() const;

@@ -132,10 +132,8 @@ int main(int argc, const char* argv[])
         beez::plugin::lua::tryLoadGlobalBeezSettings(globalSettings);
 
         beez::core::BeezSettings settings = globalSettings;
-        settings.applyEnvironment();
-
         beez::core::Context context;
-        settings.applyToContext(context);
+        settings.applyEnvironment(context);
 
         const bool HasRunTarget =
             Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
@@ -176,7 +174,7 @@ int main(int argc, const char* argv[])
 
         settings.merge(luaLoader->buildSettings());
         const beez::core::BeezSettings ProjectSettings = luaLoader->buildSettings();
-        settings.applyToContext(context);
+        settings.applyEnvironment(context);
         settings.applyCliOverrides(Parsed.options);
 
         if (Parsed.options.showConfig)

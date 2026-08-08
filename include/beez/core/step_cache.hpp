@@ -148,6 +148,7 @@ class StepCache
 
 [[nodiscard]] std::unique_ptr<ICacheKeyStrategy>
 makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings,
+                                     const std::string& envHashFingerprint = {},
                                      GlobMetadataCache* globMetadataCache = nullptr);
 [[nodiscard]] std::unique_ptr<ICacheStore> makeFileSystemCacheStore(const CacheOptions& options);
 

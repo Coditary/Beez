@@ -1,6 +1,6 @@
 #include "beez/core/settings_report.hpp"
 
-#include "beez/core/cache_options.hpp"
+#include "beez/core/env_settings.hpp"
 #include "beez/core/context.h"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
@@ -451,75 +451,56 @@ void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows
     });
 }
 
-void appendPathsRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)
+[[nodiscard]] std::string formatStringList(const std::vector<std::string>& values)
 {
-    const auto& global = input.globalSettings;
-    const auto& project = input.projectSettings;
-    const auto& active = input.activeSettings;
+    if (values.empty())
+    {
+        return "[]";
+    }
 
-    rows.push_back(ConfigRow {
-        .key = "paths.build_script",
-        .value = formatQuoted(active.paths.buildScript.value_or("build.lua")),
-        .origin = originForOptional(global.paths.buildScript,
-                                    project.paths.buildScript,
-                                    false,
-                                    {},
-                                    input.globalConfigPath,
-                                    input.context),
-    });
-
-    const auto EnvFile = active.paths.envFile.value_or(std::filesystem::path(".env"));
-
-    rows.push_back(ConfigRow {
-        .key = "paths.env_file",
-        .value = formatQuoted(formatDisplayPath(EnvFile)),
-        .origin = originForOptional(global.paths.envFile,
-                                    project.paths.envFile,
-                                    false,
-                                    {},
-                                    input.globalConfigPath,
-                                    input.context),
-    });
+    std::ostringstream stream;
+    stream << '[';
+    for (std::size_t index = 0; index < values.size(); ++index)
+    {
+        if (index > 0U)
+        {
+            stream << ", ";
+        }
+        stream << formatQuoted(values.at(index));
+    }
+    stream << ']';
+    return stream.str();
 }
 
-void appendEngineRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)
+[[nodiscard]] std::string formatPathList(const std::vector<std::filesystem::path>& paths)
 {
-    const auto& global = input.globalSettings;
-    const auto& project = input.projectSettings;
-    const auto& active = input.activeSettings;
-    const auto& cli = input.cliOptions;
+    if (paths.empty())
+    {
+        return "[]";
+    }
 
-    rows.push_back(ConfigRow {
-        .key = "engine.dry_run",
-        .value = formatBool(active.engine.dryRun.value_or(false)),
-        .origin = originForOptional(global.engine.dryRun,
-                                    project.engine.dryRun,
-                                    cli.dryRun,
-                                    "CLI --dry-run",
-                                    input.globalConfigPath,
-                                    input.context),
-    });
-
-    rows.push_back(ConfigRow {
-        .key = "engine.enable_cache",
-        .value = formatBool(active.engine.enableCache.value_or(true)),
-        .origin = originForOptional(global.engine.enableCache,
-                                    project.engine.enableCache,
-                                    !cli.enableCache,
-                                    "CLI --no-cache",
-                                    input.globalConfigPath,
-                                    input.context),
-    });
+    std::ostringstream stream;
+    stream << '[';
+    for (std::size_t index = 0; index < paths.size(); ++index)
+    {
+        if (index > 0U)
+        {
+            stream << ", ";
+        }
+        stream << '"' << formatDisplayPath(paths.at(index)) << '"';
+    }
+    stream << ']';
+    return stream.str();
 }
 
-[[nodiscard]] std::string environmentOriginForKey(const std::string& key,
-                                                  const BeezSettings& global,
-                                                  const BeezSettings& project,
-                                                  const std::filesystem::path& globalConfigPath,
-                                                  const Context& context)
+[[nodiscard]] std::string envVarOriginForKey(const std::string& key,
+                                             const BeezSettings& global,
+                                             const BeezSettings& project,
+                                             const std::filesystem::path& globalConfigPath,
+                                             const Context& context)
 {
-    const bool InProject = project.environment.contains(key);
-    const bool InGlobal = global.environment.contains(key);
+    const bool InProject = project.env.vars.contains(key);
+    const bool InGlobal = global.env.vars.contains(key);
 
     if (InProject)
     {
@@ -534,11 +515,70 @@ void appendEngineRows(const SettingsReportInput& input, std::vector<ConfigRow>& 
     return defaultOriginLabel();
 }
 
-void appendEnvironmentRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)
+void appendEnvRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows)
 {
+    const auto& global = input.globalSettings;
+    const auto& project = input.projectSettings;
+    const auto& active = input.activeSettings;
+    const auto ResolvedEnv = active.resolveEnvSettings();
+
+    rows.push_back(ConfigRow {
+        .key = "env.load_dotenv",
+        .value = formatBool(ResolvedEnv.loadDotenv),
+        .origin = originForOptional(global.env.loadDotenv,
+                                    project.env.loadDotenv,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "env.dotenv_overrides_system",
+        .value = formatBool(ResolvedEnv.dotenvOverridesSystem),
+        .origin = originForOptional(global.env.dotenvOverridesSystem,
+                                    project.env.dotenvOverridesSystem,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "env.files",
+        .value = formatPathList(ResolvedEnv.files),
+        .origin = !project.env.files.empty() ? projectOriginLabel(input.context)
+                                             : (!global.env.files.empty()
+                                                    ? globalOriginLabel(input.globalConfigPath)
+                                                    : defaultOriginLabel()),
+    });
+    rows.push_back(ConfigRow {
+        .key = "env.hash_vars",
+        .value = formatStringList(ResolvedEnv.hashVars),
+        .origin = !project.env.hashVars.empty() ? projectOriginLabel(input.context)
+                                                : (!global.env.hashVars.empty()
+                                                       ? globalOriginLabel(input.globalConfigPath)
+                                                       : defaultOriginLabel()),
+    });
+    rows.push_back(ConfigRow {
+        .key = "env.ignore_vars_for_hashing",
+        .value = formatStringList(ResolvedEnv.ignoreVarsForHashing),
+        .origin = !project.env.ignoreVarsForHashing.empty()
+                      ? projectOriginLabel(input.context)
+                      : (!global.env.ignoreVarsForHashing.empty()
+                             ? globalOriginLabel(input.globalConfigPath)
+                             : defaultOriginLabel()),
+    });
+    rows.push_back(ConfigRow {
+        .key = "env.mask_secrets",
+        .value = formatStringList(ResolvedEnv.maskSecrets),
+        .origin = !project.env.maskSecrets.empty() ? projectOriginLabel(input.context)
+                                                   : (!global.env.maskSecrets.empty()
+                                                          ? globalOriginLabel(input.globalConfigPath)
+                                                          : defaultOriginLabel()),
+    });
+
     std::vector<std::string> keys;
-    keys.reserve(input.activeSettings.environment.size());
-    for (const auto& [key, value] : input.activeSettings.environment)
+    keys.reserve(ResolvedEnv.vars.size());
+    for (const auto& [key, value] : ResolvedEnv.vars)
     {
         keys.push_back(key);
     }
@@ -546,15 +586,15 @@ void appendEnvironmentRows(const SettingsReportInput& input, std::vector<ConfigR
 
     for (const auto& key : keys)
     {
-        const auto& value = input.activeSettings.environment.at(key);
+        const auto& value = ResolvedEnv.vars.at(key);
         rows.push_back(ConfigRow {
-            .key = "environment." + key,
+            .key = "env.vars." + key,
             .value = formatQuoted(value),
-            .origin = environmentOriginForKey(key,
-                                              input.globalSettings,
-                                              input.projectSettings,
-                                              input.globalConfigPath,
-                                              input.context),
+            .origin = envVarOriginForKey(key,
+                                         input.globalSettings,
+                                         input.projectSettings,
+                                         input.globalConfigPath,
+                                         input.context),
         });
     }
 }
@@ -578,17 +618,9 @@ std::string formatActiveConfiguration(const SettingsReportInput& input)
     appendUiRows(input, uiRows);
     appendSection(stream, "UI", uiRows);
 
-    std::vector<ConfigRow> pathsRows;
-    appendPathsRows(input, pathsRows);
-    appendSection(stream, "Paths", pathsRows);
-
-    std::vector<ConfigRow> engineRows;
-    appendEngineRows(input, engineRows);
-    appendSection(stream, "Engine", engineRows);
-
-    std::vector<ConfigRow> environmentRows;
-    appendEnvironmentRows(input, environmentRows);
-    appendSection(stream, "Environment", environmentRows);
+    std::vector<ConfigRow> envRows;
+    appendEnvRows(input, envRows);
+    appendSection(stream, "Env", envRows);
 
     std::string output = stream.str();
     if (!output.empty() && output.back() == '\n')

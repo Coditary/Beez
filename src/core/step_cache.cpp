@@ -115,8 +115,11 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
 {
   public:
     ContentAddressedCacheKeyStrategy(const ContentHashSettings& settings,
+                                     std::string envHashFingerprint,
                                      GlobMetadataCache* globMetadataCache)
-        : hasher_(makeContentHasher(settings)), globMetadataCache_(globMetadataCache)
+        : hasher_(makeContentHasher(settings)),
+          envHashFingerprint_(std::move(envHashFingerprint)),
+          globMetadataCache_(globMetadataCache)
     {
     }
 
@@ -148,11 +151,13 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
                                  buildScriptFingerprint(step, projectRoot, *hasher_),
                                  fileStream.str(),
                                  configFingerprint(config),
+                                 envHashFingerprint_,
                                  version::VersionString});
     }
 
   private:
     std::unique_ptr<IContentHasher> hasher_;
+    std::string envHashFingerprint_;
     GlobMetadataCache* globMetadataCache_ = nullptr;
 };
 
@@ -546,7 +551,8 @@ OutputTracker::resolveOutputs(const Step& step, const std::vector<std::string>& 
 StepCache::StepCache(const CacheOptions& options,
                      const IGlobMatcher& matcher,
                      GlobMetadataCache* globMetadataCache)
-    : StepCache(makeContentAddressedCacheKeyStrategy(options.hash, globMetadataCache),
+    : StepCache(makeContentAddressedCacheKeyStrategy(
+                    options.hash, options.envHashFingerprint, globMetadataCache),
                 makeFileSystemCacheStore(options),
                 matcher,
                 options.root / "index",
@@ -682,9 +688,11 @@ void StepCache::writeIndex(const Step& step,
 
 std::unique_ptr<ICacheKeyStrategy>
 makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings,
+                                     const std::string& envHashFingerprint,
                                      GlobMetadataCache* globMetadataCache)
 {
-    return std::make_unique<ContentAddressedCacheKeyStrategy>(hashSettings, globMetadataCache);
+    return std::make_unique<ContentAddressedCacheKeyStrategy>(
+        hashSettings, envHashFingerprint, globMetadataCache);
 }
 
 std::unique_ptr<ICacheStore> makeFileSystemCacheStore(const CacheOptions& options)

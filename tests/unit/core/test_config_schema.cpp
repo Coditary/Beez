@@ -29,7 +29,7 @@ TEST(ConfigSchemaTest, RootShowsTableWithChildKinds)
     EXPECT_NE(Output.find("Kind: table"), std::string::npos);
     EXPECT_NE(Output.find("performance"), std::string::npos);
     EXPECT_NE(Output.find("cache"), std::string::npos);
-    EXPECT_NE(Output.find("environment"), std::string::npos);
+    EXPECT_NE(Output.find("env"), std::string::npos);
     EXPECT_NE(Output.find("map"), std::string::npos);
 }
 
@@ -90,7 +90,7 @@ TEST(ConfigSchemaTest, CompressionModeListsAllowedValues)
 TEST(ConfigSchemaTest, UnknownPathReturnsNullopt)
 {
     EXPECT_FALSE(beez::core::formatConfigOptions("cache.unknown").has_value());
-    EXPECT_FALSE(beez::core::formatConfigOptions("environment.FOO").has_value());
+    EXPECT_FALSE(beez::core::formatConfigOptions("env.vars.FOO").has_value());
 }
 
 TEST(ConfigSchemaTest, ListsRootCompletions)

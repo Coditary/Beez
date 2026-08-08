@@ -456,10 +456,10 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     sol::table beezTable = luaState->create_table();
     beezTable["env"] = [beezApi](sol::this_state lua, const std::string& key)
     { return beezApi->env(lua, key); };
-    beezTable["config"] = [&buildSettings](const sol::table& options)
+    beezTable["config"] = [&buildSettings, &context](const sol::table& options)
     {
         mergeSettingsFromLuaTable(options, buildSettings);
-        buildSettings.applyEnvironment();
+        buildSettings.applyEnvironment(context);
     };
     (*luaState)["beez"] = beezTable;
 }

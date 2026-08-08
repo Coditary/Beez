@@ -3,6 +3,7 @@
 #include "beez/cli/parsed_options.hpp"
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/env_settings.hpp"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/core/ui_options.hpp"
@@ -132,24 +133,13 @@ void BeezSettings::merge(const BeezSettings& overlay)
     mergeOptionalString(cache.compress.mode, overlay.cache.compress.mode);
     mergeOptionalValue(ui.outputMode, overlay.ui.outputMode);
     mergeUiSettingsOverlay(ui.options, overlay.ui.options);
-    mergeOptionalPath(paths.envFile, overlay.paths.envFile);
-    mergeOptionalString(paths.buildScript, overlay.paths.buildScript);
-    mergeOptionalValue(engine.dryRun, overlay.engine.dryRun);
-    mergeOptionalValue(engine.enableCache, overlay.engine.enableCache);
-
-    for (const auto& [key, value] : overlay.environment)
-    {
-        environment[key] = value;
-    }
+    mergeEnvSettingsOverlay(env, overlay.env);
+    mergeOptionalValue(dryRun, overlay.dryRun);
 }
 
-void BeezSettings::applyEnvironment() const
+void BeezSettings::applyEnvironment(const Context& context) const
 {
-    for (const auto& [key, value] : environment)
-    {
-        // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c,misc-include-cleaner)
-        setenv(key.c_str(), value.c_str(), 1);
-    }
+    applyEnvSettings(resolveEnvSettings(), context.projectRoot());
 }
 
 void BeezSettings::applyCliOverrides(const cli::ParsedOptions& options)
@@ -161,13 +151,12 @@ void BeezSettings::applyCliOverrides(const cli::ParsedOptions& options)
 
     if (options.dryRun)
     {
-        engine.dryRun = true;
+        dryRun = true;
     }
 
     if (!options.enableCache)
     {
         cache.enabled = false;
-        engine.enableCache = false;
     }
 
     if (options.maxThreads.has_value())
@@ -176,26 +165,19 @@ void BeezSettings::applyCliOverrides(const cli::ParsedOptions& options)
     }
 }
 
-void BeezSettings::applyToContext(Context& context) const
+EnvSettings BeezSettings::resolveEnvSettings() const
 {
-    if (paths.buildScript.has_value())
-    {
-        context.setBuildScriptFileName(*paths.buildScript);
-    }
-
-    if (paths.envFile.has_value())
-    {
-        context.setEnvFilePath(*paths.envFile);
-    }
+    return ::beez::core::resolveEnvSettings(env);
 }
 
 CacheOptions BeezSettings::resolveCacheOptions(const Context& context) const
 {
     CacheOptions options;
-    options.enabled = cache.enabled.value_or(engine.enableCache.value_or(true));
+    options.enabled = cache.enabled.value_or(true);
     options.protect = cache.protect.value_or(false);
     options.hash = resolveHashSettings(cache);
     options.compress = resolveCompressionSettings(cache);
+    options.envHashFingerprint = environmentHashFingerprint(resolveEnvSettings());
 
     const PerformanceSettings Performance = buildPerformanceSettings(*this);
     options.hash.useMmapForHashing = Performance.useMmapForHashing;
@@ -231,7 +213,7 @@ RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& c
 {
     const CacheOptions Cache = resolveCacheOptions(context);
     return RunOptions {
-        .dryRun = engine.dryRun.value_or(false),
+        .dryRun = dryRun.value_or(false),
         .enableCache = Cache.enabled,
         .maxThreads = performance.maxThreads,
         .outputMode = ui.outputMode.value_or(logging::OutputMode::Clean),

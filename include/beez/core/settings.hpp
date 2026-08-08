@@ -3,6 +3,7 @@
 #include "beez/cli/parsed_options.hpp"
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/env_settings.hpp"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/core/ui_options.hpp"
@@ -13,7 +14,6 @@
 #include <filesystem>
 #include <optional>
 #include <string>
-#include <unordered_map>
 
 namespace beez::logging
 {
@@ -65,27 +65,17 @@ struct BeezSettings
         UiSettingsOverlay options;
     } ui;
 
-    struct Paths
-    {
-        std::optional<std::filesystem::path> envFile;
-        std::optional<std::string> buildScript;
-    } paths;
+    EnvSettingsOverlay env;
 
-    struct Engine
-    {
-        std::optional<bool> dryRun;
-        std::optional<bool> enableCache;
-    } engine;
-
-    std::unordered_map<std::string, std::string> environment;
+    std::optional<bool> dryRun;
 
     void merge(const BeezSettings& overlay);
 
-    void applyEnvironment() const;
+    void applyEnvironment(const Context& context) const;
 
     void applyCliOverrides(const cli::ParsedOptions& options);
 
-    void applyToContext(Context& context) const;
+    [[nodiscard]] EnvSettings resolveEnvSettings() const;
 
     [[nodiscard]] RunOptions toRunOptions(logging::ILogger* logger, const Context& context) const;
 
