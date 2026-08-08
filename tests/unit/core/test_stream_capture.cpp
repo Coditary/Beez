@@ -24,3 +24,8 @@ TEST(StreamCaptureTest, PropagatesExitCode)
     const auto Captured = beez::core::captureProcessOutput([]() { return 7; });
     EXPECT_EQ(Captured.exitCode, 7);
 }
+
+TEST(StreamCaptureTest, DiscardProcessOutputPropagatesExitCode)
+{
+    EXPECT_EQ(beez::core::discardProcessOutput([]() { return 9; }), 9);
+}

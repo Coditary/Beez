@@ -29,6 +29,8 @@ class Registry
     [[nodiscard]] std::optional<Workflow> findWorkflow(const std::string& name) const;
     [[nodiscard]] Expected<std::vector<Step>, StepOrderError>
     stepsForPhase(const std::string& phase, const std::string& scope) const;
+    [[nodiscard]] Expected<std::vector<std::vector<Step>>, StepOrderError>
+    stepLevelsForPhase(const std::string& phase, const std::string& scope) const;
     [[nodiscard]] std::vector<std::string> scopesForPhase(const std::string& phase) const;
     [[nodiscard]] std::vector<std::string> phases() const;
 

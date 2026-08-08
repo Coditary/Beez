@@ -73,6 +73,7 @@ int main(int argc, const char* argv[])
         const beez::core::RunOptions Options {
             .dryRun = Parsed.options.dryRun,
             .enableCache = Parsed.options.enableCache,
+            .maxThreads = Parsed.options.maxThreads,
             .outputMode = OutputMode,
             .logger = logger.get(),
         };

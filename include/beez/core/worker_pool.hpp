@@ -4,6 +4,7 @@
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
 #include "beez/core/step_config.hpp"
+#include "beez/core/thread_pool.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -45,7 +46,8 @@ class WorkerPool
                const IGlobMatcher& matcher,
                std::string parentStepName,
                StepConfigPtr parentStepConfig,
-               bool dryRun);
+               bool dryRun,
+               const ThreadPool* threadPool = nullptr);
 
     [[nodiscard]] WorkerHandle spawn(WorkerSpec spec);
     [[nodiscard]] int wait(WorkerHandle handle);
@@ -77,6 +79,7 @@ class WorkerPool
     std::string parentStepName_;
     StepConfigPtr parentStepConfig_;
     bool dryRun_;
+    const ThreadPool* threadPool_;
     std::vector<WorkerEntry> workers_;
 };
 

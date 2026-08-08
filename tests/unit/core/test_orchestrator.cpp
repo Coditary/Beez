@@ -17,6 +17,10 @@
 #include "beez/logging/logger.hpp"
 #include "beez/logging/output_mode.hpp"
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #include "helpers/temp_project.hpp"
 #include "helpers/test_step_config.hpp"
 
@@ -26,6 +30,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -60,6 +65,44 @@ class RecordingExecutor : public beez::plugin::IExecutor
 
   private:
     std::shared_ptr<ExecutorState> state_;
+};
+
+class SlowParallelTrackingExecutor : public beez::plugin::IExecutor
+{
+  public:
+    SlowParallelTrackingExecutor(std::shared_ptr<ExecutorState> state,
+                                 std::shared_ptr<std::atomic<int>> concurrent,
+                                 std::shared_ptr<std::atomic<int>> peak)
+        : state_(std::move(state)), concurrent_(std::move(concurrent)), peak_(std::move(peak))
+    {
+    }
+
+    int execute(const std::string& command,
+                const beez::core::Context& /*context*/,
+                std::string* /*capturedOutput*/) override
+    {
+        {
+            const std::scoped_lock Lock(mutex_);
+            state_->commands.push_back(command);
+            ++state_->callCount;
+        }
+
+        const int Current = concurrent_->fetch_add(1) + 1;
+        int observed = peak_->load();
+        while (Current > observed && !peak_->compare_exchange_weak(observed, Current))
+        {
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        concurrent_->fetch_sub(1);
+        return state_->exitCode;
+    }
+
+  private:
+    std::shared_ptr<ExecutorState> state_;
+    std::shared_ptr<std::atomic<int>> concurrent_;
+    std::shared_ptr<std::atomic<int>> peak_;
+    std::mutex mutex_;
 };
 
 struct DslLoaderState
@@ -628,6 +671,48 @@ TEST(OrchestratorTest, RunPhaseOrdersStepsByArtifactDependencies)
     ASSERT_EQ(State->commands.size(), 2U);
     EXPECT_EQ(State->commands[0], "echo compile");
     EXPECT_EQ(State->commands[1], "echo link");
+}
+
+TEST(OrchestratorTest, RunPhaseExecutesIndependentStepsInParallel)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step firstStep;
+    firstStep.name = "check-a";
+    firstStep.phase = "qa";
+    firstStep.scope = "lint";
+    firstStep.shellRun = "echo a";
+    registry.registerStep(std::move(firstStep));
+
+    beez::core::Step secondStep;
+    secondStep.name = "check-b";
+    secondStep.phase = "qa";
+    secondStep.scope = "lint";
+    secondStep.shellRun = "echo b";
+    registry.registerStep(std::move(secondStep));
+
+    beez::core::Step thirdStep;
+    thirdStep.name = "check-c";
+    thirdStep.phase = "qa";
+    thirdStep.scope = "lint";
+    thirdStep.shellRun = "echo c";
+    registry.registerStep(std::move(thirdStep));
+
+    const auto State = std::make_shared<ExecutorState>();
+    const auto Concurrent = std::make_shared<std::atomic<int>>(0);
+    const auto Peak = std::make_shared<std::atomic<int>>(0);
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<SlowParallelTrackingExecutor>(State, Concurrent, Peak));
+
+    const beez::core::RunOptions Options {.maxThreads = 4};
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const beez::core::PhaseRequest Request {.phase = "qa", .scopes = {"lint"}};
+    const auto Result = orchestrator.runPhase(Request);
+    ASSERT_TRUE(Result.hasValue());
+    EXPECT_EQ(State->commands.size(), 3U);
+    EXPECT_GT(Peak->load(), 1);
 }
 
 namespace

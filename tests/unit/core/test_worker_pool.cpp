@@ -1,5 +1,6 @@
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step_cache.hpp"
+#include "beez/core/thread_pool.hpp"
 #include "beez/core/worker_pool.hpp"
 
 #include "helpers/temp_project.hpp"
@@ -7,9 +8,12 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace
@@ -180,6 +184,70 @@ TEST(WorkerPoolTest, CachedWorkerSkipsExecutionWhenOutputsExist)
                                          .outputs = {"build/main.o"}});
     EXPECT_EQ(pool.wait(ThirdHandle), 0);
     EXPECT_EQ(executed, 2);
+}
+
+TEST(WorkerPoolTest, DrainAllRunsWorkersInParallelWhenThreadPoolAllows)
+{
+    const beez::core::ThreadPool ThreadPool(beez::core::ThreadPoolConfig {.maxThreads = 4});
+    std::atomic<int> concurrent {0};
+    std::atomic<int> peak {0};
+
+    beez::core::WorkerPool pool(
+        std::filesystem::current_path(),
+        [&concurrent, &peak](const std::string& /*command*/) -> int
+        {
+            const int Current = concurrent.fetch_add(1) + 1;
+            int observed = peak.load();
+            while (Current > observed && !peak.compare_exchange_weak(observed, Current))
+            {
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            concurrent.fetch_sub(1);
+            return 0;
+        },
+        nullptr,
+        beez::core::defaultGlobMatcher(),
+        "parent",
+        nullptr,
+        false,
+        &ThreadPool);
+
+    for (int index = 0; index < 8; ++index)
+    {
+        (void)pool.spawn({.name = "worker-" + std::to_string(index), .commands = {"echo worker"}});
+    }
+
+    EXPECT_EQ(pool.drainAll(), 0);
+    EXPECT_GT(peak.load(), 1);
+}
+
+TEST(WorkerPoolTest, DrainAllStaysSequentialWithSingleThreadPool)
+{
+    const beez::core::ThreadPool ThreadPool(beez::core::ThreadPoolConfig {.maxThreads = 1});
+    std::vector<std::string> commands;
+
+    beez::core::WorkerPool pool(
+        std::filesystem::current_path(),
+        [&commands](const std::string& command) -> int
+        {
+            commands.push_back(command);
+            return 0;
+        },
+        nullptr,
+        beez::core::defaultGlobMatcher(),
+        "parent",
+        nullptr,
+        false,
+        &ThreadPool);
+
+    (void)pool.spawn({.name = "a", .commands = {"cmd-a"}});
+    (void)pool.spawn({.name = "b", .commands = {"cmd-b"}});
+
+    EXPECT_EQ(pool.drainAll(), 0);
+    ASSERT_EQ(commands.size(), 2U);
+    EXPECT_EQ(commands[0], "cmd-a");
+    EXPECT_EQ(commands[1], "cmd-b");
 }
 
 TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)

@@ -122,3 +122,34 @@ TEST_F(StepOrderTest, StableSortByNameWhenNoDependencies)
     EXPECT_EQ(Result.value()[0].name, "alpha");
     EXPECT_EQ(Result.value()[1].name, "zebra");
 }
+
+TEST_F(StepOrderTest, GroupsIndependentStepsIntoSingleParallelLevel)
+{
+    const std::vector<beez::core::Step> Steps = {
+        makeShellStep("zebra", "compile", "cpp"),
+        makeShellStep("alpha", "compile", "cpp"),
+    };
+
+    const auto Result = beez::core::orderStepsInLevels(Steps, {}, *matcher);
+    ASSERT_TRUE(Result.hasValue());
+    ASSERT_EQ(Result.value().size(), 1U);
+    ASSERT_EQ(Result.value().front().size(), 2U);
+    EXPECT_EQ(Result.value().front()[0].name, "alpha");
+    EXPECT_EQ(Result.value().front()[1].name, "zebra");
+}
+
+TEST_F(StepOrderTest, SeparatesDependentStepsIntoParallelLevels)
+{
+    const std::vector<beez::core::Step> Steps = {
+        makeShellStep("link", "compile", "cpp", {"build/**/*.o"}, {}, {}),
+        makeShellStep("compile", "compile", "cpp", {"src/**/*.cpp"}, {"build/**/*.o"}, {}),
+    };
+
+    const auto Result = beez::core::orderStepsInLevels(Steps, {}, *matcher);
+    ASSERT_TRUE(Result.hasValue());
+    ASSERT_EQ(Result.value().size(), 2U);
+    ASSERT_EQ(Result.value().at(0).size(), 1U);
+    ASSERT_EQ(Result.value().at(1).size(), 1U);
+    EXPECT_EQ(Result.value().at(0).front().name, "compile");
+    EXPECT_EQ(Result.value().at(1).front().name, "link");
+}

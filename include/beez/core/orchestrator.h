@@ -8,12 +8,15 @@
 #include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/task.hpp"
+#include "beez/core/thread_pool.hpp"
 #include "beez/core/workflow.hpp"
+#include "beez/core/workflow_step.hpp"
 #include "beez/logging/logger.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include <atomic>
@@ -67,9 +70,24 @@ class Orchestrator
         std::size_t total = 0;
     };
 
+    struct WorkflowExecutionState
+    {
+        std::atomic<bool> failed {false};
+        OrchestratorError error = OrchestratorError::ExecutionFailed;
+        std::mutex errorMutex;
+    };
+
     [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task,
                                                            ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(const Workflow& workflow);
+    void runParallelWorkflowStep(const WorkflowStep& step,
+                                 ProgressState& progress,
+                                 WorkflowExecutionState& executionState);
+    void runSequentialWorkflowStep(const WorkflowStep& step,
+                                   ProgressState& progress,
+                                   WorkflowExecutionState& executionState);
+    static void recordWorkflowFailure(WorkflowExecutionState& executionState,
+                                      OrchestratorError error);
     [[nodiscard]] Expected<int, OrchestratorError> runStepInstance(const Step& step,
                                                                    ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError>
@@ -98,6 +116,7 @@ class Orchestrator
     Context& context_;
     plugin::PluginHost& pluginHost_;
     RunOptions runOptions_;
+    ThreadPool threadPool_;
     std::unique_ptr<StepCache> ownedStepCache_;
     std::unique_ptr<SuccessCache> ownedSuccessCache_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
