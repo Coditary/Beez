@@ -1,4 +1,5 @@
 #include "beez/cli/cli_app.hpp"
+#include "beez/cli/install_completion.hpp"
 #include "beez/cli/list_formatter.hpp"
 #include "beez/cli/parsed_options.hpp"
 #include "beez/core/context.h"
@@ -48,6 +49,12 @@ int main(int argc, const char* argv[])
             std::error_code errorCode;
             std::filesystem::remove_all(CachePath, errorCode);
             std::cout << "Removed Beez cache: " << CachePath << '\n';
+        }
+
+        if (Parsed.options.installCompletion)
+        {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            return beez::cli::runInstallCompletion(argc > 0 ? argv[0] : nullptr);
         }
 
         const bool HasRunTarget =

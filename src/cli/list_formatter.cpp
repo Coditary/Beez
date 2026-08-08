@@ -44,6 +44,19 @@ std::vector<std::string> collectEntityNames(const core::Registry& registry, cons
     {
         names = registry.phases();
     }
+    else if (kind == "phase-scopes")
+    {
+        for (const auto& [name, step] : registry.steps())
+        {
+            (void)name;
+            if (step.phase.empty() || step.scope.empty())
+            {
+                continue;
+            }
+
+            names.push_back(step.phase + ':' + step.scope);
+        }
+    }
 
     std::ranges::sort(names);
     return names;

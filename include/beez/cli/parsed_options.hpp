@@ -20,6 +20,7 @@ struct ParsedOptions
     bool verbose = false;
     bool dryRun = false;
     bool cleanCache = false;
+    bool installCompletion = false;
     bool enableCache = true;
     std::optional<std::size_t> maxThreads;
     std::vector<std::string> userOptions;

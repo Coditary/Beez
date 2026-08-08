@@ -64,3 +64,32 @@ TEST(ListFormatterTest, FormatsUniqueSortedPhaseNamesFromSteps)
     EXPECT_EQ(Names[0], "compile");
     EXPECT_EQ(Names[1], "generate");
 }
+
+TEST(ListFormatterTest, FormatsPhaseScopePairsForCompletion)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step compileLuaStep;
+    compileLuaStep.name = "compile:lua";
+    compileLuaStep.phase = "compile";
+    compileLuaStep.scope = "lua";
+    registry.registerStep(std::move(compileLuaStep));
+
+    beez::core::Step generateCodeStep;
+    generateCodeStep.name = "generate:code";
+    generateCodeStep.phase = "generate";
+    generateCodeStep.scope = "code";
+    registry.registerStep(std::move(generateCodeStep));
+
+    beez::core::Step generateDocsStep;
+    generateDocsStep.name = "generate:docs";
+    generateDocsStep.phase = "generate";
+    generateDocsStep.scope = "docs";
+    registry.registerStep(std::move(generateDocsStep));
+
+    const auto Names = beez::cli::collectEntityNames(registry, "phase-scopes");
+    ASSERT_EQ(Names.size(), 3U);
+    EXPECT_EQ(Names[0], "compile:lua");
+    EXPECT_EQ(Names[1], "generate:code");
+    EXPECT_EQ(Names[2], "generate:docs");
+}

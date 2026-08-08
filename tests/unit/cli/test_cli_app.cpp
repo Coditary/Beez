@@ -85,6 +85,17 @@ TEST(CliAppTest, ParsesListKind)
     EXPECT_EQ(*Result.options.listKind, "tasks");
 }
 
+TEST(CliAppTest, ParsesPhaseScopesListKind)
+{
+    const std::vector<std::string> Args = {"beez", "--list", "phase-scopes"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.listKind.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(*Result.options.listKind, "phase-scopes");
+}
+
 TEST(CliAppTest, ParsesUserOptionsAfterSeparator)
 {
     const std::vector<std::string> Args = {"beez", "build", "--", "-j8", "release"};
@@ -159,4 +170,13 @@ TEST(CliAppTest, ParsesCleanCacheFlag)
     const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.cleanCache);
+}
+
+TEST(CliAppTest, ParsesInstallCompletionFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--install-completion"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.installCompletion);
 }

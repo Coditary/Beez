@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -57,6 +57,9 @@ run: ## Beez ausführen (z.B. make run ARGS=build BUILD_TYPE=Debug)
 install-beez: ## Symlink beez nach ~/.local/bin (danach: beez im Terminal)
 	@test -x $(BEEZ_BIN) || (echo "Run make build first." && exit 1)
 	BEEZ_INSTALL_DIR=$(BEEZ_INSTALL_DIR) BUILD_TYPE=$(BUILD_TYPE) ./scripts/install-beez.sh
+
+install-beez-completion: ## Shell-Tab-Completion in ~/.zshrc / ~/.bashrc eintragen
+	./scripts/install-beez-completion.sh
 
 uninstall-beez: ## beez-Symlink aus ~/.local/bin entfernen
 	BEEZ_INSTALL_DIR=$(BEEZ_INSTALL_DIR) ./scripts/uninstall-beez.sh

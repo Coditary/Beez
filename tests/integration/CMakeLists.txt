@@ -2,8 +2,14 @@ find_package(GTest REQUIRED)
 
 add_executable(
     beez_integration_tests
-    helpers/process_runner.cpp core/test_orchestrator_pipeline.cpp core/test_step_cache_pipeline.cpp
-    core/test_success_cache_pipeline.cpp plugins/test_lua_shell_pipeline.cpp app/test_cli.cpp
+    helpers/process_runner.cpp
+    core/test_orchestrator_pipeline.cpp
+    core/test_step_cache_pipeline.cpp
+    core/test_success_cache_pipeline.cpp
+    plugins/test_lua_shell_pipeline.cpp
+    app/test_cli.cpp
+    app/test_completion.cpp
+    app/test_install_completion.cpp
 )
 
 add_dependencies(beez_integration_tests beez)
