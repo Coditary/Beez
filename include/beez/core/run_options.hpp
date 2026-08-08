@@ -3,6 +3,7 @@
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
+#include <filesystem>
 #include <optional>
 
 namespace beez::logging
@@ -25,6 +26,7 @@ struct RunOptions
     logging::ILogger* logger = nullptr;
     StepCache* stepCache = nullptr;
     SuccessCache* successCache = nullptr;
+    std::optional<std::filesystem::path> cacheRoot;
 };
 
 }  // namespace beez::core

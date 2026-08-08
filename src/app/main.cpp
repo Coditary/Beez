@@ -6,9 +6,11 @@
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
 #include "beez/core/run_options.hpp"
+#include "beez/core/settings.hpp"
 #include "beez/logging/output_mode.hpp"
 #include "beez/logging/spdlog_backend.hpp"
 #include "beez/plugin/lua/lua_dsl.h"
+#include "beez/plugin/lua/lua_settings.hpp"
 #include "beez/plugin/plugin_host.h"
 #include "beez/plugin/shell/shell_executor.h"
 
@@ -17,6 +19,23 @@
 #include <iostream>
 #include <memory>
 #include <system_error>
+
+namespace
+{
+
+[[nodiscard]] beez::plugin::lua::LuaDslLoader*
+findLuaDslLoader(beez::plugin::PluginHost& pluginHost)
+{
+    auto* loader = pluginHost.dslLoader();
+    if (loader == nullptr)
+    {
+        return nullptr;
+    }
+
+    return dynamic_cast<beez::plugin::lua::LuaDslLoader*>(loader);
+}
+
+}  // namespace
 
 int main(int argc, const char* argv[])
 {
@@ -41,25 +60,23 @@ int main(int argc, const char* argv[])
             return Parsed.exitCode != 0 ? Parsed.exitCode : 1;
         }
 
-        beez::core::Context context;
-
-        if (Parsed.options.cleanCache)
-        {
-            const auto CachePath = context.projectRoot() / ".cache";
-            std::error_code errorCode;
-            std::filesystem::remove_all(CachePath, errorCode);
-            std::cout << "Removed Beez cache: " << CachePath << '\n';
-        }
-
         if (Parsed.options.installCompletion)
         {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             return beez::cli::runInstallCompletion(argc > 0 ? argv[0] : nullptr);
         }
 
-        const bool HasRunTarget =
-            Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
-            Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value();
+        beez::core::BeezSettings settings;
+        beez::plugin::lua::tryLoadGlobalBeezSettings(settings);
+        settings.applyEnvironment();
+
+        beez::core::Context context;
+        settings.applyToContext(context);
+
+        const bool HasRunTarget = Parsed.options.target.has_value() ||
+                                  Parsed.options.phaseRequest.has_value() ||
+                                  Parsed.options.stepName.has_value() ||
+                                  Parsed.options.listKind.has_value() || Parsed.options.cleanCache;
 
         if (!HasRunTarget)
         {
@@ -73,26 +90,51 @@ int main(int argc, const char* argv[])
         pluginHost.addPlugin(std::make_unique<beez::plugin::shell::ShellPlugin>());
         pluginHost.initialize(registry, context);
 
-        const auto OutputMode = Parsed.options.verbose ? beez::logging::OutputMode::Verbose
-                                                       : beez::logging::OutputMode::Clean;
-        auto logger = beez::logging::createSpdlogLogger(OutputMode);
-
-        const beez::core::RunOptions Options {
-            .dryRun = Parsed.options.dryRun,
-            .enableCache = Parsed.options.enableCache,
-            .maxThreads = Parsed.options.maxThreads,
-            .outputMode = OutputMode,
-            .logger = logger.get(),
-        };
-
-        beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
-
-        const auto LoadResult = orchestrator.loadBuildScript();
-        if (!LoadResult)
+        beez::plugin::lua::LuaDslLoader* luaLoader = findLuaDslLoader(pluginHost);
+        if (luaLoader == nullptr)
         {
-            std::cerr << "Error: " << beez::core::toString(LoadResult.error()) << '\n';
+            std::cerr << "Error: lua DSL loader is not available\n";
             return 1;
         }
+
+        if (!std::filesystem::exists(context.buildScriptPath()))
+        {
+            std::cerr << "Error: build.lua not found\n";
+            return 1;
+        }
+
+        if (!luaLoader->load(context, registry))
+        {
+            std::cerr << "Error: failed to load build.lua\n";
+            return 1;
+        }
+
+        settings.merge(luaLoader->buildSettings());
+        settings.applyToContext(context);
+        settings.applyCliOverrides(Parsed.options);
+
+        if (Parsed.options.cleanCache)
+        {
+            const auto CachePath = settings.resolveCacheDirectory(context);
+            std::error_code errorCode;
+            std::filesystem::remove_all(CachePath, errorCode);
+            std::cout << "Removed Beez cache: " << CachePath << '\n';
+        }
+
+        const bool ShouldRunTarget =
+            Parsed.options.target.has_value() || Parsed.options.phaseRequest.has_value() ||
+            Parsed.options.stepName.has_value() || Parsed.options.listKind.has_value();
+        if (!ShouldRunTarget)
+        {
+            return 0;
+        }
+
+        const auto OutputMode = settings.ui.outputMode.value_or(beez::logging::OutputMode::Clean);
+        auto logger = beez::logging::createSpdlogLogger(OutputMode);
+
+        const beez::core::RunOptions Options = settings.toRunOptions(logger.get(), context);
+
+        beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
 
         return beez::cli::runParsedInvocation(orchestrator, registry, Parsed.options);
     }

@@ -18,11 +18,7 @@
 -- Bump lint_rev / analyze_rev / security_rev in configure_step after toolchain changes.
 -- BUILD_TYPE / CONAN_PROFILE: process env or .env (default Release / clang-release).
 
-task("hallo", {
-	"echo holla",
-	{ name = "qa:format-check" },
-	"echo pups"
-})
+beez.config(require("config"))
 
 local function env_or(key, default)
     local value = beez.env(key)

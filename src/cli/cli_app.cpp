@@ -47,6 +47,10 @@ std::string CliApp::helpText()
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
     stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";
+    stream << "\nConfiguration:\n";
+    stream << "  User defaults: ~/.config/beez/config.lua (return a settings table)\n";
+    stream << "  Project overrides: beez.config({ ... }) in build.lua\n";
+    stream << "  CLI flags override both.\n";
     stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases, "
               "phase-scopes)\n";
     stream << "  -p, --phase TEXT Run a phase (phase[:scope1,scope2] or phase[\"scope\"])\n";

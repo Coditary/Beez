@@ -4,6 +4,7 @@
 #include "beez/core/worker_pool.hpp"
 
 #include <filesystem>
+#include <string>
 #include <utility>
 
 namespace beez::core
@@ -13,7 +14,32 @@ Context::Context(std::filesystem::path projectRoot) : projectRoot_(std::move(pro
 
 std::filesystem::path Context::buildScriptPath() const
 {
-    return projectRoot_ / "build.lua";
+    return projectRoot_ / buildScriptFileName_.value_or("build.lua");
+}
+
+void Context::setBuildScriptFileName(std::string fileName)
+{
+    buildScriptFileName_ = std::move(fileName);
+}
+
+void Context::setEnvFilePath(std::filesystem::path path)
+{
+    envFilePath_ = std::move(path);
+}
+
+std::filesystem::path Context::envFilePath() const
+{
+    if (!envFilePath_.has_value())
+    {
+        return projectRoot_ / ".env";
+    }
+
+    if (envFilePath_->is_relative())
+    {
+        return projectRoot_ / *envFilePath_;
+    }
+
+    return *envFilePath_;
 }
 
 void Context::setStepConfigAccessor(StepConfigAccessor accessor)

@@ -77,21 +77,21 @@ const char* toString(OrchestratorError error)
 Orchestrator::Orchestrator(Registry& registry,
                            Context& context,
                            plugin::PluginHost& pluginHost,
-                           RunOptions runOptions)  // cppcheck-suppress passedByValue
+                           const RunOptions& runOptions)
     : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions),
       threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads})
 {
     if (runOptions_.enableCache && runOptions_.stepCache == nullptr)
     {
-        ownedStepCache_ =
-            std::make_unique<StepCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
+        const auto CacheRoot = runOptions_.cacheRoot.value_or(context.projectRoot() / ".cache");
+        ownedStepCache_ = std::make_unique<StepCache>(CacheRoot, defaultGlobMatcher());
         runOptions_.stepCache = ownedStepCache_.get();
     }
 
     if (runOptions_.enableCache && runOptions_.successCache == nullptr)
     {
-        ownedSuccessCache_ =
-            std::make_unique<SuccessCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
+        const auto CacheRoot = runOptions_.cacheRoot.value_or(context.projectRoot() / ".cache");
+        ownedSuccessCache_ = std::make_unique<SuccessCache>(CacheRoot, defaultGlobMatcher());
         runOptions_.successCache = ownedSuccessCache_.get();
     }
 }

@@ -2,6 +2,7 @@ find_package(TBB REQUIRED)
 
 add_library(
     beez_core STATIC
+    config_paths.cpp
     context.cpp
     content_hash.cpp
     glob_expand.cpp
@@ -10,6 +11,7 @@ add_library(
     orchestrator.cpp
     phase_argument_parser.cpp
     plugin_host.cpp
+    settings.cpp
     step_cache.cpp
     success_cache.cpp
     thread_pool.cpp

@@ -50,7 +50,7 @@ class Orchestrator
     Orchestrator(Registry& registry,
                  Context& context,
                  plugin::PluginHost& pluginHost,
-                 RunOptions runOptions = {});
+                 const RunOptions& runOptions = {});
     ~Orchestrator();
 
     Orchestrator(const Orchestrator&) = delete;

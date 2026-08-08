@@ -1,0 +1,32 @@
+-- Beez user configuration
+-- Copy to ~/.config/beez/config.lua
+
+return {
+    performance = {
+        max_threads = 8,
+    },
+
+    cache = {
+        -- Use a RAM-backed cache on Linux, for example:
+        -- directory = "/dev/shm/beez-cache",
+        directory = ".cache",
+    },
+
+    ui = {
+        output_mode = "clean", -- "clean" or "verbose"
+    },
+
+    paths = {
+        env_file = ".env",
+        build_script = "build.lua",
+    },
+
+    engine = {
+        dry_run = false,
+        enable_cache = true,
+    },
+
+    environment = {
+        BUILD_TYPE = "Release",
+    },
+}

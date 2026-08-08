@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <string>
 
 namespace beez::core
 {
@@ -26,6 +27,11 @@ class Context
     }
 
     [[nodiscard]] std::filesystem::path buildScriptPath() const;
+
+    void setBuildScriptFileName(std::string fileName);
+    void setEnvFilePath(std::filesystem::path envFilePath);
+
+    [[nodiscard]] std::filesystem::path envFilePath() const;
 
     void setStepConfigAccessor(StepConfigAccessor accessor);
     void clearStepConfigAccessor();
@@ -58,6 +64,8 @@ class Context
 
   private:
     std::filesystem::path projectRoot_;
+    std::optional<std::string> buildScriptFileName_;
+    std::optional<std::filesystem::path> envFilePath_;
     StepConfigAccessor stepConfigAccessor_;
     std::optional<StepIdentity> stepIdentity_;
     SuccessCacheSession* successCacheSession_ = nullptr;
