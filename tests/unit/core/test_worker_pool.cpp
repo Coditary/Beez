@@ -34,7 +34,7 @@ TEST(WorkerPoolTest, SpawnAndWaitExecutesCommand)
     std::vector<std::string> commands;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command) -> int
+        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/) -> int
         {
             commands.push_back(command);
             return 0;
@@ -60,7 +60,7 @@ TEST(WorkerPoolTest, WaitAllExecutesMultipleWorkersSequentially)
     std::vector<std::string> commands;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command) -> int
+        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/) -> int
         {
             commands.push_back(command);
             return 0;
@@ -85,7 +85,7 @@ TEST(WorkerPoolTest, WorkerExecutesMultipleCommandsInOrder)
     std::vector<std::string> commands;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command) -> int
+        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/) -> int
         {
             commands.push_back(command);
             return 0;
@@ -109,7 +109,7 @@ TEST(WorkerPoolTest, DrainAllExecutesRemainingWorkers)
     int executed = 0;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&executed](const std::string& /*command*/) -> int
+        [&executed](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/) -> int
         {
             ++executed;
             return 0;
@@ -131,7 +131,8 @@ TEST(WorkerPoolTest, FailedWorkerReturnsNonZeroExitCode)
 {
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [](const std::string& /*command*/) -> int { return 1; },
+        [](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/) -> int
+        { return 1; },
         nullptr,
         beez::core::defaultGlobMatcher(),
         "parent",
@@ -153,7 +154,8 @@ TEST(WorkerPoolTest, CachedWorkerSkipsExecutionWhenOutputsExist)
     const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool pool(
         Project.path(),
-        [&executed, &Project](const std::string& /*command*/) -> int
+        [&executed, &Project](const std::string& /*command*/,
+                              const beez::core::WorkerSpec& /*worker*/) -> int
         {
             ++executed;
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
@@ -197,7 +199,8 @@ TEST(WorkerPoolTest, DrainAllRunsWorkersInParallelWhenThreadPoolAllows)
 
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&concurrent, &peak](const std::string& /*command*/) -> int
+        [&concurrent, &peak](const std::string& /*command*/,
+                             const beez::core::WorkerSpec& /*worker*/) -> int
         {
             const int Current = concurrent.fetch_add(1) + 1;
             int observed = peak.load();
@@ -232,7 +235,7 @@ TEST(WorkerPoolTest, DrainAllStaysSequentialWithSingleThreadPool)
 
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command) -> int
+        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/) -> int
         {
             commands.push_back(command);
             return 0;
@@ -264,7 +267,8 @@ TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
     const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool poolV1(
         Project.path(),
-        [&executed, &Project](const std::string& /*command*/) -> int
+        [&executed, &Project](const std::string& /*command*/,
+                              const beez::core::WorkerSpec& /*worker*/) -> int
         {
             ++executed;
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
@@ -292,7 +296,8 @@ TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
 
     beez::core::WorkerPool poolV2(
         Project.path(),
-        [&executed, &Project](const std::string& /*command*/) -> int
+        [&executed, &Project](const std::string& /*command*/,
+                              const beez::core::WorkerSpec& /*worker*/) -> int
         {
             ++executed;
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");

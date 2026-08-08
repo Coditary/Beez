@@ -122,6 +122,12 @@ TEST(CliTest, CleanModeShowsOnlyFailedWorkerOutput)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+beez.config({
+    ui = {
+        prefix = true,
+        prefix_format = "Worker {id}",
+    },
+})
 step({
     name = "qa-fail",
     phase = "qa",
@@ -142,6 +148,8 @@ task("fail-worker", { { name = "qa-fail" } })
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"fail-worker"});
     EXPECT_NE(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("worker-failure-output"), std::string::npos);
+    EXPECT_NE(Result.output.find("Worker bad"), std::string::npos);
+    EXPECT_EQ(Result.output.find("Worker 0"), std::string::npos);
     EXPECT_EQ(Result.output.find("noise-a"), std::string::npos);
     EXPECT_EQ(Result.output.find("noise-b"), std::string::npos);
 }

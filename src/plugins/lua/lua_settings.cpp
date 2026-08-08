@@ -2,9 +2,12 @@
 
 #include "beez/core/config_paths.hpp"
 #include "beez/core/settings.hpp"
+#include "beez/core/ui_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
+#include <algorithm>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -154,6 +157,300 @@ void readCacheSettings(const sol::table& cacheTable, core::BeezSettings& overlay
     }
 }
 
+void readStringField(const sol::table& table, const char* key, std::string& target)
+{
+    const sol::object Value = table[key];
+    if (!Value.valid() || Value.get_type() == sol::type::lua_nil)
+    {
+        return;
+    }
+
+    if (!Value.is<std::string>())
+    {
+        throw std::runtime_error(std::string(key) + " must be a string");
+    }
+
+    target = Value.as<std::string>();
+}
+
+void readOptionalStringField(const sol::table& table,
+                             const char* key,
+                             std::optional<std::string>& target)
+{
+    const sol::object Value = table[key];
+    if (!Value.valid() || Value.get_type() == sol::type::lua_nil)
+    {
+        return;
+    }
+
+    if (!Value.is<std::string>())
+    {
+        throw std::runtime_error(std::string(key) + " must be a string");
+    }
+
+    target = Value.as<std::string>();
+}
+
+void readColorPaletteField(const sol::table& table, const char* key, std::string& target)
+{
+    readStringField(table, key, target);
+}
+
+[[nodiscard]] core::UiColorPalette readColorPalette(const sol::table& table)
+{
+    core::UiColorPalette palette;
+    readColorPaletteField(table, "text", palette.text);
+    readColorPaletteField(table, "muted", palette.muted);
+    readColorPaletteField(table, "success", palette.success);
+    readColorPaletteField(table, "warning", palette.warning);
+    readColorPaletteField(table, "error", palette.error);
+    readColorPaletteField(table, "info", palette.info);
+    readColorPaletteField(table, "accent", palette.accent);
+    readColorPaletteField(table, "progress_fill", palette.progressFill);
+    readColorPaletteField(table, "progress_empty", palette.progressEmpty);
+    readColorPaletteField(table, "cache_hit", palette.cacheHit);
+    readColorPaletteField(table, "worker_prefix", palette.workerPrefix);
+    return palette;
+}
+
+[[nodiscard]] core::CustomProgressStyle readCustomProgressStyle(const sol::table& table)
+{
+    core::CustomProgressStyle style;
+    readStringField(table, "start", style.startDelimiter);
+    readStringField(table, "end_delimiter", style.endDelimiter);
+    readStringField(table, "fill", style.fillChar);
+    readStringField(table, "empty", style.emptyChar);
+    return style;
+}
+
+void readLegacyNumbersIndicator(const sol::table& table, core::UiAnimationOverlay& animation)
+{
+    const sol::object NumbersValue = table["numbers"];
+    if (!NumbersValue.valid() || animation.indicator.has_value())
+    {
+        return;
+    }
+
+    if (!NumbersValue.is<std::string>())
+    {
+        throw std::runtime_error("ui.animation.progress.numbers must be a string");
+    }
+
+    const std::string Numbers = NumbersValue.as<std::string>();
+    if (Numbers == "percent")
+    {
+        animation.indicator = "percent";
+        return;
+    }
+
+    if (Numbers == "fraction" || Numbers == "both")
+    {
+        animation.indicator = "step";
+    }
+}
+
+[[nodiscard]] std::vector<std::string> readStringArray(const sol::table& table)
+{
+    std::vector<std::pair<int, std::string>> indexedValues;
+    table.for_each(
+        [&indexedValues](const sol::object& key, const sol::object& value)
+        {
+            if (!key.is<int>())
+            {
+                throw std::runtime_error(
+                    "ui.animation.indicator frame list must use numeric indices");
+            }
+
+            if (!value.is<std::string>())
+            {
+                throw std::runtime_error("ui.animation.indicator frames must be strings");
+            }
+
+            indexedValues.emplace_back(key.as<int>(), value.as<std::string>());
+        });
+
+    std::ranges::sort(indexedValues,
+                      [](const auto& left, const auto& right) { return left.first < right.first; });
+
+    std::vector<std::string> values;
+    values.reserve(indexedValues.size());
+    for (const auto& [index, value] : indexedValues)
+    {
+        (void)index;
+        values.push_back(value);
+    }
+
+    return values;
+}
+
+[[nodiscard]] bool isIndicatorConfigTable(const sol::table& table)
+{
+    bool hasStringKey = false;
+    table.for_each(
+        [&](const sol::object& key, const sol::object& /*value*/)
+        {
+            if (!key.is<int>())
+            {
+                hasStringKey = true;
+            }
+        });
+
+    return hasStringKey;
+}
+
+void readIndicatorConfigTable(const sol::table& table, core::UiAnimationOverlay& animation)
+{
+    const sol::object TypeValue = table["type"];
+    const sol::object StyleValue = table["style"];
+    if (TypeValue.valid())
+    {
+        if (!TypeValue.is<std::string>())
+        {
+            throw std::runtime_error("ui.animation.indicator.type must be a string");
+        }
+
+        animation.indicator = TypeValue.as<std::string>();
+    }
+    else if (StyleValue.valid())
+    {
+        if (!StyleValue.is<std::string>())
+        {
+            throw std::runtime_error("ui.animation.indicator.style must be a string");
+        }
+
+        animation.indicator = StyleValue.as<std::string>();
+    }
+
+    const sol::object FramesValue = table["frames"];
+    if (FramesValue.valid())
+    {
+        if (!FramesValue.is<sol::table>())
+        {
+            throw std::runtime_error("ui.animation.indicator.frames must be a table");
+        }
+
+        animation.customIndicatorFrames = readStringArray(FramesValue.as<sol::table>());
+    }
+
+    readOptionalStringField(table, "start", animation.indicatorStartDelimiter);
+    readOptionalStringField(table, "end_delimiter", animation.indicatorEndDelimiter);
+    readOptionalNumber(table, "spin_interval", animation.indicatorSpinIntervalMs);
+}
+
+void readIndicatorValue(const sol::object& indicatorValue,
+                        core::UiAnimationOverlay& animation,
+                        const char* key)
+{
+    if (!indicatorValue.valid())
+    {
+        return;
+    }
+
+    if (indicatorValue.is<std::string>())
+    {
+        animation.indicator = indicatorValue.as<std::string>();
+        return;
+    }
+
+    if (indicatorValue.is<sol::table>())
+    {
+        const sol::table IndicatorTable = indicatorValue.as<sol::table>();
+        if (isIndicatorConfigTable(IndicatorTable))
+        {
+            readIndicatorConfigTable(IndicatorTable, animation);
+            return;
+        }
+
+        animation.customIndicatorFrames = readStringArray(IndicatorTable);
+        return;
+    }
+
+    throw std::runtime_error(std::string(key) + " must be a string or table");
+}
+
+void readAnimationSettings(const sol::table& animationTable, core::UiAnimationOverlay& animation)
+{
+    const sol::object ProgressValue = animationTable["progress"];
+    if (ProgressValue.valid())
+    {
+        if (ProgressValue.is<std::string>())
+        {
+            animation.progress = ProgressValue.as<std::string>();
+        }
+        else if (ProgressValue.is<sol::table>())
+        {
+            const sol::table ProgressTable = ProgressValue.as<sol::table>();
+            animation.customProgress = readCustomProgressStyle(ProgressTable);
+            readLegacyNumbersIndicator(ProgressTable, animation);
+            readIndicatorValue(
+                ProgressTable["indicator"], animation, "ui.animation.progress.indicator");
+        }
+        else
+        {
+            throw std::runtime_error("ui.animation.progress must be a string or table");
+        }
+    }
+
+    readIndicatorValue(animationTable["indicator"], animation, "ui.animation.indicator");
+    readOptionalNumber(
+        animationTable, "indicator_spin_interval", animation.indicatorSpinIntervalMs);
+
+    const sol::object SpinnerValue = animationTable["spinner"];
+    if (SpinnerValue.valid() && !animation.indicator.has_value() &&
+        !animation.customIndicatorFrames.has_value())
+    {
+        readIndicatorValue(SpinnerValue, animation, "ui.animation.spinner");
+    }
+}
+
+void readUiSettings(const sol::table& uiTable, core::BeezSettings& overlay)
+{
+    readOptionalBool(uiTable, "colors", overlay.ui.options.colors);
+    readOptionalBool(uiTable, "truecolor", overlay.ui.options.truecolor);
+    readOptionalBool(uiTable, "icons", overlay.ui.options.icons);
+    readOptionalString(uiTable, "log_level", overlay.ui.options.logLevel);
+    readOptionalBool(uiTable, "hide_cache_hits", overlay.ui.options.hideCacheHits);
+    readOptionalBool(uiTable, "prefix", overlay.ui.options.workerPrefix);
+    readOptionalString(uiTable, "prefix_format", overlay.ui.options.workerPrefixFormat);
+    readOptionalBool(uiTable, "show_time_saved", overlay.ui.options.showTimeSaved);
+
+    if (const sol::object ThemesValue = uiTable["themes"]; ThemesValue.valid())
+    {
+        if (!ThemesValue.is<sol::table>())
+        {
+            throw std::runtime_error("ui.themes must be a table");
+        }
+
+        std::map<std::string, core::UiColorPalette> themes;
+        ThemesValue.as<sol::table>().for_each(
+            [&themes](const sol::object& key, const sol::object& value)
+            {
+                if (!key.is<std::string>() || !value.is<sol::table>())
+                {
+                    throw std::runtime_error(
+                        "ui.themes entries must use string keys and table values");
+                }
+
+                themes.emplace(key.as<std::string>(), readColorPalette(value.as<sol::table>()));
+            });
+        overlay.ui.options.themes = std::move(themes);
+    }
+
+    readOptionalString(uiTable, "theme", overlay.ui.options.theme);
+
+    if (const sol::object AnimationValue = uiTable["animation"]; AnimationValue.valid())
+    {
+        if (!AnimationValue.is<sol::table>())
+        {
+            throw std::runtime_error("ui.animation must be a table");
+        }
+
+        core::UiAnimationOverlay animation;
+        readAnimationSettings(AnimationValue.as<sol::table>(), animation);
+        overlay.ui.options.animation = std::move(animation);
+    }
+}
+
 }  // namespace
 
 void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& settings)
@@ -213,6 +510,8 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
 
             overlay.ui.outputMode = parseOutputMode(OutputModeValue.as<std::string>());
         }
+
+        readUiSettings(UiTable, overlay);
     }
 
     if (const sol::object PathsValue = table["paths"]; PathsValue.valid())

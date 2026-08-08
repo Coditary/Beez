@@ -3,6 +3,7 @@
 #include "beez/core/cache_options.hpp"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
+#include "beez/core/ui_options.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -177,15 +178,35 @@ struct ConfigSchemaNode
                 return cache;
             }());
 
-        root.children.emplace("ui",
-                              []()
-                              {
-                                  ConfigSchemaNode uiSettings;
-                                  uiSettings.kind = ConfigSchemaKind::Object;
-                                  uiSettings.children.emplace("output_mode",
-                                                              makeEnumNode({"clean", "verbose"}));
-                                  return uiSettings;
-                              }());
+        root.children.emplace(
+            "ui",
+            []()
+            {
+                ConfigSchemaNode uiSettings;
+                uiSettings.kind = ConfigSchemaKind::Object;
+                uiSettings.children.emplace("output_mode", makeEnumNode({"clean", "verbose"}));
+                uiSettings.children.emplace("colors", makeBooleanNode());
+                uiSettings.children.emplace("truecolor", makeBooleanNode());
+                uiSettings.children.emplace("theme", makeStringNode());
+                uiSettings.children.emplace("themes", makeStringMapNode());
+                uiSettings.children.emplace("icons", makeBooleanNode());
+
+                ConfigSchemaNode animation;
+                animation.kind = ConfigSchemaKind::Object;
+                animation.children.emplace("progress", makeEnumNode(progressDisplayStyleNames()));
+                animation.children.emplace("indicator",
+                                           makeEnumNode(progressIndicatorStyleNames()));
+                animation.children.emplace("indicator_spin_interval",
+                                           makeNumberNode(NumberConstraints {}));
+                uiSettings.children.emplace("animation", std::move(animation));
+
+                uiSettings.children.emplace("log_level", makeEnumNode(uiLogLevelNames()));
+                uiSettings.children.emplace("hide_cache_hits", makeBooleanNode());
+                uiSettings.children.emplace("prefix", makeBooleanNode());
+                uiSettings.children.emplace("prefix_format", makeStringNode());
+                uiSettings.children.emplace("show_time_saved", makeBooleanNode());
+                return uiSettings;
+            }());
 
         root.children.emplace("paths",
                               []()

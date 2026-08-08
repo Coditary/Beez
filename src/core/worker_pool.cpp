@@ -201,7 +201,7 @@ int WorkerPool::executeWorker(std::size_t workerId)
     int exitCode = 0;
     for (const auto& command : entry.spec.commands)
     {
-        exitCode = execute_(command);
+        exitCode = execute_(command, entry.spec);
         if (exitCode != 0)
         {
             break;

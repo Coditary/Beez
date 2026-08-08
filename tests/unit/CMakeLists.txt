@@ -38,6 +38,7 @@ add_executable(
     core/test_progress_detail.cpp
     core/test_phase_argument_parser.cpp
     core/test_performance_options.cpp
+    core/test_ui_options.cpp
     core/test_plugin_host.cpp
     plugins/lua/test_lua_dsl.cpp
     plugins/lua/test_lua_settings.cpp

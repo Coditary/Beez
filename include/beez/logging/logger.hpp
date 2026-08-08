@@ -15,6 +15,12 @@ struct ExecutionProgress
     std::size_t total = 0;
     std::string category;
     std::string detail;
+    bool cached = false;
+};
+
+struct RunSummary
+{
+    std::size_t cacheHitsSkipped = 0;
 };
 
 // Identifies a scoped output channel for parallel execution contexts.
@@ -36,8 +42,8 @@ class ILogger
     virtual void beginRun(const std::string& runKind, const std::string& name) = 0;
     virtual void logProgress(const ExecutionProgress& progress) = 0;
     virtual void logCommandOutput(LogChannelId channel, std::string_view output) = 0;
-    virtual void logFailureOutput(std::string_view output) = 0;
-    virtual void endRun(bool success, double durationSeconds) = 0;
+    virtual void logFailureOutput(std::string_view output, LogChannelId channel = {}) = 0;
+    virtual void endRun(bool success, double durationSeconds, const RunSummary& summary = {}) = 0;
 
     // Future TUI: each channel represents a stack frame (workflow / phase / thread).
     virtual LogChannelId openChannel(const std::string& label) = 0;
@@ -50,8 +56,12 @@ class NullLogger : public ILogger
     void beginRun(const std::string& /*runKind*/, const std::string& /*name*/) override {}
     void logProgress(const ExecutionProgress& /*progress*/) override {}
     void logCommandOutput(LogChannelId /*channel*/, std::string_view /*output*/) override {}
-    void logFailureOutput(std::string_view /*output*/) override {}
-    void endRun(bool /*success*/, double /*durationSeconds*/) override {}
+    void logFailureOutput(std::string_view /*output*/, LogChannelId /*channel*/ = {}) override {}
+    void endRun(bool /*success*/,
+                double /*durationSeconds*/,
+                const RunSummary& /*summary*/ = {}) override
+    {
+    }
     LogChannelId openChannel(const std::string& /*label*/) override
     {
         return {};
@@ -86,8 +96,8 @@ class RecordingLogger : public ILogger
     void beginRun(const std::string& runKind, const std::string& name) override;
     void logProgress(const ExecutionProgress& progress) override;
     void logCommandOutput(LogChannelId channel, std::string_view output) override;
-    void logFailureOutput(std::string_view output) override;
-    void endRun(bool success, double durationSeconds) override;
+    void logFailureOutput(std::string_view output, LogChannelId channel = {}) override;
+    void endRun(bool success, double durationSeconds, const RunSummary& summary = {}) override;
     LogChannelId openChannel(const std::string& label) override;
     void closeChannel(LogChannelId channel) override;
 

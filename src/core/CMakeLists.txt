@@ -15,6 +15,7 @@ add_library(
     glob_expand.cpp
     glob_pattern.cpp
     performance_options.cpp
+    ui_options.cpp
     registry.cpp
     orchestrator.cpp
     phase_argument_parser.cpp

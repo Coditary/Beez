@@ -29,6 +29,36 @@ return {
 
     ui = {
         output_mode = "clean", -- "clean" or "verbose"
+        colors = true,
+        truecolor = true,
+        themes = {
+            gruvbox = {
+                text = "#ebdbb2",
+                muted = "#928374",
+                success = "#b8bb26",
+                warning = "#fabd2f",
+                error = "#fb4934",
+                info = "#83a598",
+                accent = "#fe8019",
+                progress_fill = "#b8bb26",
+                progress_empty = "#665c54",
+                cache_hit = "#8ec07c",
+                worker_prefix = "#83a598",
+            },
+        },
+        theme = "gruvbox", -- name from ui.themes
+        icons = true,
+        animation = {
+            progress = "minimal", -- minimal, lines, blocks, or custom table
+            indicator = "step", -- step, percent, minimal, dots, custom, or table
+            indicator_spin_interval = 80, -- ms; animated spinner with spinner indicators
+            -- indicator = { type = "dots", start = "", end_delimiter = "", spin_interval = 80 },
+        },
+        log_level = "info", -- info, warn, or error
+        hide_cache_hits = false,
+        prefix = false,
+        prefix_format = "[Worker {id}]",
+        show_time_saved = true,
     },
 
     paths = {

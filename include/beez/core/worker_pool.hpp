@@ -38,7 +38,7 @@ struct WorkerHandle
 class WorkerPool
 {
   public:
-    using ExecuteFn = std::function<int(const std::string& command)>;
+    using ExecuteFn = std::function<int(const std::string& command, const WorkerSpec& worker)>;
 
     WorkerPool(std::filesystem::path projectRoot,
                ExecuteFn execute,

@@ -209,6 +209,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
     };
     if (const auto FoundTask = registry_.findTask(name))
     {
+        cacheHitsSkipped_ = 0;
         if (runOptions_.logger != nullptr)
         {
             runOptions_.logger->beginRun("Task", name);
@@ -220,7 +221,8 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
+            runOptions_.logger->endRun(
+                static_cast<bool>(Result), elapsedSeconds(Start), runSummary());
         }
 
         return FlushAtRunEnd(Result);
@@ -228,6 +230,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 
     if (const auto FoundWorkflow = registry_.findWorkflow(name))
     {
+        cacheHitsSkipped_ = 0;
         if (runOptions_.logger != nullptr)
         {
             runOptions_.logger->beginRun("Workflow", name);
@@ -239,7 +242,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(static_cast<bool>(Result), Duration);
+            runOptions_.logger->endRun(static_cast<bool>(Result), Duration, runSummary());
         }
 
         return FlushAtRunEnd(Result);
@@ -250,7 +253,8 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 
 void Orchestrator::logProgress(ProgressState& progress,
                                const std::string& category,
-                               const std::string& detail) const
+                               const std::string& detail,
+                               const bool IsCached) const
 {
     if (runOptions_.logger == nullptr)
     {
@@ -263,6 +267,7 @@ void Orchestrator::logProgress(ProgressState& progress,
         .total = progress.total,
         .category = category,
         .detail = detail,
+        .cached = IsCached,
     });
 }
 
@@ -366,7 +371,15 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         const auto Lookup = stepCache->lookup(step, context_.projectRoot(), step.config);
         if (Lookup.skip)
         {
-            logProgress(progress, Category, Detail + " (cached)");
+            ++cacheHitsSkipped_;
+            if (!runOptions_.ui.hideCacheHits)
+            {
+                logProgress(progress, Category, Detail, true);
+            }
+            else
+            {
+                (void)progress.index.fetch_add(1);
+            }
             return 0;
         }
 
@@ -415,12 +428,18 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             context_.setSuccessCacheSession(&successCacheSession.value());
         }
 
-        std::vector<std::string> workerFailureOutputs;
+        struct WorkerFailureOutput
+        {
+            std::string workerName;
+            std::string output;
+        };
+
+        std::vector<WorkerFailureOutput> workerFailureOutputs;
         std::mutex workerFailureOutputMutex;
 
         WorkerPool::ExecuteFn executeWorkerCommand =
             [this, &workerFailureOutputs, &workerFailureOutputMutex](
-                const std::string& command) -> int
+                const std::string& command, const WorkerSpec& worker) -> int
         {
             auto* executor = pluginHost_.executor();
             if (executor == nullptr)
@@ -438,7 +457,8 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             if (ExitCode != 0 && !capturedOutput.empty())
             {
                 const std::scoped_lock Lock(workerFailureOutputMutex);
-                workerFailureOutputs.push_back(std::move(capturedOutput));
+                workerFailureOutputs.push_back(WorkerFailureOutput {
+                    .workerName = worker.name, .output = std::move(capturedOutput)});
             }
 
             return ExitCode;
@@ -475,9 +495,12 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             exitCode = discardProcessOutput(RunCallbackWithWorkers);
             if (exitCode != 0 && runOptions_.logger != nullptr)
             {
-                for (const auto& output : workerFailureOutputs)
+                for (const auto& failure : workerFailureOutputs)
                 {
-                    runOptions_.logger->logFailureOutput(output);
+                    const logging::LogChannelId Channel =
+                        runOptions_.logger->openChannel(failure.workerName);
+                    runOptions_.logger->logFailureOutput(failure.output, Channel);
+                    runOptions_.logger->closeChannel(Channel);
                 }
             }
         }
@@ -519,6 +542,7 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
         return OrchestratorError::NotFound;
     }
 
+    cacheHitsSkipped_ = 0;
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->beginRun("Step", name);
@@ -530,7 +554,7 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
 
     if (runOptions_.logger != nullptr)
     {
-        runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
+        runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start), runSummary());
     }
 
     if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
@@ -663,6 +687,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         return OrchestratorError::InvalidPhaseRequest;
     }
 
+    cacheHitsSkipped_ = 0;
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->beginRun("Phase", request.phase);
@@ -680,7 +705,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     {
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(true, elapsedSeconds(Start));
+            runOptions_.logger->endRun(true, elapsedSeconds(Start), runSummary());
         }
         return 0;
     }
@@ -695,7 +720,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         {
             if (runOptions_.logger != nullptr)
             {
-                runOptions_.logger->endRun(false, elapsedSeconds(Start));
+                runOptions_.logger->endRun(false, elapsedSeconds(Start), runSummary());
             }
             return Result.error();
         }

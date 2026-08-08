@@ -226,7 +226,8 @@ int main(int argc, const char* argv[])
         }
 
         const auto OutputMode = settings.ui.outputMode.value_or(beez::logging::OutputMode::Clean);
-        auto logger = beez::logging::createSpdlogLogger(OutputMode);
+        const auto UiSettings = settings.resolveUiSettings();
+        auto logger = beez::logging::createSpdlogLogger(OutputMode, UiSettings);
 
         const beez::core::RunOptions Options = settings.toRunOptions(logger.get(), context);
 

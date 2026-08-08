@@ -5,6 +5,7 @@
 #include "beez/core/context.h"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
+#include "beez/core/ui_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <filesystem>
@@ -130,6 +131,7 @@ void BeezSettings::merge(const BeezSettings& overlay)
     mergeOptionalValue(cache.compress.level, overlay.cache.compress.level);
     mergeOptionalString(cache.compress.mode, overlay.cache.compress.mode);
     mergeOptionalValue(ui.outputMode, overlay.ui.outputMode);
+    mergeUiSettingsOverlay(ui.options, overlay.ui.options);
     mergeOptionalPath(paths.envFile, overlay.paths.envFile);
     mergeOptionalString(paths.buildScript, overlay.paths.buildScript);
     mergeOptionalValue(engine.dryRun, overlay.engine.dryRun);
@@ -220,6 +222,11 @@ PerformanceSettings BeezSettings::resolvePerformanceSettings() const
     return buildPerformanceSettings(*this);
 }
 
+UiSettings BeezSettings::resolveUiSettings() const
+{
+    return ::beez::core::resolveUiSettings(ui.options);
+}
+
 RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& context) const
 {
     const CacheOptions Cache = resolveCacheOptions(context);
@@ -231,6 +238,7 @@ RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& c
         .logger = logger,
         .cache = Cache,
         .performance = buildPerformanceSettings(*this),
+        .ui = resolveUiSettings(),
     };
 }
 

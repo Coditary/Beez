@@ -5,6 +5,7 @@
 #include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
 #include "beez/core/thread_pool.hpp"
+#include "beez/core/ui_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <algorithm>
@@ -349,15 +350,102 @@ void appendUiRows(const SettingsReportInput& input, std::vector<ConfigRow>& rows
     const auto& active = input.activeSettings;
     const auto& cli = input.cliOptions;
 
-    const logging::OutputMode Resolved = active.ui.outputMode.value_or(logging::OutputMode::Clean);
+    const logging::OutputMode ResolvedOutputMode =
+        active.ui.outputMode.value_or(logging::OutputMode::Clean);
+    const UiSettings ResolvedUi = active.resolveUiSettings();
 
     rows.push_back(ConfigRow {
         .key = "ui.output_mode",
-        .value = formatQuoted(outputModeLabel(Resolved)),
+        .value = formatQuoted(outputModeLabel(ResolvedOutputMode)),
         .origin = originForOptional(global.ui.outputMode,
                                     project.ui.outputMode,
                                     cli.verbose,
                                     "CLI --verbose",
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.colors",
+        .value = formatBool(ResolvedUi.colors),
+        .origin = originForOptional(global.ui.options.colors,
+                                    project.ui.options.colors,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.truecolor",
+        .value = formatBool(ResolvedUi.truecolor),
+        .origin = originForOptional(global.ui.options.truecolor,
+                                    project.ui.options.truecolor,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.icons",
+        .value = formatBool(ResolvedUi.icons),
+        .origin = originForOptional(global.ui.options.icons,
+                                    project.ui.options.icons,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.animation.progress",
+        .value = formatQuoted(toString(ResolvedUi.animation.progress.style)),
+        .origin = defaultOriginLabel(),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.animation.indicator",
+        .value = formatQuoted(toString(ResolvedUi.animation.progress.indicator)),
+        .origin = defaultOriginLabel(),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.animation.indicator_spin_interval",
+        .value = std::to_string(ResolvedUi.animation.progress.indicatorSpinIntervalMs),
+        .origin = defaultOriginLabel(),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.log_level",
+        .value = formatQuoted(toString(ResolvedUi.logLevel)),
+        .origin = originForOptional(global.ui.options.logLevel,
+                                    project.ui.options.logLevel,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.hide_cache_hits",
+        .value = formatBool(ResolvedUi.hideCacheHits),
+        .origin = originForOptional(global.ui.options.hideCacheHits,
+                                    project.ui.options.hideCacheHits,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.prefix",
+        .value = formatBool(ResolvedUi.workerPrefixEnabled),
+        .origin = originForOptional(global.ui.options.workerPrefix,
+                                    project.ui.options.workerPrefix,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "ui.show_time_saved",
+        .value = formatBool(ResolvedUi.showTimeSaved),
+        .origin = originForOptional(global.ui.options.showTimeSaved,
+                                    project.ui.options.showTimeSaved,
+                                    false,
+                                    {},
                                     input.globalConfigPath,
                                     input.context),
     });

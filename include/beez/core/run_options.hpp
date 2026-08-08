@@ -2,6 +2,7 @@
 
 #include "beez/core/cache_options.hpp"
 #include "beez/core/performance_options.hpp"
+#include "beez/core/ui_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
@@ -29,6 +30,7 @@ struct RunOptions
     SuccessCache* successCache = nullptr;
     CacheOptions cache;
     PerformanceSettings performance;
+    UiSettings ui;
 };
 
 }  // namespace beez::core

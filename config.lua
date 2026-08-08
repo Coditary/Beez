@@ -26,6 +26,35 @@ return {
 
     ui = {
         output_mode = "clean",
+	    --    colors = true,
+	    --    truecolor = true,
+	    --    themes = {
+	    --        gruvbox = {
+	    --            text = "#ebdbb2",
+	    --            muted = "#928374",
+	    --            success = "#b8bb26",
+	    --            warning = "#fabd2f",
+	    --            error = "#fb4934",
+	    --            info = "#83a598",
+	    --            accent = "#fe8019",
+	    --            progress_fill = "#b8bb26",
+	    --            progress_empty = "#665c54",
+	    --            cache_hit = "#8ec07c",
+	    --            worker_prefix = "#83a598",
+	    --        },
+	    --    },
+	    --    theme = "gruvbox",
+	    --    icons = true,
+	    --    animation = {
+	    --        progress = "minimal",
+	    --        indicator = "dots",
+	    -- indicator_spin_interval = 80,
+	    --    },
+	    --    log_level = "info",
+	    --    hide_cache_hits = false,
+	    --    prefix = true,
+	    --    prefix_format = "[Worker {id}",
+	    --    show_time_saved = true,
     },
 
     paths = {

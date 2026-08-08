@@ -107,7 +107,8 @@ class Orchestrator
 
     void logProgress(ProgressState& progress,
                      const std::string& category,
-                     const std::string& detail) const;
+                     const std::string& detail,
+                     bool isCached = false) const;
     [[nodiscard]] std::size_t countWorkflowSteps(const Workflow& workflow) const;
     [[nodiscard]] std::size_t countPhaseInvocationSteps(const PhaseInvocation& invocation) const;
     [[nodiscard]] std::size_t countPhaseRequestSteps(const PhaseRequest& request) const;
@@ -126,7 +127,13 @@ class Orchestrator
     ThreadPool threadPool_;
     std::unique_ptr<StepCache> ownedStepCache_;
     std::unique_ptr<SuccessCache> ownedSuccessCache_;
+    std::size_t cacheHitsSkipped_ = 0;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
+
+    [[nodiscard]] logging::RunSummary runSummary() const
+    {
+        return logging::RunSummary {.cacheHitsSkipped = cacheHitsSkipped_};
+    }
 };
 
 }  // namespace beez::core

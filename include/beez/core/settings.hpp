@@ -5,6 +5,7 @@
 #include "beez/core/context.h"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
+#include "beez/core/ui_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
@@ -61,6 +62,7 @@ struct BeezSettings
     struct Ui
     {
         std::optional<logging::OutputMode> outputMode;
+        UiSettingsOverlay options;
     } ui;
 
     struct Paths
@@ -90,6 +92,8 @@ struct BeezSettings
     [[nodiscard]] CacheOptions resolveCacheOptions(const Context& context) const;
 
     [[nodiscard]] PerformanceSettings resolvePerformanceSettings() const;
+
+    [[nodiscard]] UiSettings resolveUiSettings() const;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 
