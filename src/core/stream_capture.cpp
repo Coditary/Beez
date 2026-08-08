@@ -23,6 +23,11 @@ constexpr std::size_t PipeWriteEnd = 1;
 
 void restoreDescriptor(int savedDescriptor, int targetDescriptor)
 {
+    if (savedDescriptor < 0)
+    {
+        return;
+    }
+
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
     dup2(savedDescriptor, targetDescriptor);
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
@@ -73,6 +78,41 @@ CapturedExecution captureProcessOutput(const std::function<int()>& action)
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
     close(pipeFds.at(PipeReadEnd));
     return {.exitCode = ExitCode, .output = std::move(output)};
+}
+
+int discardProcessOutput(const std::function<int()>& action)
+{
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    const int SavedStdout = dup(STDOUT_FILENO);
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    const int SavedStderr = dup(STDERR_FILENO);
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,concurrency-mt-unsafe)
+    const int DevNull = ::open("/dev/null", O_WRONLY);
+    if (DevNull < 0)
+    {
+        restoreDescriptor(SavedStdout, STDOUT_FILENO);
+        restoreDescriptor(SavedStderr, STDERR_FILENO);
+        return action();
+    }
+
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    dup2(DevNull, STDOUT_FILENO);
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    dup2(DevNull, STDERR_FILENO);
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    close(DevNull);
+
+    const int ExitCode = action();
+
+    // NOLINTNEXTLINE(cert-err33-c,concurrency-mt-unsafe)
+    static_cast<void>(fflush(stdout));
+    // NOLINTNEXTLINE(cert-err33-c,concurrency-mt-unsafe)
+    static_cast<void>(fflush(stderr));
+
+    restoreDescriptor(SavedStdout, STDOUT_FILENO);
+    restoreDescriptor(SavedStderr, STDERR_FILENO);
+    return ExitCode;
 }
 
 }  // namespace beez::core

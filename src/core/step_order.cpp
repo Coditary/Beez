@@ -381,6 +381,74 @@ topologicalSort(const std::vector<Step>& steps,
     return ordered;
 }
 
+[[nodiscard]] Expected<std::vector<std::vector<Step>>, StepOrderError>
+topologicalLevels(const std::vector<Step>& steps,
+                  const Adjacency& adjacency,
+                  InDegree inDegree,
+                  const std::unordered_map<std::string, const Step*>& stepByName)
+{
+    std::set<std::string> ready;
+    for (const auto& [name, degree] : inDegree)
+    {
+        if (degree == 0)
+        {
+            ready.insert(name);
+        }
+    }
+
+    std::vector<std::vector<Step>> levels;
+    std::size_t processed = 0;
+
+    while (!ready.empty())
+    {
+        std::vector<Step> level;
+        level.reserve(ready.size());
+        std::ranges::transform(ready,
+                               std::back_inserter(level),
+                               [&stepByName](const std::string& name) -> Step
+                               { return *stepByName.at(name); });
+        levels.push_back(std::move(level));
+        processed += ready.size();
+
+        std::set<std::string> nextReady;
+        for (const auto& name : ready)
+        {
+            const auto Successors = adjacency.find(name);
+            if (Successors == adjacency.end())
+            {
+                continue;
+            }
+
+            for (const auto& successor : Successors->second)
+            {
+                auto& degree = inDegree.at(successor);
+                if (degree == 0)
+                {
+                    continue;
+                }
+
+                --degree;
+                if (degree == 0)
+                {
+                    nextReady.insert(successor);
+                }
+            }
+        }
+
+        ready = std::move(nextReady);
+    }
+
+    if (processed != steps.size())
+    {
+        StepOrderError error;
+        error.kind = StepOrderErrorKind::Cycle;
+        error.message = "cyclic dependency detected between steps in the same phase";
+        return error;
+    }
+
+    return levels;
+}
+
 [[nodiscard]] Expected<std::vector<Step>, StepOrderError>
 sortStepsAlphabetically(std::vector<Step> steps)
 {
@@ -417,6 +485,41 @@ Expected<std::vector<Step>, StepOrderError> orderSteps(const std::vector<Step>& 
     }
 
     return topologicalSort(steps, adjacency, std::move(inDegree), stepByName);
+}
+
+Expected<std::vector<std::vector<Step>>, StepOrderError>
+orderStepsInLevels(const std::vector<Step>& steps,
+                   const std::vector<StepOrderHint>& hints,
+                   const IGlobMatcher& matcher)
+{
+    if (steps.empty())
+    {
+        return std::vector<std::vector<Step>> {};
+    }
+
+    const bool HasArtifacts = std::ranges::any_of(steps, stepHasArtifacts);
+    if (!HasArtifacts && hints.empty())
+    {
+        const auto Sorted = sortStepsAlphabetically(steps);
+        if (!Sorted.hasValue())
+        {
+            return Sorted.error();
+        }
+
+        return std::vector<std::vector<Step>> {Sorted.value()};
+    }
+
+    Adjacency adjacency;
+    InDegree inDegree;
+    std::unordered_map<std::string, const Step*> stepByName;
+
+    if (const auto BuildError =
+            buildDependencyGraph(steps, hints, matcher, adjacency, inDegree, stepByName))
+    {
+        return *BuildError;
+    }
+
+    return topologicalLevels(steps, adjacency, std::move(inDegree), stepByName);
 }
 
 }  // namespace beez::core

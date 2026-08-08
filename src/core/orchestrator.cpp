@@ -340,30 +340,24 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         context_.setWorkerPool(&workerPool);
 
         int exitCode = 0;
-        std::string capturedOutput;
+        const auto RunCallbackWithWorkers = [this, &step, &workerPool]() -> int
+        {
+            const int CallbackExitCode = step.callback(context_);
+            if (CallbackExitCode != 0)
+            {
+                return CallbackExitCode;
+            }
+
+            return workerPool.drainAll();
+        };
+
         if (runOptions_.outputMode == logging::OutputMode::Verbose)
         {
-            exitCode = step.callback(context_);
-            if (exitCode == 0)
-            {
-                exitCode = workerPool.drainAll();
-            }
+            exitCode = RunCallbackWithWorkers();
         }
         else
         {
-            const auto Captured = captureProcessOutput(
-                [this, &step, &workerPool]() -> int
-                {
-                    const int CallbackExitCode = step.callback(context_);
-                    if (CallbackExitCode != 0)
-                    {
-                        return CallbackExitCode;
-                    }
-
-                    return workerPool.drainAll();
-                });
-            exitCode = Captured.exitCode;
-            capturedOutput = Captured.output;
+            exitCode = discardProcessOutput(RunCallbackWithWorkers);
         }
 
         context_.clearWorkerPool();
@@ -374,12 +368,6 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         if (successCacheSession.has_value())
         {
             successCacheSession->finish();
-        }
-
-        if (runOptions_.outputMode == logging::OutputMode::Verbose &&
-            runOptions_.logger != nullptr && !capturedOutput.empty())
-        {
-            runOptions_.logger->logCommandOutput({}, capturedOutput);
         }
 
         if (exitCode != 0)
@@ -472,21 +460,59 @@ std::size_t Orchestrator::countWorkflowSteps(const Workflow& workflow) const
 Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInvocation& invocation,
                                                                   ProgressState& progress)
 {
-    const auto MatchedSteps = registry_.stepsForPhase(
+    const auto StepLevels = registry_.stepLevelsForPhase(
         invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
 
-    if (!MatchedSteps.hasValue())
+    if (!StepLevels.hasValue())
     {
-        std::cerr << "Step ordering error: " << MatchedSteps.error().message << '\n';
+        std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
         return OrchestratorError::StepOrderingFailed;
     }
 
-    for (const auto& step : MatchedSteps.value())
+    for (const auto& level : StepLevels.value())
     {
-        const auto Result = runStepInstance(step, progress);
-        if (!Result)
+        if (level.empty())
         {
-            return Result.error();
+            continue;
+        }
+
+        if (level.size() == 1 || threadPool_.isSequential())
+        {
+            for (const auto& step : level)
+            {
+                const auto Result = runStepInstance(step, progress);
+                if (!Result)
+                {
+                    return Result.error();
+                }
+            }
+            continue;
+        }
+
+        std::atomic<bool> levelFailed {false};
+        OrchestratorError levelError = OrchestratorError::ExecutionFailed;
+        std::mutex levelErrorMutex;
+
+        threadPool_.parallelFor(level.size(),
+                                [&](std::size_t index)
+                                {
+                                    if (levelFailed.load())
+                                    {
+                                        return;
+                                    }
+
+                                    const auto Result = runStepInstance(level.at(index), progress);
+                                    if (!Result)
+                                    {
+                                        levelFailed.store(true);
+                                        const std::scoped_lock Lock(levelErrorMutex);
+                                        levelError = Result.error();
+                                    }
+                                });
+
+        if (levelFailed.load())
+        {
+            return levelError;
         }
     }
 

@@ -14,4 +14,8 @@ struct CapturedExecution
 
 [[nodiscard]] CapturedExecution captureProcessOutput(const std::function<int()>& action);
 
+// Suppresses stdout/stderr for the duration of the action without buffering output.
+// Prefer this over captureProcessOutput when parallel subprocesses may write heavily.
+[[nodiscard]] int discardProcessOutput(const std::function<int()>& action);
+
 }  // namespace beez::core

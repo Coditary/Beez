@@ -114,6 +114,28 @@ Expected<std::vector<Step>, StepOrderError> Registry::stepsForPhase(const std::s
     return orderSteps(matched, stepOrderHints_, matcher);
 }
 
+Expected<std::vector<std::vector<Step>>, StepOrderError>
+Registry::stepLevelsForPhase(const std::string& phase, const std::string& scope) const
+{
+    std::vector<Step> matched;
+    for (const auto& [name, step] : steps_)
+    {
+        (void)name;
+        if (step.phase != phase)
+        {
+            continue;
+        }
+
+        if (step.scope == scope || scope == "*")
+        {
+            matched.push_back(step);
+        }
+    }
+
+    const IGlobMatcher& matcher = defaultGlobMatcher();
+    return orderStepsInLevels(matched, stepOrderHints_, matcher);
+}
+
 std::vector<std::string> Registry::scopesForPhase(const std::string& phase) const
 {
     std::vector<std::string> scopes;

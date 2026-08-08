@@ -36,4 +36,9 @@ orderSteps(const std::vector<Step>& steps,
            const std::vector<StepOrderHint>& hints,
            const IGlobMatcher& matcher);
 
+[[nodiscard]] Expected<std::vector<std::vector<Step>>, StepOrderError>
+orderStepsInLevels(const std::vector<Step>& steps,
+                   const std::vector<StepOrderHint>& hints,
+                   const IGlobMatcher& matcher);
+
 }  // namespace beez::core
