@@ -2,6 +2,7 @@
 
 #include "beez/core/cache_options.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -13,6 +14,14 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
+
+#ifdef __linux__
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 namespace beez::core
 {
@@ -104,7 +113,7 @@ constexpr int HexDigestWidth32 = 8;
 class ContentHasher final : public IContentHasher
 {
   public:
-    explicit ContentHasher(ContentHashSettings settings) : settings_(settings) {}
+    explicit ContentHasher(const ContentHashSettings& settings) : settings_(settings) {}
 
     [[nodiscard]] std::string hashBytes(std::string_view data) const override
     {
@@ -126,6 +135,39 @@ class ContentHasher final : public IContentHasher
 
     [[nodiscard]] std::string hashFile(const std::filesystem::path& path) const override
     {
+#ifdef __linux__
+        if (settings_.useMmapForHashing)
+        {
+            // NOLINTBEGIN(cppcoreguidelines-pro-type-vararg)
+            struct stat fileStat {};
+            if (stat(path.c_str(), &fileStat) == 0 &&
+                std::cmp_greater_equal(static_cast<std::size_t>(fileStat.st_size),
+                                       settings_.mmapHashingMinBytes))
+            {
+                const int Descriptor = open(path.c_str(), O_RDONLY);
+                if (Descriptor >= 0)
+                {
+                    void* mapped = mmap(nullptr,
+                                        static_cast<std::size_t>(fileStat.st_size),
+                                        PROT_READ,
+                                        MAP_PRIVATE,
+                                        Descriptor,
+                                        0);
+                    close(Descriptor);
+                    if (mapped != MAP_FAILED)
+                    {
+                        const std::string_view View(static_cast<const char*>(mapped),
+                                                    static_cast<std::size_t>(fileStat.st_size));
+                        const auto Digest = hashBytes(View);
+                        munmap(mapped, static_cast<std::size_t>(fileStat.st_size));
+                        return Digest;
+                    }
+                }
+            }
+            // NOLINTEND(cppcoreguidelines-pro-type-vararg)
+        }
+#endif
+
         std::ifstream stream(path, std::ios::binary);
         if (!stream.is_open())
         {

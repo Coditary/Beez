@@ -1,6 +1,7 @@
 #pragma once
 
 #include "beez/core/cache_options.hpp"
+#include "beez/core/performance_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
 #include <cstddef>
@@ -27,6 +28,7 @@ struct RunOptions
     StepCache* stepCache = nullptr;
     SuccessCache* successCache = nullptr;
     CacheOptions cache;
+    PerformanceSettings performance;
 };
 
 }  // namespace beez::core

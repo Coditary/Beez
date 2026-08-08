@@ -16,6 +16,8 @@
 namespace beez::core
 {
 
+class GlobMetadataCache;
+
 struct CacheLookupResult
 {
     bool skip = false;
@@ -66,7 +68,9 @@ class ICacheStore
 class OutputTracker
 {
   public:
-    OutputTracker(std::filesystem::path projectRoot, const IGlobMatcher& matcher);
+    OutputTracker(std::filesystem::path projectRoot,
+                  const IGlobMatcher& matcher,
+                  GlobMetadataCache* globMetadataCache = nullptr);
 
     void begin(const Step& step);
     [[nodiscard]] std::vector<std::string> end(const Step& step);
@@ -90,18 +94,22 @@ class OutputTracker
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed matcher
     const IGlobMatcher& matcher_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
+    GlobMetadataCache* globMetadataCache_ = nullptr;
     std::unordered_map<std::string, FileStamp> snapshotBefore_;
 };
 
 class StepCache
 {
   public:
-    StepCache(const CacheOptions& options, const IGlobMatcher& matcher);
+    StepCache(const CacheOptions& options,
+              const IGlobMatcher& matcher,
+              GlobMetadataCache* globMetadataCache = nullptr);
     StepCache(std::unique_ptr<ICacheKeyStrategy> keyStrategy,
               std::unique_ptr<ICacheStore> store,
               const IGlobMatcher& matcher,
               std::filesystem::path indexRoot = {},
-              CacheOptions cacheOptions = {});
+              CacheOptions cacheOptions = {},
+              GlobMetadataCache* globMetadataCache = nullptr);
 
     [[nodiscard]] CacheLookupResult lookup(const Step& step,
                                            const std::filesystem::path& projectRoot,
@@ -124,6 +132,7 @@ class StepCache
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
     std::filesystem::path indexRoot_;
     CacheOptions cacheOptions_;
+    GlobMetadataCache* globMetadataCache_ = nullptr;
 
     [[nodiscard]] std::optional<CacheLookupResult>
     lookupViaIndex(const Step& step,
@@ -138,7 +147,8 @@ class StepCache
 };
 
 [[nodiscard]] std::unique_ptr<ICacheKeyStrategy>
-makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings);
+makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings,
+                                     GlobMetadataCache* globMetadataCache = nullptr);
 [[nodiscard]] std::unique_ptr<ICacheStore> makeFileSystemCacheStore(const CacheOptions& options);
 
 }  // namespace beez::core

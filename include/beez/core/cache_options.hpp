@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -10,6 +11,7 @@ namespace beez::core
 
 constexpr int DefaultCacheCompressionLevel = 6;
 constexpr int MaxCacheCompressionLevel = 9;
+constexpr std::size_t DefaultMmapHashingMinBytes = 65536;
 
 enum class ContentHashAlgorithm : std::uint8_t
 {
@@ -38,10 +40,14 @@ enum class CacheCompressionMode : std::uint8_t
     Auto,
 };
 
+class CacheWriteCoordinator;
+
 struct ContentHashSettings
 {
     ContentHashAlgorithm algorithm = ContentHashAlgorithm::Fnv1a64;
     std::uint32_t seed = 0;
+    bool useMmapForHashing = false;
+    std::size_t mmapHashingMinBytes = DefaultMmapHashingMinBytes;
 };
 
 struct CacheCompressionSettings
@@ -58,6 +64,7 @@ struct CacheOptions
     bool protect = false;
     ContentHashSettings hash;
     CacheCompressionSettings compress;
+    CacheWriteCoordinator* writeCoordinator = nullptr;
 };
 
 [[nodiscard]] ContentHashAlgorithm parseContentHashAlgorithm(const std::string& value);
@@ -72,7 +79,7 @@ struct CacheOptions
 [[nodiscard]] const char* toString(CacheCompressionMode mode);
 [[nodiscard]] std::vector<const char*> cacheCompressionModeNames();
 
-[[nodiscard]] ContentHashSettings normalizeContentHashSettings(ContentHashSettings settings);
+[[nodiscard]] ContentHashSettings normalizeContentHashSettings(const ContentHashSettings& settings);
 [[nodiscard]] CacheCompressionSettings
 normalizeCacheCompressionSettings(CacheCompressionSettings settings);
 

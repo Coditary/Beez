@@ -1,6 +1,7 @@
 #include "beez/core/config_schema.hpp"
 
 #include "beez/core/cache_options.hpp"
+#include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
 
 #include <algorithm>
@@ -109,21 +110,33 @@ struct ConfigSchemaNode
         ConfigSchemaNode root;
         root.kind = ConfigSchemaKind::Object;
 
-        root.children.emplace("performance",
-                              []()
-                              {
-                                  ConfigSchemaNode performance;
-                                  performance.kind = ConfigSchemaKind::Object;
-                                  performance.children.emplace(
-                                      "max_threads",
-                                      makeNumberNode(NumberConstraints {
-                                          .min = 1,
-                                          .max = MaxConfiguredWorkerThreads,
-                                          .storage = "integer",
-                                          .defaultValue = "CPU core count",
-                                      }));
-                                  return performance;
-                              }());
+        root.children.emplace(
+            "performance",
+            []()
+            {
+                ConfigSchemaNode performance;
+                performance.kind = ConfigSchemaKind::Object;
+                performance.children.emplace("max_threads",
+                                             makeNumberNode(NumberConstraints {
+                                                 .min = 1,
+                                                 .max = MaxConfiguredWorkerThreads,
+                                                 .storage = "integer",
+                                                 .defaultValue = "CPU core count",
+                                             }));
+                performance.children.emplace("cache_write_strategy",
+                                             makeEnumNode(cacheWriteStrategyNames()));
+                performance.children.emplace("cache_fs_metadata", makeBooleanNode());
+                performance.children.emplace("use_mmap_for_hashing", makeBooleanNode());
+                performance.children.emplace("mmap_hashing_min_bytes",
+                                             makeNumberNode(NumberConstraints {
+                                                 .min = 1,
+                                                 .storage = "integer",
+                                                 .defaultValue = "65536",
+                                             }));
+                performance.children.emplace("optimize_gc_for_throughput", makeBooleanNode());
+                performance.children.emplace("pin_threads_to_cores", makeBooleanNode());
+                return performance;
+            }());
 
         root.children.emplace(
             "cache",

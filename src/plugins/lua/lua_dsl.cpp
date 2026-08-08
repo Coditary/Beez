@@ -500,6 +500,24 @@ const core::BeezSettings& LuaDslLoader::buildSettings() const
     return impl_->buildSettings;
 }
 
+void LuaDslLoader::setGcThroughputMode(bool enable)
+{
+    if (impl_->luaState == nullptr)
+    {
+        return;
+    }
+
+    sol::state_view view(*impl_->luaState);
+    if (enable)
+    {
+        view.stop_gc();
+        return;
+    }
+
+    view.restart_gc();
+    view.collect_garbage();
+}
+
 void LuaDslLoader::releaseState()
 {
     impl_->luaState = nullptr;

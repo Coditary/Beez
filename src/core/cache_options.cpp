@@ -175,7 +175,7 @@ std::vector<const char*> cacheCompressionModeNames()
     return {"never", "always", "auto"};
 }
 
-ContentHashSettings normalizeContentHashSettings(ContentHashSettings settings)
+ContentHashSettings normalizeContentHashSettings(const ContentHashSettings& settings)
 {
     return settings;
 }

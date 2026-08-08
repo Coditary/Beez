@@ -15,11 +15,13 @@ add_executable(
     core/test_content_hash.cpp
     core/test_include_fingerprint.cpp
     core/test_cache_options.cpp
+    core/test_cache_write_coordinator.cpp
     core/test_config_schema.cpp
     core/test_text_table.cpp
     core/test_cache_compress.cpp
     core/test_cache_storage.cpp
     core/test_glob_expand.cpp
+    core/test_glob_metadata_cache.cpp
     core/test_step_cache.cpp
     core/test_success_cache.cpp
     core/test_thread_pool.cpp
@@ -35,6 +37,7 @@ add_executable(
     core/test_stream_capture.cpp
     core/test_progress_detail.cpp
     core/test_phase_argument_parser.cpp
+    core/test_performance_options.cpp
     core/test_plugin_host.cpp
     plugins/lua/test_lua_dsl.cpp
     plugins/lua/test_lua_settings.cpp

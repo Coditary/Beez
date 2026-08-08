@@ -3,6 +3,7 @@
 #include "beez/cli/parsed_options.hpp"
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
@@ -76,11 +77,50 @@ void mergeOptionalValue(std::optional<T>& target, const std::optional<T>& overla
     return normalizeCacheCompressionSettings(settings);
 }
 
+[[nodiscard]] PerformanceSettings buildPerformanceSettings(const BeezSettings& settings)
+{
+    PerformanceSettings resolved;
+    if (settings.performance.cacheWriteStrategy.has_value())
+    {
+        resolved.cacheWriteStrategy =
+            parseCacheWriteStrategy(*settings.performance.cacheWriteStrategy);
+    }
+    if (settings.performance.cacheFilesystemMetadata.has_value())
+    {
+        resolved.cacheFilesystemMetadata = *settings.performance.cacheFilesystemMetadata;
+    }
+    if (settings.performance.useMmapForHashing.has_value())
+    {
+        resolved.useMmapForHashing = *settings.performance.useMmapForHashing;
+    }
+    if (settings.performance.mmapHashingMinBytes.has_value())
+    {
+        resolved.mmapHashingMinBytes = *settings.performance.mmapHashingMinBytes;
+    }
+    if (settings.performance.optimizeGcForThroughput.has_value())
+    {
+        resolved.optimizeGcForThroughput = *settings.performance.optimizeGcForThroughput;
+    }
+    if (settings.performance.pinThreadsToCores.has_value())
+    {
+        resolved.pinThreadsToCores = *settings.performance.pinThreadsToCores;
+    }
+    return normalizePerformanceSettings(resolved);
+}
+
 }  // namespace
 
 void BeezSettings::merge(const BeezSettings& overlay)
 {
     mergeOptionalValue(performance.maxThreads, overlay.performance.maxThreads);
+    mergeOptionalString(performance.cacheWriteStrategy, overlay.performance.cacheWriteStrategy);
+    mergeOptionalValue(performance.cacheFilesystemMetadata,
+                       overlay.performance.cacheFilesystemMetadata);
+    mergeOptionalValue(performance.useMmapForHashing, overlay.performance.useMmapForHashing);
+    mergeOptionalValue(performance.mmapHashingMinBytes, overlay.performance.mmapHashingMinBytes);
+    mergeOptionalValue(performance.optimizeGcForThroughput,
+                       overlay.performance.optimizeGcForThroughput);
+    mergeOptionalValue(performance.pinThreadsToCores, overlay.performance.pinThreadsToCores);
     mergeOptionalPath(cache.path, overlay.cache.path);
     mergeOptionalValue(cache.enabled, overlay.cache.enabled);
     mergeOptionalValue(cache.protect, overlay.cache.protect);
@@ -155,6 +195,10 @@ CacheOptions BeezSettings::resolveCacheOptions(const Context& context) const
     options.hash = resolveHashSettings(cache);
     options.compress = resolveCompressionSettings(cache);
 
+    const PerformanceSettings Performance = buildPerformanceSettings(*this);
+    options.hash.useMmapForHashing = Performance.useMmapForHashing;
+    options.hash.mmapHashingMinBytes = Performance.mmapHashingMinBytes;
+
     if (!cache.path.has_value() || cache.path->empty())
     {
         options.root = context.projectRoot() / ".cache";
@@ -171,6 +215,11 @@ CacheOptions BeezSettings::resolveCacheOptions(const Context& context) const
     return options;
 }
 
+PerformanceSettings BeezSettings::resolvePerformanceSettings() const
+{
+    return buildPerformanceSettings(*this);
+}
+
 RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& context) const
 {
     const CacheOptions Cache = resolveCacheOptions(context);
@@ -181,6 +230,7 @@ RunOptions BeezSettings::toRunOptions(logging::ILogger* logger, const Context& c
         .outputMode = ui.outputMode.value_or(logging::OutputMode::Clean),
         .logger = logger,
         .cache = Cache,
+        .performance = buildPerformanceSettings(*this),
     };
 }
 

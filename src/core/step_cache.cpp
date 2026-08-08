@@ -4,6 +4,7 @@
 #include "beez/core/cache_storage.hpp"
 #include "beez/core/content_hash.hpp"
 #include "beez/core/glob_expand.hpp"
+#include "beez/core/glob_metadata_cache.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_config.hpp"
@@ -113,8 +114,9 @@ namespace
 class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
 {
   public:
-    explicit ContentAddressedCacheKeyStrategy(ContentHashSettings settings)
-        : hasher_(makeContentHasher(settings))
+    ContentAddressedCacheKeyStrategy(const ContentHashSettings& settings,
+                                     GlobMetadataCache* globMetadataCache)
+        : hasher_(makeContentHasher(settings)), globMetadataCache_(globMetadataCache)
     {
     }
 
@@ -123,8 +125,8 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
                                          const StepConfigPtr& config,
                                          const IGlobMatcher& matcher) const override
     {
-        const auto InputFiles =
-            expandGlobPatterns(artifactPatternsForInputs(step), projectRoot, matcher);
+        const auto InputFiles = expandGlobPatterns(
+            artifactPatternsForInputs(step), projectRoot, matcher, globMetadataCache_);
 
         std::vector<std::string> fileParts;
         fileParts.reserve(InputFiles.size());
@@ -151,6 +153,7 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
 
   private:
     std::unique_ptr<IContentHasher> hasher_;
+    GlobMetadataCache* globMetadataCache_ = nullptr;
 };
 
 class FileSystemCacheStore final : public ICacheStore
@@ -270,10 +273,11 @@ struct CacheIndexEntry
 
 [[nodiscard]] std::vector<InputStamp> collectInputStamps(const Step& step,
                                                          const std::filesystem::path& projectRoot,
-                                                         const IGlobMatcher& matcher)
+                                                         const IGlobMatcher& matcher,
+                                                         GlobMetadataCache* globMetadataCache)
 {
-    const auto InputFiles =
-        expandGlobPatterns(artifactPatternsForInputs(step), projectRoot, matcher);
+    const auto InputFiles = expandGlobPatterns(
+        artifactPatternsForInputs(step), projectRoot, matcher, globMetadataCache);
 
     std::vector<InputStamp> stamps;
     stamps.reserve(InputFiles.size());
@@ -421,8 +425,10 @@ bool isStepCacheable(const Step& step)
     return stepHasArtifacts(step);
 }
 
-OutputTracker::OutputTracker(std::filesystem::path projectRoot, const IGlobMatcher& matcher)
-    : projectRoot_(std::move(projectRoot)), matcher_(matcher)
+OutputTracker::OutputTracker(std::filesystem::path projectRoot,
+                             const IGlobMatcher& matcher,
+                             GlobMetadataCache* globMetadataCache)
+    : projectRoot_(std::move(projectRoot)), matcher_(matcher), globMetadataCache_(globMetadataCache)
 {
 }
 
@@ -526,23 +532,26 @@ OutputTracker::resolveOutputs(const Step& step, const std::vector<std::string>& 
 {
     if (!step.output.empty())
     {
-        return expandGlobPatterns(step.output, projectRoot_, matcher_);
+        return expandGlobPatterns(step.output, projectRoot_, matcher_, globMetadataCache_);
     }
 
     if (!step.mutate.empty())
     {
-        return expandGlobPatterns(step.mutate, projectRoot_, matcher_);
+        return expandGlobPatterns(step.mutate, projectRoot_, matcher_, globMetadataCache_);
     }
 
     return snapshotDiff;
 }
 
-StepCache::StepCache(const CacheOptions& options, const IGlobMatcher& matcher)
-    : StepCache(makeContentAddressedCacheKeyStrategy(options.hash),
+StepCache::StepCache(const CacheOptions& options,
+                     const IGlobMatcher& matcher,
+                     GlobMetadataCache* globMetadataCache)
+    : StepCache(makeContentAddressedCacheKeyStrategy(options.hash, globMetadataCache),
                 makeFileSystemCacheStore(options),
                 matcher,
                 options.root / "index",
-                options)
+                options,
+                globMetadataCache)
 {
 }
 
@@ -550,9 +559,11 @@ StepCache::StepCache(std::unique_ptr<ICacheKeyStrategy> keyStrategy,
                      std::unique_ptr<ICacheStore> store,
                      const IGlobMatcher& matcher,
                      std::filesystem::path indexRoot,
-                     CacheOptions cacheOptions)
+                     CacheOptions cacheOptions,
+                     GlobMetadataCache* globMetadataCache)
     : keyStrategy_(std::move(keyStrategy)), store_(std::move(store)), matcher_(matcher),
-      indexRoot_(std::move(indexRoot)), cacheOptions_(std::move(cacheOptions))
+      indexRoot_(std::move(indexRoot)), cacheOptions_(std::move(cacheOptions)),
+      globMetadataCache_(globMetadataCache)
 {
     if (!indexRoot_.empty())
     {
@@ -635,7 +646,7 @@ std::optional<CacheLookupResult> StepCache::lookupViaIndex(const Step& step,
         return std::nullopt;
     }
 
-    const auto CurrentStamps = collectInputStamps(step, projectRoot, matcher_);
+    const auto CurrentStamps = collectInputStamps(step, projectRoot, matcher_, globMetadataCache_);
     if (!inputStampsMatch(IndexEntry->inputs, CurrentStamps))
     {
         return std::nullopt;
@@ -664,15 +675,16 @@ void StepCache::writeIndex(const Step& step,
         stepCommandFingerprint(step, projectRoot, *makeContentHasher(cacheOptions_.hash));
     indexEntry.config = configFingerprint(config);
     indexEntry.version = version::VersionString;
-    indexEntry.inputs = collectInputStamps(step, projectRoot, matcher_);
+    indexEntry.inputs = collectInputStamps(step, projectRoot, matcher_, globMetadataCache_);
     indexEntry.outputs = outputs;
     writeCacheIndex(indexPathForStep(indexRoot_, step), indexEntry, cacheOptions_);
 }
 
 std::unique_ptr<ICacheKeyStrategy>
-makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings)
+makeContentAddressedCacheKeyStrategy(const ContentHashSettings& hashSettings,
+                                     GlobMetadataCache* globMetadataCache)
 {
-    return std::make_unique<ContentAddressedCacheKeyStrategy>(hashSettings);
+    return std::make_unique<ContentAddressedCacheKeyStrategy>(hashSettings, globMetadataCache);
 }
 
 std::unique_ptr<ICacheStore> makeFileSystemCacheStore(const CacheOptions& options)

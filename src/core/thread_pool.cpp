@@ -10,6 +10,11 @@
 #include <optional>
 #include <thread>
 
+#ifdef __linux__
+#include <pthread.h>
+#include <sched.h>
+#endif
+
 namespace beez::core
 {
 
@@ -20,6 +25,38 @@ namespace
 {
     const auto Count = std::thread::hardware_concurrency();
     return Count == 0 ? 1 : Count;
+}
+
+void pinWorkerThreadIfNeeded(bool enabled)
+{
+    if (!enabled)
+    {
+        return;
+    }
+
+#ifdef __linux__
+    static thread_local bool pinned = false;
+    if (pinned)
+    {
+        return;
+    }
+
+    const auto ThreadIndex = tbb::this_task_arena::current_thread_index();
+    if (ThreadIndex < 0)
+    {
+        return;
+    }
+
+    cpu_set_t cpuSet;
+    CPU_ZERO(&cpuSet);
+    CPU_SET(static_cast<int>(ThreadIndex % hardwareThreadCount()), &cpuSet);
+    if (pthread_setaffinity_np(pthread_self(), sizeof(cpuSet), &cpuSet) == 0)
+    {
+        pinned = true;
+    }
+#else
+    (void)enabled;
+#endif
 }
 
 }  // namespace
@@ -50,6 +87,7 @@ std::size_t ThreadPool::resolveConcurrency(const std::optional<std::size_t>& req
 
 ThreadPool::ThreadPool(ThreadPoolConfig config)
     : maxConcurrency_(resolveConcurrency(config.maxThreads)),
+      pinThreadsToCores_(config.pinThreadsToCores),
       impl_(std::make_unique<Impl>(static_cast<int>(maxConcurrency_)))
 {
 }
@@ -63,9 +101,16 @@ void ThreadPool::executeImpl(const std::function<void()>& callback) const
 
 void ThreadPool::parallelForRange(std::size_t begin,
                                   std::size_t end,
-                                  const std::function<void(std::size_t)>& callback)
+                                  const std::function<void(std::size_t)>& callback) const
 {
-    tbb::parallel_for(begin, end, [&](std::size_t index) { callback(index); });
+    const bool PinThreads = pinThreadsToCores_;
+    tbb::parallel_for(begin,
+                      end,
+                      [&](std::size_t index)
+                      {
+                          pinWorkerThreadIfNeeded(PinThreads);
+                          callback(index);
+                      });
 }
 
 }  // namespace beez::core

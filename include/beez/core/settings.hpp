@@ -3,6 +3,7 @@
 #include "beez/cli/parsed_options.hpp"
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/performance_options.hpp"
 #include "beez/core/run_options.hpp"
 #include "beez/logging/output_mode.hpp"
 
@@ -27,6 +28,12 @@ struct BeezSettings
     struct Performance
     {
         std::optional<std::size_t> maxThreads;
+        std::optional<std::string> cacheWriteStrategy;
+        std::optional<bool> cacheFilesystemMetadata;
+        std::optional<bool> useMmapForHashing;
+        std::optional<std::size_t> mmapHashingMinBytes;
+        std::optional<bool> optimizeGcForThroughput;
+        std::optional<bool> pinThreadsToCores;
     } performance;
 
     struct CacheHash
@@ -81,6 +88,8 @@ struct BeezSettings
     [[nodiscard]] RunOptions toRunOptions(logging::ILogger* logger, const Context& context) const;
 
     [[nodiscard]] CacheOptions resolveCacheOptions(const Context& context) const;
+
+    [[nodiscard]] PerformanceSettings resolvePerformanceSettings() const;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 

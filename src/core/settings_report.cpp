@@ -2,6 +2,7 @@
 
 #include "beez/core/cache_options.hpp"
 #include "beez/core/context.h"
+#include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
 #include "beez/core/thread_pool.hpp"
 #include "beez/logging/output_mode.hpp"
@@ -160,6 +161,7 @@ void appendPerformanceRows(const SettingsReportInput& input, std::vector<ConfigR
 
     const std::size_t ResolvedThreads =
         ThreadPool(ThreadPoolConfig {.maxThreads = active.performance.maxThreads}).maxConcurrency();
+    const PerformanceSettings ResolvedPerformance = active.resolvePerformanceSettings();
 
     rows.push_back(ConfigRow {
         .key = "performance.max_threads",
@@ -168,6 +170,66 @@ void appendPerformanceRows(const SettingsReportInput& input, std::vector<ConfigR
                                     project.performance.maxThreads,
                                     cli.maxThreads.has_value(),
                                     "CLI --threads",
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "performance.cache_write_strategy",
+        .value = toString(ResolvedPerformance.cacheWriteStrategy),
+        .origin = originForOptional(global.performance.cacheWriteStrategy,
+                                    project.performance.cacheWriteStrategy,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "performance.cache_fs_metadata",
+        .value = formatBool(ResolvedPerformance.cacheFilesystemMetadata),
+        .origin = originForOptional(global.performance.cacheFilesystemMetadata,
+                                    project.performance.cacheFilesystemMetadata,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "performance.use_mmap_for_hashing",
+        .value = formatBool(ResolvedPerformance.useMmapForHashing),
+        .origin = originForOptional(global.performance.useMmapForHashing,
+                                    project.performance.useMmapForHashing,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "performance.mmap_hashing_min_bytes",
+        .value = std::to_string(ResolvedPerformance.mmapHashingMinBytes),
+        .origin = originForOptional(global.performance.mmapHashingMinBytes,
+                                    project.performance.mmapHashingMinBytes,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "performance.optimize_gc_for_throughput",
+        .value = formatBool(ResolvedPerformance.optimizeGcForThroughput),
+        .origin = originForOptional(global.performance.optimizeGcForThroughput,
+                                    project.performance.optimizeGcForThroughput,
+                                    false,
+                                    {},
+                                    input.globalConfigPath,
+                                    input.context),
+    });
+    rows.push_back(ConfigRow {
+        .key = "performance.pin_threads_to_cores",
+        .value = formatBool(ResolvedPerformance.pinThreadsToCores),
+        .origin = originForOptional(global.performance.pinThreadsToCores,
+                                    project.performance.pinThreadsToCores,
+                                    false,
+                                    {},
                                     input.globalConfigPath,
                                     input.context),
     });

@@ -11,6 +11,7 @@
 namespace beez::core
 {
 
+class GlobMetadataCache;
 class WorkerPool;
 class SuccessCacheSession;
 
@@ -62,6 +63,14 @@ class Context
         return workerPool_;
     }
 
+    void setGlobMetadataCache(GlobMetadataCache* cache);
+    void clearGlobMetadataCache();
+
+    [[nodiscard]] GlobMetadataCache* globMetadataCache() const
+    {
+        return globMetadataCache_;
+    }
+
   private:
     std::filesystem::path projectRoot_;
     std::optional<std::string> buildScriptFileName_;
@@ -70,6 +79,7 @@ class Context
     std::optional<StepIdentity> stepIdentity_;
     SuccessCacheSession* successCacheSession_ = nullptr;
     WorkerPool* workerPool_ = nullptr;
+    GlobMetadataCache* globMetadataCache_ = nullptr;
 };
 
 }  // namespace beez::core

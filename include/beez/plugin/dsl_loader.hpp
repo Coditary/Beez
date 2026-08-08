@@ -20,6 +20,11 @@ class IDslLoader
     IDslLoader& operator=(IDslLoader&&) = delete;
 
     virtual bool load(const core::Context& context, core::Registry& registry) = 0;
+
+    virtual void setGcThroughputMode(bool enable)
+    {
+        (void)enable;
+    }
 };
 
 }  // namespace beez::plugin

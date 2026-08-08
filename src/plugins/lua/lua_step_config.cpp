@@ -370,7 +370,10 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
             });
 
         const std::vector<std::string> Files =
-            core::expandGlobPatterns(patterns, context.projectRoot(), core::defaultGlobMatcher());
+            core::expandGlobPatterns(patterns,
+                                     context.projectRoot(),
+                                     core::defaultGlobMatcher(),
+                                     context.globMetadataCache());
 
         sol::table files = luaState->create_table();
         for (std::size_t index = 0; index < Files.size(); ++index)

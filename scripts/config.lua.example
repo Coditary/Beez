@@ -4,6 +4,12 @@
 return {
     performance = {
         max_threads = 8,
+        cache_write_strategy = "phase",
+        cache_fs_metadata = true,
+        use_mmap_for_hashing = true,
+        mmap_hashing_min_bytes = 65536,
+        optimize_gc_for_throughput = false,
+        pin_threads_to_cores = false,
     },
 
     cache = {

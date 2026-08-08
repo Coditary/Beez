@@ -169,6 +169,19 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
 
         const sol::table PerformanceTable = PerformanceValue.as<sol::table>();
         readOptionalNumber(PerformanceTable, "max_threads", overlay.performance.maxThreads);
+        readOptionalString(
+            PerformanceTable, "cache_write_strategy", overlay.performance.cacheWriteStrategy);
+        readOptionalBool(
+            PerformanceTable, "cache_fs_metadata", overlay.performance.cacheFilesystemMetadata);
+        readOptionalBool(
+            PerformanceTable, "use_mmap_for_hashing", overlay.performance.useMmapForHashing);
+        readOptionalNumber(
+            PerformanceTable, "mmap_hashing_min_bytes", overlay.performance.mmapHashingMinBytes);
+        readOptionalBool(PerformanceTable,
+                         "optimize_gc_for_throughput",
+                         overlay.performance.optimizeGcForThroughput);
+        readOptionalBool(
+            PerformanceTable, "pin_threads_to_cores", overlay.performance.pinThreadsToCores);
     }
 
     if (const sol::object CacheValue = table["cache"]; CacheValue.valid())

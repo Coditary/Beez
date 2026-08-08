@@ -22,6 +22,7 @@ class LuaDslLoader : public IDslLoader
     LuaDslLoader& operator=(LuaDslLoader&&) = delete;
 
     bool load(const core::Context& context, core::Registry& registry) override;
+    void setGcThroughputMode(bool enable) override;
     void releaseState();
 
     [[nodiscard]] const core::BeezSettings& buildSettings() const;

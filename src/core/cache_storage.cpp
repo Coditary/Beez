@@ -2,6 +2,7 @@
 
 #include "beez/core/cache_compress.hpp"
 #include "beez/core/cache_options.hpp"
+#include "beez/core/cache_write_coordinator.hpp"
 
 #include <charconv>
 #include <cstdlib>
@@ -294,6 +295,12 @@ void writeCacheFile(const std::filesystem::path& path,
                     const std::string& content,
                     const CacheOptions& options)
 {
+    if (options.writeCoordinator != nullptr && options.writeCoordinator->buffersWrites())
+    {
+        options.writeCoordinator->submit(path, content, options);
+        return;
+    }
+
     prepareCacheFileForWrite(path, options.protect);
     writeBinaryFile(path, buildCachePayload(content, options.compress));
     applyCacheFileProtection(path, options.protect);

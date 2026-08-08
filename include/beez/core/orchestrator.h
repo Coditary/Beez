@@ -1,7 +1,9 @@
 #pragma once
 
+#include "beez/core/cache_write_coordinator.hpp"
 #include "beez/core/context.h"
 #include "beez/core/expected.hpp"
+#include "beez/core/glob_metadata_cache.hpp"
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
 #include "beez/core/registry.h"
@@ -110,12 +112,17 @@ class Orchestrator
     [[nodiscard]] std::size_t countPhaseInvocationSteps(const PhaseInvocation& invocation) const;
     [[nodiscard]] std::size_t countPhaseRequestSteps(const PhaseRequest& request) const;
 
+    void flushBufferedCacheWrites();
+    void flushBufferedCacheWritesForPhase();
+
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel
     // dependencies
     Registry& registry_;
     Context& context_;
     plugin::PluginHost& pluginHost_;
     RunOptions runOptions_;
+    CacheWriteCoordinator cacheWriteCoordinator_;
+    GlobMetadataCache globMetadataCache_;
     ThreadPool threadPool_;
     std::unique_ptr<StepCache> ownedStepCache_;
     std::unique_ptr<SuccessCache> ownedSuccessCache_;

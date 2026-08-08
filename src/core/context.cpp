@@ -92,4 +92,14 @@ void Context::clearWorkerPool()
     workerPool_ = nullptr;
 }
 
+void Context::setGlobMetadataCache(GlobMetadataCache* cache)
+{
+    globMetadataCache_ = cache;
+}
+
+void Context::clearGlobMetadataCache()
+{
+    globMetadataCache_ = nullptr;
+}
+
 }  // namespace beez::core

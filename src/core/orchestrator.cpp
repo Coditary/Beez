@@ -1,8 +1,11 @@
 #include "beez/core/orchestrator.h"
 
 #include "beez/core/cache_options.hpp"
+#include "beez/core/cache_write_coordinator.hpp"
 #include "beez/core/expected.hpp"
+#include "beez/core/glob_metadata_cache.hpp"
 #include "beez/core/glob_pattern.hpp"
+#include "beez/core/performance_options.hpp"
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
 #include "beez/core/progress_detail.hpp"
@@ -21,6 +24,7 @@
 #include "beez/core/workflow_step.hpp"
 #include "beez/logging/logger.hpp"
 #include "beez/logging/output_mode.hpp"
+#include "beez/plugin/dsl_loader.hpp"
 #include "beez/plugin/plugin_host.h"
 
 #include <atomic>
@@ -51,6 +55,44 @@ namespace
     return std::chrono::duration<double>(End - start).count();
 }
 
+class ThroughputRunScope
+{
+  public:
+    ThroughputRunScope(plugin::PluginHost& pluginHost, bool optimizeGc)
+        : pluginHost_(pluginHost), active_(optimizeGc)
+    {
+        if (active_)
+        {
+            if (auto* dslLoader = pluginHost_.dslLoader())
+            {
+                dslLoader->setGcThroughputMode(true);
+            }
+        }
+    }
+
+    ThroughputRunScope(const ThroughputRunScope&) = delete;
+    ThroughputRunScope& operator=(const ThroughputRunScope&) = delete;
+    ThroughputRunScope(ThroughputRunScope&&) = delete;
+    ThroughputRunScope& operator=(ThroughputRunScope&&) = delete;
+
+    ~ThroughputRunScope()
+    {
+        if (!active_)
+        {
+            return;
+        }
+
+        if (auto* dslLoader = pluginHost_.dslLoader())
+        {
+            dslLoader->setGcThroughputMode(false);
+        }
+    }
+
+  private:
+    plugin::PluginHost& pluginHost_;
+    bool active_;
+};
+
 }  // namespace
 
 const char* toString(OrchestratorError error)
@@ -80,7 +122,10 @@ Orchestrator::Orchestrator(Registry& registry,
                            plugin::PluginHost& pluginHost,
                            const RunOptions& runOptions)
     : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions),
-      threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads})
+      cacheWriteCoordinator_(runOptions.performance.cacheWriteStrategy),
+      globMetadataCache_(runOptions.performance.cacheFilesystemMetadata),
+      threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads,
+                                    .pinThreadsToCores = runOptions.performance.pinThreadsToCores})
 {
     if (runOptions_.enableCache)
     {
@@ -90,11 +135,13 @@ Orchestrator::Orchestrator(Registry& registry,
             cacheOptions.root = context.projectRoot() / ".cache";
         }
 
+        cacheOptions.writeCoordinator = &cacheWriteCoordinator_;
         runOptions_.cache = cacheOptions;
 
         if (runOptions_.stepCache == nullptr)
         {
-            ownedStepCache_ = std::make_unique<StepCache>(cacheOptions, defaultGlobMatcher());
+            ownedStepCache_ = std::make_unique<StepCache>(
+                cacheOptions, defaultGlobMatcher(), &globMetadataCache_);
             runOptions_.stepCache = ownedStepCache_.get();
         }
 
@@ -104,9 +151,19 @@ Orchestrator::Orchestrator(Registry& registry,
             runOptions_.successCache = ownedSuccessCache_.get();
         }
     }
+
+    if (globMetadataCache_.enabled())
+    {
+        globMetadataCache_.clear();
+        context_.setGlobMetadataCache(&globMetadataCache_);
+    }
 }
 
-Orchestrator::~Orchestrator() = default;
+Orchestrator::~Orchestrator()
+{
+    flushBufferedCacheWrites();
+    context_.clearGlobMetadataCache();
+}
 
 Expected<void, OrchestratorError> Orchestrator::loadBuildScript()
 {
@@ -125,8 +182,31 @@ Expected<void, OrchestratorError> Orchestrator::loadBuildScript()
     return {};
 }
 
+void Orchestrator::flushBufferedCacheWrites()
+{
+    cacheWriteCoordinator_.flush(runOptions_.cache);
+}
+
+void Orchestrator::flushBufferedCacheWritesForPhase()
+{
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::Phase)
+    {
+        flushBufferedCacheWrites();
+    }
+}
+
 Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 {
+    const ThroughputRunScope ThroughputScope(pluginHost_,
+                                             runOptions_.performance.optimizeGcForThroughput);
+    const auto FlushAtRunEnd = [this](const auto& result)
+    {
+        if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+        {
+            flushBufferedCacheWrites();
+        }
+        return result;
+    };
     if (const auto FoundTask = registry_.findTask(name))
     {
         if (runOptions_.logger != nullptr)
@@ -143,7 +223,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
             runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
         }
 
-        return Result;
+        return FlushAtRunEnd(Result);
     }
 
     if (const auto FoundWorkflow = registry_.findWorkflow(name))
@@ -162,7 +242,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
             runOptions_.logger->endRun(static_cast<bool>(Result), Duration);
         }
 
-        return Result;
+        return FlushAtRunEnd(Result);
     }
 
     return OrchestratorError::NotFound;
@@ -290,7 +370,8 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             return 0;
         }
 
-        outputTracker.emplace(context_.projectRoot(), stepCache->matcher());
+        outputTracker.emplace(
+            context_.projectRoot(), stepCache->matcher(), context_.globMetadataCache());
         outputTracker->begin(step);
     }
 
@@ -429,6 +510,9 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
 
 Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
 {
+    const ThroughputRunScope ThroughputScope(pluginHost_,
+                                             runOptions_.performance.optimizeGcForThroughput);
+
     const auto FoundStep = registry_.findStep(name);
     if (!FoundStep)
     {
@@ -447,6 +531,11 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
+    }
+
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+    {
+        flushBufferedCacheWrites();
     }
 
     return Result;
@@ -507,6 +596,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
     if (!StepLevels.hasValue())
     {
         std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
+        flushBufferedCacheWritesForPhase();
         return OrchestratorError::StepOrderingFailed;
     }
 
@@ -524,6 +614,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
                 const auto Result = runStepInstance(step, progress);
                 if (!Result)
                 {
+                    flushBufferedCacheWritesForPhase();
                     return Result.error();
                 }
             }
@@ -553,15 +644,20 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
 
         if (levelFailed.load())
         {
+            flushBufferedCacheWritesForPhase();
             return levelError;
         }
     }
 
+    flushBufferedCacheWritesForPhase();
     return 0;
 }
 
 Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& request)
 {
+    const ThroughputRunScope ThroughputScope(pluginHost_,
+                                             runOptions_.performance.optimizeGcForThroughput);
+
     if (request.phase.empty())
     {
         return OrchestratorError::InvalidPhaseRequest;
@@ -608,6 +704,11 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->endRun(true, elapsedSeconds(Start));
+    }
+
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+    {
+        flushBufferedCacheWrites();
     }
 
     return 0;

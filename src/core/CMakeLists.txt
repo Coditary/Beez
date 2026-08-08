@@ -6,12 +6,15 @@ add_library(
     cache_compress.cpp
     cache_options.cpp
     cache_storage.cpp
+    cache_write_coordinator.cpp
     config_paths.cpp
     context.cpp
     content_hash.cpp
+    glob_metadata_cache.cpp
     include_fingerprint.cpp
     glob_expand.cpp
     glob_pattern.cpp
+    performance_options.cpp
     registry.cpp
     orchestrator.cpp
     phase_argument_parser.cpp
