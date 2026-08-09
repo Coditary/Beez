@@ -143,7 +143,7 @@ Use [GitHub Issues](https://github.com/Coditary/Beez/issues). For bugs, include:
 - Expected vs actual behavior
 - Relevant output (`beez --verbose`, run log path under `.cache/logs/`)
 
-For security vulnerabilities, use [GitHub Security Advisories](https://github.com/Coditary/Beez/security/advisories/new) or contact the maintainers privately. Do not file public issues for security bugs.
+For security vulnerabilities, see [`SECURITY.md`](SECURITY.md). Do not file public issues for security bugs.
 
 ## Documentation
 
