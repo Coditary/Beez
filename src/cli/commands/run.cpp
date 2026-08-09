@@ -1,8 +1,7 @@
-#include "beez/cli/run_target.hpp"
+#include "beez/cli/commands/run.hpp"
 
-#include "beez/cli/list_formatter.hpp"
-#include "beez/cli/name_suggestion.hpp"
-#include "beez/cli/parsed_options.hpp"
+#include "beez/cli/parsing/parsed_options.hpp"
+#include "beez/cli/presentation/name_suggestion.hpp"
 #include "beez/core/expected.hpp"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
@@ -56,17 +55,11 @@ void printTargetNotFoundHint(const core::Registry& registry,
 
 }  // namespace
 
-int runParsedInvocation(core::Orchestrator& orchestrator,
-                        const core::Registry& registry,
-                        const ParsedOptions& options,
-                        logging::OutputMode outputMode)
+int runOrchestratorCommand(core::Orchestrator& orchestrator,
+                           const core::Registry& registry,
+                           const ParsedOptions& options,
+                           logging::OutputMode outputMode)
 {
-    if (options.listKind.has_value())
-    {
-        std::cout << formatEntityList(registry, *options.listKind);
-        return 0;
-    }
-
     if (options.stepName.has_value())
     {
         return finishRunResult(orchestrator.runStep(*options.stepName), outputMode);

@@ -1,6 +1,6 @@
-#include "beez/cli/run_target.hpp"
+#include "beez/cli/commands/run.hpp"
 
-#include "beez/cli/parsed_options.hpp"
+#include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
 #include "beez/core/task.hpp"
@@ -11,7 +11,7 @@
 
 #include <string>
 
-TEST(RunTargetTest, SilentModeSuppressesDidYouMean)
+TEST(RunCommandTest, SilentModeSuppressesDidYouMean)
 {
     beez::core::Context context;
     beez::core::Registry registry;
@@ -24,7 +24,7 @@ TEST(RunTargetTest, SilentModeSuppressesDidYouMean)
     options.target = "biuld";
 
     testing::internal::CaptureStderr();
-    const int ExitCode = beez::cli::runParsedInvocation(
+    const int ExitCode = beez::cli::runOrchestratorCommand(
         orchestrator, registry, options, beez::logging::OutputMode::Silent);
     const auto Stderr = testing::internal::GetCapturedStderr();
 
@@ -32,7 +32,7 @@ TEST(RunTargetTest, SilentModeSuppressesDidYouMean)
     EXPECT_TRUE(Stderr.empty());
 }
 
-TEST(RunTargetTest, MisspelledTargetPrintsDidYouMean)
+TEST(RunCommandTest, MisspelledTargetPrintsDidYouMean)
 {
     beez::core::Context context;
     beez::core::Registry registry;
@@ -46,7 +46,7 @@ TEST(RunTargetTest, MisspelledTargetPrintsDidYouMean)
 
     testing::internal::CaptureStdout();
     testing::internal::CaptureStderr();
-    const int ExitCode = beez::cli::runParsedInvocation(orchestrator, registry, options);
+    const int ExitCode = beez::cli::runOrchestratorCommand(orchestrator, registry, options);
     const auto Stderr = testing::internal::GetCapturedStderr();
     testing::internal::GetCapturedStdout();
 

@@ -1,6 +1,7 @@
-#include "beez/cli/cli_app.hpp"
-#include "beez/cli/install_completion.hpp"
-#include "beez/cli/parsed_options.hpp"
+#include "beez/cli/completion/install_completion.hpp"
+#include "beez/cli/parsing/cli_parser.hpp"
+#include "beez/cli/parsing/help_text.hpp"
+#include "beez/cli/parsing/parsed_options.hpp"
 
 #include <gtest/gtest.h>
 
@@ -25,9 +26,9 @@ std::vector<const char*> toArgv(const std::vector<std::string>& args)
 
 }  // namespace
 
-TEST(CliAppTest, HelpContainsBannerAndUsage)
+TEST(CliParserTest, HelpContainsBannerAndUsage)
 {
-    const std::string Help = beez::cli::CliApp::helpText();
+    const std::string Help = beez::cli::helpText();
     EXPECT_NE(Help.find("Beez - Build Everything Easy (0.1.0)"), std::string::npos);
     EXPECT_NE(Help.find("Usage: beez [target] [core-options] [-- user-options]"),
               std::string::npos);
@@ -41,37 +42,37 @@ TEST(CliAppTest, HelpContainsBannerAndUsage)
     EXPECT_NE(Help.find("--list TEXT"), std::string::npos);
 }
 
-TEST(CliAppTest, VersionContainsBeezAndLua)
+TEST(CliParserTest, VersionContainsBeezAndLua)
 {
-    const std::string Version = beez::cli::CliApp::versionText();
+    const std::string Version = beez::cli::versionText();
     EXPECT_NE(Version.find("Beez 0.1.0"), std::string::npos);
     EXPECT_NE(Version.find("Lua 5.4"), std::string::npos);
 }
 
-TEST(CliAppTest, HelpFlagRequestsHelp)
+TEST(CliParserTest, HelpFlagRequestsHelp)
 {
     const std::vector<std::string> Args = {"beez", "--help"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Help);
     EXPECT_EQ(Result.exitCode, 0);
 }
 
-TEST(CliAppTest, VersionFlagRequestsVersion)
+TEST(CliParserTest, VersionFlagRequestsVersion)
 {
     const std::vector<std::string> Args = {"beez", "-v"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Version);
     EXPECT_EQ(Result.exitCode, 0);
 }
 
-TEST(CliAppTest, ParsesSilentAndErrorFlags)
+TEST(CliParserTest, ParsesSilentAndErrorFlags)
 {
     {
         const std::vector<std::string> Args = {"beez", "build", "--silent"};
         const auto Argv = toArgv(Args);
-        const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+        const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
         ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
         EXPECT_TRUE(Result.options.silent);
         EXPECT_FALSE(Result.options.errorsOnly);
@@ -81,7 +82,7 @@ TEST(CliAppTest, ParsesSilentAndErrorFlags)
     {
         const std::vector<std::string> Args = {"beez", "build", "--error"};
         const auto Argv = toArgv(Args);
-        const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+        const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
         ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
         EXPECT_TRUE(Result.options.errorsOnly);
         EXPECT_FALSE(Result.options.silent);
@@ -89,19 +90,19 @@ TEST(CliAppTest, ParsesSilentAndErrorFlags)
     }
 }
 
-TEST(CliAppTest, RejectsConflictingOutputFlags)
+TEST(CliParserTest, RejectsConflictingOutputFlags)
 {
     const std::vector<std::string> Args = {"beez", "build", "--silent", "--verbose"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
-TEST(CliAppTest, ParsesTargetAndFlags)
+TEST(CliParserTest, ParsesTargetAndFlags)
 {
     const std::vector<std::string> Args = {"beez", "build", "--verbose", "--dry-run"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.target.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
@@ -110,137 +111,137 @@ TEST(CliAppTest, ParsesTargetAndFlags)
     EXPECT_TRUE(Result.options.dryRun);
 }
 
-TEST(CliAppTest, ParsesListKind)
+TEST(CliParserTest, ParsesListKind)
 {
     const std::vector<std::string> Args = {"beez", "--list", "tasks"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.listKind.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
     EXPECT_EQ(*Result.options.listKind, "tasks");
 }
 
-TEST(CliAppTest, ParsesPhasesListKind)
+TEST(CliParserTest, ParsesPhasesListKind)
 {
     const std::vector<std::string> Args = {"beez", "--list", "phases"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.listKind.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
     EXPECT_EQ(*Result.options.listKind, "phases");
 }
 
-TEST(CliAppTest, ParsesUserOptionsAfterSeparator)
+TEST(CliParserTest, ParsesUserOptionsAfterSeparator)
 {
     const std::vector<std::string> Args = {"beez", "build", "--", "-j8", "release"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_EQ(Result.options.userOptions.size(), 2U);
     EXPECT_EQ(Result.options.userOptions[0], "-j8");
     EXPECT_EQ(Result.options.userOptions[1], "release");
 }
 
-TEST(CliAppTest, MissingTargetShowsHelpWithError)
+TEST(CliParserTest, MissingTargetShowsHelpWithError)
 {
     const std::vector<std::string> Args = {"beez"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Help);
     EXPECT_EQ(Result.exitCode, 1);
 }
 
-TEST(CliAppTest, RejectsUnknownListKind)
+TEST(CliParserTest, RejectsUnknownListKind)
 {
     const std::vector<std::string> Args = {"beez", "--list", "unknown"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
-TEST(CliAppTest, NoCacheDisablesCaching)
+TEST(CliParserTest, NoCacheDisablesCaching)
 {
     const std::vector<std::string> Args = {"beez", "build", "--no-cache"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_FALSE(Result.options.enableCache);
 }
 
-TEST(CliAppTest, ParsesThreadsFlag)
+TEST(CliParserTest, ParsesThreadsFlag)
 {
     const std::vector<std::string> Args = {"beez", "build", "--threads", "4"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.maxThreads.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
     EXPECT_EQ(Result.options.maxThreads.value(), 4U);
 }
 
-TEST(CliAppTest, ParsesJobsAlias)
+TEST(CliParserTest, ParsesJobsAlias)
 {
     const std::vector<std::string> Args = {"beez", "build", "-j", "2"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.maxThreads.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
     EXPECT_EQ(Result.options.maxThreads.value(), 2U);
 }
 
-TEST(CliAppTest, RejectsZeroThreads)
+TEST(CliParserTest, RejectsZeroThreads)
 {
     const std::vector<std::string> Args = {"beez", "build", "--threads", "0"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
-TEST(CliAppTest, ParsesConfigOptionsFlag)
+TEST(CliParserTest, ParsesConfigOptionsFlag)
 {
     const std::vector<std::string> Args = {"beez", "--config-options", "cache.hash"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.configOptions);
     EXPECT_EQ(Result.options.configOptionsPath, "cache.hash");
 }
 
-TEST(CliAppTest, ParsesConfigOptionsWithoutPath)
+TEST(CliParserTest, ParsesConfigOptionsWithoutPath)
 {
     const std::vector<std::string> Args = {"beez", "--config-options"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.configOptions);
     EXPECT_TRUE(Result.options.configOptionsPath.empty());
 }
 
-TEST(CliAppTest, ParsesCompleteConfigOptionsFlag)
+TEST(CliParserTest, ParsesCompleteConfigOptionsFlag)
 {
     const std::vector<std::string> Args = {
         "beez", "--complete-config-options", "performance.cache"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.completeConfigOptions);
     EXPECT_EQ(Result.options.completeConfigOptionsPrefix, "performance.cache");
 }
 
-TEST(CliAppTest, ParsesDumpCompletionFlag)
+TEST(CliParserTest, ParsesDumpCompletionFlag)
 {
     const std::vector<std::string> Args = {"beez", "--dump-completion", "zsh"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.dumpCompletion);
     EXPECT_EQ(Result.options.dumpCompletionShell, "zsh");
 }
 
-TEST(CliAppTest, DumpCompletionScriptContainsConfigOptions)
+TEST(CliParserTest, DumpCompletionScriptContainsConfigOptions)
 {
     const std::string Content = std::string(beez::cli::dumpCompletionScript("zsh").value_or(""));
     ASSERT_FALSE(Content.empty());
@@ -248,47 +249,47 @@ TEST(CliAppTest, DumpCompletionScriptContainsConfigOptions)
     EXPECT_NE(Content.find("--complete-config-options"), std::string::npos);
 }
 
-TEST(CliAppTest, ParsesShowConfigFlag)
+TEST(CliParserTest, ParsesShowConfigFlag)
 {
     const std::vector<std::string> Args = {"beez", "--show-config"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.showConfig);
 }
 
-TEST(CliAppTest, ParsesCleanCacheFlag)
+TEST(CliParserTest, ParsesCleanCacheFlag)
 {
     const std::vector<std::string> Args = {"beez", "--clean-cache"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.cleanCache);
 }
 
-TEST(CliAppTest, ParsesUpdateFlag)
+TEST(CliParserTest, ParsesUpdateFlag)
 {
     const std::vector<std::string> Args = {"beez", "--update"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.updateCache);
 }
 
-TEST(CliAppTest, ParsesInstallCompletionFlag)
+TEST(CliParserTest, ParsesInstallCompletionFlag)
 {
     const std::vector<std::string> Args = {"beez", "--install-completion"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.installCompletion);
 }
 
-TEST(CliAppTest, ParsesLogFileFlag)
+TEST(CliParserTest, ParsesLogFileFlag)
 {
     const std::vector<std::string> Args = {"beez", "build", "--log-file", "/tmp/beez-run.log"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.logFile.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
@@ -296,48 +297,48 @@ TEST(CliAppTest, ParsesLogFileFlag)
     EXPECT_FALSE(Result.options.noLogFile);
 }
 
-TEST(CliAppTest, ParsesNoLogFileFlag)
+TEST(CliParserTest, ParsesNoLogFileFlag)
 {
     const std::vector<std::string> Args = {"beez", "build", "--no-log-file"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.noLogFile);
     EXPECT_FALSE(Result.options.logFile.has_value());
 }
 
-TEST(CliAppTest, RejectsInvalidDumpCompletionShell)
+TEST(CliParserTest, RejectsInvalidDumpCompletionShell)
 {
     const std::vector<std::string> Args = {"beez", "--dump-completion", "fish"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
-TEST(CliAppTest, RejectsSilentAndErrorTogether)
+TEST(CliParserTest, RejectsSilentAndErrorTogether)
 {
     const std::vector<std::string> Args = {"beez", "build", "--silent", "--error"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
 }
 
-TEST(CliAppTest, ParsesStepFlag)
+TEST(CliParserTest, ParsesStepFlag)
 {
     const std::vector<std::string> Args = {"beez", "-s", "compile"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.stepName.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
     EXPECT_EQ(Result.options.stepName.value(), "compile");
 }
 
-TEST(CliAppTest, ParsesPhaseFlag)
+TEST(CliParserTest, ParsesPhaseFlag)
 {
     const std::vector<std::string> Args = {"beez", "-p", "generate:code"};
     const auto Argv = toArgv(Args);
-    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     ASSERT_TRUE(Result.options.phaseRequest.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above

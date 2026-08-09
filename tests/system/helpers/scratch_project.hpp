@@ -18,8 +18,8 @@ class ScratchProject
     ScratchProject()
     {
         const auto Counter = idCounter.fetch_add(1);
-        path_ = beez::test::testTempDirectory() /
-                ("beez_system_scratch_" + std::to_string(Counter));
+        path_ =
+            beez::test::testTempDirectory() / ("beez_system_scratch_" + std::to_string(Counter));
         std::filesystem::create_directories(path_);
     }
 

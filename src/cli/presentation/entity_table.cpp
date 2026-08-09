@@ -1,4 +1,4 @@
-#include "beez/cli/list_formatter.hpp"
+#include "beez/cli/presentation/entity_table.hpp"
 
 #include "beez/core/registry.h"
 #include "beez/core/text_table.hpp"

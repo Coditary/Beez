@@ -28,10 +28,11 @@ inline std::filesystem::path testTempDirectory()
     const std::filesystem::path FromStd = std::filesystem::temp_directory_path(errorCode);
     if (!errorCode && !FromStd.empty() && FromStd.is_absolute())
     {
+        // NOLINTNEXTLINE(performance-no-automatic-move) -- returning local path by value
         return FromStd;
     }
 
-    return std::filesystem::path("/tmp");
+    return {"/tmp"};
 }
 
 }  // namespace beez::test

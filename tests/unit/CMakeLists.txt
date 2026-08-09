@@ -10,10 +10,10 @@ add_executable(
     logging/test_logging_settings.cpp
     logging/test_progress_spinner.cpp
     logging/test_worker_output_format.cpp
-    cli/test_cli_app.cpp
-    cli/test_list_formatter.cpp
-    cli/test_name_suggestion.cpp
-    cli/test_run_target.cpp
+    cli/parsing/test_cli_parser.cpp
+    cli/presentation/test_entity_table.cpp
+    cli/presentation/test_name_suggestion.cpp
+    cli/commands/test_run.cpp
     core/test_registry.cpp
     core/test_content_hash.cpp
     core/test_include_fingerprint.cpp

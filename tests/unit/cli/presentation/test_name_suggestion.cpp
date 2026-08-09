@@ -1,4 +1,4 @@
-#include "beez/cli/name_suggestion.hpp"
+#include "beez/cli/presentation/name_suggestion.hpp"
 
 #include "beez/core/registry.h"
 #include "beez/core/task.hpp"

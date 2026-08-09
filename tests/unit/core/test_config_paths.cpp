@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -75,7 +76,7 @@ class ScopedEnv
 class ScopedTempTree
 {
   public:
-    explicit ScopedTempTree(const std::filesystem::path& path) : path_(path) {}
+    explicit ScopedTempTree(std::filesystem::path path) : path_(std::move(path)) {}
 
     ~ScopedTempTree()
     {
@@ -97,7 +98,7 @@ class ScopedTempTree
 TEST(ConfigPathsTest, UsesXdgConfigHomeWhenSet)
 {
     const auto Root = beez::core::systemTempDirectory() / "beez_config_paths_xdg_test";
-    ScopedTempTree Cleanup(Root);
+    const ScopedTempTree Cleanup(Root);
     std::filesystem::create_directories(Root);
     const ScopedEnv Xdg("XDG_CONFIG_HOME", Root.c_str());
 
@@ -108,7 +109,7 @@ TEST(ConfigPathsTest, UsesXdgConfigHomeWhenSet)
 TEST(ConfigPathsTest, FallsBackToHomeDotConfigWhenXdgUnset)
 {
     const auto HomeRoot = beez::core::systemTempDirectory() / "beez_config_paths_home_test";
-    ScopedTempTree Cleanup(HomeRoot);
+    const ScopedTempTree Cleanup(HomeRoot);
     std::filesystem::create_directories(HomeRoot);
     const ScopedEnv Home("HOME", HomeRoot.c_str());
     const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");

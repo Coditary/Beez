@@ -1,6 +1,6 @@
 // NOLINTBEGIN(misc-include-cleaner,concurrency-mt-unsafe,performance-no-automatic-move,bugprone-command-processor,cert-env33-c)
-#include "beez/cli/install_completion.hpp"
-#include "beez/cli/completion_embedded.hpp"
+#include "beez/cli/completion/install_completion.hpp"
+#include "beez/cli/completion/completion_embedded.hpp"
 #include "beez/core/temp_directory.hpp"
 
 #include <algorithm>
@@ -226,19 +226,7 @@ readConfigValue(const std::filesystem::path& path, const std::string& key)
     return ExitCode;
 }
 
-}  // namespace
-
-int runInstallCompletion(const char* argv0)
-{
-    if (const auto Script = installScriptPath(argv0))
-    {
-        return runShellCommand("bash " + Script->string());
-    }
-
-    return runEmbeddedInstallCompletion();
-}
-
-std::optional<std::string_view> embeddedCompletionContent(const char* name)
+[[nodiscard]] std::optional<std::string_view> embeddedCompletionContent(const char* name)
 {
     const auto Files = embeddedCompletionFiles();
     const auto* const Found = std::ranges::find_if(
@@ -249,6 +237,18 @@ std::optional<std::string_view> embeddedCompletionContent(const char* name)
     }
 
     return Found->content;
+}
+
+}  // namespace
+
+int runInstallCompletion(const char* argv0)
+{
+    if (const auto Script = installScriptPath(argv0))
+    {
+        return runShellCommand("bash " + Script->string());
+    }
+
+    return runEmbeddedInstallCompletion();
 }
 
 std::optional<std::string_view> dumpCompletionScript(const std::string& shell)

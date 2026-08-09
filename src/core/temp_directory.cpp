@@ -17,7 +17,7 @@ namespace
 
 [[nodiscard]] std::filesystem::path tempFromEnvironment(const char* variable)
 {
-    // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
+    // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c,cppcoreguidelines-pro-bounds-pointer-arithmetic)
     if (const char* value = std::getenv(variable); value != nullptr && value[0] != '\0')
     {
         const std::filesystem::path Configured(value);
@@ -36,6 +36,7 @@ namespace
     const std::filesystem::path FromStd = std::filesystem::temp_directory_path(errorCode);
     if (!errorCode && isAbsoluteTempPath(FromStd))
     {
+        // NOLINTNEXTLINE(performance-no-automatic-move) -- returning local path by value
         return FromStd;
     }
 
@@ -58,10 +59,11 @@ std::filesystem::path systemTempDirectory()
     const auto FromStd = tempFromStdLibrary();
     if (!FromStd.empty())
     {
+        // NOLINTNEXTLINE(performance-no-automatic-move) -- returning local path by value
         return FromStd;
     }
 
-    return std::filesystem::path("/tmp");
+    return {"/tmp"};
 }
 
 }  // namespace beez::core
