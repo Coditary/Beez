@@ -522,4 +522,56 @@ orderStepsInLevels(const std::vector<Step>& steps,
     return topologicalLevels(steps, adjacency, std::move(inDegree), stepByName);
 }
 
+std::vector<std::vector<Step>> isolateCallbackStepsInLevels(std::vector<std::vector<Step>> levels)
+{
+    std::vector<std::vector<Step>> isolated;
+    isolated.reserve(levels.size());
+
+    for (auto& level : levels)
+    {
+        if (level.size() <= 1U)
+        {
+            isolated.push_back(std::move(level));
+            continue;
+        }
+
+        const std::size_t CallbackCount =
+            std::ranges::count_if(level, [](const Step& step) { return step.hasCallback(); });
+        if (CallbackCount <= 1U)
+        {
+            isolated.push_back(std::move(level));
+            continue;
+        }
+
+        std::vector<Step> shellSteps;
+        std::vector<Step> callbackSteps;
+        shellSteps.reserve(level.size());
+        callbackSteps.reserve(level.size());
+
+        for (auto& step : level)
+        {
+            if (step.hasCallback())
+            {
+                callbackSteps.push_back(std::move(step));
+            }
+            else
+            {
+                shellSteps.push_back(std::move(step));
+            }
+        }
+
+        if (!shellSteps.empty())
+        {
+            isolated.push_back(std::move(shellSteps));
+        }
+
+        std::ranges::transform(callbackSteps,
+                               std::back_inserter(isolated),
+                               [](Step callbackStep) -> std::vector<Step>
+                               { return std::vector<Step> {std::move(callbackStep)}; });
+    }
+
+    return isolated;
+}
+
 }  // namespace beez::core

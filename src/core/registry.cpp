@@ -196,7 +196,13 @@ Registry::stepLevelsForPhase(const std::string& phase, const std::string& scope)
     }
 
     const IGlobMatcher& matcher = defaultGlobMatcher();
-    return orderStepsInLevels(matched, stepOrderHints_, matcher);
+    const auto Ordered = orderStepsInLevels(matched, stepOrderHints_, matcher);
+    if (!Ordered.hasValue())
+    {
+        return Ordered.error();
+    }
+
+    return isolateCallbackStepsInLevels(Ordered.value());
 }
 
 std::vector<std::string> Registry::scopesForPhase(const std::string& phase) const

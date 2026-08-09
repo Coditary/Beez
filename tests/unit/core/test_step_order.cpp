@@ -1,3 +1,4 @@
+#include "beez/core/context.h"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_order.hpp"
@@ -27,6 +28,17 @@ beez::core::Step makeShellStep(const std::string& name,
     step.input = std::move(input);
     step.output = std::move(output);
     step.mutate = std::move(mutate);
+    return step;
+}
+
+beez::core::Step
+makeCallbackStep(const std::string& name, const std::string& phase, const std::string& scope)
+{
+    beez::core::Step step;
+    step.name = name;
+    step.phase = phase;
+    step.scope = scope;
+    step.callback = [](const beez::core::Context&) -> int { return 0; };
     return step;
 }
 
@@ -152,4 +164,34 @@ TEST_F(StepOrderTest, SeparatesDependentStepsIntoParallelLevels)
     ASSERT_EQ(Result.value().at(1).size(), 1U);
     EXPECT_EQ(Result.value().at(0).front().name, "compile");
     EXPECT_EQ(Result.value().at(1).front().name, "link");
+}
+
+TEST_F(StepOrderTest, IsolatesMultipleCallbackStepsIntoSeparateLevels)
+{
+    const std::vector<std::vector<beez::core::Step>> Levels = {{
+        makeShellStep("shell-a", "qa", "code"),
+        makeCallbackStep("callback-a", "qa", "code"),
+        makeCallbackStep("callback-b", "qa", "code"),
+    }};
+
+    const auto Isolated = beez::core::isolateCallbackStepsInLevels(Levels);
+    ASSERT_EQ(Isolated.size(), 3U);
+    ASSERT_EQ(Isolated.at(0).size(), 1U);
+    EXPECT_EQ(Isolated.at(0).front().name, "shell-a");
+    ASSERT_EQ(Isolated.at(1).size(), 1U);
+    EXPECT_EQ(Isolated.at(1).front().name, "callback-a");
+    ASSERT_EQ(Isolated.at(2).size(), 1U);
+    EXPECT_EQ(Isolated.at(2).front().name, "callback-b");
+}
+
+TEST_F(StepOrderTest, KeepsSingleCallbackWithShellStepsInSameLevel)
+{
+    const std::vector<std::vector<beez::core::Step>> Levels = {{
+        makeShellStep("shell-a", "qa", "code"),
+        makeCallbackStep("callback-a", "qa", "code"),
+    }};
+
+    const auto Isolated = beez::core::isolateCallbackStepsInLevels(Levels);
+    ASSERT_EQ(Isolated.size(), 1U);
+    ASSERT_EQ(Isolated.front().size(), 2U);
 }

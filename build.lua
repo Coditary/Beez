@@ -234,7 +234,7 @@ step({
     run = "cmake --build --preset " .. CMAKE_PRESET,
 })
 
-order("configure:setup", "build:compile")
+-- order("configure:setup", "build:compile")
 
 -- ── Tests (ctest per suite, step cache on binaries + sources) ────────────────
 
@@ -300,10 +300,10 @@ make_test_step(
     "report/test/performance.ok"
 )
 
-order("build:compile", "test:unit")
-order("build:compile", "test:integration")
-order("build:compile", "test:system")
-order("build:compile", "test:performance")
+-- order("build:compile", "test:unit")
+-- order("build:compile", "test:integration")
+-- order("build:compile", "test:system")
+-- order("build:compile", "test:performance")
 
 -- ── Format (check + apply) ───────────────────────────────────────────────────
 
@@ -522,11 +522,11 @@ step({
     end,
 })
 
--- Lua callback steps share one interpreter — serialize them; shell steps stay parallel.
--- TODO: remove these orders once parallel Lua step execution is thread-safe.
-order("qa:format-check", "qa:lint")
-order("qa:lint", "qa:analyze-tidy")
-order("qa:analyze-tidy", "qa:security-tidy")
+-- Lua callback steps share one interpreter — the engine serializes them automatically.
+-- Explicit order() is only needed for mutate conflicts that cannot be inferred from patterns.
+-- order("qa:format-check", "qa:lint")
+-- order("qa:lint", "qa:analyze-tidy")
+-- order("qa:analyze-tidy", "qa:security-tidy")
 
 -- ── Debug build ──────────────────────────────────────────────────────────────
 
@@ -568,7 +568,7 @@ step({
     run = "cmake --build --preset conan-debug",
 })
 
-order("configure:debug", "build:debug")
+-- order("configure:debug", "build:debug")
 
 -- ── Coverage ─────────────────────────────────────────────────────────────────
 
@@ -649,9 +649,9 @@ step({
         REPORTS_DIR,
 })
 
-order("configure:coverage", "build:coverage")
-order("build:coverage", "test:coverage")
-order("test:coverage", "report:coverage")
+-- order("configure:coverage", "build:coverage")
+-- order("build:coverage", "test:coverage")
+-- order("test:coverage", "report:coverage")
 
 -- ── Sanitizer ────────────────────────────────────────────────────────────────
 
@@ -711,8 +711,8 @@ step({
         "/sanitize/sanitize-report.ok",
 })
 
-order("configure:sanitize", "build:sanitize")
-order("build:sanitize", "test:sanitize")
+-- order("configure:sanitize", "build:sanitize")
+-- order("build:sanitize", "test:sanitize")
 
 -- ── Fuzzer ───────────────────────────────────────────────────────────────────
 
@@ -814,11 +814,11 @@ step({
         " REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-torture.sh build",
 })
 
-order("configure:fuzzer", "build:fuzzer")
-order("build:fuzzer", "fuzz:smoke")
-order("build:fuzzer", "fuzz:corpus")
-order("build:fuzzer", "fuzz:seed-verify")
-order("build:fuzzer", "fuzz:torture")
+-- order("configure:fuzzer", "build:fuzzer")
+-- order("build:fuzzer", "fuzz:smoke")
+-- order("build:fuzzer", "fuzz:corpus")
+-- order("build:fuzzer", "fuzz:seed-verify")
+-- order("build:fuzzer", "fuzz:torture")
 
 workflow("fuzzer_torture", {
     { phase = "configure", scope = "fuzz" },
