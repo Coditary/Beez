@@ -156,3 +156,5 @@ User-facing behavior changes should be reflected in the wiki when practical.
 ## License
 
 By contributing, you agree that your contributions are licensed under the [Apache License 2.0](LICENSE), the same license as the project.
+
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
