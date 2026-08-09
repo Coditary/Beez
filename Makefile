@@ -3,6 +3,7 @@
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
 CONAN_PROFILE ?= clang-release
+COVERAGE_STAMP := $(BUILD_DIR)/build/Debug/.beez-coverage-configured
 REPORTS_DIR ?= report
 ARGS ?=
 BEEZ_BIN := $(BUILD_DIR)/build/$(BUILD_TYPE)/bin/beez
@@ -34,15 +35,20 @@ setup-debug: ## Conan + CMake configure (Debug)
 
 setup-coverage: setup-debug ## CMake configure für Coverage
 	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=ON -DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF
+	@grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' $(BUILD_DIR)/build/Debug/CMakeCache.txt
+	touch $(COVERAGE_STAMP)
 
 setup-sanitize: setup-debug ## CMake configure für Sanitizer-Build
 	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON -DENABLE_TSAN=OFF
+	rm -f $(COVERAGE_STAMP)
 
 setup-tsan: setup-debug ## CMake configure für ThreadSanitizer-Build
 	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF -DENABLE_TSAN=ON
+	rm -f $(COVERAGE_STAMP)
 
 setup-fuzzer: setup-debug ## CMake configure für Fuzzer
 	cmake --preset conan-debug -DBUILD_TESTING=OFF -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=ON -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF
+	rm -f $(COVERAGE_STAMP)
 
 build: ## Release build
 	$(MAKE) setup BUILD_TYPE=Release

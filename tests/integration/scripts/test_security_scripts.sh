@@ -57,6 +57,14 @@ test_ci_install_rejects_invalid_version() {
       bash "${ROOT_DIR}/scripts/ci-install-osv-scanner.sh"
 }
 
+test_ci_install_cppcheck_rejects_invalid_version() {
+    assert_exit 1 env CPPCHECK_VERSION='2.21;rm -rf /' \
+        bash "${ROOT_DIR}/scripts/ci-install-cppcheck.sh"
+    assert_output_contains "invalid CPPCHECK_VERSION" \
+        env CPPCHECK_VERSION='not-a-version' \
+        bash "${ROOT_DIR}/scripts/ci-install-cppcheck.sh"
+}
+
 test_dependency_audit_missing_scanner() {
     local home="${TMP_DIR}/home-without-scanner"
     mkdir -p "${home}"
@@ -167,6 +175,7 @@ test_security_script_requires_compile_commands() {
 test_conan_graph_converter_rejects_invalid_json
 test_conan_graph_converter_rejects_missing_file
 test_ci_install_rejects_invalid_version
+test_ci_install_cppcheck_rejects_invalid_version
 test_dependency_audit_missing_scanner
 test_dependency_audit_prefers_pinned_scanner_over_path_hijack
 test_dependency_audit_malformed_sbom_fails

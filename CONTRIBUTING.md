@@ -23,7 +23,7 @@ Thank you for your interest in Beez. This file is the entry point for contributo
 - Conan 2.x
 - Ninja
 
-Optional: ccache or sccache, clang-format, clang-tidy, cmake-format, cppcheck
+Optional: ccache or sccache, clang-format, clang-tidy, cmake-format, cppcheck (CI pins 2.21.1 via `scripts/ci-install-cppcheck.sh`)
 
 ### First-time setup
 

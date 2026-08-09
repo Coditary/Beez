@@ -14,6 +14,7 @@ env:
   CC: clang
   CXX: clang++
   LLVM_VERSION: "22"
+  CPPCHECK_VERSION: "2.21.1"
   FUZZER_TIME: 30
   MIN_LINE_COVERAGE: 85
   STRICT_CI: 1

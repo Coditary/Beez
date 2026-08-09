@@ -13,10 +13,15 @@ if [[ ! -d "${DEBUG_BUILD_TREE}" ]]; then
     exit 2
 fi
 
-if [[ ! -f "${DEBUG_BUILD_TREE}/.beez-coverage-configured" ]] ||
-    ! grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' "${DEBUG_BUILD_TREE}/CMakeCache.txt" 2>/dev/null; then
-    echo "error: Debug build is not configured for coverage (BUILD_COVERAGE=OFF or stale after sanitize)." >&2
-    echo "Run: beez configure:coverage && beez build:coverage" >&2
+if [[ ! -f "${DEBUG_BUILD_TREE}/.beez-coverage-configured" ]]; then
+    echo "error: coverage stamp missing (${DEBUG_BUILD_TREE}/.beez-coverage-configured)." >&2
+    echo "Run: make setup-coverage (or beez configure:coverage && beez build:coverage)" >&2
+    exit 2
+fi
+
+if ! grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' "${DEBUG_BUILD_TREE}/CMakeCache.txt" 2>/dev/null; then
+    echo "error: Debug build is not configured for coverage (BUILD_COVERAGE=OFF or stale after sanitize/tsan/fuzz)." >&2
+    echo "Run: make setup-coverage (or beez configure:coverage && beez build:coverage)" >&2
     exit 2
 fi
 
@@ -24,7 +29,7 @@ mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/test"
 find "${DEBUG_BUILD_TREE}" -name '*.gcda' -delete
 
 cd "${DEBUG_BUILD_TREE}"
-CTEST_JOBS="${CTEST_JOBS:-$(nproc)}"
+CTEST_JOBS="${CTEST_JOBS:-1}"
 ctest -j"${CTEST_JOBS}" --output-on-failure 2>&1 | tee "${REPORT_FILE}"
 
 if ! find "${DEBUG_BUILD_TREE}" -name '*.gcda' -print -quit | grep -q .; then

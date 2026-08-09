@@ -36,7 +36,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 - Conan 2.x
 - Ninja
 
-Optional: ccache or sccache, clang-format, clang-tidy, cmake-format, cppcheck
+Optional: ccache or sccache, clang-format, clang-tidy, cmake-format, cppcheck (CI pins 2.21.1)
 
 ## Quick start
 
