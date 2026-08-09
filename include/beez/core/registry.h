@@ -24,6 +24,9 @@ class Registry
     void registerWorkflow(Workflow workflow);
     void registerStepOrder(const std::string& before, const std::string& after);
 
+    void clear();
+    void validateConsistent() const;
+
     [[nodiscard]] std::optional<Task> findTask(const std::string& name) const;
     [[nodiscard]] std::optional<Step> findStep(const std::string& name) const;
     [[nodiscard]] std::optional<Workflow> findWorkflow(const std::string& name) const;
@@ -54,8 +57,6 @@ class Registry
 
     std::unordered_map<std::string, Task> tasks_;
     std::unordered_map<std::string, Step> steps_;
-    // TODO(step-config): After build.lua is fully loaded, warn on pending entries that never
-    // matched a registered step.
     std::unordered_map<std::string, StepConfigPtr> pendingStepConfigs_;
     std::unordered_map<std::string, Workflow> workflows_;
     std::vector<StepOrderHint> stepOrderHints_;

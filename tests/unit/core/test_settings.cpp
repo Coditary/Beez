@@ -10,6 +10,32 @@
 #include <cstdlib>
 #include <filesystem>
 
+TEST(BeezSettingsTest, MergeOrderGlobalProjectThenCli)
+{
+    beez::core::BeezSettings settings;
+    settings.performance.maxThreads = 2;
+    settings.ui.outputMode = beez::logging::OutputMode::Clean;
+    settings.cache.enabled = true;
+
+    beez::core::BeezSettings project;
+    project.performance.maxThreads = 4;
+    project.ui.outputMode = beez::logging::OutputMode::Verbose;
+    settings.merge(project);
+
+    beez::cli::ParsedOptions cli;
+    cli.maxThreads = 8;
+    cli.verbose = true;
+    cli.enableCache = false;
+    settings.applyCliOverrides(cli);
+
+    ASSERT_TRUE(settings.performance.maxThreads.has_value());
+    EXPECT_EQ(*settings.performance.maxThreads, 8U);
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Verbose);
+    ASSERT_TRUE(settings.cache.enabled.has_value());
+    EXPECT_FALSE(*settings.cache.enabled);
+}
+
 TEST(BeezSettingsTest, MergePrefersOverlayValues)
 {
     beez::core::BeezSettings base;

@@ -1,0 +1,135 @@
+name: Setup Beez CI
+description: Install toolchain, caches, and optional QA tools for Beez CI jobs
+
+inputs:
+  install-llvm:
+    description: Install pinned LLVM/Clang toolchain
+    required: false
+    default: 'true'
+  install-conan:
+    description: Install Conan and prepare the CI profile
+    required: false
+    default: 'true'
+  install-ccache:
+    description: Install and restore ccache for compiler caching
+    required: false
+    default: 'true'
+  install-cppcheck:
+    description: Install cppcheck
+    required: false
+    default: 'false'
+  install-gcovr:
+    description: Install gcovr for coverage reports
+    required: false
+    default: 'false'
+  install-osv-scanner:
+    description: Install osv-scanner for dependency auditing
+    required: false
+    default: 'false'
+  install-cmakelang:
+    description: Install cmake-format via cmakelang
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Install LLVM toolchain
+      if: inputs.install-llvm == 'true'
+      shell: bash
+      run: ./scripts/ci-install-llvm.sh
+
+    - name: Install system dependencies
+      shell: bash
+      run: |
+        PACKAGES=(cmake ninja-build pipx)
+        if [ "${{ inputs.install-cppcheck }}" = "true" ]; then
+          PACKAGES+=(g++)
+        fi
+        if [ "${{ inputs.install-ccache }}" = "true" ]; then
+          PACKAGES+=(ccache)
+        fi
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends "${PACKAGES[@]}"
+
+    - name: Cache cppcheck binary
+      if: inputs.install-cppcheck == 'true'
+      id: cppcheck-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/bin/cppcheck
+        key: cppcheck-${{ env.CPPCHECK_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
+    - name: Install cppcheck
+      if: inputs.install-cppcheck == 'true' && steps.cppcheck-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        CPPCHECK_VERSION: ${{ env.CPPCHECK_VERSION }}
+      run: ./scripts/ci-install-cppcheck.sh
+
+    - name: Add local tools to PATH
+      if: inputs.install-cppcheck == 'true' || inputs.install-osv-scanner == 'true'
+      shell: bash
+      run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: Install Python tools
+      shell: bash
+      run: |
+        TOOLS=()
+        if [ "${{ inputs.install-conan }}" = "true" ]; then
+          TOOLS+=(conan)
+        fi
+        if [ "${{ inputs.install-gcovr }}" = "true" ]; then
+          TOOLS+=(gcovr)
+        fi
+        if [ "${{ inputs.install-cmakelang }}" = "true" ]; then
+          TOOLS+=(cmakelang)
+        fi
+        for tool in "${TOOLS[@]}"; do
+          pipx install "${tool}"
+        done
+        if [ "${{ inputs.install-cmakelang }}" = "true" ]; then
+          pipx inject cmakelang pyyaml
+        fi
+        if [ "${#TOOLS[@]}" -gt 0 ]; then
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        fi
+
+    - name: Install osv-scanner
+      if: inputs.install-osv-scanner == 'true'
+      shell: bash
+      run: ./scripts/ci-install-osv-scanner.sh
+
+    - name: Prepare Conan profile
+      if: inputs.install-conan == 'true'
+      shell: bash
+      run: |
+        PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
+        echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
+        echo "Using Conan profile at ${PROFILE_PATH}"
+
+    - name: Cache Conan packages
+      if: inputs.install-conan == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.conan2
+        key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
+        restore-keys: |
+          conan-${{ runner.os }}-
+
+    - name: Cache ccache
+      if: inputs.install-ccache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ccache-${{ runner.os }}-${{ hashFiles('conanfile.py', 'CMakeLists.txt', 'src/**', 'include/**', 'tests/**') }}
+        restore-keys: |
+          ccache-${{ runner.os }}-
+
+    - name: Configure ccache
+      if: inputs.install-ccache == 'true'
+      shell: bash
+      run: |
+        ccache --set-config=max_size=500M
+        ccache --zero-stats
+        echo "CCACHE_DIR=$HOME/.cache/ccache" >> "$GITHUB_ENV"

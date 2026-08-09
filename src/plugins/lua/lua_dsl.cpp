@@ -270,10 +270,22 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
 
 core::PhaseInvocation parsePhaseInvocation(const sol::table& invocationTable)
 {
-    core::PhaseInvocation invocation;
-    invocation.phase = invocationTable["phase"].get<std::string>();
-    invocation.scope = invocationTable["scope"].get<std::string>();
-    return invocation;
+    const sol::object PhaseValue = invocationTable["phase"];
+    if (!PhaseValue.valid() || !PhaseValue.is<std::string>() ||
+        PhaseValue.as<std::string>().empty())
+    {
+        throw std::runtime_error("workflow phase invocation is missing required field 'phase'");
+    }
+
+    const sol::object ScopeValue = invocationTable["scope"];
+    if (!ScopeValue.valid() || !ScopeValue.is<std::string>() ||
+        ScopeValue.as<std::string>().empty())
+    {
+        throw std::runtime_error("workflow phase invocation is missing required field 'scope'");
+    }
+
+    return core::PhaseInvocation {.phase = PhaseValue.as<std::string>(),
+                                  .scope = ScopeValue.as<std::string>()};
 }
 
 core::WorkflowStep parseWorkflowStep(const sol::table& stepTable)
@@ -311,16 +323,74 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
     workflow.name = name;
 
     stepsTable.for_each(
-        [&workflow](const sol::object& /*key*/, const sol::object& value)
+        [&workflow, &name](const sol::object& /*key*/, const sol::object& value)
         {
             if (!value.is<sol::table>())
             {
+                if (value.is<std::string>())
+                {
+                    throw std::runtime_error("workflow '" + name +
+                                             "' entry must be a phase table, not a string ('" +
+                                             value.as<std::string>() + "')");
+                }
+
+                if (value.is<int>() || value.is<double>())
+                {
+                    throw std::runtime_error("workflow '" + name +
+                                             "' entry must be a phase table, not a number");
+                }
+
                 return;
             }
+
             workflow.steps.push_back(parseWorkflowStep(value.as<sol::table>()));
         });
 
     return workflow;
+}
+
+void validateLoadedRegistry(core::Registry& registry)
+{
+    for (const auto& [taskName, task] : registry.tasks())
+    {
+        for (const auto& action : task.actions)
+        {
+            if (const auto* stepAction = std::get_if<core::TaskStepAction>(&action))
+            {
+                if (!registry.findStep(stepAction->stepName).has_value())
+                {
+                    throw std::runtime_error("task '" + taskName + "' references undefined step '" +
+                                             stepAction->stepName + "'");
+                }
+            }
+        }
+    }
+
+    for (const auto& [workflowName, workflow] : registry.workflows())
+    {
+        for (const auto& workflowStep : workflow.steps)
+        {
+            for (const auto& invocation : workflowStep.invocations)
+            {
+                const auto Matched = registry.stepsForPhase(invocation.phase, invocation.scope);
+                if (!Matched.hasValue())
+                {
+                    throw std::runtime_error(
+                        "workflow '" + workflowName + "' step ordering failed for phase '" +
+                        invocation.phase + "' scope '" + invocation.scope + "'");
+                }
+
+                if (Matched.value().empty())
+                {
+                    throw std::runtime_error(
+                        "workflow '" + workflowName + "' has no registered steps for phase '" +
+                        invocation.phase + "' scope '" + invocation.scope + "'");
+                }
+            }
+        }
+    }
+
+    registry.validateConsistent();
 }
 
 class BeezDslEnv
@@ -456,9 +526,14 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     sol::table beezTable = luaState->create_table();
     beezTable["env"] = [beezApi](sol::this_state lua, const std::string& key)
     { return beezApi->env(lua, key); };
-    beezTable["config"] = [&buildSettings, &context](const sol::table& options)
+    beezTable["config"] = [&buildSettings, &context](const sol::object& options)
     {
-        mergeSettingsFromLuaTable(options, buildSettings);
+        if (!options.is<sol::table>())
+        {
+            throw std::runtime_error("beez.config argument must be a table");
+        }
+
+        mergeSettingsFromLuaTable(options.as<sol::table>(), buildSettings);
         buildSettings.applyEnvironment(context);
     };
     (*luaState)["beez"] = beezTable;
@@ -468,6 +543,7 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
 bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 {
+    registry.clear();
     try
     {
         impl_->buildSettings = {};
@@ -479,18 +555,21 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 
         const auto ScriptPath = context.buildScriptPath().string();
         impl_->luaState->script_file(ScriptPath);
+        validateLoadedRegistry(registry);
         return true;
     }
     catch (const sol::error& error)
     {
         std::cerr << "Lua error: " << error.what() << '\n';
         impl_->luaState = nullptr;
+        registry.clear();
         return false;
     }
     catch (const std::exception& error)
     {
         std::cerr << "DSL error: " << error.what() << '\n';
         impl_->luaState = nullptr;
+        registry.clear();
         return false;
     }
 }

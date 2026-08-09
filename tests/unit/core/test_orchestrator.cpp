@@ -290,6 +290,52 @@ TEST(OrchestratorTest, RunTaskPropagatesExecutorExitCode)
     EXPECT_EQ(Result.error(), beez::core::OrchestratorError::ExecutionFailed);
 }
 
+TEST(OrchestratorTest, RunStepPropagatesShellExecutorExitCode)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "compile";
+    step.phase = "compile";
+    step.scope = "code";
+    step.shellRun = "exit 7";
+    registry.registerStep(std::move(step));
+
+    const auto State = std::make_shared<ExecutorState>();
+    State->exitCode = 7;
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto Result = orchestrator.runStep("compile");
+    ASSERT_FALSE(Result.hasValue());
+    EXPECT_EQ(Result.error(), beez::core::OrchestratorError::ExecutionFailed);
+}
+
+TEST(OrchestratorTest, RunWithCacheDisabledStillExecutesSteps)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Task task;
+    task.name = "build";
+    task.actions = {beez::core::makeShellAction("echo build")};
+    registry.registerTask(std::move(task));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    const beez::core::RunOptions Options {.enableCache = false};
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.run("build");
+    ASSERT_TRUE(Result.hasValue());
+    EXPECT_EQ(State->callCount, 1);
+}
+
 TEST(OrchestratorTest, RunPrefersTaskOverWorkflowWithSameName)
 {
     beez::core::Context context;
@@ -713,6 +759,50 @@ TEST(OrchestratorTest, RunPhaseExecutesIndependentStepsInParallel)
     ASSERT_TRUE(Result.hasValue());
     EXPECT_EQ(State->commands.size(), 3U);
     EXPECT_GT(Peak->load(), 1);
+}
+
+TEST(OrchestratorTest, RunPhaseSerializesMultipleCallbackStepsWithoutOrderHints)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    std::atomic<int> concurrentCallbacks {0};
+    std::atomic<int> peakConcurrentCallbacks {0};
+
+    const auto MakeCallbackStep = [&](const std::string& name)
+    {
+        beez::core::Step step;
+        step.name = name;
+        step.phase = "qa";
+        step.scope = "code";
+        step.callback = [&concurrentCallbacks,
+                         &peakConcurrentCallbacks](const beez::core::Context&) -> int
+        {
+            const int Active = concurrentCallbacks.fetch_add(1) + 1;
+            int observed = peakConcurrentCallbacks.load();
+            while (Active > observed &&
+                   !peakConcurrentCallbacks.compare_exchange_weak(observed, Active))
+            {
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            concurrentCallbacks.fetch_sub(1);
+            return 0;
+        };
+        registry.registerStep(std::move(step));
+    };
+
+    MakeCallbackStep("callback-a");
+    MakeCallbackStep("callback-b");
+    MakeCallbackStep("callback-c");
+
+    beez::plugin::PluginHost pluginHost;
+    const beez::core::RunOptions Options {.maxThreads = 4};
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const beez::core::PhaseRequest Request {.phase = "qa", .scopes = {"code"}};
+    const auto Result = orchestrator.runPhase(Request);
+    ASSERT_TRUE(Result.hasValue());
+    EXPECT_EQ(peakConcurrentCallbacks.load(), 1);
 }
 
 namespace

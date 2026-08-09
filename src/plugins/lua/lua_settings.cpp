@@ -9,11 +9,13 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
@@ -25,6 +27,27 @@ namespace
 {
 
 [[nodiscard]] std::vector<std::string> readStringArray(const sol::table& table);
+
+void warnUnknownTableKeys(const sol::table& table,
+                          const std::unordered_set<std::string>& knownKeys,
+                          const std::string& prefix)
+{
+    table.for_each(
+        [&knownKeys, &prefix](const sol::object& key, const sol::object& /*value*/)
+        {
+            if (!key.is<std::string>())
+            {
+                return;
+            }
+
+            const std::string KeyString = key.as<std::string>();
+            if (!knownKeys.contains(KeyString))
+            {
+                std::cerr << "Warning: unknown beez.config key '" << prefix << KeyString
+                          << "' (ignored)\n";
+            }
+        });
+}
 
 [[nodiscard]] std::optional<logging::OutputMode> parseOutputMode(const std::string& value)
 {
@@ -570,6 +593,8 @@ void readUiSettings(const sol::table& uiTable, core::BeezSettings& overlay)
 
 void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& settings)
 {
+    warnUnknownTableKeys(table, {"performance", "cache", "ui", "env"}, "");
+
     core::BeezSettings overlay;
 
     if (const sol::object PerformanceValue = table["performance"]; PerformanceValue.valid())
@@ -580,6 +605,15 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
         }
 
         const sol::table PerformanceTable = PerformanceValue.as<sol::table>();
+        warnUnknownTableKeys(PerformanceTable,
+                             {"max_threads",
+                              "cache_write_strategy",
+                              "cache_fs_metadata",
+                              "use_mmap_for_hashing",
+                              "mmap_hashing_min_bytes",
+                              "optimize_gc_for_throughput",
+                              "pin_threads_to_cores"},
+                             "performance.");
         readOptionalNumber(PerformanceTable, "max_threads", overlay.performance.maxThreads);
         readOptionalString(
             PerformanceTable, "cache_write_strategy", overlay.performance.cacheWriteStrategy);
@@ -604,6 +638,8 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
         }
 
         const sol::table CacheTable = CacheValue.as<sol::table>();
+        warnUnknownTableKeys(
+            CacheTable, {"path", "enabled", "protect", "hash", "compress"}, "cache.");
         readCacheSettings(CacheTable, overlay);
     }
 
@@ -636,7 +672,17 @@ void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& sett
             throw std::runtime_error("env must be a table");
         }
 
-        readEnvSettings(EnvValue.as<sol::table>(), overlay.env);
+        const sol::table EnvTable = EnvValue.as<sol::table>();
+        readEnvSettings(EnvTable, overlay.env);
+        warnUnknownTableKeys(EnvTable,
+                             {"load_dotenv",
+                              "dotenv_overrides_system",
+                              "files",
+                              "vars",
+                              "hash_vars",
+                              "ignore_vars_for_hashing",
+                              "mask_secrets"},
+                             "env.");
     }
 
     settings.merge(overlay);

@@ -25,6 +25,18 @@ TEST(RecordingLoggerTest, RecordsRunLifecycle)
     EXPECT_DOUBLE_EQ(logger.lines()[4].durationSeconds, 1.42);
 }
 
+TEST(RecordingLoggerTest, RecordsFailedEndRun)
+{
+    beez::logging::RecordingLogger logger;
+    logger.beginRun("Task", "fail");
+    logger.endRun(false, 0.5);
+
+    ASSERT_EQ(logger.lines().size(), 2U);
+    EXPECT_EQ(logger.lines().back().kind, beez::logging::RecordedLine::Kind::EndRun);
+    EXPECT_FALSE(logger.lines().back().success);
+    EXPECT_DOUBLE_EQ(logger.lines().back().durationSeconds, 0.5);
+}
+
 TEST(RecordingLoggerTest, TracksParallelChannels)
 {
     beez::logging::RecordingLogger logger;
@@ -38,6 +50,18 @@ TEST(RecordingLoggerTest, TracksParallelChannels)
     EXPECT_EQ(logger.lines()[0].text, "compile:code");
     EXPECT_EQ(logger.lines()[1].kind, beez::logging::RecordedLine::Kind::CommandOutput);
     EXPECT_EQ(logger.lines()[2].kind, beez::logging::RecordedLine::Kind::CloseChannel);
+}
+
+TEST(RecordingLoggerTest, AssignsDistinctChannelIds)
+{
+    beez::logging::RecordingLogger logger;
+
+    const auto First = logger.openChannel("worker-a");
+    const auto Second = logger.openChannel("worker-b");
+
+    EXPECT_NE(First.value, Second.value);
+    EXPECT_NE(First.value, 0U);
+    EXPECT_NE(Second.value, 0U);
 }
 
 TEST(NullLoggerTest, DoesNotThrow)

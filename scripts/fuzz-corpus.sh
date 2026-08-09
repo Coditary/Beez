@@ -9,6 +9,10 @@ FUZZER_CORPUS_DIR="${REPORTS_DIR}/fuzz/corpus/lua_dsl"
 FUZZER_ARTIFACTS_DIR="${REPORTS_DIR}/fuzz/artifacts"
 SEED_DIR="tests/fuzz/corpus/lua_dsl"
 
+# shellcheck source=scripts/fuzz-common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/fuzz-common.sh"
+fuzz_libfuzzer_args
+
 if ! compgen -G "${SEED_DIR}/*.lua" > /dev/null; then
     echo "ERROR: No fuzz seeds in ${SEED_DIR}/*.lua" >&2
     exit 1
@@ -21,9 +25,7 @@ cp "${SEED_DIR}"/*.lua "${FUZZER_CORPUS_DIR}/"
 echo "=== Running fuzz_lua_dsl for ${FUZZER_TIME}s (corpus collection) ==="
 ASAN_OPTIONS=detect_leaks=0 \
     "${FUZZER_BIN}" "${FUZZER_CORPUS_DIR}" \
-    -dict=tests/fuzz/lua_dsl.dict \
-    -detect_leaks=0 \
+    "${FUZZER_LIBFUZZER_ARGS[@]}" \
     -max_total_time="${FUZZER_TIME}" \
-    -rss_limit_mb=0 \
-    -artifact_prefix="${FUZZER_ARTIFACTS_DIR}/" \
+    -print_final_stats=1 \
     2>&1 | tee "${REPORTS_DIR}/fuzz/fuzz-corpus-report.txt"

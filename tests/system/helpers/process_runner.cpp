@@ -71,6 +71,14 @@ ProcessResult runBeez(const std::filesystem::path& workingDir,
         return {.exitCode = -1, .output = output + "\nfailed to close beez process"};
     }
 
+    if (WIFSIGNALED(Status))
+    {
+        return {.exitCode = -1,
+                .terminatedBySignal = true,
+                .signalNumber = WTERMSIG(Status),
+                .output = output};
+    }
+
     int exitCode = -1;
     if (WIFEXITED(Status))
     {

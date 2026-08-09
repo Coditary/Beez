@@ -54,3 +54,17 @@ TEST(WorkerOutputFormatTest, ReturnsNoSegmentsForEmptyLine)
     const auto Segments = beez::logging::splitWorkerOutputLine("", 80);
     EXPECT_TRUE(Segments.empty());
 }
+
+TEST(WorkerOutputFormatTest, UsesStdoutTerminalWidthFallback)
+{
+    const std::size_t Width = beez::logging::stdoutTerminalWidth(120);
+    EXPECT_GT(Width, 0U);
+}
+
+TEST(WorkerOutputFormatTest, KeepsLineWhenTerminalWidthEqualsPrefix)
+{
+    const auto Segments =
+        beez::logging::splitWorkerOutputLine("abcdef", beez::logging::WorkerOutputPrefix.size());
+    ASSERT_EQ(Segments.size(), 1U);
+    EXPECT_EQ(Segments[0], "abcdef");
+}

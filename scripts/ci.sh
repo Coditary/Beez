@@ -24,16 +24,19 @@ echo "=== Beez CI pipeline ==="
 echo "Compiler: $($CXX --version | head -n1)"
 echo "Conan profile: ${CONAN_PROFILE}"
 echo "Fuzzer time: ${FUZZER_TIME}s"
+echo ""
+echo "Note: CI runs these steps in parallel on GitHub Actions."
+echo "This script runs them sequentially for local reproduction."
 
+run_step "Format check" make format-check
+run_step "Static check (cppcheck)" make static-check
 run_step "Build (Release)" make build
 run_step "Tests" make test
-run_step "Format check" make format-check
-run_step "Lint" make lint
-run_step "Static analysis" make analyze
-run_step "Security analysis" make security
+run_step "Clang-tidy (CI combined pass)" make tidy-ci
 run_step "Coverage" make coverage
 run_step "Sanitizer (ASan/UBSan)" make sanitize
 run_step "Fuzzer smoke test" make fuzzer-smoke
 
 echo ""
 echo "=== CI pipeline passed ==="
+echo "Run 'make tsan' separately for ThreadSanitizer (parallel in GitHub Actions)."

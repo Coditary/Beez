@@ -316,6 +316,8 @@ TEST(LuaDslTest, LoadsSequentialWorkflow)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({ name = "gen", phase = "generate", scope = "code", run = "true" })
+step({ name = "compile", phase = "compile", scope = "code", run = "true" })
 workflow("build", {
     { phase = "generate", scope = "code" },
     { phase = "compile", scope = "code" },
@@ -340,6 +342,9 @@ TEST(LuaDslTest, LoadsWorkflowWithParallelStep)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({ name = "gen-docs", phase = "generate", scope = "docs", run = "true" })
+step({ name = "gen-code", phase = "generate", scope = "code", run = "true" })
+step({ name = "compile", phase = "compile", scope = "code", run = "true" })
 workflow("ci", {
     { parallel = {
         { phase = "generate", scope = "docs" },
@@ -564,4 +569,98 @@ task("hello", "echo without env access")
 
     beez::core::Registry registry;
     EXPECT_TRUE(loadScript(Project, registry));
+}
+
+TEST(LuaDslTest, DuplicateTaskRegistrationFailsToLoad)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("build", "echo first")
+task("build", "echo second")
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findTask("build").has_value());
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenTaskTableIsEmpty)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("empty", {})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findTask("empty").has_value());
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenStepMissingName)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    phase = "generate",
+    scope = "docs",
+    run = "true",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenStepRunIsInvalidType)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "broken",
+    phase = "generate",
+    scope = "docs",
+    run = 42,
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("broken").has_value());
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenTaskActionHasInvalidType)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("broken", {
+    42,
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findTask("broken").has_value());
+}
+
+TEST(LuaDslTest, DuplicateStepRegistrationFailsToLoad)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "gen-docs",
+    phase = "generate",
+    scope = "docs",
+    run = "echo first",
+})
+step({
+    name = "gen-docs",
+    phase = "generate",
+    scope = "docs",
+    run = "echo second",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("gen-docs").has_value());
 }

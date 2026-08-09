@@ -6,6 +6,7 @@
 --   beez debug              Debug configure + build
 --   beez coverage           Coverage configure, build, tests, HTML report
 --   beez sanitize           ASan/UBSan configure, build, tests
+--   beez tsan               ThreadSanitizer configure, build, tests
 --   beez fuzzer_smoke       Build fuzzer + short fuzz run (FUZZER_TIME, default 30s)
 --   beez fuzzer_corpus      Build fuzzer + longer corpus run (60s)
 --   beez clean              remove build/, report/, .cache/
@@ -21,7 +22,7 @@
 -- Scopes group steps for workflow/CLI selection (phase + scope), not file domains.
 --   code     — programming: configure (Release), build, test, qa, format:apply
 --   debug    — Debug configure + build (isolated from Release configure)
---   coverage / sanitize / fuzz — specialized code toolchains (own configure tree)
+--   coverage / sanitize / tsan / fuzz — specialized code toolchains (own configure tree)
 --   smoke / corpus         — fuzz run variants (phase fuzz, separate workflow targets)
 --   repo                   — repository-wide clean (future: book, docs, …)
 -- Steps in the same phase+scope are ordered via order(); independent steps run in parallel.
@@ -41,8 +42,10 @@ local CONAN_PROFILE = env_or("CONAN_PROFILE", "clang-release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
 local CMAKE_PRESET = (BUILD_TYPE == "Debug") and "conan-debug" or "conan-release"
 local DEBUG_BUILD_TREE = "build/build/Debug"
+local COVERAGE_STAMP = DEBUG_BUILD_TREE .. "/.beez-coverage-configured"
 local REPORTS_DIR = env_or("REPORTS_DIR", "report")
 local FUZZER_TIME = env_or("FUZZER_TIME", "30")
+local MIN_LINE_COVERAGE = env_or("MIN_LINE_COVERAGE", "85")
 local FUZZER_BIN = DEBUG_BUILD_TREE .. "/fuzz/fuzz_lua_dsl"
 
 local CXX_SOURCE_PATTERNS = {
@@ -232,7 +235,7 @@ step({
     run = "cmake --build --preset " .. CMAKE_PRESET,
 })
 
-order("configure:setup", "build:compile")
+-- order("configure:setup", "build:compile")
 
 -- ── Tests (ctest per suite, step cache on binaries + sources) ────────────────
 
@@ -298,10 +301,10 @@ make_test_step(
     "report/test/performance.ok"
 )
 
-order("build:compile", "test:unit")
-order("build:compile", "test:integration")
-order("build:compile", "test:system")
-order("build:compile", "test:performance")
+-- order("build:compile", "test:unit")
+-- order("build:compile", "test:integration")
+-- order("build:compile", "test:system")
+-- order("build:compile", "test:performance")
 
 -- ── Format (check + apply) ───────────────────────────────────────────────────
 
@@ -473,6 +476,28 @@ step({
     run = "mkdir -p report/security && scripts/cppcheck-security.sh && touch report/security/cppcheck.ok",
 })
 
+step({
+    name = "qa:dependency-audit",
+    phase = "qa",
+    scope = "code",
+    input = {
+        "conanfile.py",
+        "scripts/sbom-generate.sh",
+        "scripts/conan-graph-to-cyclonedx.py",
+        "scripts/dependency-audit.sh",
+        "scripts/ci-conan-profile.sh",
+        "conan/profiles/**",
+    },
+    output = {
+        "report/security/dependency-audit.ok",
+        "report/security/dependency-audit.txt",
+        "report/sbom/cyclonedx.json",
+        "report/sbom/conan-graph.json",
+    },
+    description = "Dependency vulnerability scan (OSV, Conan SBOM)",
+    run = "scripts/dependency-audit.sh build report && touch report/security/dependency-audit.ok",
+})
+
 configure_step("qa:security-tidy", {
     compdb = BUILD_TREE,
     header_filter = "(src|include|tests)/.*",
@@ -498,11 +523,11 @@ step({
     end,
 })
 
--- Lua callback steps share one interpreter — serialize them; shell steps stay parallel.
--- TODO: remove these orders once parallel Lua step execution is thread-safe.
-order("qa:format-check", "qa:lint")
-order("qa:lint", "qa:analyze-tidy")
-order("qa:analyze-tidy", "qa:security-tidy")
+-- Lua callback steps share one interpreter — the engine serializes them automatically.
+-- Explicit order() is only needed for mutate conflicts that cannot be inferred from patterns.
+-- order("qa:format-check", "qa:lint")
+-- order("qa:lint", "qa:analyze-tidy")
+-- order("qa:analyze-tidy", "qa:security-tidy")
 
 -- ── Debug build ──────────────────────────────────────────────────────────────
 
@@ -544,7 +569,7 @@ step({
     run = "cmake --build --preset conan-debug",
 })
 
-order("configure:debug", "build:debug")
+-- order("configure:debug", "build:debug")
 
 -- ── Coverage ─────────────────────────────────────────────────────────────────
 
@@ -562,13 +587,15 @@ step({
     output = {
         DEBUG_BUILD_TREE .. "/compile_commands.json",
         DEBUG_BUILD_TREE .. "/build.ninja",
+        COVERAGE_STAMP,
     },
     description = "CMake configure with coverage instrumentation",
     run = "conan install . --output-folder=build --build=missing " ..
         "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
-        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=ON " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF",
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON -DBUILD_COVERAGE=ON " ..
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF " ..
+        "&& grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' " .. DEBUG_BUILD_TREE .. "/CMakeCache.txt " ..
+        "&& touch " .. COVERAGE_STAMP,
 })
 
 step({
@@ -580,6 +607,7 @@ step({
         "include/**/*.hpp",
         "tests/**/*.cpp",
         DEBUG_BUILD_TREE .. "/build.ninja",
+        COVERAGE_STAMP,
     },
     output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
     description = "Build Debug with coverage flags",
@@ -594,11 +622,15 @@ step({
         DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
         "src/**/*.cpp",
         "tests/**/*.cpp",
+        COVERAGE_STAMP,
     },
-    output = { REPORTS_DIR .. "/test/coverage-test-report.ok" },
+    output = {
+        REPORTS_DIR .. "/test/coverage-test-report.ok",
+        REPORTS_DIR .. "/test/coverage-test-report.txt",
+        DEBUG_BUILD_TREE .. "/**/*.gcda",
+    },
     description = "Run tests and capture coverage test report",
-    run = "./scripts/coverage-test.sh build " .. REPORTS_DIR .. " && touch " .. REPORTS_DIR ..
-        "/test/coverage-test-report.ok",
+    run = "./scripts/coverage-test.sh build " .. REPORTS_DIR,
 })
 
 step({
@@ -608,15 +640,19 @@ step({
     input = {
         DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
         "src/**/*.cpp",
+        REPORTS_DIR .. "/test/coverage-test-report.ok",
+        DEBUG_BUILD_TREE .. "/**/*.gcda",
     },
     output = { REPORTS_DIR .. "/coverage/index.html" },
-    description = "Generate HTML coverage report (gcovr)",
-    run = "./scripts/coverage-report.sh build " .. REPORTS_DIR,
+    description = "Generate HTML coverage report and enforce minimum line coverage (" ..
+        MIN_LINE_COVERAGE .. "%)",
+    run = "MIN_LINE_COVERAGE=" .. MIN_LINE_COVERAGE .. " ./scripts/coverage-report.sh build " ..
+        REPORTS_DIR,
 })
 
-order("configure:coverage", "build:coverage")
-order("build:coverage", "test:coverage")
-order("test:coverage", "report:coverage")
+-- order("configure:coverage", "build:coverage")
+-- order("build:coverage", "test:coverage")
+-- order("test:coverage", "report:coverage")
 
 -- ── Sanitizer ────────────────────────────────────────────────────────────────
 
@@ -640,7 +676,8 @@ step({
         "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
         " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
         "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON",
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON " ..
+        "&& rm -f " .. COVERAGE_STAMP,
 })
 
 step({
@@ -675,8 +712,68 @@ step({
         "/sanitize/sanitize-report.ok",
 })
 
-order("configure:sanitize", "build:sanitize")
-order("build:sanitize", "test:sanitize")
+-- order("configure:sanitize", "build:sanitize")
+-- order("build:sanitize", "test:sanitize")
+
+-- ── ThreadSanitizer ──────────────────────────────────────────────────────────
+
+step({
+    name = "configure:tsan",
+    phase = "configure",
+    scope = "tsan",
+    input = {
+        "conanfile.py",
+        "CMakeLists.txt",
+        "cmake/**",
+        "src/**/CMakeLists.txt",
+        "tests/**/CMakeLists.txt",
+    },
+    output = {
+        DEBUG_BUILD_TREE .. "/compile_commands.json",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    description = "CMake configure with ThreadSanitizer",
+    run = "conan install . --output-folder=build --build=missing " ..
+        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
+        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF -DENABLE_TSAN=ON " ..
+        "&& rm -f " .. COVERAGE_STAMP,
+})
+
+step({
+    name = "build:tsan",
+    phase = "build",
+    scope = "tsan",
+    input = {
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "tests/**/*.cpp",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
+    description = "Build Debug with ThreadSanitizer",
+    run = "cmake --build --preset conan-debug",
+})
+
+step({
+    name = "test:tsan",
+    phase = "test",
+    scope = "tsan",
+    input = {
+        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
+        "src/**/*.cpp",
+        "tests/**/*.cpp",
+    },
+    output = { REPORTS_DIR .. "/tsan/tsan-report.ok" },
+    description = "Run tests under ThreadSanitizer",
+    run = "mkdir -p " .. REPORTS_DIR .. "/tsan && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
+        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
+        "/tsan/tsan-report.txt' && touch " .. REPORTS_DIR .. "/tsan/tsan-report.ok",
+})
+
+-- order("configure:tsan", "build:tsan")
+-- order("build:tsan", "test:tsan")
 
 -- ── Fuzzer ───────────────────────────────────────────────────────────────────
 
@@ -722,6 +819,8 @@ step({
         FUZZER_BIN,
         "tests/fuzz/corpus/lua_dsl/*.lua",
         "tests/fuzz/lua_dsl.dict",
+        "scripts/fuzz-common.sh",
+        "scripts/fuzz-smoke.sh",
     },
     output = { REPORTS_DIR .. "/fuzz/fuzz-smoke-report.txt" },
     description = "Short fuzz run (" .. FUZZER_TIME .. "s default)",
@@ -737,15 +836,56 @@ step({
         FUZZER_BIN,
         "tests/fuzz/corpus/lua_dsl/*.lua",
         "tests/fuzz/lua_dsl.dict",
+        "scripts/fuzz-common.sh",
+        "scripts/fuzz-corpus.sh",
     },
     output = { REPORTS_DIR .. "/fuzz/fuzz-corpus-report.txt" },
     description = "Longer fuzz run for corpus collection (60s)",
     run = "FUZZER_TIME=60 REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-corpus.sh build",
 })
 
-order("configure:fuzzer", "build:fuzzer")
-order("build:fuzzer", "fuzz:smoke")
-order("build:fuzzer", "fuzz:corpus")
+step({
+    name = "fuzz:seed-verify",
+    phase = "fuzz",
+    scope = "verify",
+    input = {
+        FUZZER_BIN,
+        "tests/fuzz/corpus/lua_dsl/*.lua",
+        "scripts/fuzz-seed-verify.sh",
+    },
+    output = { REPORTS_DIR .. "/fuzz/fuzz-seed-verify-report.txt" },
+    description = "Run each committed fuzz seed through the harness once",
+    run = "REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-seed-verify.sh build",
+})
+
+step({
+    name = "fuzz:torture",
+    phase = "fuzz",
+    scope = "torture",
+    input = {
+        FUZZER_BIN,
+        "tests/fuzz/corpus/lua_dsl/*.lua",
+        "tests/fuzz/lua_dsl.dict",
+        "scripts/fuzz-common.sh",
+        "scripts/fuzz-torture.sh",
+    },
+    output = { REPORTS_DIR .. "/fuzz/fuzz-torture-report.txt" },
+    description = "Aggressive multi-minute fuzz run (FUZZER_TIME=300 default)",
+    run = "FUZZER_TIME=" .. (beez.env("FUZZER_TORTURE_TIME") or "300") ..
+        " REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-torture.sh build",
+})
+
+-- order("configure:fuzzer", "build:fuzzer")
+-- order("build:fuzzer", "fuzz:smoke")
+-- order("build:fuzzer", "fuzz:corpus")
+-- order("build:fuzzer", "fuzz:seed-verify")
+-- order("build:fuzzer", "fuzz:torture")
+
+workflow("fuzzer_torture", {
+    { phase = "configure", scope = "fuzz" },
+    { phase = "build", scope = "fuzz" },
+    { phase = "fuzz", scope = "torture" },
+})
 
 -- ── Clean ────────────────────────────────────────────────────────────────────
 
@@ -785,6 +925,12 @@ workflow("sanitize", {
     { phase = "configure", scope = "sanitize" },
     { phase = "build", scope = "sanitize" },
     { phase = "test", scope = "sanitize" },
+})
+
+workflow("tsan", {
+    { phase = "configure", scope = "tsan" },
+    { phase = "build", scope = "tsan" },
+    { phase = "test", scope = "tsan" },
 })
 
 workflow("fuzzer_smoke", {

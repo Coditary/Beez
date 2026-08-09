@@ -2,6 +2,8 @@
 
 #include <atomic>
 #include <filesystem>
+#include <fstream>
+#include <ios>
 #include <stdexcept>
 #include <string>
 
@@ -50,6 +52,21 @@ class FixtureProject
     [[nodiscard]] bool hasFile(const std::filesystem::path& relativePath) const
     {
         return std::filesystem::exists(path_ / relativePath);
+    }
+
+    void writeFile(const std::filesystem::path& relativePath, const std::string& content) const
+    {
+        const auto FullPath = path_ / relativePath;
+        if (relativePath.has_parent_path())
+        {
+            std::filesystem::create_directories(FullPath.parent_path());
+        }
+        std::ofstream stream(FullPath, std::ios::binary);
+        if (!stream)
+        {
+            throw std::runtime_error("failed to write fixture file: " + relativePath.string());
+        }
+        stream.write(content.data(), static_cast<std::streamsize>(content.size()));
     }
 
   private:

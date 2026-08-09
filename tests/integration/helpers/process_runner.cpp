@@ -36,6 +36,30 @@ std::string shellQuote(const std::string& value)
     return quoted;
 }
 
+ProcessResult finalizeProcessStatus(const int WaitStatus, std::string output)
+{
+    if (WaitStatus == -1)
+    {
+        return {.exitCode = -1, .output = std::move(output)};
+    }
+
+    if (WIFSIGNALED(WaitStatus))
+    {
+        return {.exitCode = -1,
+                .terminatedBySignal = true,
+                .signalNumber = WTERMSIG(WaitStatus),
+                .output = std::move(output)};
+    }
+
+    int exitCode = -1;
+    if (WIFEXITED(WaitStatus))
+    {
+        exitCode = WEXITSTATUS(WaitStatus);
+    }
+
+    return {.exitCode = exitCode, .output = std::move(output)};
+}
+
 }  // namespace
 
 ProcessResult runBeez(const std::filesystem::path& workingDir,
@@ -68,16 +92,10 @@ ProcessResult runBeez(const std::filesystem::path& workingDir,
     const int Status = pclose(pipe);
     if (Status == -1)
     {
-        return {.exitCode = -1, .output = output + "\nfailed to close beez process"};
+        return finalizeProcessStatus(-1, output + "\nfailed to close beez process");
     }
 
-    int exitCode = -1;
-    if (WIFEXITED(Status))
-    {
-        exitCode = WEXITSTATUS(Status);
-    }
-
-    return {.exitCode = exitCode, .output = output};
+    return finalizeProcessStatus(Status, std::move(output));
 }
 
 ProcessResult runShellScript(const std::filesystem::path& scriptPath,
@@ -109,16 +127,10 @@ ProcessResult runShellScript(const std::filesystem::path& scriptPath,
     const int Status = pclose(pipe);
     if (Status == -1)
     {
-        return {.exitCode = -1, .output = output + "\nfailed to close shell script"};
+        return finalizeProcessStatus(-1, output + "\nfailed to close shell script");
     }
 
-    int exitCode = -1;
-    if (WIFEXITED(Status))
-    {
-        exitCode = WEXITSTATUS(Status);
-    }
-
-    return {.exitCode = exitCode, .output = output};
+    return finalizeProcessStatus(Status, std::move(output));
 }
 
 }  // namespace beez::test

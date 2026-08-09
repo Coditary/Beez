@@ -29,13 +29,15 @@
 
 ## Documentation
 
-- [ ] Wiki updated (if user-facing behavior changed)
+- [ ] Wiki updated (required for user-visible CLI, DSL, config, cache, or UI changes)
 - [ ] `CHANGELOG.md` updated (if appropriate)
-- [ ] Not needed
+- [ ] In-repo docs updated (`README.md`, `docs/`, as needed)
+- [ ] Not needed (internal-only change)
 
 ## Checklist
 
 - [ ] New source and test files are registered in CMake where needed
 - [ ] DSL or parser changes include fuzz corpus updates when appropriate (`tests/fuzz/corpus/lua_dsl/`)
+- [ ] Line coverage on `src/` ≥ 85% (`make coverage`)
 - [ ] No unrelated drive-by refactors mixed into this change
 - [ ] I have read [`CONTRIBUTING.md`](CONTRIBUTING.md)

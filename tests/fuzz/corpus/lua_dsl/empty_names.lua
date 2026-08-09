@@ -1,0 +1,2 @@
+task("", "true")
+workflow("", {})

@@ -19,9 +19,11 @@ Core (models, registry, orchestrator)
     ↓
 Plugins (Lua DSL, shell executor)
     ↓
-CLI (main.cpp)
+CLI (main.cpp / cli when user-visible)
     ↓
-Refactor + quality assurance (make all)
+Documentation (wiki, CHANGELOG, in-repo docs)
+    ↓
+Refactor + quality assurance (make all, coverage ≥ 85%)
 ```
 
 **Not** vertical: Only extending `Registry` with no DSL binding, no tests, no CLI behavior.
@@ -151,7 +153,42 @@ Only write production code to make failing tests pass (Green phase).
 
 ---
 
-### 5. Parser / DSL changes: fuzzer
+### 5. Documentation (required for user-visible changes)
+
+Documentation is part of a vertical feature, not a follow-up task.
+
+#### Wiki ([Beez Wiki](https://github.com/Coditary/Beez/wiki))
+
+The wiki is a separate git repository on GitHub. Update it when behavior visible to users changes:
+
+| Area | Typical pages |
+|------|----------------|
+| CLI flags or commands | CLI Flag Reference, CLI Overview, Quick Reference |
+| Config keys / merge order | Config Reference, Configuration Overview |
+| DSL / `build.lua` | DSL Overview, Step/Task/Workflow declaration pages |
+| Caching | Caching chapter, troubleshooting if behavior changed |
+| Terminal UI | UI and Output chapter (modes, themes, summaries, logs) |
+| Contributor workflow | Feature Development Workflow, Code Quality, Building and Setup |
+
+Push wiki changes to the wiki repo so they are live before or right after the code merge.
+
+#### In-repository docs
+
+| File | When to update |
+|------|----------------|
+| [`CHANGELOG.md`](CHANGELOG.md) | User-visible changes, fixes, breaking changes |
+| [`README.md`](README.md) | Install paths, quick start, high-level features |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | PR process, CI, quality targets |
+| [`docs/`](README.md) | Developer workflow, architecture notes |
+| Issue/PR templates | Process or checklist changes |
+
+See [`docs/README.md`](README.md) for the full documentation map.
+
+**Definition of done for docs:** wiki and in-repo docs match the behavior on `main`. No stale flag tables, config keys, or examples.
+
+---
+
+### 6. Parser / DSL changes: fuzzer
 
 When `lua_dsl.cpp` or DSL syntax changes:
 
@@ -161,7 +198,7 @@ When `lua_dsl.cpp` or DSL syntax changes:
 
 ---
 
-### 6. Quality assurance (required before "done")
+### 7. Quality assurance (required before "done")
 
 At the end, **always** run the full pipeline:
 
@@ -179,11 +216,21 @@ This includes:
 | Lint | `lint` | clang-tidy |
 | Static analysis | `analyze` | cppcheck + clang-tidy |
 | Security | `security` | Snyk / security scripts |
-| Coverage | `coverage` | Code coverage |
+| Coverage | `coverage` | Line coverage on `src/` ≥ **85%** (enforced by `scripts/coverage-report.sh`) |
 | Sanitizer | `sanitize` | ASan + UBSan |
+| ThreadSanitizer | `tsan` | Data races / thread safety |
 | Fuzzer | `fuzzer-smoke` | Lua DSL robustness |
 
-**Definition of done:** `make all` completes without errors.
+Check coverage locally:
+
+```bash
+make coverage
+# Open report/coverage/index.html
+```
+
+Override the threshold for local experiments only: `MIN_LINE_COVERAGE=80 make coverage`.
+
+**Definition of done:** `make all` completes without errors and line coverage on `src/` is at least 85%. CI runs the same checks in parallel (see [`CONTRIBUTING.md`](../CONTRIBUTING.md)).
 
 On failure: fix issues and rerun `make all`, do not mark as done prematurely.
 
@@ -206,7 +253,10 @@ Copy this checklist into the feature description or PR:
 [ ] Integration tests (if components interact)
 [ ] System tests + fixtures (if end-to-end behavior)
 [ ] Fuzzer seed (if DSL changed)
-[ ] make all, green
+[ ] Wiki updated (if user-visible behavior changed)
+[ ] CHANGELOG.md / README / docs updated (as appropriate)
+[ ] make coverage ≥ 85% line coverage on src/
+[ ] make all green
 ```
 
 ---
@@ -243,10 +293,11 @@ Acceptance criteria:
 - ...
 
 Please implement vertically with TDD (Red → Green → Refactor)
-per docs/vertical-feature.md (tests first, then make all at the end).
+per docs/vertical-feature.md (tests first, update wiki/docs for user-visible
+changes, make all + coverage ≥ 85% at the end).
 ```
 
-The Cursor rule `.cursor/rules/vertical-feature.mdc` ensures QA steps are included automatically.
+See also [`docs/README.md`](README.md) for where user vs contributor documentation lives.
 
 ---
 
@@ -256,5 +307,7 @@ The Cursor rule `.cursor/rules/vertical-feature.mdc` ensures QA steps are includ
 - Implement a feature in only one layer and leave tests for "later"
 - Commit hash files from the fuzzer into `tests/fuzz/corpus/`
 - Skip `make all` or only run `make test`
+- Ship user-visible features without updating the wiki or CHANGELOG
+- Merge when line coverage on `src/` is below 85%
 - Forget to add new files to `CMakeLists.txt`
 - Create nested module folders (`src/core/src/`)

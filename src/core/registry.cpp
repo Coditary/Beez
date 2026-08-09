@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <optional>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,7 +21,11 @@ namespace beez::core
 
 void Registry::registerTask(Task task)
 {
-    tasks_.insert_or_assign(task.name, std::move(task));
+    if (tasks_.contains(task.name))
+    {
+        throw std::runtime_error("duplicate task name '" + task.name + "'");
+    }
+    tasks_.emplace(task.name, std::move(task));
 }
 
 void Registry::registerStep(Step step)
@@ -32,7 +37,11 @@ void Registry::registerStep(Step step)
         pendingStepConfigs_.erase(PendingIterator);
     }
 
-    steps_.insert_or_assign(step.name, std::move(step));
+    if (steps_.contains(step.name))
+    {
+        throw std::runtime_error("duplicate step name '" + step.name + "'");
+    }
+    steps_.emplace(step.name, std::move(step));
 }
 
 void Registry::configureStep(const std::string& name, const StepConfigPtr& config)
@@ -54,12 +63,66 @@ void Registry::applyStepConfig(const std::string& name, const StepConfigPtr& con
 
 void Registry::registerWorkflow(Workflow workflow)
 {
-    workflows_.insert_or_assign(workflow.name, std::move(workflow));
+    if (workflows_.contains(workflow.name))
+    {
+        throw std::runtime_error("duplicate workflow name '" + workflow.name + "'");
+    }
+    workflows_.emplace(workflow.name, std::move(workflow));
+}
+
+void Registry::validateConsistent() const
+{
+    if (pendingStepConfigs_.empty())
+    {
+        return;
+    }
+
+    std::vector<std::string> names;
+    names.reserve(pendingStepConfigs_.size());
+    for (const auto& [name, config] : pendingStepConfigs_)
+    {
+        (void)config;
+        names.push_back(name);
+    }
+
+    // NOLINTNEXTLINE(modernize-use-ranges) -- std::ranges::sort requires additional headers
+    std::sort(names.begin(), names.end());
+
+    std::string message = "configure_step referenced undefined step";
+    if (names.size() == 1U)
+    {
+        message += " '" + names.front() + "'";
+    }
+    else
+    {
+        message += "s: ";
+        bool first = true;
+        for (const auto& name : names)
+        {
+            if (!first)
+            {
+                message += ", ";
+            }
+            first = false;
+            message += "'" + name + "'";
+        }
+    }
+
+    throw std::runtime_error(message);
 }
 
 void Registry::registerStepOrder(const std::string& before, const std::string& after)
 {
     stepOrderHints_.push_back(StepOrderHint {.before = before, .after = after});
+}
+
+void Registry::clear()
+{
+    tasks_.clear();
+    steps_.clear();
+    pendingStepConfigs_.clear();
+    workflows_.clear();
+    stepOrderHints_.clear();
 }
 
 std::optional<Task> Registry::findTask(const std::string& name) const
@@ -133,7 +196,13 @@ Registry::stepLevelsForPhase(const std::string& phase, const std::string& scope)
     }
 
     const IGlobMatcher& matcher = defaultGlobMatcher();
-    return orderStepsInLevels(matched, stepOrderHints_, matcher);
+    const auto Ordered = orderStepsInLevels(matched, stepOrderHints_, matcher);
+    if (!Ordered.hasValue())
+    {
+        return Ordered.error();
+    }
+
+    return isolateCallbackStepsInLevels(Ordered.value());
 }
 
 std::vector<std::string> Registry::scopesForPhase(const std::string& phase) const

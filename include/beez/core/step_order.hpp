@@ -41,4 +41,9 @@ orderStepsInLevels(const std::vector<Step>& steps,
                    const std::vector<StepOrderHint>& hints,
                    const IGlobMatcher& matcher);
 
+// Callback steps may share a single interpreter; split parallel levels so at most one
+// callback step runs per level while shell steps stay grouped.
+[[nodiscard]] std::vector<std::vector<Step>>
+isolateCallbackStepsInLevels(std::vector<std::vector<Step>> levels);
+
 }  // namespace beez::core
