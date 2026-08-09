@@ -1,5 +1,7 @@
-#include "beez/core/cache/step_cache.hpp"
-#include "beez/core/cache/storage.hpp"
+#include "beez/core/cache/step/filesystem_store.hpp"
+
+#include "beez/core/cache/step/types.hpp"
+#include "beez/core/cache/storage/envelope.hpp"
 #include "beez/core/config/cache_options.hpp"
 
 #include <filesystem>

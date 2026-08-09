@@ -1,13 +1,12 @@
-#include "step_cache_detail.hpp"
+#include "index.hpp"
+#include "step_fingerprint.hpp"
 
-#include "beez/core/cache/content_hash.hpp"
-#include "beez/core/cache/storage.hpp"
+#include "beez/core/cache/storage/envelope.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
-#include "beez/core/model/step_config.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -18,14 +17,14 @@
 #include <sstream>
 #include <string>
 #include <system_error>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace beez::core::step_cache_detail
 {
 
-[[nodiscard]] bool outputsExist(const std::vector<std::string>& outputs,
-                                const std::filesystem::path& projectRoot)
+bool outputsExist(const std::vector<std::string>& outputs, const std::filesystem::path& projectRoot)
 {
     if (outputs.empty())
     {
@@ -37,70 +36,24 @@ namespace beez::core::step_cache_detail
                                { return std::filesystem::exists(projectRoot / relativePath); });
 }
 
-[[nodiscard]] bool stepHasArtifacts(const Step& step)
+bool stepHasArtifacts(const Step& step)
 {
     return !step.input.empty() || !step.output.empty() || !step.mutate.empty();
 }
 
-[[nodiscard]] std::string stepExecutionIdentity(const Step& step)
+void addDirectoryFromPattern(const std::string& pattern,
+                             std::unordered_set<std::string>& directories)
 {
-    std::ostringstream stream;
-    stream << step.name << '\0' << step.phase << '\0' << step.scope << '\0';
-    if (step.shellRun.has_value())
+    auto slashIndex = pattern.find('/');
+    if (slashIndex == std::string::npos)
     {
-        stream << *step.shellRun;
+        return;
     }
-    else if (step.hasCallback())
-    {
-        stream << "<callback>";
-    }
-    return stream.str();
+    directories.insert(pattern.substr(0, slashIndex));
 }
 
-[[nodiscard]] std::string configFingerprint(const StepConfigPtr& config)
+namespace
 {
-    if (config == nullptr || config->empty())
-    {
-        return {};
-    }
-    return config->cacheFingerprint();
-}
-
-[[nodiscard]] std::vector<std::string> artifactPatternsForInputs(const Step& step)
-{
-    std::vector<std::string> patterns = step.input;
-    patterns.insert(patterns.end(), step.mutate.begin(), step.mutate.end());
-    return patterns;
-}
-
-[[nodiscard]] std::string buildScriptFingerprint(const Step& step,
-                                                 const std::filesystem::path& projectRoot,
-                                                 const IContentHasher& hasher)
-{
-    if (!step.hasCallback())
-    {
-        return {};
-    }
-
-    return hasher.hashFile(projectRoot / "build.lua");
-}
-
-[[nodiscard]] std::string stepCommandFingerprint(const Step& step,
-                                                 const std::filesystem::path& projectRoot,
-                                                 const IContentHasher& hasher)
-{
-    if (step.shellRun.has_value())
-    {
-        return *step.shellRun;
-    }
-
-    if (step.hasCallback())
-    {
-        return std::string("<callback>:") + buildScriptFingerprint(step, projectRoot, hasher);
-    }
-
-    return {};
-}
 
 [[nodiscard]] std::string sanitizeIndexComponent(std::string value)
 {
@@ -112,8 +65,9 @@ namespace beez::core::step_cache_detail
     return value;
 }
 
-[[nodiscard]] std::filesystem::path indexPathForStep(const std::filesystem::path& indexRoot,
-                                                     const Step& step)
+}  // namespace
+
+std::filesystem::path indexPathForStep(const std::filesystem::path& indexRoot, const Step& step)
 {
     const std::string FileName = sanitizeIndexComponent(step.name) + "__" +
                                  sanitizeIndexComponent(step.phase) + "__" +
@@ -121,10 +75,10 @@ namespace beez::core::step_cache_detail
     return indexRoot / FileName;
 }
 
-[[nodiscard]] std::vector<InputStamp> collectInputStamps(const Step& step,
-                                                         const std::filesystem::path& projectRoot,
-                                                         const IGlobMatcher& matcher,
-                                                         GlobMetadataCache* globMetadataCache)
+std::vector<InputStamp> collectInputStamps(const Step& step,
+                                           const std::filesystem::path& projectRoot,
+                                           const IGlobMatcher& matcher,
+                                           GlobMetadataCache* globMetadataCache)
 {
     const auto InputFiles = expandGlobPatterns(
         artifactPatternsForInputs(step), projectRoot, matcher, globMetadataCache);
@@ -153,8 +107,8 @@ namespace beez::core::step_cache_detail
     return stamps;
 }
 
-[[nodiscard]] bool inputStampsMatch(const std::vector<InputStamp>& expected,
-                                    const std::vector<InputStamp>& actual)
+bool inputStampsMatch(const std::vector<InputStamp>& expected,
+                      const std::vector<InputStamp>& actual)
 {
     if (expected.size() != actual.size())
     {
@@ -174,8 +128,8 @@ namespace beez::core::step_cache_detail
     return true;
 }
 
-[[nodiscard]] std::optional<CacheIndexEntry> readCacheIndex(const std::filesystem::path& indexPath,
-                                                            const CacheOptions& options)
+std::optional<CacheIndexEntry> readCacheIndex(const std::filesystem::path& indexPath,
+                                              const CacheOptions& options)
 {
     if (!std::filesystem::exists(indexPath))
     {

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "beez/core/cache/step_cache.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
-#include "beez/core/model/step_config.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -16,7 +14,6 @@
 namespace beez::core
 {
 class GlobMetadataCache;
-class IContentHasher;
 }  // namespace beez::core
 
 namespace beez::core::step_cache_detail
@@ -26,20 +23,6 @@ namespace beez::core::step_cache_detail
                                 const std::filesystem::path& projectRoot);
 
 [[nodiscard]] bool stepHasArtifacts(const Step& step);
-
-[[nodiscard]] std::string stepExecutionIdentity(const Step& step);
-
-[[nodiscard]] std::string configFingerprint(const StepConfigPtr& config);
-
-[[nodiscard]] std::string buildScriptFingerprint(const Step& step,
-                                                 const std::filesystem::path& projectRoot,
-                                                 const IContentHasher& hasher);
-
-[[nodiscard]] std::string stepCommandFingerprint(const Step& step,
-                                                 const std::filesystem::path& projectRoot,
-                                                 const IContentHasher& hasher);
-
-[[nodiscard]] std::vector<std::string> artifactPatternsForInputs(const Step& step);
 
 void addDirectoryFromPattern(const std::string& pattern,
                              std::unordered_set<std::string>& directories);

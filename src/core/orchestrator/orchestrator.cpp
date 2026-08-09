@@ -1,8 +1,8 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "orchestrator_detail.hpp"
 
-#include "beez/core/cache/step_cache.hpp"
-#include "beez/core/cache/success_cache.hpp"
+#include "beez/core/cache/step/step_cache.hpp"
+#include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/config/performance_options.hpp"
 #include "beez/core/config/run_options.hpp"

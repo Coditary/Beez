@@ -1,4 +1,4 @@
-#include "beez/core/cache/content_hash.hpp"
+#include "beez/core/cache/fingerprint/content_hash.hpp"
 
 #include "beez/core/config/cache_options.hpp"
 

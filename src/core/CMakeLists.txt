@@ -3,17 +3,19 @@ find_package(ZLIB REQUIRED)
 
 add_library(
     beez_core STATIC
-    cache/compress.cpp
-    cache/content_hash.cpp
-    cache/filesystem_store.cpp
-    cache/include_fingerprint.cpp
-    cache/key_strategy.cpp
-    cache/output_tracker.cpp
-    cache/step_cache.cpp
-    cache/step_cache_detail.cpp
-    cache/storage.cpp
-    cache/success_cache.cpp
-    cache/write_coordinator.cpp
+    cache/fingerprint/content_hash.cpp
+    cache/fingerprint/include_fingerprint.cpp
+    cache/storage/compress.cpp
+    cache/storage/envelope.cpp
+    cache/storage/migration.cpp
+    cache/storage/write_coordinator.cpp
+    cache/step/filesystem_store.cpp
+    cache/step/index.cpp
+    cache/step/key_strategy.cpp
+    cache/step/output_tracker.cpp
+    cache/step/step_cache.cpp
+    cache/step/step_fingerprint.cpp
+    cache/success/success_cache.cpp
     config/cache_options.cpp
     config/config_paths.cpp
     config/config_schema.cpp
@@ -55,7 +57,8 @@ add_library(
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/report)
-target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache)
+target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/step)
+target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/storage)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator)
 
 target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB)

@@ -1,6 +1,6 @@
-#include "beez/core/cache/write_coordinator.hpp"
+#include "beez/core/cache/storage/write_coordinator.hpp"
 
-#include "beez/core/cache/storage.hpp"
+#include "beez/core/cache/storage/envelope.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/config/performance_options.hpp"
 

@@ -1,10 +1,10 @@
-#include "beez/core/cache/step_cache.hpp"
-#include "step_cache_detail.hpp"
+#include "beez/core/cache/step/output_tracker.hpp"
 
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
+#include "index.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -17,24 +17,13 @@
 #include <utility>
 #include <vector>
 
-namespace beez::core::step_cache_detail
-{
-
-void addDirectoryFromPattern(const std::string& pattern,
-                             std::unordered_set<std::string>& directories)
-{
-    auto slashIndex = pattern.find('/');
-    if (slashIndex == std::string::npos)
-    {
-        return;
-    }
-    directories.insert(pattern.substr(0, slashIndex));
-}
-
-}  // namespace beez::core::step_cache_detail
-
 namespace beez::core
 {
+
+bool isStepCacheable(const Step& step)
+{
+    return step_cache_detail::stepHasArtifacts(step);
+}
 
 OutputTracker::OutputTracker(std::filesystem::path projectRoot,
                              const IGlobMatcher& matcher,

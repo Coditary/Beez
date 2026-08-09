@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/cache/step_cache.hpp"
+#include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/execution/thread_pool.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"

@@ -1,12 +1,17 @@
-#include "beez/core/cache/step_cache.hpp"
-#include "step_cache_detail.hpp"
+#include "beez/core/cache/step/step_cache.hpp"
+#include "beez/core/cache/step/types.hpp"
 
-#include "beez/core/cache/content_hash.hpp"
+#include "beez/core/cache/fingerprint/content_hash.hpp"
+#include "beez/core/cache/step/filesystem_store.hpp"
+#include "beez/core/cache/step/key_strategy.hpp"
+#include "beez/core/cache/step/output_tracker.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"
+#include "index.hpp"
+#include "step_fingerprint.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -17,11 +22,6 @@
 
 namespace beez::core
 {
-
-bool isStepCacheable(const Step& step)
-{
-    return step_cache_detail::stepHasArtifacts(step);
-}
 
 StepCache::StepCache(const CacheOptions& options,
                      const IGlobMatcher& matcher,

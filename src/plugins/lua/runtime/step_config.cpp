@@ -1,6 +1,6 @@
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
-#include "beez/core/cache/success_cache.hpp"
+#include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/execution/worker_pool.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/pattern.hpp"

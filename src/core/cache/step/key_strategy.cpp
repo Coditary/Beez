@@ -1,7 +1,6 @@
-#include "beez/core/cache/step_cache.hpp"
-#include "step_cache_detail.hpp"
+#include "beez/core/cache/step/key_strategy.hpp"
 
-#include "beez/core/cache/content_hash.hpp"
+#include "beez/core/cache/fingerprint/content_hash.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
@@ -9,6 +8,8 @@
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"
+#include "index.hpp"
+#include "step_fingerprint.hpp"
 
 #include <algorithm>
 #include <filesystem>

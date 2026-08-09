@@ -1,4 +1,5 @@
-#include "beez/core/cache/storage.hpp"
+#include "beez/core/cache/storage/envelope.hpp"
+#include "beez/core/cache/storage/migration.hpp"
 
 #include "beez/core/config/cache_options.hpp"
 

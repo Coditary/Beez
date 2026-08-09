@@ -18,18 +18,18 @@ add_executable(
     cli/commands/test_run.cpp
     core/registry/test_registry.cpp
     core/test_cache_options.cpp
-    core/cache/test_content_hash.cpp
-    core/cache/test_include_fingerprint.cpp
-    core/cache/test_cache_write_coordinator.cpp
+    core/cache/fingerprint/test_content_hash.cpp
+    core/cache/fingerprint/test_include_fingerprint.cpp
+    core/cache/storage/test_cache_write_coordinator.cpp
     core/config/test_config_paths.cpp
     core/test_temp_directory.cpp
     core/test_text_table.cpp
-    core/cache/test_cache_compress.cpp
-    core/cache/test_cache_storage.cpp
+    core/cache/storage/test_cache_compress.cpp
+    core/cache/storage/test_cache_storage.cpp
     core/glob/test_expand.cpp
     core/glob/test_metadata_cache.cpp
-    core/cache/test_step_cache.cpp
-    core/cache/test_success_cache.cpp
+    core/cache/step/test_step_cache.cpp
+    core/cache/success/test_success_cache.cpp
     core/execution/test_thread_pool.cpp
     core/execution/test_worker_pool.cpp
     core/env/test_env_file.cpp

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/cache/content_hash.hpp"
+#include "beez/core/cache/fingerprint/content_hash.hpp"
 
 #include <filesystem>
 #include <string>

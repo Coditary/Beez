@@ -1,5 +1,5 @@
 #include "beez/core/runtime/context.hpp"
-#include "beez/core/cache/success_cache.hpp"
+#include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/execution/worker_pool.hpp"
 #include "beez/core/model/step_config.hpp"
 

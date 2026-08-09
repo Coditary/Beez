@@ -1,4 +1,5 @@
-#include "beez/core/cache/step_cache.hpp"
+#include "beez/core/cache/step/output_tracker.hpp"
+#include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"

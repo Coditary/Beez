@@ -2,8 +2,9 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "orchestrator_detail.hpp"
 
-#include "beez/core/cache/step_cache.hpp"
-#include "beez/core/cache/success_cache.hpp"
+#include "beez/core/cache/step/step_cache.hpp"
+#include "beez/core/cache/step/types.hpp"
+#include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"

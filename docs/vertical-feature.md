@@ -57,7 +57,7 @@ Modules are **flat** under `src/` (no per-module CMake targets). Within `src/cor
 | `util/` | expected, text_table, temp_directory | `util/` | `test_text_table.cpp`, `test_temp_directory.cpp` |
 | `registry/` | registry, step_order | `registry/` | `registry/` |
 | `config/` | settings, cache_options, ui_options, … | `config/` (+ `report/`, `ui/`) | `config/` |
-| `cache/` | step_cache, storage, compress, … | `cache/` | `cache/` |
+| `cache/` | `storage/`, `fingerprint/`, `step/`, `success/` | `cache/` | `cache/{storage,fingerprint,step,success}/` |
 | `glob/` | pattern, expand, metadata_cache | `glob/` | `glob/` |
 | `env/` | env_file | `env/` | `env/` |
 | `runtime/` | context | `runtime/` | `runtime/` |

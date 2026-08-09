@@ -1,6 +1,6 @@
-#include "beez/core/cache/include_fingerprint.hpp"
+#include "beez/core/cache/fingerprint/include_fingerprint.hpp"
 
-#include "beez/core/cache/content_hash.hpp"
+#include "beez/core/cache/fingerprint/content_hash.hpp"
 
 #include <gtest/gtest.h>
 

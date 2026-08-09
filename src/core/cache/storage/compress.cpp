@@ -1,4 +1,4 @@
-#include "beez/core/cache/compress.hpp"
+#include "beez/core/cache/storage/compress.hpp"
 
 #include "beez/core/config/cache_options.hpp"
 
