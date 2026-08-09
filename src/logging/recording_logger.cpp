@@ -31,7 +31,16 @@ void RecordingLogger::logCommandOutput(LogChannelId channel, std::string_view ou
     });
 }
 
-void RecordingLogger::endRun(bool success, double durationSeconds)
+void RecordingLogger::logFailureOutput(std::string_view output, const LogChannelId Channel)
+{
+    lines_.push_back(RecordedLine {
+        .kind = RecordedLine::Kind::FailureOutput,
+        .text = std::string(output),
+        .channel = Channel,
+    });
+}
+
+void RecordingLogger::endRun(bool success, double durationSeconds, const RunSummary& /*summary*/)
 {
     lines_.push_back(RecordedLine {
         .kind = RecordedLine::Kind::EndRun,

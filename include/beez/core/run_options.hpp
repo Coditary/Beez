@@ -1,6 +1,11 @@
 #pragma once
 
+#include "beez/core/cache_options.hpp"
+#include "beez/core/performance_options.hpp"
+#include "beez/core/ui_options.hpp"
+#include "beez/logging/logging_settings.hpp"
 #include "beez/logging/output_mode.hpp"
+#include "beez/logging/run_log_writer.hpp"
 
 #include <cstddef>
 #include <optional>
@@ -25,6 +30,11 @@ struct RunOptions
     logging::ILogger* logger = nullptr;
     StepCache* stepCache = nullptr;
     SuccessCache* successCache = nullptr;
+    CacheOptions cache;
+    PerformanceSettings performance;
+    UiSettings ui;
+    logging::LoggingSettings logging;
+    logging::RunLogWriter* runLogWriter = nullptr;
 };
 
 }  // namespace beez::core

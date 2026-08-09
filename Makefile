@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -58,6 +58,9 @@ install-beez: ## Symlink beez nach ~/.local/bin (danach: beez im Terminal)
 	@test -x $(BEEZ_BIN) || (echo "Run make build first." && exit 1)
 	BEEZ_INSTALL_DIR=$(BEEZ_INSTALL_DIR) BUILD_TYPE=$(BUILD_TYPE) ./scripts/install-beez.sh
 
+install-beez-completion: ## Shell-Tab-Completion in ~/.zshrc / ~/.bashrc eintragen
+	./scripts/install-beez-completion.sh
+
 uninstall-beez: ## beez-Symlink aus ~/.local/bin entfernen
 	BEEZ_INSTALL_DIR=$(BEEZ_INSTALL_DIR) ./scripts/uninstall-beez.sh
 
@@ -101,9 +104,8 @@ clean-reports: ## QA-Reports löschen
 
 coverage: setup-coverage ## Code-Coverage-Report erzeugen
 	cmake --build --preset conan-debug
-	@mkdir -p $(REPORTS_DIR)/test $(REPORTS_DIR)/coverage
-	bash -o pipefail -c 'cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/coverage-test-report.txt'
-	cd $(BUILD_DIR)/build/Debug && gcovr --gcov-executable 'llvm-cov gcov' --root $(CURDIR) --filter '$(CURDIR)/src/' --filter '$(CURDIR)/tests/' --html-details $(CURDIR)/$(REPORTS_DIR)/coverage/index.html .
+	./scripts/coverage-test.sh $(BUILD_DIR) $(REPORTS_DIR)
+	./scripts/coverage-report.sh $(BUILD_DIR) $(REPORTS_DIR)
 
 sanitize: setup-sanitize ## Debug-Build mit ASan/UBSan + Tests
 	cmake --build --preset conan-debug

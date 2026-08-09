@@ -1,5 +1,6 @@
 #include "beez/core/glob_expand.hpp"
 
+#include "beez/core/glob_metadata_cache.hpp"
 #include "beez/core/glob_pattern.hpp"
 
 #include <algorithm>
@@ -118,12 +119,30 @@ void collectMatches(const std::string& pattern,
 
 std::vector<std::string> expandGlobPatterns(const std::vector<std::string>& patterns,
                                             const std::filesystem::path& projectRoot,
-                                            const IGlobMatcher& matcher)
+                                            const IGlobMatcher& matcher,
+                                            GlobMetadataCache* metadataCache)
 {
     std::vector<std::string> matches;
     for (const auto& pattern : patterns)
     {
-        collectMatches(pattern, projectRoot, matcher, matches);
+        if (metadataCache != nullptr)
+        {
+            if (const auto Cached = metadataCache->lookup(pattern, projectRoot); Cached.has_value())
+            {
+                matches.insert(matches.end(), Cached->begin(), Cached->end());
+                continue;
+            }
+        }
+
+        std::vector<std::string> patternMatches;
+        collectMatches(pattern, projectRoot, matcher, patternMatches);
+
+        if (metadataCache != nullptr)
+        {
+            metadataCache->store(pattern, projectRoot, patternMatches);
+        }
+
+        matches.insert(matches.end(), patternMatches.begin(), patternMatches.end());
     }
 
     std::ranges::sort(matches);

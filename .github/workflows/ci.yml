@@ -19,6 +19,7 @@ jobs:
     env:
       CC: clang
       CXX: clang++
+      LLVM_VERSION: "22"
       FUZZER_TIME: 30
       STRICT_CI: 1
 
@@ -26,16 +27,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install LLVM toolchain
+        run: ./scripts/ci-install-llvm.sh
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake \
             ninja-build \
-            clang \
-            clang-tidy \
-            clang-format \
-            llvm \
             cppcheck \
             pipx
 

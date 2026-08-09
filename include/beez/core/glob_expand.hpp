@@ -9,8 +9,12 @@
 namespace beez::core
 {
 
-[[nodiscard]] std::vector<std::string> expandGlobPatterns(const std::vector<std::string>& patterns,
-                                                          const std::filesystem::path& projectRoot,
-                                                          const IGlobMatcher& matcher);
+class GlobMetadataCache;
+
+[[nodiscard]] std::vector<std::string>
+expandGlobPatterns(const std::vector<std::string>& patterns,
+                   const std::filesystem::path& projectRoot,
+                   const IGlobMatcher& matcher,
+                   GlobMetadataCache* metadataCache = nullptr);
 
 }  // namespace beez::core

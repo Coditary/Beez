@@ -6,12 +6,16 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <string>
 
 namespace beez::core
 {
 
+class GlobMetadataCache;
 class WorkerPool;
 class SuccessCacheSession;
+
+using CacheStatsRecorder = std::function<void(bool hit, double savedSeconds)>;
 
 class Context
 {
@@ -26,6 +30,11 @@ class Context
     }
 
     [[nodiscard]] std::filesystem::path buildScriptPath() const;
+
+    void setBuildScriptFileName(std::string fileName);
+    void setEnvFilePath(std::filesystem::path envFilePath);
+
+    [[nodiscard]] std::filesystem::path envFilePath() const;
 
     void setStepConfigAccessor(StepConfigAccessor accessor);
     void clearStepConfigAccessor();
@@ -56,12 +65,33 @@ class Context
         return workerPool_;
     }
 
+    void setGlobMetadataCache(GlobMetadataCache* cache);
+    void clearGlobMetadataCache();
+
+    [[nodiscard]] GlobMetadataCache* globMetadataCache() const
+    {
+        return globMetadataCache_;
+    }
+
+    void setCacheStatsRecorder(CacheStatsRecorder recorder);
+    void clearCacheStatsRecorder();
+
+    void recordCacheUnit(bool hit, double savedSeconds = 0.0) const;
+
+    void setPendingWorkerDuration(double durationSeconds) const;
+    [[nodiscard]] double consumePendingWorkerDuration() const;
+
   private:
     std::filesystem::path projectRoot_;
+    std::optional<std::string> buildScriptFileName_;
+    std::optional<std::filesystem::path> envFilePath_;
     StepConfigAccessor stepConfigAccessor_;
     std::optional<StepIdentity> stepIdentity_;
     SuccessCacheSession* successCacheSession_ = nullptr;
     WorkerPool* workerPool_ = nullptr;
+    GlobMetadataCache* globMetadataCache_ = nullptr;
+    CacheStatsRecorder cacheStatsRecorder_;
+    mutable std::optional<double> pendingWorkerDuration_;
 };
 
 }  // namespace beez::core

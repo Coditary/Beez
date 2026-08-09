@@ -1,7 +1,12 @@
 #include "beez/core/orchestrator.h"
 
+#include "beez/core/cache_options.hpp"
+#include "beez/core/cache_write_coordinator.hpp"
 #include "beez/core/expected.hpp"
+#include "beez/core/glob_expand.hpp"
+#include "beez/core/glob_metadata_cache.hpp"
 #include "beez/core/glob_pattern.hpp"
+#include "beez/core/performance_options.hpp"
 #include "beez/core/phase_invocation.hpp"
 #include "beez/core/phase_request.hpp"
 #include "beez/core/progress_detail.hpp"
@@ -20,8 +25,10 @@
 #include "beez/core/workflow_step.hpp"
 #include "beez/logging/logger.hpp"
 #include "beez/logging/output_mode.hpp"
+#include "beez/plugin/dsl_loader.hpp"
 #include "beez/plugin/plugin_host.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -32,6 +39,7 @@
 #include <numeric>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -49,6 +57,44 @@ namespace
     const auto End = std::chrono::steady_clock::now();
     return std::chrono::duration<double>(End - start).count();
 }
+
+class ThroughputRunScope
+{
+  public:
+    ThroughputRunScope(plugin::PluginHost& pluginHost, bool optimizeGc)
+        : pluginHost_(pluginHost), active_(optimizeGc)
+    {
+        if (active_)
+        {
+            if (auto* dslLoader = pluginHost_.dslLoader())
+            {
+                dslLoader->setGcThroughputMode(true);
+            }
+        }
+    }
+
+    ThroughputRunScope(const ThroughputRunScope&) = delete;
+    ThroughputRunScope& operator=(const ThroughputRunScope&) = delete;
+    ThroughputRunScope(ThroughputRunScope&&) = delete;
+    ThroughputRunScope& operator=(ThroughputRunScope&&) = delete;
+
+    ~ThroughputRunScope()
+    {
+        if (!active_)
+        {
+            return;
+        }
+
+        if (auto* dslLoader = pluginHost_.dslLoader())
+        {
+            dslLoader->setGcThroughputMode(false);
+        }
+    }
+
+  private:
+    plugin::PluginHost& pluginHost_;
+    bool active_;
+};
 
 }  // namespace
 
@@ -77,26 +123,54 @@ const char* toString(OrchestratorError error)
 Orchestrator::Orchestrator(Registry& registry,
                            Context& context,
                            plugin::PluginHost& pluginHost,
-                           RunOptions runOptions)  // cppcheck-suppress passedByValue
+                           const RunOptions& runOptions)
     : registry_(registry), context_(context), pluginHost_(pluginHost), runOptions_(runOptions),
-      threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads})
+      cacheWriteCoordinator_(runOptions.performance.cacheWriteStrategy),
+      globMetadataCache_(runOptions.performance.cacheFilesystemMetadata),
+      threadPool_(ThreadPoolConfig {.maxThreads = runOptions.maxThreads,
+                                    .pinThreadsToCores = runOptions.performance.pinThreadsToCores})
 {
-    if (runOptions_.enableCache && runOptions_.stepCache == nullptr)
+    if (runOptions_.enableCache)
     {
-        ownedStepCache_ =
-            std::make_unique<StepCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
-        runOptions_.stepCache = ownedStepCache_.get();
+        auto cacheOptions = runOptions_.cache;
+        if (cacheOptions.root.empty())
+        {
+            cacheOptions.root = context.projectRoot() / ".cache";
+        }
+
+        cacheOptions.writeCoordinator = &cacheWriteCoordinator_;
+        runOptions_.cache = cacheOptions;
+
+        if (runOptions_.stepCache == nullptr)
+        {
+            ownedStepCache_ = std::make_unique<StepCache>(
+                cacheOptions, defaultGlobMatcher(), &globMetadataCache_);
+            runOptions_.stepCache = ownedStepCache_.get();
+        }
+
+        if (runOptions_.successCache == nullptr)
+        {
+            ownedSuccessCache_ = std::make_unique<SuccessCache>(cacheOptions, defaultGlobMatcher());
+            runOptions_.successCache = ownedSuccessCache_.get();
+        }
     }
 
-    if (runOptions_.enableCache && runOptions_.successCache == nullptr)
+    if (globMetadataCache_.enabled())
     {
-        ownedSuccessCache_ =
-            std::make_unique<SuccessCache>(context.projectRoot() / ".cache", defaultGlobMatcher());
-        runOptions_.successCache = ownedSuccessCache_.get();
+        globMetadataCache_.clear();
+        context_.setGlobMetadataCache(&globMetadataCache_);
     }
+
+    // NOLINTNEXTLINE(readability-identifier-naming)
+    context_.setCacheStatsRecorder([this](const bool hit, const double savedSeconds)
+                                   { recordCacheUnit(hit, savedSeconds); });
 }
 
-Orchestrator::~Orchestrator() = default;
+Orchestrator::~Orchestrator()
+{
+    flushBufferedCacheWrites();
+    context_.clearGlobMetadataCache();
+}
 
 Expected<void, OrchestratorError> Orchestrator::loadBuildScript()
 {
@@ -115,10 +189,254 @@ Expected<void, OrchestratorError> Orchestrator::loadBuildScript()
     return {};
 }
 
+void Orchestrator::resetRunStats()
+{
+    cacheHitsSkipped_ = 0;
+    runTotalSteps_ = 0;
+    peakWorkers_ = 0;
+    cachedTimeSavedSeconds_ = 0.0;
+    runSegments_.clear();
+    activeRunSegment_.reset();
+}
+
+void Orchestrator::beginRunSegment(std::string label)
+{
+    if (activeRunSegment_.has_value())
+    {
+        endRunSegment(true);
+    }
+
+    activeRunSegment_ = ActiveRunSegment {
+        .label = std::move(label),
+        .started = std::chrono::steady_clock::now(),
+    };
+}
+
+void Orchestrator::endRunSegment(bool success)
+{
+    if (!activeRunSegment_.has_value())
+    {
+        return;
+    }
+
+    ActiveRunSegment segment = std::move(*activeRunSegment_);
+    activeRunSegment_.reset();
+
+    runSegments_.push_back(logging::SegmentSummary {
+        .name = std::move(segment.label),
+        .success = success,
+        .durationSeconds = elapsedSeconds(segment.started),
+        .cacheHits = segment.cacheHits,
+        .totalSteps = segment.steps,
+    });
+}
+
+// NOLINTNEXTLINE(readability-identifier-naming)
+void Orchestrator::recordCacheUnit(const bool hit, const double savedSeconds)
+{
+    ++runTotalSteps_;
+    if (hit)
+    {
+        ++cacheHitsSkipped_;
+        if (savedSeconds > 0.0)
+        {
+            cachedTimeSavedSeconds_ += savedSeconds;
+        }
+    }
+
+    if (activeRunSegment_.has_value())
+    {
+        ++activeRunSegment_->steps;
+        if (hit)
+        {
+            ++activeRunSegment_->cacheHits;
+        }
+    }
+}
+
+namespace
+{
+
+struct CallbackFileCacheStats
+{
+    std::size_t units = 0;
+    std::size_t hits = 0;
+    double savedSeconds = 0.0;
+};
+
+[[nodiscard]] CallbackFileCacheStats
+estimateCallbackFileCacheStats(const Step& step,
+                               const SuccessCache* successCache,
+                               const std::filesystem::path& projectRoot,
+                               const StepCache* stepCache,
+                               GlobMetadataCache* globMetadataCache)
+{
+    CallbackFileCacheStats stats;
+    if (successCache == nullptr || !step.hasCallback())
+    {
+        return stats;
+    }
+
+    std::vector<std::string> patterns = step.input;
+    patterns.insert(patterns.end(), step.mutate.begin(), step.mutate.end());
+    if (patterns.empty())
+    {
+        return stats;
+    }
+
+    const StepIdentity Identity {.name = step.name, .phase = step.phase, .scope = step.scope};
+    const SuccessCacheSession Session =
+        successCache->openSession(Identity, projectRoot, step.config);
+    const IGlobMatcher& matcher =
+        stepCache != nullptr ? stepCache->matcher() : defaultGlobMatcher();
+    const auto Files = expandGlobPatterns(patterns, projectRoot, matcher, globMetadataCache);
+
+    // NOLINTNEXTLINE(readability-identifier-naming) -- local set, not a constant
+    const std::unordered_set<std::string> uniqueFiles(Files.begin(), Files.end());
+    for (const auto& relativePath : uniqueFiles)
+    {
+        ++stats.units;
+        if (Session.fileSuccessCached(relativePath))
+        {
+            ++stats.hits;
+            stats.savedSeconds += Session.fileSavedDurationSeconds(relativePath);
+        }
+    }
+
+    return stats;
+}
+
+}  // namespace
+
+// NOLINTNEXTLINE(readability-identifier-naming)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters,readability-identifier-naming)
+void Orchestrator::recordCacheBulk(const std::size_t totalUnits,
+                                   // NOLINTNEXTLINE(readability-identifier-naming)
+                                   const std::size_t hits,
+                                   // NOLINTNEXTLINE(readability-identifier-naming)
+                                   const double savedSeconds)
+{
+    runTotalSteps_ += totalUnits;
+    cacheHitsSkipped_ += hits;
+    if (savedSeconds > 0.0)
+    {
+        cachedTimeSavedSeconds_ += savedSeconds;
+    }
+
+    if (activeRunSegment_.has_value())
+    {
+        activeRunSegment_->steps += totalUnits;
+        activeRunSegment_->cacheHits += hits;
+    }
+}
+
+void Orchestrator::recordStepCacheSkip(const Step& step,
+                                       const CacheLookupResult& lookup,
+                                       ProgressState& progress,
+                                       const std::string& category,
+                                       const std::string& detail)
+{
+    std::size_t totalUnits = 1;
+    std::size_t hits = 1;
+    double savedSeconds = lookup.savedDurationSeconds;
+
+    if (step.hasCallback() && runOptions_.successCache != nullptr)
+    {
+        const CallbackFileCacheStats FileStats =
+            estimateCallbackFileCacheStats(step,
+                                           runOptions_.successCache,
+                                           context_.projectRoot(),
+                                           runOptions_.stepCache,
+                                           context_.globMetadataCache());
+        totalUnits = FileStats.units + 1U;
+        hits = FileStats.hits + 1U;
+        if (savedSeconds <= 0.0 && FileStats.savedSeconds > 0.0)
+        {
+            savedSeconds = FileStats.savedSeconds;
+        }
+    }
+
+    recordCacheBulk(totalUnits, hits, savedSeconds);
+
+    if (!runOptions_.ui.hideCacheHits)
+    {
+        logProgress(progress, category, detail, true, savedSeconds, false);
+    }
+    else
+    {
+        (void)progress.index.fetch_add(1);
+    }
+}
+
+// NOLINTNEXTLINE(readability-identifier-naming)
+void Orchestrator::recordRunStep(const bool cached)
+{
+    recordCacheUnit(cached, 0.0);
+}
+
+void Orchestrator::recordPeakWorkers(std::size_t workerCount)
+{
+    peakWorkers_ = std::max(peakWorkers_, workerCount);
+}
+
+logging::RunSummary Orchestrator::buildRunSummary(double durationSeconds) const
+{
+    const std::size_t ExecutedSteps =
+        runTotalSteps_ > cacheHitsSkipped_ ? runTotalSteps_ - cacheHitsSkipped_ : 0U;
+
+    double estimatedSaved = cachedTimeSavedSeconds_;
+    if (estimatedSaved <= 0.0 && cacheHitsSkipped_ > 0U)
+    {
+        if (ExecutedSteps > 0U)
+        {
+            estimatedSaved = durationSeconds / static_cast<double>(ExecutedSteps) *
+                             static_cast<double>(cacheHitsSkipped_);
+        }
+        else if (cacheHitsSkipped_ == runTotalSteps_)
+        {
+            estimatedSaved = durationSeconds;
+        }
+    }
+
+    return logging::RunSummary {
+        .cacheHitsSkipped = cacheHitsSkipped_,
+        .totalSteps = runTotalSteps_,
+        .peakWorkers = peakWorkers_,
+        .workerThreads = threadPool_.maxConcurrency(),
+        .estimatedTimeSavedSeconds = estimatedSaved,
+        .segments = runSegments_,
+    };
+}
+
+void Orchestrator::flushBufferedCacheWrites()
+{
+    cacheWriteCoordinator_.flush(runOptions_.cache);
+}
+
+void Orchestrator::flushBufferedCacheWritesForPhase()
+{
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::Phase)
+    {
+        flushBufferedCacheWrites();
+    }
+}
+
 Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 {
+    const ThroughputRunScope ThroughputScope(pluginHost_,
+                                             runOptions_.performance.optimizeGcForThroughput);
+    const auto FlushAtRunEnd = [this](const auto& result)
+    {
+        if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+        {
+            flushBufferedCacheWrites();
+        }
+        return result;
+    };
     if (const auto FoundTask = registry_.findTask(name))
     {
+        resetRunStats();
+        beginRunSegment(name);
         if (runOptions_.logger != nullptr)
         {
             runOptions_.logger->beginRun("Task", name);
@@ -127,17 +445,21 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
         const auto Start = std::chrono::steady_clock::now();
         ProgressState progress {.total = FoundTask->actions.size()};
         const auto Result = runTask(*FoundTask, progress);
+        endRunSegment(static_cast<bool>(Result));
 
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
+            runOptions_.logger->endRun(static_cast<bool>(Result),
+                                       elapsedSeconds(Start),
+                                       buildRunSummary(elapsedSeconds(Start)));
         }
 
-        return Result;
+        return FlushAtRunEnd(Result);
     }
 
     if (const auto FoundWorkflow = registry_.findWorkflow(name))
     {
+        resetRunStats();
         if (runOptions_.logger != nullptr)
         {
             runOptions_.logger->beginRun("Workflow", name);
@@ -149,30 +471,44 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(static_cast<bool>(Result), Duration);
+            runOptions_.logger->endRun(
+                static_cast<bool>(Result), Duration, buildRunSummary(Duration));
         }
 
-        return Result;
+        return FlushAtRunEnd(Result);
     }
 
     return OrchestratorError::NotFound;
 }
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 void Orchestrator::logProgress(ProgressState& progress,
                                const std::string& category,
-                               const std::string& detail) const
+                               const std::string& detail,
+                               const bool IsCached,
+                               // NOLINTNEXTLINE(readability-identifier-naming)
+                               const double savedSeconds,
+                               // NOLINTNEXTLINE(readability-identifier-naming)
+                               const bool updateCacheStats)
 {
+    if (updateCacheStats)
+    {
+        recordCacheUnit(IsCached, IsCached ? savedSeconds : 0.0);
+    }
+    (void)progress.index.fetch_add(1);
+
     if (runOptions_.logger == nullptr)
     {
         return;
     }
 
-    const std::size_t CurrentIndex = progress.index.fetch_add(1) + 1;
+    const std::size_t CurrentIndex = progress.index.load();
     runOptions_.logger->logProgress(logging::ExecutionProgress {
         .index = CurrentIndex,
         .total = progress.total,
         .category = category,
         .detail = detail,
+        .cached = IsCached,
     });
 }
 
@@ -196,10 +532,22 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
 
     std::string capturedOutput;
     const int ExitCode = executor->execute(command, context_, &capturedOutput);
-    if (runOptions_.outputMode == logging::OutputMode::Verbose && runOptions_.logger != nullptr &&
-        !capturedOutput.empty())
+    if (runOptions_.runLogWriter != nullptr &&
+        runOptions_.runLogWriter->shouldPersistWorkerOutput(ExitCode) && !capturedOutput.empty())
     {
-        runOptions_.logger->logCommandOutput(channel, capturedOutput);
+        runOptions_.runLogWriter->writeWorkerOutput(
+            label.detail, "shell", capturedOutput, ExitCode);
+    }
+    if (runOptions_.logger != nullptr && !capturedOutput.empty())
+    {
+        if (runOptions_.outputMode == logging::OutputMode::Verbose)
+        {
+            runOptions_.logger->logCommandOutput(channel, capturedOutput);
+        }
+        else if (ExitCode != 0)
+        {
+            runOptions_.logger->logFailureOutput(capturedOutput);
+        }
     }
 
     if (ExitCode != 0)
@@ -270,13 +618,27 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         const auto Lookup = stepCache->lookup(step, context_.projectRoot(), step.config);
         if (Lookup.skip)
         {
-            logProgress(progress, Category, Detail + " (cached)");
+            recordStepCacheSkip(step, Lookup, progress, Category, Detail);
             return 0;
         }
 
-        outputTracker.emplace(context_.projectRoot(), stepCache->matcher());
+        outputTracker.emplace(
+            context_.projectRoot(), stepCache->matcher(), context_.globMetadataCache());
         outputTracker->begin(step);
     }
+
+    const auto StepStart = std::chrono::steady_clock::now();
+    const auto StoreCachedOutputs = [&](const double DurationSeconds)
+    {
+        if (outputTracker.has_value() && stepCache != nullptr)
+        {
+            stepCache->store(step,
+                             context_.projectRoot(),
+                             step.config,
+                             outputTracker->end(step),
+                             DurationSeconds);
+        }
+    };
 
     if (const auto& command = step.shellRun)
     {
@@ -287,15 +649,12 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             return Result.error();
         }
 
-        if (outputTracker.has_value() && stepCache != nullptr)
-        {
-            stepCache->store(step, context_.projectRoot(), step.config, outputTracker->end(step));
-        }
+        StoreCachedOutputs(elapsedSeconds(StepStart));
 
         return Result.value();
     }
 
-    logProgress(progress, Category, Detail);
+    logProgress(progress, Category, Detail, false, 0.0, false);
 
     if (runOptions_.dryRun)
     {
@@ -318,7 +677,18 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             context_.setSuccessCacheSession(&successCacheSession.value());
         }
 
-        WorkerPool::ExecuteFn executeWorkerCommand = [this](const std::string& command) -> int
+        struct WorkerFailureOutput
+        {
+            std::string workerName;
+            std::string output;
+        };
+
+        std::vector<WorkerFailureOutput> workerFailureOutputs;
+        std::mutex workerFailureOutputMutex;
+
+        WorkerPool::ExecuteFn executeWorkerCommand =
+            [this, step, &workerFailureOutputs, &workerFailureOutputMutex](
+                const std::string& command, const WorkerSpec& worker) -> int
         {
             auto* executor = pluginHost_.executor();
             if (executor == nullptr)
@@ -326,7 +696,28 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                 return -1;
             }
 
-            return executor->execute(command, context_, nullptr);
+            if (runOptions_.outputMode == logging::OutputMode::Verbose)
+            {
+                return executor->execute(command, context_, nullptr);
+            }
+
+            std::string capturedOutput;
+            const int ExitCode = executor->execute(command, context_, &capturedOutput);
+            if (runOptions_.runLogWriter != nullptr &&
+                runOptions_.runLogWriter->shouldPersistWorkerOutput(ExitCode) &&
+                !capturedOutput.empty())
+            {
+                runOptions_.runLogWriter->writeWorkerOutput(
+                    step.name, worker.name, capturedOutput, ExitCode);
+            }
+            if (ExitCode != 0 && !capturedOutput.empty())
+            {
+                const std::scoped_lock Lock(workerFailureOutputMutex);
+                workerFailureOutputs.push_back(WorkerFailureOutput {
+                    .workerName = worker.name, .output = std::move(capturedOutput)});
+            }
+
+            return ExitCode;
         };
 
         WorkerPool workerPool(context_.projectRoot(),
@@ -336,7 +727,10 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                               step.name,
                               step.config,
                               runOptions_.dryRun,
-                              &threadPool_);
+                              &threadPool_,
+                              // NOLINTNEXTLINE(readability-identifier-naming)
+                              [this](const bool hit, const double savedSeconds)
+                              { recordCacheUnit(hit, savedSeconds); });
         context_.setWorkerPool(&workerPool);
 
         int exitCode = 0;
@@ -358,6 +752,30 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
         else
         {
             exitCode = discardProcessOutput(RunCallbackWithWorkers);
+            if (exitCode != 0 && runOptions_.logger != nullptr)
+            {
+                for (const auto& failure : workerFailureOutputs)
+                {
+                    const logging::LogChannelId Channel =
+                        runOptions_.logger->openChannel(failure.workerName);
+                    runOptions_.logger->logFailureOutput(failure.output, Channel);
+                    runOptions_.logger->closeChannel(Channel);
+                }
+            }
+        }
+
+        recordPeakWorkers(workerPool.workerCount());
+
+        const std::size_t WorkerCount = workerPool.workerCount();
+        if (WorkerCount > 0U)
+        {
+            const bool AllWorkersCached =
+                workerPool.cacheMissCount() == 0U && workerPool.cacheHitCount() == WorkerCount;
+            recordCacheUnit(AllWorkersCached, 0.0);
+        }
+        else
+        {
+            recordCacheUnit(false, 0.0);
         }
 
         context_.clearWorkerPool();
@@ -375,10 +793,7 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
             return OrchestratorError::ExecutionFailed;
         }
 
-        if (outputTracker.has_value() && stepCache != nullptr)
-        {
-            stepCache->store(step, context_.projectRoot(), step.config, outputTracker->end(step));
-        }
+        StoreCachedOutputs(elapsedSeconds(StepStart));
 
         return exitCode;
     }
@@ -388,12 +803,17 @@ Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
 
 Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
 {
+    const ThroughputRunScope ThroughputScope(pluginHost_,
+                                             runOptions_.performance.optimizeGcForThroughput);
+
     const auto FoundStep = registry_.findStep(name);
     if (!FoundStep)
     {
         return OrchestratorError::NotFound;
     }
 
+    resetRunStats();
+    beginRunSegment(name);
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->beginRun("Step", name);
@@ -402,10 +822,19 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
     const auto Start = std::chrono::steady_clock::now();
     ProgressState progress {.total = 1};
     const auto Result = runStepInstance(*FoundStep, progress);
+    endRunSegment(static_cast<bool>(Result));
 
     if (runOptions_.logger != nullptr)
     {
-        runOptions_.logger->endRun(static_cast<bool>(Result), elapsedSeconds(Start));
+        runOptions_.logger->endRun(static_cast<bool>(Result),
+                                   elapsedSeconds(Start),
+                                   buildRunSummary(elapsedSeconds(Start)));
+    }
+
+    flushBufferedCacheWritesForPhase();
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+    {
+        flushBufferedCacheWrites();
     }
 
     return Result;
@@ -465,7 +894,11 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
 
     if (!StepLevels.hasValue())
     {
-        std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
+        if (logging::writesCliErrorsToConsole(runOptions_.outputMode))
+        {
+            std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
+        }
+        flushBufferedCacheWritesForPhase();
         return OrchestratorError::StepOrderingFailed;
     }
 
@@ -483,6 +916,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
                 const auto Result = runStepInstance(step, progress);
                 if (!Result)
                 {
+                    flushBufferedCacheWritesForPhase();
                     return Result.error();
                 }
             }
@@ -512,20 +946,26 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
 
         if (levelFailed.load())
         {
+            flushBufferedCacheWritesForPhase();
             return levelError;
         }
     }
 
+    flushBufferedCacheWritesForPhase();
     return 0;
 }
 
 Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& request)
 {
+    const ThroughputRunScope ThroughputScope(pluginHost_,
+                                             runOptions_.performance.optimizeGcForThroughput);
+
     if (request.phase.empty())
     {
         return OrchestratorError::InvalidPhaseRequest;
     }
 
+    resetRunStats();
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->beginRun("Phase", request.phase);
@@ -543,7 +983,8 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     {
         if (runOptions_.logger != nullptr)
         {
-            runOptions_.logger->endRun(true, elapsedSeconds(Start));
+            runOptions_.logger->endRun(
+                true, elapsedSeconds(Start), buildRunSummary(elapsedSeconds(Start)));
         }
         return 0;
     }
@@ -552,13 +993,16 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     for (const auto& scope : scopes)
     {
+        beginRunSegment(request.phase + ":" + scope);
         const PhaseInvocation Invocation {.phase = request.phase, .scope = scope};
         const auto Result = runPhaseInvocation(Invocation, progress);
+        endRunSegment(static_cast<bool>(Result));
         if (!Result)
         {
             if (runOptions_.logger != nullptr)
             {
-                runOptions_.logger->endRun(false, elapsedSeconds(Start));
+                runOptions_.logger->endRun(
+                    false, elapsedSeconds(Start), buildRunSummary(elapsedSeconds(Start)));
             }
             return Result.error();
         }
@@ -566,7 +1010,13 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     if (runOptions_.logger != nullptr)
     {
-        runOptions_.logger->endRun(true, elapsedSeconds(Start));
+        runOptions_.logger->endRun(
+            true, elapsedSeconds(Start), buildRunSummary(elapsedSeconds(Start)));
+    }
+
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+    {
+        flushBufferedCacheWrites();
     }
 
     return 0;
@@ -580,10 +1030,18 @@ void Orchestrator::recordWorkflowFailure(WorkflowExecutionState& executionState,
     executionState.error = error;
 }
 
+[[nodiscard]] std::string workflowSegmentLabel(const WorkflowStep& step)
+{
+    const auto& invocation = step.invocations.front();
+    return invocation.phase + ":" + invocation.scope;
+}
+
 void Orchestrator::runParallelWorkflowStep(const WorkflowStep& step,
                                            ProgressState& progress,
                                            WorkflowExecutionState& executionState)
 {
+    beginRunSegment(workflowSegmentLabel(step));
+
     std::vector<logging::LogChannelId> channels(step.invocations.size());
     for (std::size_t index = 0; index < step.invocations.size(); ++index)
     {
@@ -623,13 +1081,19 @@ void Orchestrator::runParallelWorkflowStep(const WorkflowStep& step,
     if (stepFailed.load())
     {
         recordWorkflowFailure(executionState, stepError);
+        endRunSegment(false);
+        return;
     }
+
+    endRunSegment(true);
 }
 
 void Orchestrator::runSequentialWorkflowStep(const WorkflowStep& step,
                                              ProgressState& progress,
                                              WorkflowExecutionState& executionState)
 {
+    beginRunSegment(workflowSegmentLabel(step));
+
     logging::LogChannelId channel {};
     if (runOptions_.logger != nullptr)
     {
@@ -646,7 +1110,11 @@ void Orchestrator::runSequentialWorkflowStep(const WorkflowStep& step,
     if (!Result)
     {
         recordWorkflowFailure(executionState, Result.error());
+        endRunSegment(false);
+        return;
     }
+
+    endRunSegment(true);
 }
 
 Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workflow)

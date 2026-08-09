@@ -18,7 +18,7 @@ TEST(SystemErrorTest, MissingBuildScriptFails)
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"hello"});
     EXPECT_NE(Result.exitCode, 0);
-    EXPECT_TRUE(beez::test::outputContains(Result, "build.lua not found"));
+    EXPECT_TRUE(beez::test::outputContains(Result, "build script not found"));
 }
 
 TEST(SystemErrorTest, InvalidBuildScriptFails)
@@ -27,7 +27,7 @@ TEST(SystemErrorTest, InvalidBuildScriptFails)
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"hello"});
     EXPECT_NE(Result.exitCode, 0);
-    EXPECT_TRUE(beez::test::outputContains(Result, "failed to load build.lua"));
+    EXPECT_TRUE(beez::test::outputContains(Result, "failed to load build script"));
 }
 
 TEST(SystemErrorTest, UnknownTaskInValidProjectFails)

@@ -28,6 +28,8 @@ endif ()
 
 add_subdirectory(tests)
 
+beez_apply_coverage_targets()
+
 message(STATUS "Beez v${PROJECT_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")

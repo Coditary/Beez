@@ -370,7 +370,10 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
             });
 
         const std::vector<std::string> Files =
-            core::expandGlobPatterns(patterns, context.projectRoot(), core::defaultGlobMatcher());
+            core::expandGlobPatterns(patterns,
+                                     context.projectRoot(),
+                                     core::defaultGlobMatcher(),
+                                     context.globMetadataCache());
 
         sol::table files = luaState->create_table();
         for (std::size_t index = 0; index < Files.size(); ++index)
@@ -405,7 +408,14 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                 throw std::runtime_error("worker pool is not available in this step context");
             }
 
-            return pool->wait(parseWorkerHandleFromObject(handleValue));
+            const core::WorkerHandle Handle = parseWorkerHandleFromObject(handleValue);
+            const int ExitCode = pool->wait(Handle);
+            if (ExitCode == 0)
+            {
+                context.setPendingWorkerDuration(pool->workerDuration(Handle.id));
+            }
+
+            return ExitCode;
         });
 
     stepContext.set_function(
@@ -446,7 +456,13 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
             return false;
         }
 
-        return session->successCached(key);
+        const bool Cached = session->successCached(key);
+        if (Cached)
+        {
+            context.recordCacheUnit(true, 0.0);
+        }
+
+        return Cached;
     };
 
     stepContext["file_success_cached"] = [&context](const std::string& relativePath) -> bool
@@ -457,7 +473,13 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
             return false;
         }
 
-        return session->fileSuccessCached(relativePath);
+        const bool Cached = session->fileSuccessCached(relativePath);
+        if (Cached)
+        {
+            context.recordCacheUnit(true, session->fileSavedDurationSeconds(relativePath));
+        }
+
+        return Cached;
     };
 
     stepContext["cache_success"] = [&context](const std::string& key)
@@ -479,7 +501,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
             return;
         }
 
-        session->cacheFileSuccess(relativePath);
+        session->cacheFileSuccess(relativePath, context.consumePendingWorkerDuration());
     };
 
     stepContext["record_cache_miss"] = [&context](const std::string& key)

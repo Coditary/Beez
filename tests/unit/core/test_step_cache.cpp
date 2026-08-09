@@ -1,3 +1,4 @@
+#include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_cache.hpp"
@@ -45,7 +46,9 @@ class StepCacheTest : public ::testing::Test
         std::filesystem::create_directories(root);
         cacheDir = root / ".cache";
         matcher = beez::core::makeSimpleGlobMatcher();
-        cache = std::make_unique<beez::core::StepCache>(cacheDir, *matcher);
+        beez::core::CacheOptions cacheOptions;
+        cacheOptions.root = cacheDir;
+        cache = std::make_unique<beez::core::StepCache>(cacheOptions, *matcher);
     }
 
     void TearDown() override
@@ -165,6 +168,34 @@ TEST_F(StepCacheTest, HitViaIndexOnRepeatedLookup)
     ASSERT_TRUE(First.skip);
     ASSERT_TRUE(Second.skip);
     EXPECT_EQ(First.key, Second.key);
+}
+
+TEST_F(StepCacheTest, LookupReturnsStoredDurationSeconds)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    constexpr double KDuration = 42.5;
+    cache->store(Step, root, nullptr, {"build/main.o"}, KDuration);
+
+    const auto Result = cache->lookup(Step, root, nullptr);
+    ASSERT_TRUE(Result.skip);
+    EXPECT_DOUBLE_EQ(Result.savedDurationSeconds, KDuration);
+}
+
+TEST_F(StepCacheTest, StoreLookupPathPreservesIndexedDuration)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    constexpr double KDuration = 12.25;
+    cache->store(Step, root, nullptr, {"build/main.o"}, KDuration);
+
+    const auto Second = cache->lookup(Step, root, nullptr);
+    ASSERT_TRUE(Second.skip);
+    EXPECT_DOUBLE_EQ(Second.savedDurationSeconds, KDuration);
 }
 
 TEST_F(StepCacheTest, MissViaIndexWhenInputSizeChanges)

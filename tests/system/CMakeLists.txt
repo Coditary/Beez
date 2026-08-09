@@ -18,7 +18,3 @@ target_compile_definitions(
 
 include(GoogleTest)
 gtest_discover_tests(beez_system_tests PROPERTIES LABELS system)
-
-if (BUILD_COVERAGE)
-    beez_enable_coverage(beez_system_tests)
-endif ()

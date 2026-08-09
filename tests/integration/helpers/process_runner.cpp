@@ -80,5 +80,46 @@ ProcessResult runBeez(const std::filesystem::path& workingDir,
     return {.exitCode = exitCode, .output = output};
 }
 
+ProcessResult runShellScript(const std::filesystem::path& scriptPath,
+                             const std::initializer_list<std::string>& envVars)
+{
+    std::string command;
+    for (const auto& envVar : envVars)
+    {
+        command += envVar;
+        command += ' ';
+    }
+    command += shellQuote("bash") + ' ' + shellQuote(scriptPath.string()) + " 2>&1";
+
+    std::string output;
+    std::array<char, 256> buffer {};
+
+    // NOLINTNEXTLINE(bugprone-command-processor,cert-env33-c,concurrency-mt-unsafe)
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe == nullptr)
+    {
+        return {.exitCode = -1, .output = "failed to start shell script"};
+    }
+
+    while (std::fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr)
+    {
+        output += buffer.data();
+    }
+
+    const int Status = pclose(pipe);
+    if (Status == -1)
+    {
+        return {.exitCode = -1, .output = output + "\nfailed to close shell script"};
+    }
+
+    int exitCode = -1;
+    if (WIFEXITED(Status))
+    {
+        exitCode = WEXITSTATUS(Status);
+    }
+
+    return {.exitCode = exitCode, .output = output};
+}
+
 }  // namespace beez::test
 // NOLINTEND(misc-include-cleaner)

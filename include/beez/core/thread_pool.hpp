@@ -12,6 +12,7 @@ struct ThreadPoolConfig
 {
     // When unset, concurrency follows hardware thread count.
     std::optional<std::size_t> maxThreads;
+    bool pinThreadsToCores = false;
 };
 
 class ThreadPool
@@ -57,15 +58,15 @@ class ThreadPool
         }
 
         const std::function<void(std::size_t)> Task(std::forward<Fn>(callback));
-        execute([&] { parallelForRange(0, count, Task); });
+        execute([this, count, &Task] { parallelForRange(0, count, Task); });
     }
 
   private:
     struct Impl;
 
-    static void parallelForRange(std::size_t begin,
-                                 std::size_t end,
-                                 const std::function<void(std::size_t)>& callback);
+    void parallelForRange(std::size_t begin,
+                          std::size_t end,
+                          const std::function<void(std::size_t)>& callback) const;
 
     void executeImpl(const std::function<void()>& callback) const;
 
@@ -73,6 +74,7 @@ class ThreadPool
     resolveConcurrency(const std::optional<std::size_t>& requested);
 
     std::size_t maxConcurrency_ = 1;
+    bool pinThreadsToCores_ = false;
     std::unique_ptr<Impl> impl_;
 };
 

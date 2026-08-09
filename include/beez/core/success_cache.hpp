@@ -1,5 +1,6 @@
 #pragma once
 
+#include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step_config.hpp"
 
@@ -23,13 +24,15 @@ class SuccessCacheSession
     SuccessCacheSession(StepIdentity identity,
                         std::filesystem::path projectRoot,
                         StepConfigPtr config,
-                        std::filesystem::path successRoot);
+                        std::filesystem::path successRoot,
+                        CacheOptions cacheOptions);
 
     [[nodiscard]] bool successCached(const std::string& key) const;
     [[nodiscard]] bool fileSuccessCached(const std::filesystem::path& relativePath) const;
+    [[nodiscard]] double fileSavedDurationSeconds(const std::filesystem::path& relativePath) const;
 
     void cacheSuccess(const std::string& key);
-    void cacheFileSuccess(const std::filesystem::path& relativePath);
+    void cacheFileSuccess(const std::filesystem::path& relativePath, double durationSeconds = 0.0);
 
     void recordCacheMiss(const std::string& key);
     void recordFileCacheMiss(const std::filesystem::path& relativePath);
@@ -43,12 +46,12 @@ class SuccessCacheSession
     [[nodiscard]] std::string entryKey(const std::string& kind, const std::string& value) const;
     [[nodiscard]] std::filesystem::path missesPath() const;
     [[nodiscard]] std::filesystem::path entryManifestPath(const std::string& key) const;
-    [[nodiscard]] bool entryMatchesCurrentContext(const std::filesystem::path& manifestPath) const;
 
     StepIdentity identity_;
     std::filesystem::path projectRoot_;
     StepConfigPtr config_;
     std::filesystem::path successRoot_;
+    CacheOptions cacheOptions_;
     std::vector<std::string> previousMisses_;
     std::vector<std::string> currentMisses_;
 };
@@ -56,7 +59,7 @@ class SuccessCacheSession
 class SuccessCache
 {
   public:
-    SuccessCache(const std::filesystem::path& cacheRoot, const IGlobMatcher& matcher);
+    SuccessCache(const CacheOptions& options, const IGlobMatcher& matcher);
 
     [[nodiscard]] SuccessCacheSession openSession(const StepIdentity& identity,
                                                   const std::filesystem::path& projectRoot,
@@ -64,6 +67,7 @@ class SuccessCache
 
   private:
     std::filesystem::path successRoot_;
+    CacheOptions cacheOptions_;
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     const IGlobMatcher& matcher_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)

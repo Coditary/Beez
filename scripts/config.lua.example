@@ -1,0 +1,87 @@
+-- Beez user configuration
+-- Copy to ~/.config/beez/config.lua
+
+return {
+    performance = {
+        max_threads = 8,
+        cache_write_strategy = "phase",
+        cache_fs_metadata = true,
+        use_mmap_for_hashing = true,
+        mmap_hashing_min_bytes = 65536,
+        optimize_gc_for_throughput = false,
+        pin_threads_to_cores = false,
+    },
+
+    cache = {
+        path = ".cache",
+        enabled = true,
+        protect = false,
+        hash = {
+            algorithm = "fnv1a64",
+            seed = 0,
+        },
+        compress = {
+            algorithm = "none",
+            level = 6,
+            mode = "auto",
+        },
+    },
+
+    ui = {
+        output_mode = "clean", -- "clean" or "verbose"
+        colors = true, -- uses built-in default palette when no theme is set
+        -- truecolor defaults to colors; set explicitly to force 16-color ANSI mapping
+        -- truecolor = true,
+        -- themes = { gruvbox = { ... } },
+        -- theme = "gruvbox", -- optional; omit to use the default palette
+        icons = true,
+        animation = {
+            progress = "minimal", -- minimal, lines, blocks, or custom table
+            indicator = "step", -- step, percent, minimal, dots, custom, or table
+            indicator_spin_interval = 80, -- ms; animated spinner with spinner indicators
+            -- indicator = { type = "dots", start = "", end_delimiter = "", spin_interval = 80 },
+        },
+        log_level = "info", -- info, warn, or error
+        hide_cache_hits = false,
+        prefix = false,
+        prefix_format = "[Worker {id}]",
+        show_time_saved = true,
+        summary = "simple", -- minimal, simple, compact, or data
+        logging = {
+            run_log = true,
+            run_log_file = ".cache/logs/latest.log",
+            log_steps = false,
+            workers = "on_failure", -- off, on_failure, or always
+            workers_dir = ".cache/logs/workers",
+        },
+    },
+
+    env = {
+        load_dotenv = true,
+        dotenv_overrides_system = false,
+        files = ".env",
+        vars = {
+            BUILD_TYPE = "Release",
+        },
+        hash_vars = {
+            "CC",
+            "CXX",
+            "CFLAGS",
+            "CXXFLAGS",
+            "LDFLAGS",
+            "BUILD_TYPE",
+        },
+        ignore_vars_for_hashing = {
+            "TERM",
+            "COLORTERM",
+            "PWD",
+            "SESSION_ID",
+        },
+        mask_secrets = {
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "GITHUB_TOKEN",
+            "NPM_AUTH_TOKEN",
+        },
+    },
+}

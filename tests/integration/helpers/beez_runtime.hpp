@@ -24,7 +24,7 @@ class BeezRuntime
         pluginHost_.initialize(registry_, context_);
     }
 
-    [[nodiscard]] beez::core::Orchestrator orchestrator(beez::core::RunOptions options = {})
+    [[nodiscard]] beez::core::Orchestrator orchestrator(const beez::core::RunOptions& options = {})
     {
         return {registry_, context_, pluginHost_, options};
     }

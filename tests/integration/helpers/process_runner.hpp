@@ -16,4 +16,7 @@ struct ProcessResult
 [[nodiscard]] ProcessResult runBeez(const std::filesystem::path& workingDir,
                                     const std::initializer_list<std::string>& args);
 
+[[nodiscard]] ProcessResult runShellScript(const std::filesystem::path& scriptPath,
+                                           const std::initializer_list<std::string>& envVars = {});
+
 }  // namespace beez::test

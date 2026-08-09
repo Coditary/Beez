@@ -1,3 +1,4 @@
+#include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/step_config.hpp"
 #include "beez/core/success_cache.hpp"
@@ -38,7 +39,9 @@ class SuccessCacheTest : public ::testing::Test
         std::filesystem::create_directories(root);
         cacheDir = root / ".cache";
         matcher = beez::core::makeSimpleGlobMatcher();
-        cache = std::make_unique<beez::core::SuccessCache>(cacheDir, *matcher);
+        beez::core::CacheOptions cacheOptions;
+        cacheOptions.root = cacheDir;
+        cache = std::make_unique<beez::core::SuccessCache>(cacheOptions, *matcher);
     }
 
     void TearDown() override
@@ -90,6 +93,20 @@ TEST_F(SuccessCacheTest, HitAfterCacheFileSuccess)
     EXPECT_TRUE(nextSession.fileSuccessCached("src/main.cpp"));
 }
 
+TEST_F(SuccessCacheTest, LookupReturnsStoredFileDurationSeconds)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+
+    auto session = openSession();
+    constexpr double KDuration = 0.42;
+    session.cacheFileSuccess("src/main.cpp", KDuration);
+    session.finish();
+
+    auto nextSession = openSession();
+    ASSERT_TRUE(nextSession.fileSuccessCached("src/main.cpp"));
+    EXPECT_DOUBLE_EQ(nextSession.fileSavedDurationSeconds("src/main.cpp"), KDuration);
+}
+
 TEST_F(SuccessCacheTest, MissWhenFileContentChanges)
 {
     writeFile(root / "src" / "main.cpp", "int main() {}\n");
@@ -99,6 +116,24 @@ TEST_F(SuccessCacheTest, MissWhenFileContentChanges)
     session.finish();
 
     writeFile(root / "src" / "main.cpp", "int main() { return 1; }\n");
+
+    auto nextSession = openSession();
+    EXPECT_FALSE(nextSession.fileSuccessCached("src/main.cpp"));
+}
+
+TEST_F(SuccessCacheTest, MissWhenIncludedHeaderChanges)
+{
+    writeFile(root / "include" / "widget.hpp", "#pragma once\nstruct Widget {};\n");
+    writeFile(root / "src" / "main.cpp", R"(
+#include "include/widget.hpp"
+int main() {}
+)");
+
+    auto session = openSession();
+    session.cacheFileSuccess("src/main.cpp");
+    session.finish();
+
+    writeFile(root / "include" / "widget.hpp", "#pragma once\nstruct Widget { int id; };\n");
 
     auto nextSession = openSession();
     EXPECT_FALSE(nextSession.fileSuccessCached("src/main.cpp"));

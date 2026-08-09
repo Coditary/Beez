@@ -6,6 +6,7 @@
 #include "beez/core/step_config.hpp"
 #include "beez/core/thread_pool.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <filesystem>
 #include <mutex>
@@ -21,6 +22,12 @@ namespace beez::core
 
 namespace
 {
+
+[[nodiscard]] double elapsedSeconds(const std::chrono::steady_clock::time_point& start)
+{
+    const auto End = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(End - start).count();
+}
 
 [[nodiscard]] bool isWorkerCacheable(const WorkerSpec& spec)
 {
@@ -49,11 +56,14 @@ WorkerPool::WorkerPool(std::filesystem::path projectRoot,
                        const IGlobMatcher& matcher,
                        std::string parentStepName,
                        StepConfigPtr parentStepConfig,
-                       bool dryRun,
-                       const ThreadPool* threadPool)
+                       // NOLINTNEXTLINE(readability-identifier-naming)
+                       const bool dryRun,
+                       const ThreadPool* threadPool,
+                       CacheStatsRecorder statsRecorder)
     : projectRoot_(std::move(projectRoot)), execute_(std::move(execute)), stepCache_(stepCache),
       matcher_(matcher), parentStepName_(std::move(parentStepName)),
-      parentStepConfig_(std::move(parentStepConfig)), dryRun_(dryRun), threadPool_(threadPool)
+      parentStepConfig_(std::move(parentStepConfig)), dryRun_(dryRun), threadPool_(threadPool),
+      statsRecorder_(std::move(statsRecorder))
 {
 }
 
@@ -189,6 +199,20 @@ int WorkerPool::executeWorker(std::size_t workerId)
         const auto Lookup = stepCache_->lookup(AsStep, projectRoot_, parentStepConfig_);
         if (Lookup.skip)
         {
+            entry.lastDurationSeconds = Lookup.savedDurationSeconds;
+            if (Lookup.savedDurationSeconds > 0.0)
+            {
+                const std::scoped_lock Lock(timingMutex_);
+                totalWorkerSavedSeconds_ += Lookup.savedDurationSeconds;
+            }
+
+            if (statsRecorder_ != nullptr)
+            {
+                statsRecorder_(true, Lookup.savedDurationSeconds);
+            }
+
+            ++cacheHitCount_;
+
             entry.done = true;
             entry.exitCode = 0;
             return 0;
@@ -198,25 +222,75 @@ int WorkerPool::executeWorker(std::size_t workerId)
         outputTracker->begin(AsStep);
     }
 
+    const auto WorkerStart = std::chrono::steady_clock::now();
     int exitCode = 0;
     for (const auto& command : entry.spec.commands)
     {
-        exitCode = execute_(command);
+        exitCode = execute_(command, entry.spec);
         if (exitCode != 0)
         {
             break;
         }
     }
+    const double WorkerDuration = elapsedSeconds(WorkerStart);
+    entry.lastDurationSeconds = WorkerDuration;
 
     entry.done = true;
     entry.exitCode = exitCode;
 
+    if (exitCode == 0)
+    {
+        const std::scoped_lock Lock(timingMutex_);
+        totalWorkerExecutionSeconds_ += WorkerDuration;
+    }
+
+    if (statsRecorder_ != nullptr)
+    {
+        statsRecorder_(false, 0.0);
+    }
+
+    ++cacheMissCount_;
+
     if (exitCode == 0 && outputTracker.has_value() && stepCache_ != nullptr)
     {
-        stepCache_->store(AsStep, projectRoot_, parentStepConfig_, outputTracker->end(AsStep));
+        stepCache_->store(
+            AsStep, projectRoot_, parentStepConfig_, outputTracker->end(AsStep), WorkerDuration);
     }
 
     return exitCode;
+}
+
+// NOLINTNEXTLINE(readability-identifier-naming)
+double WorkerPool::workerDuration(const std::size_t workerId) const
+{
+    if (workerId >= workers_.size())
+    {
+        return 0.0;
+    }
+
+    return workers_.at(workerId).lastDurationSeconds;
+}
+
+double WorkerPool::totalWorkerExecutionSeconds() const
+{
+    const std::scoped_lock Lock(timingMutex_);
+    return totalWorkerExecutionSeconds_;
+}
+
+double WorkerPool::totalWorkerSavedSeconds() const
+{
+    const std::scoped_lock Lock(timingMutex_);
+    return totalWorkerSavedSeconds_;
+}
+
+std::size_t WorkerPool::cacheHitCount() const
+{
+    return cacheHitCount_;
+}
+
+std::size_t WorkerPool::cacheMissCount() const
+{
+    return cacheMissCount_;
 }
 
 }  // namespace beez::core

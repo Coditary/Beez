@@ -21,10 +21,12 @@ TEST(ListFormatterTest, FormatsSortedTaskNames)
     EXPECT_EQ(Names[0], "alpha");
     EXPECT_EQ(Names[1], "beta");
 
-    const std::string Formatted = beez::cli::formatEntityList("tasks", Names);
-    EXPECT_NE(Formatted.find("tasks:\n"), std::string::npos);
-    EXPECT_NE(Formatted.find("  alpha\n"), std::string::npos);
-    EXPECT_NE(Formatted.find("  beta\n"), std::string::npos);
+    const std::string Formatted = beez::cli::formatEntityList(registry, "tasks");
+    EXPECT_NE(Formatted.find("tasks:\n\n"), std::string::npos);
+    EXPECT_NE(Formatted.find("Name"), std::string::npos);
+    EXPECT_NE(Formatted.find("alpha"), std::string::npos);
+    EXPECT_NE(Formatted.find("beta"), std::string::npos);
+    EXPECT_EQ(Formatted.find("Actions"), std::string::npos);
 }
 
 TEST(ListFormatterTest, FormatsWorkflowNames)
@@ -35,6 +37,11 @@ TEST(ListFormatterTest, FormatsWorkflowNames)
     const auto Names = beez::cli::collectEntityNames(registry, "workflows");
     ASSERT_EQ(Names.size(), 1U);
     EXPECT_EQ(Names[0], "build");
+
+    const std::string Formatted = beez::cli::formatEntityList(registry, "workflows");
+    EXPECT_NE(Formatted.find("Name"), std::string::npos);
+    EXPECT_NE(Formatted.find("build"), std::string::npos);
+    EXPECT_EQ(Formatted.find("Plan"), std::string::npos);
 }
 
 TEST(ListFormatterTest, FormatsUniqueSortedPhaseNamesFromSteps)
@@ -63,4 +70,27 @@ TEST(ListFormatterTest, FormatsUniqueSortedPhaseNamesFromSteps)
     ASSERT_EQ(Names.size(), 2U);
     EXPECT_EQ(Names[0], "compile");
     EXPECT_EQ(Names[1], "generate");
+
+    const std::string Formatted = beez::cli::formatEntityList(registry, "phases");
+    EXPECT_NE(Formatted.find("Scopes"), std::string::npos);
+    EXPECT_NE(Formatted.find("[lua]"), std::string::npos);
+    EXPECT_NE(Formatted.find("[code, docs]"), std::string::npos);
+}
+
+TEST(ListFormatterTest, FormatsStepMetadataTable)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "lint:cpp";
+    step.phase = "lint";
+    step.scope = "cpp";
+    step.description = "Run C++ linters";
+    registry.registerStep(std::move(step));
+
+    const std::string Formatted = beez::cli::formatEntityList(registry, "steps");
+    EXPECT_NE(Formatted.find("lint:cpp"), std::string::npos);
+    EXPECT_NE(Formatted.find("lint"), std::string::npos);
+    EXPECT_NE(Formatted.find("cpp"), std::string::npos);
+    EXPECT_NE(Formatted.find("Run C++ linters"), std::string::npos);
 }

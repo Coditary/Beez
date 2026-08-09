@@ -1,5 +1,6 @@
 #pragma once
 
+#include "beez/core/settings.hpp"
 #include "beez/plugin/dsl_loader.hpp"
 #include "beez/plugin/plugin.hpp"
 
@@ -21,7 +22,10 @@ class LuaDslLoader : public IDslLoader
     LuaDslLoader& operator=(LuaDslLoader&&) = delete;
 
     bool load(const core::Context& context, core::Registry& registry) override;
+    void setGcThroughputMode(bool enable) override;
     void releaseState();
+
+    [[nodiscard]] const core::BeezSettings& buildSettings() const;
 
   private:
     struct Impl;

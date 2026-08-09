@@ -27,9 +27,12 @@
 namespace beez::plugin::lua
 {
 
+void mergeSettingsFromLuaTable(const sol::table& table, core::BeezSettings& settings);
+
 struct LuaDslLoader::Impl
 {
     std::shared_ptr<sol::state> luaState;
+    core::BeezSettings buildSettings;
 };
 
 LuaDslLoader::LuaDslLoader() : impl_(std::make_unique<Impl>()) {}
@@ -323,10 +326,7 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
 class BeezDslEnv
 {
   public:
-    explicit BeezDslEnv(const std::filesystem::path& projectRoot)
-        : envFilePath_(projectRoot / ".env")
-    {
-    }
+    explicit BeezDslEnv(const core::Context& context) : envFilePath_(context.envFilePath()) {}
 
     sol::object env(sol::this_state lua, const std::string& key) const
     {
@@ -430,11 +430,12 @@ class DslBinder
 
 void registerDsl(const std::shared_ptr<sol::state>& luaState,
                  core::Registry& registry,
-                 const core::Context& context)
+                 const core::Context& context,
+                 core::BeezSettings& buildSettings)
 {
     const std::weak_ptr<sol::state> WeakState = luaState;
     auto binder = std::make_shared<DslBinder>(&registry, WeakState);
-    auto beezApi = std::make_shared<BeezDslEnv>(context.projectRoot());
+    auto beezApi = std::make_shared<BeezDslEnv>(context);
 
     (*luaState)["task"] = sol::overload(
         [binder](const std::string& name, const std::string& run) { binder->task(name, run); },
@@ -455,6 +456,11 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     sol::table beezTable = luaState->create_table();
     beezTable["env"] = [beezApi](sol::this_state lua, const std::string& key)
     { return beezApi->env(lua, key); };
+    beezTable["config"] = [&buildSettings, &context](const sol::table& options)
+    {
+        mergeSettingsFromLuaTable(options, buildSettings);
+        buildSettings.applyEnvironment(context);
+    };
     (*luaState)["beez"] = beezTable;
 }
 
@@ -464,11 +470,12 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 {
     try
     {
+        impl_->buildSettings = {};
         impl_->luaState = nullptr;
         impl_->luaState = std::make_shared<sol::state>();
         impl_->luaState->open_libraries(sol::lib::base, sol::lib::package);
 
-        registerDsl(impl_->luaState, registry, context);
+        registerDsl(impl_->luaState, registry, context, impl_->buildSettings);
 
         const auto ScriptPath = context.buildScriptPath().string();
         impl_->luaState->script_file(ScriptPath);
@@ -486,6 +493,29 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
         impl_->luaState = nullptr;
         return false;
     }
+}
+
+const core::BeezSettings& LuaDslLoader::buildSettings() const
+{
+    return impl_->buildSettings;
+}
+
+void LuaDslLoader::setGcThroughputMode(bool enable)
+{
+    if (impl_->luaState == nullptr)
+    {
+        return;
+    }
+
+    sol::state_view view(*impl_->luaState);
+    if (enable)
+    {
+        view.stop_gc();
+        return;
+    }
+
+    view.restart_gc();
+    view.collect_garbage();
 }
 
 void LuaDslLoader::releaseState()
