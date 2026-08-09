@@ -758,6 +758,8 @@ step({
         FUZZER_BIN,
         "tests/fuzz/corpus/lua_dsl/*.lua",
         "tests/fuzz/lua_dsl.dict",
+        "scripts/fuzz-common.sh",
+        "scripts/fuzz-smoke.sh",
     },
     output = { REPORTS_DIR .. "/fuzz/fuzz-smoke-report.txt" },
     description = "Short fuzz run (" .. FUZZER_TIME .. "s default)",
@@ -773,15 +775,56 @@ step({
         FUZZER_BIN,
         "tests/fuzz/corpus/lua_dsl/*.lua",
         "tests/fuzz/lua_dsl.dict",
+        "scripts/fuzz-common.sh",
+        "scripts/fuzz-corpus.sh",
     },
     output = { REPORTS_DIR .. "/fuzz/fuzz-corpus-report.txt" },
     description = "Longer fuzz run for corpus collection (60s)",
     run = "FUZZER_TIME=60 REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-corpus.sh build",
 })
 
+step({
+    name = "fuzz:seed-verify",
+    phase = "fuzz",
+    scope = "verify",
+    input = {
+        FUZZER_BIN,
+        "tests/fuzz/corpus/lua_dsl/*.lua",
+        "scripts/fuzz-seed-verify.sh",
+    },
+    output = { REPORTS_DIR .. "/fuzz/fuzz-seed-verify-report.txt" },
+    description = "Run each committed fuzz seed through the harness once",
+    run = "REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-seed-verify.sh build",
+})
+
+step({
+    name = "fuzz:torture",
+    phase = "fuzz",
+    scope = "torture",
+    input = {
+        FUZZER_BIN,
+        "tests/fuzz/corpus/lua_dsl/*.lua",
+        "tests/fuzz/lua_dsl.dict",
+        "scripts/fuzz-common.sh",
+        "scripts/fuzz-torture.sh",
+    },
+    output = { REPORTS_DIR .. "/fuzz/fuzz-torture-report.txt" },
+    description = "Aggressive multi-minute fuzz run (FUZZER_TIME=300 default)",
+    run = "FUZZER_TIME=" .. (beez.env("FUZZER_TORTURE_TIME") or "300") ..
+        " REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-torture.sh build",
+})
+
 order("configure:fuzzer", "build:fuzzer")
 order("build:fuzzer", "fuzz:smoke")
 order("build:fuzzer", "fuzz:corpus")
+order("build:fuzzer", "fuzz:seed-verify")
+order("build:fuzzer", "fuzz:torture")
+
+workflow("fuzzer_torture", {
+    { phase = "configure", scope = "fuzz" },
+    { phase = "build", scope = "fuzz" },
+    { phase = "fuzz", scope = "torture" },
+})
 
 -- ── Clean ────────────────────────────────────────────────────────────────────
 

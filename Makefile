@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus fuzzer-seed-verify fuzzer-torture fuzz-seeds install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -133,23 +133,25 @@ fuzzer: setup-fuzzer ## Fuzzer bauen
 fuzzer-smoke: fuzzer ## Fuzzer kurz laufen lassen (FUZZER_TIME Sekunden, default 30)
 	@test -n "$$(ls tests/fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
 		(echo "ERROR: No fuzz seeds in tests/fuzz/corpus/lua_dsl/*.lua" && exit 1)
-	rm -rf $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
-	mkdir -p $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
-	cp tests/fuzz/corpus/lua_dsl/*.lua $(FUZZER_CORPUS_DIR)/
-	@echo "=== Running fuzz_lua_dsl for $(FUZZER_TIME)s (invalid Lua input is expected) ==="
-	@mkdir -p $(REPORTS_DIR)/fuzz
-	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=$(FUZZER_TIME) -print_final_stats=1 -rss_limit_mb=0 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-smoke-report.txt'
+	FUZZER_TIME=$(FUZZER_TIME) REPORTS_DIR=$(REPORTS_DIR) scripts/fuzz-smoke.sh build
 
 fuzzer-run: fuzzer-smoke ## Alias für fuzzer-smoke
 
 fuzzer-corpus: fuzzer ## Fuzzer länger laufen lassen und Corpus sammeln
 	@test -n "$$(ls tests/fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
 		(echo "ERROR: No fuzz seeds in tests/fuzz/corpus/lua_dsl/*.lua" && exit 1)
-	rm -rf $(REPORTS_DIR)/fuzz/corpus $(FUZZER_ARTIFACTS_DIR)
-	mkdir -p $(FUZZER_CORPUS_DIR) $(FUZZER_ARTIFACTS_DIR)
-	cp tests/fuzz/corpus/lua_dsl/*.lua $(FUZZER_CORPUS_DIR)/
-	@mkdir -p $(REPORTS_DIR)/fuzz
-	bash -o pipefail -c 'ASAN_OPTIONS=detect_leaks=0 $(FUZZER_BIN) $(FUZZER_CORPUS_DIR) -dict=tests/fuzz/lua_dsl.dict -detect_leaks=0 -max_total_time=60 -rss_limit_mb=0 -artifact_prefix=$(FUZZER_ARTIFACTS_DIR)/ 2>&1 | tee $(REPORTS_DIR)/fuzz/fuzz-corpus-report.txt'
+	FUZZER_TIME=60 REPORTS_DIR=$(REPORTS_DIR) scripts/fuzz-corpus.sh build
+
+fuzzer-seed-verify: fuzzer ## Jeden Seed einmal durch den Harness jagen
+	REPORTS_DIR=$(REPORTS_DIR) scripts/fuzz-seed-verify.sh build
+
+fuzzer-torture: fuzzer ## Aggressiver Langlauf (FUZZER_TORTURE_TIME, default 300s)
+	@test -n "$$(ls tests/fuzz/corpus/lua_dsl/*.lua 2>/dev/null)" || \
+		(echo "ERROR: No fuzz seeds in tests/fuzz/corpus/lua_dsl/*.lua" && exit 1)
+	FUZZER_TIME=$(FUZZER_TORTURE_TIME) FUZZER_PROFILE=torture REPORTS_DIR=$(REPORTS_DIR) scripts/fuzz-torture.sh build
+
+fuzz-seeds: ## Field-Matrix-Seeds aus Fixtures regenerieren
+	scripts/generate-fuzz-seeds.sh
 
 all: build test format-check lint analyze security coverage sanitize fuzzer-smoke ## Komplette QS-Pipeline
 	@echo "=== All quality checks passed ==="
