@@ -17,7 +17,3 @@ gtest_discover_tests(
     PROPERTIES LABELS performance
     TIMEOUT 600
 )
-
-if (BUILD_COVERAGE)
-    beez_enable_coverage(beez_perf_tests)
-endif ()

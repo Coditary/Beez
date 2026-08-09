@@ -62,7 +62,3 @@ target_include_directories(beez_tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAK
 
 include(GoogleTest)
 gtest_discover_tests(beez_tests)
-
-if (BUILD_COVERAGE)
-    beez_enable_coverage(beez_tests)
-endif ()

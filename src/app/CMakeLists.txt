@@ -6,7 +6,3 @@ set_target_properties(beez PROPERTIES OUTPUT_NAME "beez" RUNTIME_OUTPUT_DIRECTOR
 
 include(CompilerWarnings)
 beez_set_warnings(beez PRIVATE)
-
-if (BUILD_COVERAGE)
-    beez_enable_coverage(beez)
-endif ()

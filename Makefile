@@ -104,9 +104,8 @@ clean-reports: ## QA-Reports löschen
 
 coverage: setup-coverage ## Code-Coverage-Report erzeugen
 	cmake --build --preset conan-debug
-	@mkdir -p $(REPORTS_DIR)/test $(REPORTS_DIR)/coverage
-	bash -o pipefail -c 'cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/coverage-test-report.txt'
-	cd $(BUILD_DIR)/build/Debug && gcovr --gcov-executable 'llvm-cov gcov' --root $(CURDIR) --filter '$(CURDIR)/src/' --filter '$(CURDIR)/tests/' --html-details $(CURDIR)/$(REPORTS_DIR)/coverage/index.html .
+	./scripts/coverage-test.sh $(BUILD_DIR) $(REPORTS_DIR)
+	./scripts/coverage-report.sh $(BUILD_DIR) $(REPORTS_DIR)
 
 sanitize: setup-sanitize ## Debug-Build mit ASan/UBSan + Tests
 	cmake --build --preset conan-debug

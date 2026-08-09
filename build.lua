@@ -597,9 +597,7 @@ step({
     },
     output = { REPORTS_DIR .. "/test/coverage-test-report.ok" },
     description = "Run tests and capture coverage test report",
-    run = "mkdir -p " .. REPORTS_DIR .. "/test && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
-        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
-        "/test/coverage-test-report.txt' && touch ../../../" .. REPORTS_DIR ..
+    run = "./scripts/coverage-test.sh build " .. REPORTS_DIR .. " && touch " .. REPORTS_DIR ..
         "/test/coverage-test-report.ok",
 })
 
@@ -613,10 +611,7 @@ step({
     },
     output = { REPORTS_DIR .. "/coverage/index.html" },
     description = "Generate HTML coverage report (gcovr)",
-    run = "mkdir -p " .. REPORTS_DIR .. "/coverage && cd " .. DEBUG_BUILD_TREE ..
-        " && gcovr --gcov-executable 'llvm-cov gcov' --root ../../.. " ..
-        "--filter ../../../src/ --filter ../../../tests/ " ..
-        "--html-details ../../../" .. REPORTS_DIR .. "/coverage/index.html .",
+    run = "./scripts/coverage-report.sh build " .. REPORTS_DIR,
 })
 
 order("configure:coverage", "build:coverage")
@@ -676,7 +671,7 @@ step({
     description = "Run tests under ASan/UBSan",
     run = "mkdir -p " .. REPORTS_DIR .. "/sanitize && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
         " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
-        "/sanitize/sanitize-report.txt' && touch ../../../" .. REPORTS_DIR ..
+        "/sanitize/sanitize-report.txt' && touch " .. REPORTS_DIR ..
         "/sanitize/sanitize-report.ok",
 })
 

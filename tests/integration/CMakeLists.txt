@@ -22,7 +22,3 @@ target_compile_definitions(beez_integration_tests PRIVATE "BEEZ_EXECUTABLE=\"$<T
 
 include(GoogleTest)
 gtest_discover_tests(beez_integration_tests)
-
-if (BUILD_COVERAGE)
-    beez_enable_coverage(beez_integration_tests)
-endif ()
