@@ -3,6 +3,11 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <string>
+
+#ifndef BEEZ_EXECUTABLE
+#error "BEEZ_EXECUTABLE must be defined by CMake for integration tests"
+#endif
 
 TEST(InstallCompletionTest, RegistersShellHookInRcFiles)
 {
