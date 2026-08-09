@@ -10,69 +10,119 @@ concurrency:
   group: qa-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  CC: clang
+  CXX: clang++
+  LLVM_VERSION: "22"
+  FUZZER_TIME: 30
+  MIN_LINE_COVERAGE: 85
+  STRICT_CI: 1
+
 jobs:
-  qa:
-    name: Quality Assurance
+  detect-changes:
+    name: Detect changes
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 5
+    outputs:
+      source: ${{ steps.diff.outputs.source }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    env:
-      CC: clang
-      CXX: clang++
-      LLVM_VERSION: "22"
-      FUZZER_TIME: 30
-      MIN_LINE_COVERAGE: 85
-      STRICT_CI: 1
+      - name: Detect source changes
+        id: diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="${{ github.event.pull_request.base.sha }}...${{ github.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            RANGE="${{ github.event.before }}...${{ github.sha }}"
+          else
+            echo "source=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
+          if git diff --name-only "${RANGE}" | grep -qvE '^(docs/|\.github/badges/|.*\.md$)'; then
+            echo "source=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "source=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  format-check:
+    name: Format check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install LLVM toolchain
-        run: ./scripts/ci-install-llvm.sh
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake \
-            ninja-build \
-            cppcheck \
-            pipx
-
-      - name: Install Python tools
-        run: |
-          pipx install conan
-          pipx install gcovr
-          pipx install cmakelang
-          pipx inject cmakelang pyyaml
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Install osv-scanner
-        run: ./scripts/ci-install-osv-scanner.sh
-
-      - name: Prepare Conan profile
-        run: |
-          PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
-          echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
-          echo "Using Conan profile at ${PROFILE_PATH}"
-          cat "${PROFILE_PATH}"
-
-      - name: Cache Conan packages
-        uses: actions/cache@v4
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
         with:
-          path: ~/.conan2
-          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
-          restore-keys: |
-            conan-${{ runner.os }}-
+          install-conan: 'false'
+          install-ccache: 'false'
+          install-cmakelang: 'true'
+
+      - name: Check formatting
+        run: make format-check
+
+      - name: Upload format report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: format-report
+          path: report/format/
+          if-no-files-found: ignore
+
+  static-check:
+    name: Static check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
+        with:
+          install-llvm: 'false'
+          install-conan: 'false'
+          install-ccache: 'false'
+          install-cppcheck: 'true'
+
+      - name: Run cppcheck
+        run: make static-check
+
+      - name: Upload static analysis report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-check-report
+          path: report/analyze/
+          if-no-files-found: ignore
+
+  build-test:
+    name: Build and test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.source == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
 
       - name: Build (Release)
         run: make build
 
       - name: Run tests
-        run: |
-          set -o pipefail
-          make test
+        run: make test
+
+      - name: Run clang-tidy
+        run: make tidy-ci
 
       - name: Test summary
         if: always()
@@ -88,19 +138,30 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Check formatting
-        run: make format-check
+      - name: Upload build-test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-test-reports
+          path: report/
+          if-no-files-found: ignore
 
-      - name: Lint
-        run: make lint
+  coverage:
+    name: Coverage
+    needs: detect-changes
+    if: needs.detect-changes.outputs.source == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Static analysis
-        run: make analyze
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
+        with:
+          install-gcovr: 'true'
 
-      - name: Security analysis
-        run: make security
-
-      - name: Coverage
+      - name: Generate coverage report
         run: make coverage
 
       - name: Upload coverage badge
@@ -119,66 +180,68 @@ jobs:
           path: report/coverage/
           if-no-files-found: ignore
 
-      - name: Sanitizer (ASan/UBSan)
-        run: make sanitize
-
-      - name: Fuzzer smoke test
-        run: make fuzzer-smoke
-
-      - name: Upload QA reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: qa-reports
-          path: report/
-          if-no-files-found: ignore
-
-  thread-sanitizer:
-    name: ThreadSanitizer
+  sanitize:
+    name: Sanitizer
+    needs: detect-changes
+    if: needs.detect-changes.outputs.source == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-
-    env:
-      CC: clang
-      CXX: clang++
-      LLVM_VERSION: "22"
-      STRICT_CI: 1
-
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install LLVM toolchain
-        run: ./scripts/ci-install-llvm.sh
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake \
-            ninja-build \
-            pipx
+      - name: Run ASan/UBSan tests
+        run: make sanitize
 
-      - name: Install Python tools
-        run: |
-          pipx install conan
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Prepare Conan profile
-        run: |
-          PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
-          echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
-          echo "Using Conan profile at ${PROFILE_PATH}"
-
-      - name: Cache Conan packages
-        uses: actions/cache@v4
+      - name: Upload sanitizer report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: ~/.conan2
-          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
-          restore-keys: |
-            conan-${{ runner.os }}-
+          name: sanitize-report
+          path: report/sanitize/
+          if-no-files-found: ignore
 
-      - name: ThreadSanitizer tests
+  fuzzer:
+    name: Fuzzer smoke
+    needs: detect-changes
+    if: needs.detect-changes.outputs.source == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
+
+      - name: Run fuzzer smoke test
+        run: make fuzzer-smoke
+
+      - name: Upload fuzzer report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzzer-report
+          path: report/fuzz/
+          if-no-files-found: ignore
+
+  thread-sanitizer:
+    name: ThreadSanitizer
+    needs: detect-changes
+    if: needs.detect-changes.outputs.source == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
+
+      - name: Run ThreadSanitizer tests
         run: make tsan
 
       - name: Upload TSan report
@@ -189,16 +252,62 @@ jobs:
           path: report/tsan/
           if-no-files-found: ignore
 
+  sbom:
+    name: SBOM and dependency audit
+    needs: detect-changes
+    if: needs.detect-changes.outputs.source == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-beez
+        with:
+          install-ccache: 'false'
+          install-osv-scanner: 'true'
+
+      - name: Generate SBOM
+        run: make sbom
+
+      - name: Run dependency audit
+        env:
+          DEPENDENCY_AUDIT_SBOM: ${{ github.workspace }}/report/sbom/cyclonedx.json
+        run: make dependency-audit
+
+      - name: SBOM summary
+        run: |
+          COMPONENT_COUNT="$(python3 -c "import json; print(len(json.load(open('report/sbom/cyclonedx.json'))['components']))")"
+          {
+            echo "## SBOM"
+            echo "Generated CycloneDX SBOM with **${COMPONENT_COUNT}** Conan dependencies."
+            echo ""
+            echo "Submitted to GitHub Dependency Graph for this commit."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Submit SBOM to GitHub Dependency Graph
+        uses: evryfs/sbom-dependency-submission-action@v0.0.14
+        with:
+          sbom-files: report/sbom/cyclonedx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: report/sbom/
+          if-no-files-found: error
+
   coverage-status:
-    name: Coverage
-    needs: qa
-    if: always()
+    name: Coverage status
+    needs: [detect-changes, coverage]
+    if: always() && needs.detect-changes.outputs.source == 'true'
     runs-on: ubuntu-24.04
     permissions:
       checks: write
       contents: read
-    env:
-      MIN_LINE_COVERAGE: 85
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -253,8 +362,8 @@ jobs:
 
   coverage-badge:
     name: Update coverage badge
-    needs: [qa, coverage-status]
-    if: always() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [detect-changes, coverage, coverage-status]
+    if: always() && !cancelled() && needs.detect-changes.outputs.source == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -290,55 +399,66 @@ jobs:
           git commit -m "chore: update coverage badge [skip ci]"
           git push
 
-  sbom:
-    name: SBOM
+  ci-success:
+    name: CI
+    needs:
+      - detect-changes
+      - format-check
+      - static-check
+      - build-test
+      - coverage
+      - sanitize
+      - fuzzer
+      - thread-sanitizer
+      - sbom
+      - coverage-status
+    if: always()
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Python tools
+      - name: Verify all required jobs passed
+        env:
+          DETECT_CHANGES_RESULT: ${{ needs.detect-changes.result }}
+          FORMAT_CHECK_RESULT: ${{ needs.format-check.result }}
+          STATIC_CHECK_RESULT: ${{ needs.static-check.result }}
+          BUILD_TEST_RESULT: ${{ needs.build-test.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+          SANITIZE_RESULT: ${{ needs.sanitize.result }}
+          FUZZER_RESULT: ${{ needs.fuzzer.result }}
+          TSAN_RESULT: ${{ needs.thread-sanitizer.result }}
+          SBOM_RESULT: ${{ needs.sbom.result }}
+          COVERAGE_STATUS_RESULT: ${{ needs.coverage-status.result }}
+          SOURCE_CHANGED: ${{ needs.detect-changes.outputs.source }}
         run: |
-          pipx install conan
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          failed=0
 
-      - name: Prepare Conan profile
-        run: |
-          PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
-          echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
-          echo "Using Conan profile at ${PROFILE_PATH}"
+          check_result() {
+            local name="$1"
+            local result="$2"
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "Job failed: ${name} (${result})" >&2
+              failed=1
+            fi
+          }
 
-      - name: Cache Conan packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.conan2
-          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
-          restore-keys: |
-            conan-${{ runner.os }}-
+          check_result "detect-changes" "${DETECT_CHANGES_RESULT}"
+          check_result "format-check" "${FORMAT_CHECK_RESULT}"
+          check_result "static-check" "${STATIC_CHECK_RESULT}"
+          check_result "coverage-status" "${COVERAGE_STATUS_RESULT}"
 
-      - name: Generate SBOM
-        run: ./scripts/sbom-generate.sh build report
+          if [ "${SOURCE_CHANGED}" = "true" ]; then
+            check_result "build-test" "${BUILD_TEST_RESULT}"
+            check_result "coverage" "${COVERAGE_RESULT}"
+            check_result "sanitize" "${SANITIZE_RESULT}"
+            check_result "fuzzer" "${FUZZER_RESULT}"
+            check_result "thread-sanitizer" "${TSAN_RESULT}"
+            check_result "sbom" "${SBOM_RESULT}"
+          else
+            echo "Docs-only change detected; skipping build and test jobs."
+          fi
 
-      - name: SBOM summary
-        run: |
-          COMPONENT_COUNT="$(python3 -c "import json; print(len(json.load(open('report/sbom/cyclonedx.json'))['components']))")"
-          {
-            echo "## SBOM"
-            echo "Generated CycloneDX SBOM with **${COMPONENT_COUNT}** Conan dependencies."
-            echo ""
-            echo "Submitted to GitHub Dependency Graph for this commit."
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${failed}" -ne 0 ]; then
+            echo "One or more required CI jobs failed." >&2
+            exit 1
+          fi
 
-      - name: Submit SBOM to GitHub Dependency Graph
-        uses: evryfs/sbom-dependency-submission-action@v0.0.14
-        with:
-          sbom-files: report/sbom/cyclonedx.json
-
-      - name: Upload SBOM
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom
-          path: report/sbom/
-          if-no-files-found: error
+          echo "All required CI jobs passed."

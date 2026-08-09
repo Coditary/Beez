@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-tsan setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tsan tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus fuzzer-seed-verify fuzzer-torture fuzz-seeds install-beez install-beez-completion uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-tsan setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean tidy-ci static-check format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tsan tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus fuzzer-seed-verify fuzzer-torture fuzz-seeds install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -77,6 +77,14 @@ uninstall-beez: ## beez-Symlink aus ~/.local/bin entfernen
 lint: ## clang-tidy + cmake-format check (full)
 	@mkdir -p $(REPORTS_DIR)/lint
 	bash -o pipefail -c './scripts/lint.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/lint/lint-report.txt'
+
+tidy-ci: ## Single clang-tidy pass for CI (after make build)
+	@mkdir -p $(REPORTS_DIR)/lint
+	bash -o pipefail -c './scripts/tidy-ci.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/lint/tidy-ci-report.txt'
+
+static-check: ## cppcheck static analysis (no build required)
+	@mkdir -p $(REPORTS_DIR)/analyze
+	bash -o pipefail -c './scripts/static-check.sh 2>&1 | tee $(REPORTS_DIR)/analyze/static-check-report.txt'
 
 lint-stale: ## Incremental lint (only changed or previously failed files)
 	@mkdir -p $(REPORTS_DIR)/lint

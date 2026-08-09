@@ -24,7 +24,8 @@ mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/test"
 find "${DEBUG_BUILD_TREE}" -name '*.gcda' -delete
 
 cd "${DEBUG_BUILD_TREE}"
-ctest -j1 --output-on-failure 2>&1 | tee "${REPORT_FILE}"
+CTEST_JOBS="${CTEST_JOBS:-$(nproc)}"
+ctest -j"${CTEST_JOBS}" --output-on-failure 2>&1 | tee "${REPORT_FILE}"
 
 if ! find "${DEBUG_BUILD_TREE}" -name '*.gcda' -print -quit | grep -q .; then
     echo "error: no .gcda files after ctest; coverage instrumentation data is missing" >&2

@@ -111,22 +111,26 @@ A change is ready to merge when:
 
 ## Continuous integration
 
-GitHub Actions workflow **Quality Assurance** (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`:
+GitHub Actions workflow **Quality Assurance** (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`.
 
-| Step | Make target |
-|------|-------------|
-| Build | `make build` |
-| Tests | `make test` |
-| Format | `make format-check` |
-| Lint | `make lint` |
-| Static analysis | `make analyze` |
-| Security | `make security` |
-| Coverage | `make coverage` |
-| Sanitizers | `make sanitize` |
+Jobs run **in parallel** where possible. Use the **CI** check (aggregate `ci-success` job) for branch protection.
+
+| Job | What it runs |
+|-----|----------------|
+| Format check | `make format-check` |
+| Static check | `make static-check` (cppcheck, no build) |
+| Build and test | `make build`, `make test`, `make tidy-ci` |
+| Coverage | `make coverage` (≥ 85% line coverage on `src/`) |
+| Sanitizer | `make sanitize` (ASan/UBSan) |
+| Fuzzer smoke | `make fuzzer-smoke` |
 | ThreadSanitizer | `make tsan` |
-| Fuzzer | `make fuzzer-smoke` |
+| SBOM and dependency audit | `make sbom`, `make dependency-audit` |
 
-Environment: Ubuntu 24.04, Clang (LLVM 22), Conan 2, Ninja.
+Docs-only pull requests (changes under `docs/`, `*.md`, or `.github/badges/`) skip build and test jobs but still run format and static checks.
+
+Shared setup (LLVM, Conan, ccache) lives in `.github/actions/setup-beez/`.
+
+Environment: Ubuntu 24.04, Clang (LLVM 22), Conan 2, Ninja, ccache.
 
 A separate **CodeQL** workflow (`.github/workflows/codeql.yml`) analyzes C++ on pushes to `main` and `develop`, on pull requests targeting `main`, and on a weekly schedule.
 

@@ -44,8 +44,8 @@ Do not leave the wiki outdated while in-repo docs describe new behavior.
 
 | Target | Where enforced |
 |--------|----------------|
-| `make all` green | CI, [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
-| Line coverage **≥ 85%** on `src/` | `make coverage`, `scripts/coverage-report.sh` |
-| Fuzz smoke pass | `make fuzzer-smoke` |
+| `make all` green | CI (`build-test`, `coverage`, `sanitize`, `fuzzer` jobs), [`CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| Line coverage **≥ 85%** on `src/` | `make coverage`, `scripts/coverage-report.sh`, CI `coverage` job |
+| Fuzz smoke pass | `make fuzzer-smoke`, CI `fuzzer` job |
 
 Run `make coverage` locally and open `report/coverage/index.html` before opening a PR that adds or changes production code.

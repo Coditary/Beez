@@ -230,7 +230,7 @@ make coverage
 
 Override the threshold for local experiments only: `MIN_LINE_COVERAGE=80 make coverage`.
 
-**Definition of done:** `make all` completes without errors and line coverage on `src/` is at least 85%.
+**Definition of done:** `make all` completes without errors and line coverage on `src/` is at least 85%. CI runs the same checks in parallel (see [`CONTRIBUTING.md`](../CONTRIBUTING.md)).
 
 On failure: fix issues and rerun `make all`, do not mark as done prematurely.
 
