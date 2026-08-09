@@ -5,6 +5,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 **Status:** pre-1.0 (API and DSL may change). See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
 
 [![Quality Assurance](https://github.com/Coditary/Beez/actions/workflows/ci.yml/badge.svg)](https://github.com/Coditary/Beez/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Coditary/Beez/main/.github/badges/coverage.json)](https://github.com/Coditary/Beez/actions/workflows/ci.yml)
 
 ## Features
 
@@ -88,6 +89,7 @@ make format        # apply clang-format + cmake-format
 make lint          # clang-tidy + cmake-format check
 make analyze       # static analysis
 make security      # security-focused checks
+make coverage      # coverage report (fails below 85% line coverage on src/)
 make all           # full QA pipeline (same as CI)
 ```
 

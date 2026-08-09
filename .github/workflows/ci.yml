@@ -21,6 +21,7 @@ jobs:
       CXX: clang++
       LLVM_VERSION: "22"
       FUZZER_TIME: 30
+      MIN_LINE_COVERAGE: 85
       STRICT_CI: 1
 
     steps:
@@ -99,11 +100,13 @@ jobs:
       - name: Coverage
         run: make coverage
 
-      - name: Sanitizer (ASan/UBSan)
-        run: make sanitize
-
-      - name: Fuzzer smoke test
-        run: make fuzzer-smoke
+      - name: Upload coverage badge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-badge
+          path: report/coverage/coverage-badge.json
+          if-no-files-found: ignore
 
       - name: Upload coverage report
         if: always()
@@ -113,6 +116,12 @@ jobs:
           path: report/coverage/
           if-no-files-found: ignore
 
+      - name: Sanitizer (ASan/UBSan)
+        run: make sanitize
+
+      - name: Fuzzer smoke test
+        run: make fuzzer-smoke
+
       - name: Upload QA reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -120,3 +129,104 @@ jobs:
           name: qa-reports
           path: report/
           if-no-files-found: ignore
+
+  coverage-status:
+    name: Coverage
+    needs: qa
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      checks: write
+      contents: read
+    env:
+      MIN_LINE_COVERAGE: 85
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage-report
+
+      - name: Publish coverage summary
+        id: summary
+        if: always()
+        run: ./scripts/coverage-github-summary.sh coverage-report/coverage-summary.json "${MIN_LINE_COVERAGE}"
+
+      - name: Publish coverage check
+        if: always() && steps.summary.outputs.line_percent != ''
+        uses: actions/github-script@v7
+        env:
+          LINE_PCT: ${{ steps.summary.outputs.line_percent }}
+          MEETS_THRESHOLD: ${{ steps.summary.outputs.meets_threshold }}
+          MIN_LINE_COVERAGE: ${{ env.MIN_LINE_COVERAGE }}
+        with:
+          script: |
+            const linePct = Number(process.env.LINE_PCT);
+            const min = Number(process.env.MIN_LINE_COVERAGE);
+            const meets = process.env.MEETS_THRESHOLD === 'true';
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Line coverage',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: meets ? 'success' : 'failure',
+              output: {
+                title: `${linePct}% line coverage on src/`,
+                summary: [
+                  `Minimum required: ${min}%`,
+                  meets ? 'Threshold met.' : 'Threshold not met.',
+                ].join('\n\n'),
+              },
+            });
+
+      - name: Enforce coverage threshold
+        if: always() && steps.summary.outputs.meets_threshold == 'false'
+        run: |
+          echo "Line coverage ${LINE_PCT}% is below the required ${MIN_LINE_COVERAGE}%." >&2
+          exit 1
+        env:
+          LINE_PCT: ${{ steps.summary.outputs.line_percent }}
+
+  coverage-badge:
+    name: Update coverage badge
+    needs: [qa, coverage-status]
+    if: always() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download coverage badge
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-badge
+          path: badge
+
+      - name: Commit coverage badge
+        run: |
+          if [ ! -f badge/coverage-badge.json ]; then
+            echo "No coverage badge artifact found; skipping."
+            exit 0
+          fi
+
+          mkdir -p .github/badges
+          cp badge/coverage-badge.json .github/badges/coverage.json
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .github/badges/coverage.json
+          if git diff --staged --quiet; then
+            echo "Coverage badge unchanged."
+            exit 0
+          fi
+
+          git commit -m "chore: update coverage badge [skip ci]"
+          git push

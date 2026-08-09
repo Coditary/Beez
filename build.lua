@@ -43,6 +43,7 @@ local CMAKE_PRESET = (BUILD_TYPE == "Debug") and "conan-debug" or "conan-release
 local DEBUG_BUILD_TREE = "build/build/Debug"
 local REPORTS_DIR = env_or("REPORTS_DIR", "report")
 local FUZZER_TIME = env_or("FUZZER_TIME", "30")
+local MIN_LINE_COVERAGE = env_or("MIN_LINE_COVERAGE", "85")
 local FUZZER_BIN = DEBUG_BUILD_TREE .. "/fuzz/fuzz_lua_dsl"
 
 local CXX_SOURCE_PATTERNS = {
@@ -608,10 +609,14 @@ step({
     input = {
         DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
         "src/**/*.cpp",
+        REPORTS_DIR .. "/test/coverage-test-report.ok",
+        DEBUG_BUILD_TREE .. "/**/*.gcda",
     },
     output = { REPORTS_DIR .. "/coverage/index.html" },
-    description = "Generate HTML coverage report (gcovr)",
-    run = "./scripts/coverage-report.sh build " .. REPORTS_DIR,
+    description = "Generate HTML coverage report and enforce minimum line coverage (" ..
+        MIN_LINE_COVERAGE .. "%)",
+    run = "MIN_LINE_COVERAGE=" .. MIN_LINE_COVERAGE .. " ./scripts/coverage-report.sh build " ..
+        REPORTS_DIR,
 })
 
 order("configure:coverage", "build:coverage")

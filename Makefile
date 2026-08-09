@@ -9,12 +9,14 @@ BEEZ_BIN := $(BUILD_DIR)/build/$(BUILD_TYPE)/bin/beez
 BEEZ_INSTALL_DIR ?= $(HOME)/.local/bin
 FUZZER_BIN := $(BUILD_DIR)/build/Debug/fuzz/fuzz_lua_dsl
 FUZZER_TIME ?= 30
+MIN_LINE_COVERAGE ?= 85
 FUZZER_CORPUS_DIR := $(REPORTS_DIR)/fuzz/corpus/lua_dsl
 FUZZER_ARTIFACTS_DIR := $(REPORTS_DIR)/fuzz/artifacts
 
 export CC = clang
 export CXX = clang++
 export REPORTS_DIR
+export MIN_LINE_COVERAGE
 
 CXX_FILES := $(shell find src include tests -name '*.cpp' -o -name '*.hpp' -o -name '*.h' 2>/dev/null)
 CMAKE_FILES := CMakeLists.txt src/CMakeLists.txt src/app/CMakeLists.txt src/cli/CMakeLists.txt src/core/CMakeLists.txt src/logging/CMakeLists.txt src/plugins/CMakeLists.txt src/plugins/lua/CMakeLists.txt src/plugins/shell/CMakeLists.txt tests/CMakeLists.txt tests/unit/CMakeLists.txt tests/integration/CMakeLists.txt tests/system/CMakeLists.txt tests/fuzz/CMakeLists.txt
@@ -102,7 +104,7 @@ clean: ## Build artifacts löschen
 clean-reports: ## QA-Reports löschen
 	rm -rf $(REPORTS_DIR)
 
-coverage: setup-coverage ## Code-Coverage-Report erzeugen
+coverage: setup-coverage ## Code-Coverage-Report (bricht ab unter $(MIN_LINE_COVERAGE)% auf src/)
 	cmake --build --preset conan-debug
 	./scripts/coverage-test.sh $(BUILD_DIR) $(REPORTS_DIR)
 	./scripts/coverage-report.sh $(BUILD_DIR) $(REPORTS_DIR)
