@@ -1,4 +1,3 @@
-#include "beez/core/config_paths.hpp"
 #include "beez/core/temp_directory.hpp"
 
 #include <gtest/gtest.h>
@@ -72,56 +71,22 @@ class ScopedEnv
     std::string saved_;
 };
 
-class ScopedTempTree
-{
-  public:
-    explicit ScopedTempTree(const std::filesystem::path& path) : path_(path) {}
-
-    ~ScopedTempTree()
-    {
-        std::error_code errorCode;
-        std::filesystem::remove_all(path_, errorCode);
-    }
-
-    ScopedTempTree(const ScopedTempTree&) = delete;
-    ScopedTempTree& operator=(const ScopedTempTree&) = delete;
-
-  private:
-    std::filesystem::path path_;
-};
-
 // NOLINTEND(misc-include-cleaner)
 
 }  // namespace
 
-TEST(ConfigPathsTest, UsesXdgConfigHomeWhenSet)
+TEST(TempDirectoryTest, SystemTempDirectoryIsAbsolute)
 {
-    const auto Root = beez::core::systemTempDirectory() / "beez_config_paths_xdg_test";
-    ScopedTempTree Cleanup(Root);
-    std::filesystem::create_directories(Root);
-    const ScopedEnv Xdg("XDG_CONFIG_HOME", Root.c_str());
-
-    EXPECT_EQ(beez::core::beezConfigDirectory(), Root / "beez");
-    EXPECT_EQ(beez::core::globalBeezConfigPath(), Root / "beez" / "config.lua");
+    const auto Temp = beez::core::systemTempDirectory();
+    EXPECT_FALSE(Temp.empty());
+    EXPECT_TRUE(Temp.is_absolute());
 }
 
-TEST(ConfigPathsTest, FallsBackToHomeDotConfigWhenXdgUnset)
+TEST(TempDirectoryTest, IgnoresRelativeTmpdirEnvironmentValue)
 {
-    const auto HomeRoot = beez::core::systemTempDirectory() / "beez_config_paths_home_test";
-    ScopedTempTree Cleanup(HomeRoot);
-    std::filesystem::create_directories(HomeRoot);
-    const ScopedEnv Home("HOME", HomeRoot.c_str());
-    const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");
+    const ScopedEnv Tmpdir("TMPDIR", "tmp");
 
-    EXPECT_EQ(beez::core::beezConfigDirectory(), HomeRoot / ".config" / "beez");
-    EXPECT_EQ(beez::core::globalBeezConfigPath(), HomeRoot / ".config" / "beez" / "config.lua");
-}
-
-TEST(ConfigPathsTest, ReturnsEmptyWhenHomeUnset)
-{
-    const ScopedEnv HomeUnset("HOME", "");
-    const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");
-
-    EXPECT_TRUE(beez::core::beezConfigDirectory().empty());
-    EXPECT_TRUE(beez::core::globalBeezConfigPath().empty());
+    const auto Temp = beez::core::systemTempDirectory();
+    EXPECT_TRUE(Temp.is_absolute());
+    EXPECT_NE(Temp, std::filesystem::path("tmp"));
 }

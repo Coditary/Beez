@@ -1,5 +1,6 @@
 #include "beez/core/context.h"
 #include "beez/core/registry.h"
+#include "beez/core/temp_directory.hpp"
 #include "beez/plugin/lua/lua_dsl.h"
 
 #include <algorithm>
@@ -99,7 +100,7 @@ class FuzzProcessEnvGuard
 std::filesystem::path fuzzProjectRoot()
 {
     static const std::filesystem::path Path =
-        std::filesystem::temp_directory_path() / "beez_fuzz_project";
+        beez::core::systemTempDirectory() / "beez_fuzz_project";
     std::filesystem::create_directories(Path);
     return Path;
 }

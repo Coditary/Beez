@@ -334,38 +334,27 @@ workflow("build", {
         return;
     }
     ASSERT_EQ(Found->steps.size(), 2U);
-    beez::test::expectSequentialStep(Found->steps[0], "generate", "code");
-    beez::test::expectSequentialStep(Found->steps[1], "compile", "code");
+    beez::test::expectWorkflowStep(Found->steps[0], "generate", "code");
+    beez::test::expectWorkflowStep(Found->steps[1], "compile", "code");
 }
 
-TEST(LuaDslTest, LoadsWorkflowWithParallelStep)
+TEST(LuaDslTest, RejectsWorkflowWithParallelStep)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
 step({ name = "gen-docs", phase = "generate", scope = "docs", run = "true" })
 step({ name = "gen-code", phase = "generate", scope = "code", run = "true" })
-step({ name = "compile", phase = "compile", scope = "code", run = "true" })
 workflow("ci", {
     { parallel = {
         { phase = "generate", scope = "docs" },
         { phase = "generate", scope = "code" },
     }},
-    { phase = "compile", scope = "code" },
 })
 )");
 
     beez::core::Registry registry;
-    ASSERT_TRUE(loadScript(Project, registry));
-
-    const auto Found = beez::test::requireWorkflow(registry, "ci");
-    ASSERT_TRUE(Found.has_value());
-    if (!Found)
-    {
-        return;
-    }
-    ASSERT_EQ(Found->steps.size(), 2U);
-    beez::test::expectParallelStep(Found->steps[0], {{"generate", "docs"}, {"generate", "code"}});
-    beez::test::expectSequentialStep(Found->steps[1], "compile", "code");
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findWorkflow("ci").has_value());
 }
 
 TEST(LuaDslTest, ReturnsFalseForSyntaxError)

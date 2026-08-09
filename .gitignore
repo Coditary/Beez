@@ -7,6 +7,9 @@ out/
 .cache/
 cmake-build-*/
 
+# Accidental relative TMPDIR scratch (tests/fuzzer used temp_directory_path())
+tmp/
+
 # IDE
 .vscode/
 .idea/

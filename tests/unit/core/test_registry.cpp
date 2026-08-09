@@ -234,9 +234,9 @@ TEST(RegistryTest, RegisterAndFindWorkflow)
     beez::core::Workflow workflow;
     workflow.name = "build";
     workflow.steps.push_back(beez::core::WorkflowStep {
-        .invocations = {beez::core::PhaseInvocation {.phase = "generate", .scope = "code"}}});
+        .invocation = beez::core::PhaseInvocation {.phase = "generate", .scope = "code"}});
     workflow.steps.push_back(beez::core::WorkflowStep {
-        .invocations = {beez::core::PhaseInvocation {.phase = "compile", .scope = "code"}}});
+        .invocation = beez::core::PhaseInvocation {.phase = "compile", .scope = "code"}});
     registry.registerWorkflow(std::move(workflow));
 
     const auto FoundWorkflow = beez::test::requireWorkflow(registry, "build");
@@ -246,33 +246,8 @@ TEST(RegistryTest, RegisterAndFindWorkflow)
         return;
     }
     ASSERT_EQ(FoundWorkflow->steps.size(), 2U);
-    beez::test::expectSequentialStep(FoundWorkflow->steps[0], "generate", "code");
-    beez::test::expectSequentialStep(FoundWorkflow->steps[1], "compile", "code");
-}
-
-TEST(RegistryTest, RegisterWorkflowWithParallelPhases)
-{
-    beez::core::Registry registry;
-
-    beez::core::Workflow workflow;
-    workflow.name = "ci";
-    workflow.steps.push_back(beez::core::WorkflowStep {
-        .invocations = {beez::core::PhaseInvocation {.phase = "generate", .scope = "docs"},
-                        beez::core::PhaseInvocation {.phase = "generate", .scope = "code"}}});
-    workflow.steps.push_back(beez::core::WorkflowStep {
-        .invocations = {beez::core::PhaseInvocation {.phase = "compile", .scope = "code"}}});
-    registry.registerWorkflow(std::move(workflow));
-
-    const auto FoundWorkflow = beez::test::requireWorkflow(registry, "ci");
-    ASSERT_TRUE(FoundWorkflow.has_value());
-    if (!FoundWorkflow)
-    {
-        return;
-    }
-    ASSERT_EQ(FoundWorkflow->steps.size(), 2U);
-    beez::test::expectParallelStep(FoundWorkflow->steps[0],
-                                   {{"generate", "docs"}, {"generate", "code"}});
-    beez::test::expectSequentialStep(FoundWorkflow->steps[1], "compile", "code");
+    beez::test::expectWorkflowStep(FoundWorkflow->steps[0], "generate", "code");
+    beez::test::expectWorkflowStep(FoundWorkflow->steps[1], "compile", "code");
 }
 
 TEST(RegistryTest, ConfigureStepBeforeRegistrationAppliesOnRegister)

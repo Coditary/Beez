@@ -131,7 +131,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `mutate` | ✓ | — | — | — | ~ | Unit only |
 | `order` declaration | ✓ | — | — | — | ~ | Unit only |
 | `workflow(name, sequential)` | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| `workflow(name, {parallel})` | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| `workflow(name, {parallel})` | ✗ | ✗ | ✗ | ✗ | ✗ | **Entfernt** |
 | `beez.config({...})` | ✓ | ~ | ✗ | ~ | ~ | Unit + 1 Integration case |
 | `beez.env(name)` | ✓ | ✗ | ✗ | ✓ | ~ | Unit + fuzz seed |
 | Phase-task shorthand `{phase, scope, run}` | ~ | ✗ | ✗ | ✓ | ~ | Negative in unit; fuzz seed only |
@@ -153,7 +153,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | Step-by-name (`-s`) | ✓ | ✓ | ✓ | ✓ |
 | Phase-Ausführung (`-p`) | ✓ | ✓ | ✓ | ✓ |
 | Workflow-Ausführung | ✓ | ✓ | ✓ | ✓ |
-| Parallel phases in workflow | ✓ | ✓ | ✓ | ✓ |
+| Parallel phases in workflow | ✗ | ✗ | ✗ | **Entfernt** |
 | Worker spawn/wait | ✓ | ✓ | — | ~ |
 | Step-Cache Hit/Miss | ✓ | ✓ | ✗ | ~ |
 | Success-Cache Hit/Miss | ✓ | ✓ | ✗ | ~ |
@@ -227,7 +227,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | Bereich | Corpus-Seeds | Dictionary | Status |
 |---------|--------------|------------|--------|
 | `task()` forms | `step.lua`, `task_with_step.lua`, `orphan_task.lua` | ✓ | ✓ |
-| `workflow()` forms | `workflow_sequential.lua`, `workflow_parallel.lua` | ✓ | ✓ |
+| `workflow()` forms | `workflow_sequential.lua` | ✓ | ✓ |
 | `step()` forms | `step.lua`, `step_config.lua`, `step_artifact_fields.lua` | ✓ | ✓ |
 | `beez.env()` | `beez_env.lua` | — | ~ |
 | `beez.config()` | — | — | ✗ |

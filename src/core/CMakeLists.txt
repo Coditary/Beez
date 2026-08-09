@@ -34,6 +34,7 @@ add_library(
     step_order.cpp
     stream_capture.cpp
     progress_detail.cpp
+    temp_directory.cpp
 )
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)

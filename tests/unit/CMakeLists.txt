@@ -21,6 +21,7 @@ add_executable(
     core/test_cache_write_coordinator.cpp
     core/test_config_schema.cpp
     core/test_config_paths.cpp
+    core/test_temp_directory.cpp
     core/test_text_table.cpp
     core/test_cache_compress.cpp
     core/test_cache_storage.cpp

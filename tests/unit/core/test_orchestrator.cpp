@@ -145,9 +145,9 @@ void registerBuildWorkflow(beez::core::Registry& registry)
     beez::core::Workflow workflow;
     workflow.name = "build";
     workflow.steps.push_back(beez::core::WorkflowStep {
-        .invocations = {beez::core::PhaseInvocation {.phase = "generate", .scope = "code"}}});
+        .invocation = beez::core::PhaseInvocation {.phase = "generate", .scope = "code"}});
     workflow.steps.push_back(beez::core::WorkflowStep {
-        .invocations = {beez::core::PhaseInvocation {.phase = "compile", .scope = "code"}}});
+        .invocation = beez::core::PhaseInvocation {.phase = "compile", .scope = "code"}});
     registry.registerWorkflow(std::move(workflow));
 }
 

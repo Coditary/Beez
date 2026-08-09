@@ -21,7 +21,8 @@ add_dependencies(beez_system_tests beez)
 
 target_link_libraries(beez_system_tests PRIVATE GTest::gtest GTest::gtest_main)
 
-target_include_directories(beez_system_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(beez_system_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                                      ${CMAKE_SOURCE_DIR}/tests/helpers)
 
 target_compile_definitions(
     beez_system_tests

@@ -871,19 +871,11 @@ std::size_t Orchestrator::countPhaseRequestSteps(const PhaseRequest& request) co
 
 std::size_t Orchestrator::countWorkflowSteps(const Workflow& workflow) const
 {
-    return std::accumulate(
-        workflow.steps.begin(),
-        workflow.steps.end(),
-        std::size_t {0},
-        [this](std::size_t total, const WorkflowStep& step)
-        {
-            return total +
-                   std::accumulate(step.invocations.begin(),
-                                   step.invocations.end(),
-                                   std::size_t {0},
-                                   [this](std::size_t stepTotal, const PhaseInvocation& invocation)
-                                   { return stepTotal + countPhaseInvocationSteps(invocation); });
-        });
+    return std::accumulate(workflow.steps.begin(),
+                           workflow.steps.end(),
+                           std::size_t {0},
+                           [this](std::size_t total, const WorkflowStep& step)
+                           { return total + countPhaseInvocationSteps(step.invocation); });
 }
 
 Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInvocation& invocation,
@@ -1032,76 +1024,23 @@ void Orchestrator::recordWorkflowFailure(WorkflowExecutionState& executionState,
 
 [[nodiscard]] std::string workflowSegmentLabel(const WorkflowStep& step)
 {
-    const auto& invocation = step.invocations.front();
-    return invocation.phase + ":" + invocation.scope;
+    return step.invocation.phase + ":" + step.invocation.scope;
 }
 
-void Orchestrator::runParallelWorkflowStep(const WorkflowStep& step,
-                                           ProgressState& progress,
-                                           WorkflowExecutionState& executionState)
-{
-    beginRunSegment(workflowSegmentLabel(step));
-
-    std::vector<logging::LogChannelId> channels(step.invocations.size());
-    for (std::size_t index = 0; index < step.invocations.size(); ++index)
-    {
-        if (runOptions_.logger != nullptr)
-        {
-            const auto& invocation = step.invocations.at(index);
-            channels.at(index) =
-                runOptions_.logger->openChannel(invocation.phase + ":" + invocation.scope);
-        }
-    }
-
-    std::atomic<bool> stepFailed {false};
-    OrchestratorError stepError = OrchestratorError::ExecutionFailed;
-
-    threadPool_.parallelFor(step.invocations.size(),
-                            [&](std::size_t index)
-                            {
-                                if (stepFailed.load())
-                                {
-                                    return;
-                                }
-
-                                const auto Result =
-                                    runPhaseInvocation(step.invocations.at(index), progress);
-                                if (runOptions_.logger != nullptr)
-                                {
-                                    runOptions_.logger->closeChannel(channels.at(index));
-                                }
-
-                                if (!Result)
-                                {
-                                    stepFailed.store(true);
-                                    stepError = Result.error();
-                                }
-                            });
-
-    if (stepFailed.load())
-    {
-        recordWorkflowFailure(executionState, stepError);
-        endRunSegment(false);
-        return;
-    }
-
-    endRunSegment(true);
-}
-
-void Orchestrator::runSequentialWorkflowStep(const WorkflowStep& step,
-                                             ProgressState& progress,
-                                             WorkflowExecutionState& executionState)
+void Orchestrator::runWorkflowStep(const WorkflowStep& step,
+                                   ProgressState& progress,
+                                   WorkflowExecutionState& executionState)
 {
     beginRunSegment(workflowSegmentLabel(step));
 
     logging::LogChannelId channel {};
     if (runOptions_.logger != nullptr)
     {
-        const auto& invocation = step.invocations.front();
-        channel = runOptions_.logger->openChannel(invocation.phase + ":" + invocation.scope);
+        channel =
+            runOptions_.logger->openChannel(step.invocation.phase + ":" + step.invocation.scope);
     }
 
-    const auto Result = runPhaseInvocation(step.invocations.front(), progress);
+    const auto Result = runPhaseInvocation(step.invocation, progress);
     if (runOptions_.logger != nullptr)
     {
         runOptions_.logger->closeChannel(channel);
@@ -1145,14 +1084,7 @@ Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workf
                     return {};
                 }
 
-                if (step.isParallel())
-                {
-                    runParallelWorkflowStep(step, progress, executionState);
-                }
-                else
-                {
-                    runSequentialWorkflowStep(step, progress, executionState);
-                }
+                runWorkflowStep(step, progress, executionState);
 
                 return {};
             });

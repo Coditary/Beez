@@ -150,7 +150,7 @@
 "no registered steps"
 "pending configure_step"
 "step ordering failed"
-"parallel step requires at least one phase"
+"does not support 'parallel'"
 "rejects string entries"
 "rejects numeric entries"
 "invalid"

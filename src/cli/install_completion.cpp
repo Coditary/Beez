@@ -1,6 +1,7 @@
 // NOLINTBEGIN(misc-include-cleaner,concurrency-mt-unsafe,performance-no-automatic-move,bugprone-command-processor,cert-env33-c)
 #include "beez/cli/install_completion.hpp"
 #include "beez/cli/completion_embedded.hpp"
+#include "beez/core/temp_directory.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -209,7 +210,7 @@ readConfigValue(const std::filesystem::path& path, const std::string& key)
 [[nodiscard]] int runEmbeddedInstallCompletion()
 {
     const auto StagingDir =
-        std::filesystem::temp_directory_path() / ("beez-completion-" + std::to_string(getpid()));
+        beez::core::systemTempDirectory() / ("beez-completion-" + std::to_string(getpid()));
 
     std::error_code errorCode;
     std::filesystem::remove_all(StagingDir, errorCode);

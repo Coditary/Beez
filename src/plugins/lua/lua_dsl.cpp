@@ -290,31 +290,12 @@ core::PhaseInvocation parsePhaseInvocation(const sol::table& invocationTable)
 
 core::WorkflowStep parseWorkflowStep(const sol::table& stepTable)
 {
-    const sol::object ParallelValue = stepTable["parallel"];
-    if (ParallelValue.valid() && ParallelValue.is<sol::table>())
+    if (stepTable["parallel"].valid())
     {
-        core::WorkflowStep step;
-
-        const sol::table ParallelTable = ParallelValue.as<sol::table>();
-        ParallelTable.for_each(
-            [&step](const sol::object& /*key*/, const sol::object& value)
-            {
-                if (!value.is<sol::table>())
-                {
-                    return;
-                }
-                step.invocations.push_back(parsePhaseInvocation(value.as<sol::table>()));
-            });
-
-        if (step.invocations.empty())
-        {
-            throw std::runtime_error("workflow parallel step requires at least one phase");
-        }
-
-        return step;
+        throw std::runtime_error("workflow step does not support 'parallel'");
     }
 
-    return core::WorkflowStep {.invocations = {parsePhaseInvocation(stepTable)}};
+    return core::WorkflowStep {.invocation = parsePhaseInvocation(stepTable)};
 }
 
 core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTable)
@@ -370,22 +351,20 @@ void validateLoadedRegistry(core::Registry& registry)
     {
         for (const auto& workflowStep : workflow.steps)
         {
-            for (const auto& invocation : workflowStep.invocations)
+            const auto& invocation = workflowStep.invocation;
+            const auto Matched = registry.stepsForPhase(invocation.phase, invocation.scope);
+            if (!Matched.hasValue())
             {
-                const auto Matched = registry.stepsForPhase(invocation.phase, invocation.scope);
-                if (!Matched.hasValue())
-                {
-                    throw std::runtime_error(
-                        "workflow '" + workflowName + "' step ordering failed for phase '" +
-                        invocation.phase + "' scope '" + invocation.scope + "'");
-                }
+                throw std::runtime_error("workflow '" + workflowName +
+                                         "' step ordering failed for phase '" + invocation.phase +
+                                         "' scope '" + invocation.scope + "'");
+            }
 
-                if (Matched.value().empty())
-                {
-                    throw std::runtime_error(
-                        "workflow '" + workflowName + "' has no registered steps for phase '" +
-                        invocation.phase + "' scope '" + invocation.scope + "'");
-                }
+            if (Matched.value().empty())
+            {
+                throw std::runtime_error("workflow '" + workflowName +
+                                         "' has no registered steps for phase '" +
+                                         invocation.phase + "' scope '" + invocation.scope + "'");
             }
         }
     }

@@ -86,12 +86,9 @@ class Orchestrator
     [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task,
                                                            ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(const Workflow& workflow);
-    void runParallelWorkflowStep(const WorkflowStep& step,
-                                 ProgressState& progress,
-                                 WorkflowExecutionState& executionState);
-    void runSequentialWorkflowStep(const WorkflowStep& step,
-                                   ProgressState& progress,
-                                   WorkflowExecutionState& executionState);
+    void runWorkflowStep(const WorkflowStep& step,
+                         ProgressState& progress,
+                         WorkflowExecutionState& executionState);
     static void recordWorkflowFailure(WorkflowExecutionState& executionState,
                                       OrchestratorError error);
     [[nodiscard]] Expected<int, OrchestratorError> runStepInstance(const Step& step,

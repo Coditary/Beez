@@ -68,7 +68,13 @@ Milestone 13: Fixing Bugs, Security and Testability
 - `build.lua` removes obsolete explicit `order()` chains now handled by the engine (callback serialization, mutate inference)
 - Fuzz scripts refactored with shared `fuzz-common.sh`
 
+### Removed
+
+- Workflow `parallel` groups — workflows now run phase+scope pairs strictly sequentially; a workflow step with `parallel` is rejected when `build.lua` is loaded (`workflow step does not support 'parallel'`)
+
 ### Fixed
+
+- Tests, fuzzer, and shell-completion staging no longer create a stray `tmp/` folder in the project root when `TMPDIR` (or similar) is set to a relative path like `tmp`
 
 - Segfault when multiple Lua callback steps shared a parallel execution level (order calculation now isolates callbacks)
 - Step order errors are propagated correctly from `orderStepsInLevels` instead of being ignored
