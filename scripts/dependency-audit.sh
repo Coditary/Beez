@@ -11,13 +11,17 @@ SBOM_JSON="${ROOT_DIR}/${REPORTS_DIR}/sbom/cyclonedx.json"
 mkdir -p "${SECURITY_DIR}"
 
 resolve_osv_scanner() {
-    if command -v osv-scanner >/dev/null 2>&1; then
-        OSV_SCANNER="osv-scanner"
+    if [[ -n "${OSV_SCANNER:-}" && -x "${OSV_SCANNER}" ]]; then
         return 0
     fi
 
     if [[ -x "${HOME}/.local/bin/osv-scanner" ]]; then
         OSV_SCANNER="${HOME}/.local/bin/osv-scanner"
+        return 0
+    fi
+
+    if command -v osv-scanner >/dev/null 2>&1; then
+        OSV_SCANNER="osv-scanner"
         return 0
     fi
 
@@ -40,7 +44,16 @@ if ! resolve_osv_scanner; then
 fi
 
 echo "=== Generating Conan SBOM for dependency audit ==="
-"${ROOT_DIR}/scripts/sbom-generate.sh" "${BUILD_DIR}" "${REPORTS_DIR}"
+if [[ -n "${DEPENDENCY_AUDIT_SBOM:-}" ]]; then
+    if [[ ! -f "${DEPENDENCY_AUDIT_SBOM}" ]]; then
+        echo "error: DEPENDENCY_AUDIT_SBOM not found at ${DEPENDENCY_AUDIT_SBOM}" >&2
+        exit 2
+    fi
+    SBOM_JSON="${DEPENDENCY_AUDIT_SBOM}"
+else
+    "${ROOT_DIR}/scripts/sbom-generate.sh" "${BUILD_DIR}" "${REPORTS_DIR}"
+    SBOM_JSON="${ROOT_DIR}/${REPORTS_DIR}/sbom/cyclonedx.json"
+fi
 
 if [[ ! -f "${SBOM_JSON}" ]]; then
     echo "error: SBOM not found at ${SBOM_JSON}" >&2

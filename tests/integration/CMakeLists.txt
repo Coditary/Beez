@@ -13,6 +13,7 @@ add_executable(
     app/test_config_runtime.cpp
     app/test_completion.cpp
     app/test_install_completion.cpp
+    app/test_security_scripts.cpp
 )
 
 add_dependencies(beez_integration_tests beez)

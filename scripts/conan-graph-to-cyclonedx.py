@@ -67,10 +67,27 @@ def main() -> int:
 
     graph_path, output_path = sys.argv[1], sys.argv[2]
 
-    with open(graph_path, encoding="utf-8") as handle:
-        payload = json.load(handle)
+    try:
+        with open(graph_path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except OSError as exc:
+        print(f"failed to read Conan graph at {graph_path}: {exc}", file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as exc:
+        print(f"failed to parse Conan graph JSON at {graph_path}: {exc}", file=sys.stderr)
+        return 1
 
-    nodes: dict[str, dict[str, Any]] = payload["graph"]["nodes"]
+    graph = payload.get("graph")
+    if not isinstance(graph, dict):
+        print("invalid Conan graph: missing or invalid graph object", file=sys.stderr)
+        return 1
+
+    nodes_raw = graph.get("nodes")
+    if not isinstance(nodes_raw, dict):
+        print("invalid Conan graph: missing or invalid graph.nodes", file=sys.stderr)
+        return 1
+
+    nodes: dict[str, dict[str, Any]] = nodes_raw
     consumer = nodes.get("0")
     if consumer is None:
         print("missing consumer node in Conan graph", file=sys.stderr)

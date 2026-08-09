@@ -3,8 +3,15 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
+COMPDB="${COMPDB_DIR}/compile_commands.json"
 HEADER_FILTER='(src|include|tests)/.*'
 FAILED=0
+
+if [[ ! -f "${COMPDB}" ]]; then
+    echo "error: compile_commands.json not found at ${COMPDB}" >&2
+    echo "Run 'make setup build' before security analysis." >&2
+    exit 2
+fi
 
 echo "=== Running security analysis ==="
 echo ""
