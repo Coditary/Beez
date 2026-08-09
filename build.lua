@@ -597,9 +597,9 @@ step({
     },
     output = { REPORTS_DIR .. "/test/coverage-test-report.ok" },
     description = "Run tests and capture coverage test report",
-    run = "mkdir -p " .. REPORTS_DIR .. "/test && cd " .. DEBUG_BUILD_TREE ..
+    run = "mkdir -p " .. REPORTS_DIR .. "/test && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
         " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
-        "/test/coverage-test-report.txt && touch ../../../" .. REPORTS_DIR ..
+        "/test/coverage-test-report.txt' && touch ../../../" .. REPORTS_DIR ..
         "/test/coverage-test-report.ok",
 })
 
@@ -674,9 +674,9 @@ step({
     },
     output = { REPORTS_DIR .. "/sanitize/sanitize-report.ok" },
     description = "Run tests under ASan/UBSan",
-    run = "mkdir -p " .. REPORTS_DIR .. "/sanitize && cd " .. DEBUG_BUILD_TREE ..
+    run = "mkdir -p " .. REPORTS_DIR .. "/sanitize && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
         " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
-        "/sanitize/sanitize-report.txt && touch ../../../" .. REPORTS_DIR ..
+        "/sanitize/sanitize-report.txt' && touch ../../../" .. REPORTS_DIR ..
         "/sanitize/sanitize-report.ok",
 })
 
