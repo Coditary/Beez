@@ -17,35 +17,35 @@ add_executable(
     cli/presentation/test_name_suggestion.cpp
     cli/commands/test_run.cpp
     core/registry/test_registry.cpp
-    core/test_content_hash.cpp
-    core/test_include_fingerprint.cpp
     core/test_cache_options.cpp
-    core/test_cache_write_coordinator.cpp
-    core/test_config_schema.cpp
-    core/test_config_paths.cpp
+    core/cache/test_content_hash.cpp
+    core/cache/test_include_fingerprint.cpp
+    core/cache/test_cache_write_coordinator.cpp
+    core/config/test_config_paths.cpp
     core/test_temp_directory.cpp
     core/test_text_table.cpp
-    core/test_cache_compress.cpp
-    core/test_cache_storage.cpp
-    core/test_glob_expand.cpp
-    core/test_glob_metadata_cache.cpp
-    core/test_step_cache.cpp
-    core/test_success_cache.cpp
+    core/cache/test_cache_compress.cpp
+    core/cache/test_cache_storage.cpp
+    core/glob/test_expand.cpp
+    core/glob/test_metadata_cache.cpp
+    core/cache/test_step_cache.cpp
+    core/cache/test_success_cache.cpp
     core/test_thread_pool.cpp
     core/test_worker_pool.cpp
-    core/test_env_file.cpp
-    core/test_glob_pattern.cpp
+    core/env/test_env_file.cpp
+    core/glob/test_pattern.cpp
     core/registry/test_step_order.cpp
     core/test_workflow.cpp
-    core/test_context.cpp
-    core/test_settings.cpp
-    core/test_settings_report.cpp
+    core/runtime/test_context.cpp
+    core/config/test_settings.cpp
+    core/config/test_settings_report.cpp
     core/test_orchestrator.cpp
     core/test_stream_capture.cpp
     core/test_progress_detail.cpp
     core/test_phase_argument_parser.cpp
-    core/test_performance_options.cpp
-    core/test_ui_options.cpp
+    core/config/test_performance_options.cpp
+    core/config/test_ui_options.cpp
+    core/config/test_config_schema.cpp
     plugin/host/test_plugin_host.cpp
     plugin/lua/test_lua_dsl.cpp
     plugin/lua/test_lua_dsl_fields.cpp

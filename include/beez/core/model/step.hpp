@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/context.h"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/model/step_config.hpp"
 
 #include <functional>

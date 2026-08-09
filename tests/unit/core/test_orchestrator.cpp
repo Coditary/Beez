@@ -1,4 +1,4 @@
-#include "beez/core/context.h"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
 #include "beez/core/model/step.hpp"
@@ -13,7 +13,7 @@
 #include "beez/plugin/contract/executor.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 
-#include "beez/core/run_options.hpp"
+#include "beez/core/config/run_options.hpp"
 #include "beez/logging/backends/recording_logger.hpp"
 #include "beez/logging/console/output_mode.hpp"
 

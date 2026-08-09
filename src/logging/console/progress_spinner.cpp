@@ -1,7 +1,7 @@
 // NOLINTBEGIN(misc-include-cleaner,readability-identifier-length,readability-identifier-naming,cppcoreguidelines-avoid-magic-numbers,bugprone-easily-swappable-parameters,cppcoreguidelines-pro-type-vararg)
 #include "beez/logging/console/progress_spinner.hpp"
 
-#include "beez/core/ui_options.hpp"
+#include "beez/core/config/ui_options.hpp"
 #include "beez/logging/console/worker_output_format.hpp"
 
 #include <fcntl.h>

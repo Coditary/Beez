@@ -1,7 +1,7 @@
 #include "beez/plugin/lua/settings/lua_settings.hpp"
 
-#include "beez/core/config_paths.hpp"
-#include "beez/core/settings.hpp"
+#include "beez/core/config/config_paths.hpp"
+#include "beez/core/config/settings.hpp"
 #include "beez/plugin/lua/settings/settings_overlay.hpp"
 
 #include <filesystem>

@@ -2,8 +2,8 @@
 
 #include "beez/cli/completion/install_completion.hpp"
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/config_schema.hpp"
-#include "beez/core/settings_report.hpp"
+#include "beez/core/config/config_schema.hpp"
+#include "beez/core/config/settings_report.hpp"
 
 #include <iostream>
 #include <optional>

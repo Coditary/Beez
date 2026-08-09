@@ -1,4 +1,4 @@
-#include "beez/core/context.h"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 

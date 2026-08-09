@@ -1,6 +1,6 @@
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 
-#include "beez/core/context.h"
+#include "beez/core/runtime/context.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
 #include <iostream>

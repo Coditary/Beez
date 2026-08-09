@@ -1,8 +1,8 @@
 #include "beez/plugin/lua/settings/settings_overlay.hpp"
 
-#include "beez/core/env_settings.hpp"
-#include "beez/core/settings.hpp"
-#include "beez/core/ui_options.hpp"
+#include "beez/core/config/env_settings.hpp"
+#include "beez/core/config/settings.hpp"
+#include "beez/core/config/ui_options.hpp"
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
 

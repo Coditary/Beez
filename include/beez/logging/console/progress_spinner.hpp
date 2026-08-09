@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/ui_options.hpp"
+#include "beez/core/config/ui_options.hpp"
 #include "beez/logging/contract/run_types.hpp"
 
 #include <atomic>

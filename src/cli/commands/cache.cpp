@@ -1,10 +1,10 @@
 #include "beez/cli/commands/cache.hpp"
 
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/cache_options.hpp"
-#include "beez/core/cache_storage.hpp"
-#include "beez/core/context.h"
-#include "beez/core/settings.hpp"
+#include "beez/core/cache/storage.hpp"
+#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/settings.hpp"
+#include "beez/core/runtime/context.hpp"
 
 #include <cstddef>
 #include <filesystem>

@@ -1,4 +1,4 @@
-#include "beez/core/context.h"
+#include "beez/core/runtime/context.hpp"
 #include "beez/plugin/shell/shell_executor.hpp"
 
 #include <gtest/gtest.h>

@@ -1,6 +1,6 @@
 #include "beez/core/registry/step_order.hpp"
 
-#include "beez/core/glob_pattern.hpp"
+#include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/util/expected.hpp"
 

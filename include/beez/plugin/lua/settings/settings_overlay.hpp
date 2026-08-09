@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/settings.hpp"
+#include "beez/core/config/settings.hpp"
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <sol/forward.hpp>

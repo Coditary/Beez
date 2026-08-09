@@ -1,8 +1,8 @@
 #pragma once
 
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/context.h"
-#include "beez/core/settings.hpp"
+#include "beez/core/config/settings.hpp"
+#include "beez/core/runtime/context.hpp"
 
 namespace beez::cli
 {

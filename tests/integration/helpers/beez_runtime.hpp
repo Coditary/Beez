@@ -1,9 +1,9 @@
 #pragma once
 
-#include "beez/core/context.h"
+#include "beez/core/config/run_options.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry/registry.hpp"
-#include "beez/core/run_options.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 #include "beez/plugin/shell/shell_executor.hpp"
