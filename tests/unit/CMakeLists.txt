@@ -45,6 +45,7 @@ add_executable(
     core/test_ui_options.cpp
     core/test_plugin_host.cpp
     plugins/lua/test_lua_dsl.cpp
+    plugins/lua/test_lua_dsl_fields.cpp
     plugins/lua/test_lua_settings.cpp
     plugins/shell/test_shell_executor.cpp
 )

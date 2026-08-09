@@ -595,15 +595,19 @@ CacheLookupResult StepCache::lookup(const Step& step,
         return result;
     }
 
+    result.key = keyStrategy_->computeKey(step, projectRoot, config, matcher_);
+
     if (!indexRoot_.empty())
     {
         if (const auto Indexed = lookupViaIndex(step, projectRoot, config))
         {
-            return *Indexed;
+            if (Indexed->skip && store_->lookup(Indexed->key).has_value())
+            {
+                return *Indexed;
+            }
         }
     }
 
-    result.key = keyStrategy_->computeKey(step, projectRoot, config, matcher_);
     const auto Entry = store_->lookup(result.key);
     if (!Entry.has_value())
     {

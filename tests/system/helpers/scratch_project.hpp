@@ -3,6 +3,7 @@
 #include <atomic>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <stdexcept>
 #include <string>
 
@@ -49,9 +50,8 @@ class ScratchProject
         {
             throw std::runtime_error("fuzz corpus seed not found: " + source.string());
         }
-        std::filesystem::copy_file(source,
-                                   path_ / "build.lua",
-                                   std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy_file(
+            source, path_ / "build.lua", std::filesystem::copy_options::overwrite_existing);
     }
 
     void writeBuildLuaBytes(const std::string& bytes) const
@@ -66,12 +66,12 @@ class ScratchProject
 
     void writeFile(const std::filesystem::path& relativePath, const std::string& content) const
     {
-        const auto fullPath = path_ / relativePath;
+        const auto FullPath = path_ / relativePath;
         if (relativePath.has_parent_path())
         {
-            std::filesystem::create_directories(fullPath.parent_path());
+            std::filesystem::create_directories(FullPath.parent_path());
         }
-        std::ofstream stream(fullPath, std::ios::binary);
+        std::ofstream stream(FullPath, std::ios::binary);
         if (!stream)
         {
             throw std::runtime_error("failed to write file in scratch project: " +

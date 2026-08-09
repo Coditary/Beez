@@ -4,9 +4,11 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
+#include <ios>
 #include <string>
 #include <vector>
 
@@ -43,11 +45,9 @@ std::vector<std::filesystem::path> listFuzzCorpusSeeds()
 
 void expectNoCrash(const beez::test::ProcessResult& result, const std::string& context)
 {
-    EXPECT_FALSE(result.terminatedBySignal)
-        << context << ", signal=" << result.signalNumber << "\n"
-        << result.output;
-    EXPECT_TRUE(beez::test::exitedNormally(result)) << context << "\n"
-                                                    << result.output;
+    EXPECT_FALSE(result.terminatedBySignal) << context << ", signal=" << result.signalNumber << "\n"
+                                            << result.output;
+    EXPECT_TRUE(beez::test::exitedNormally(result)) << context << "\n" << result.output;
 }
 
 void expectBeezInvocationDoesNotCrash(const std::filesystem::path& projectPath,
@@ -61,15 +61,16 @@ void expectSeedInvocationDoesNotCrash(const std::filesystem::path& seed,
                                       const std::initializer_list<std::string>& args,
                                       const std::string& invocation)
 {
-    beez::test::ScratchProject project;
-    project.copyBuildLuaFrom(seed);
-    expectNoCrash(beez::test::runBeez(project.path(), args),
+    const beez::test::ScratchProject Project;
+    Project.copyBuildLuaFrom(seed);
+    expectNoCrash(beez::test::runBeez(Project.path(), args),
                   seed.filename().string() + " (" + invocation + ")");
 }
 
-std::string repeatChar(const char character, const std::size_t count)
+std::string repeatChar(const char Character, const std::size_t Count)
 {
-    return std::string(count, character);
+    // NOLINTNEXTLINE(modernize-return-braced-init-list) -- braced init narrows size_t
+    return std::string(Count, Character);
 }
 
 }  // namespace
@@ -107,6 +108,7 @@ TEST(SystemRobustnessTest, AdversarialBuildScriptsDoNotCrashBeez)
         const char* script;
     };
 
+    // NOLINTBEGIN(modernize-avoid-c-arrays,modernize-use-designated-initializers)
     const Scenario Scenarios[] = {
         {"empty file", ""},
         {"whitespace only", "   \n\n\t  "},
@@ -158,22 +160,22 @@ beez.config("not-a-table")
 task("hello", "true")
 )"},
     };
+    // NOLINTEND(modernize-avoid-c-arrays,modernize-use-designated-initializers)
 
     for (const auto& scenario : Scenarios)
     {
-        beez::test::ScratchProject project;
-        project.writeBuildLua(scenario.script);
+        const beez::test::ScratchProject Project;
+        Project.writeBuildLua(scenario.script);
 
-        expectBeezInvocationDoesNotCrash(project.path(),
-                                         {"run"},
-                                         std::string("adversarial script: ") + scenario.name);
-        expectBeezInvocationDoesNotCrash(project.path(),
+        expectBeezInvocationDoesNotCrash(
+            Project.path(), {"run"}, std::string("adversarial script: ") + scenario.name);
+        expectBeezInvocationDoesNotCrash(Project.path(),
                                          {"--list", "tasks"},
                                          std::string("adversarial script list: ") + scenario.name);
     }
 
     {
-        beez::test::ScratchProject project;
+        const beez::test::ScratchProject Project;
         std::string script = R"(task("big", {)";
         for (int index = 0; index < 200; ++index)
         {
@@ -183,16 +185,16 @@ task("hello", "true")
 })
 workflow("run", {"big"})
 )";
-        project.writeBuildLua(script);
-        expectBeezInvocationDoesNotCrash(project.path(), {"run"}, "huge task command list");
+        Project.writeBuildLua(script);
+        expectBeezInvocationDoesNotCrash(Project.path(), {"run"}, "huge task command list");
     }
 }
 
 TEST(SystemRobustnessTest, BinaryGarbageBuildScriptDoesNotCrashBeez)
 {
-    beez::test::ScratchProject project;
+    const beez::test::ScratchProject Project;
     std::string bytes;
-    bytes.reserve(256U * 100U);
+    bytes.reserve(static_cast<std::size_t>(256U) * 100U);
     for (int byte = 0; byte < 256; ++byte)
     {
         for (int repeat = 0; repeat < 100; ++repeat)
@@ -200,61 +202,59 @@ TEST(SystemRobustnessTest, BinaryGarbageBuildScriptDoesNotCrashBeez)
             bytes.push_back(static_cast<char>(byte));
         }
     }
-    project.writeBuildLuaBytes(bytes);
+    Project.writeBuildLuaBytes(bytes);
 
-    expectBeezInvocationDoesNotCrash(project.path(), {"build"}, "binary garbage build.lua");
-    expectBeezInvocationDoesNotCrash(project.path(),
-                                     {"--show-config"},
-                                     "binary garbage --show-config");
+    expectBeezInvocationDoesNotCrash(Project.path(), {"build"}, "binary garbage build.lua");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"--show-config"}, "binary garbage --show-config");
 }
 
 TEST(SystemRobustnessTest, VeryLongIdentifiersDoNotCrashBeez)
 {
-    beez::test::ScratchProject project;
-    const std::string longName = repeatChar('a', 8000U);
-    project.writeBuildLua("task(\"" + longName + "\", \"true\")\nworkflow(\"run\", {\"" +
-                          longName + "\"})\n");
+    const beez::test::ScratchProject Project;
+    const std::string LongName = repeatChar('a', 8000U);
+    Project.writeBuildLua("task(\"" + LongName + "\", \"true\")\nworkflow(\"run\", {\"" + LongName +
+                          "\"})\n");
 
-    expectBeezInvocationDoesNotCrash(project.path(), {"run"}, "very long task name");
-    expectBeezInvocationDoesNotCrash(project.path(),
-                                     {"--list", "tasks"},
-                                     "very long task name list");
+    expectBeezInvocationDoesNotCrash(Project.path(), {"run"}, "very long task name");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"--list", "tasks"}, "very long task name list");
 }
 
 TEST(SystemRobustnessTest, AdversarialCliArgumentsDoNotCrashBeez)
 {
     const beez::test::FixtureProject Project("flag-matrix");
-    const std::string longTarget = repeatChar('z', 8000U);
+    const std::string LongTarget = repeatChar('z', 8000U);
 
-    expectBeezInvocationDoesNotCrash(Project.path(), {longTarget}, "very long target name");
+    expectBeezInvocationDoesNotCrash(Project.path(), {LongTarget}, "very long target name");
     expectBeezInvocationDoesNotCrash(Project.path(), {"hello", "--dry-run"}, "hello --dry-run");
     expectBeezInvocationDoesNotCrash(Project.path(), {"fail", "--silent"}, "fail --silent");
     expectBeezInvocationDoesNotCrash(Project.path(), {"fail", "--error"}, "fail --error");
     expectBeezInvocationDoesNotCrash(Project.path(), {"echo", "--verbose"}, "echo --verbose");
     expectBeezInvocationDoesNotCrash(Project.path(), {"hello", "--no-cache"}, "hello --no-cache");
     expectBeezInvocationDoesNotCrash(Project.path(), {"hello", "-j", "16"}, "hello -j 16");
-    expectBeezInvocationDoesNotCrash(Project.path(),
-                                     {"--list", "tasks", "--list", "workflows"},
-                                     "duplicate list flags");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"--list", "tasks", "--list", "workflows"}, "duplicate list flags");
     expectBeezInvocationDoesNotCrash(Project.path(), {"--show-config"}, "show-config");
     expectBeezInvocationDoesNotCrash(Project.path(), {"--", "--help"}, "user option --help");
-    expectBeezInvocationDoesNotCrash(Project.path(), {"--", longTarget}, "very long user option");
+    expectBeezInvocationDoesNotCrash(Project.path(), {"--", LongTarget}, "very long user option");
 }
 
 TEST(SystemRobustnessTest, CorruptCacheDirectoryDoesNotCrashBeez)
 {
     const beez::test::FixtureProject Project("flag-matrix");
-    const auto cachePath = Project.path() / ".cache";
-    std::filesystem::create_directories(cachePath / "entries" / "broken");
+    const auto CachePath = Project.path() / ".cache";
+    std::filesystem::create_directories(CachePath / "entries" / "broken");
 
-    auto writeFile = [&Project](const std::filesystem::path& relativePath, const std::string& content)
+    auto writeFile =
+        [&Project](const std::filesystem::path& relativePath, const std::string& content)
     {
-        const auto fullPath = Project.path() / relativePath;
+        const auto FullPath = Project.path() / relativePath;
         if (relativePath.has_parent_path())
         {
-            std::filesystem::create_directories(fullPath.parent_path());
+            std::filesystem::create_directories(FullPath.parent_path());
         }
-        std::ofstream stream(fullPath, std::ios::binary);
+        std::ofstream stream(FullPath, std::ios::binary);
         stream.write(content.data(), static_cast<std::streamsize>(content.size()));
     };
 
@@ -263,9 +263,8 @@ TEST(SystemRobustnessTest, CorruptCacheDirectoryDoesNotCrashBeez)
     writeFile(".cache/not-a-directory", "plain text cache corruption");
 
     expectBeezInvocationDoesNotCrash(Project.path(), {"hello"}, "corrupt cache hello");
-    expectBeezInvocationDoesNotCrash(Project.path(),
-                                     {"hello", "--no-cache"},
-                                     "corrupt cache hello --no-cache");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"hello", "--no-cache"}, "corrupt cache hello --no-cache");
     expectBeezInvocationDoesNotCrash(Project.path(), {"--clean-cache"}, "corrupt cache clean");
 }
 
@@ -277,13 +276,10 @@ TEST(SystemRobustnessTest, WorkflowsFixtureStressPathsDoNotCrashBeez)
     expectBeezInvocationDoesNotCrash(Project.path(), {"ci"}, "workflows ci");
     expectBeezInvocationDoesNotCrash(Project.path(), {"build", "--dry-run"}, "workflows dry-run");
     expectBeezInvocationDoesNotCrash(Project.path(), {"-s", "compile"}, "workflows step compile");
-    expectBeezInvocationDoesNotCrash(Project.path(),
-                                     {"-p", "generate:code"},
-                                     "workflows phase generate:code");
-    expectBeezInvocationDoesNotCrash(Project.path(),
-                                     {"-p", "generate:docs"},
-                                     "workflows phase generate:docs");
-    expectBeezInvocationDoesNotCrash(Project.path(),
-                                     {"__missing_workflow__"},
-                                     "workflows missing target");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"-p", "generate:code"}, "workflows phase generate:code");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"-p", "generate:docs"}, "workflows phase generate:docs");
+    expectBeezInvocationDoesNotCrash(
+        Project.path(), {"__missing_workflow__"}, "workflows missing target");
 }

@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -78,7 +79,7 @@ TEST(RegistryTest, RegisterAndFindStep)
     EXPECT_EQ(Found->shellRun.value_or(""), "doxygen Doxyfile");
 }
 
-TEST(RegistryTest, RegisterTaskOverwritesExisting)
+TEST(RegistryTest, RegisterTaskRejectsDuplicate)
 {
     beez::core::Registry registry;
 
@@ -90,7 +91,7 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
     beez::core::Task second;
     second.name = "clean";
     second.actions = {beez::core::makeShellAction("echo updated")};
-    registry.registerTask(std::move(second));
+    EXPECT_THROW(registry.registerTask(std::move(second)), std::runtime_error);
 
     const auto Found = registry.findTask("clean");
     ASSERT_TRUE(Found.has_value());
@@ -99,10 +100,10 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
         return;
     }
     ASSERT_EQ(Found->actions.size(), 1U);
-    beez::test::expectShellCommand(*Found, 0, "echo updated");
+    beez::test::expectShellCommand(*Found, 0, "rm -fr app.o");
 }
 
-TEST(RegistryTest, RegisterStepOverwritesExisting)
+TEST(RegistryTest, RegisterStepRejectsDuplicate)
 {
     beez::core::Registry registry;
 
@@ -118,7 +119,7 @@ TEST(RegistryTest, RegisterStepOverwritesExisting)
     second.phase = "generate";
     second.scope = "docs";
     second.shellRun = "echo second";
-    registry.registerStep(std::move(second));
+    EXPECT_THROW(registry.registerStep(std::move(second)), std::runtime_error);
 
     const auto Found = registry.findStep("doxygen");
     ASSERT_TRUE(Found.has_value());
@@ -127,7 +128,7 @@ TEST(RegistryTest, RegisterStepOverwritesExisting)
         return;
     }
     ASSERT_TRUE(Found->hasShellRun());
-    EXPECT_EQ(Found->shellRun.value_or(""), "echo second");
+    EXPECT_EQ(Found->shellRun.value_or(""), "echo first");
 }
 
 TEST(RegistryTest, StepsForPhaseFiltersByPhaseAndScope)

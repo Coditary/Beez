@@ -316,6 +316,8 @@ TEST(LuaDslTest, LoadsSequentialWorkflow)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({ name = "gen", phase = "generate", scope = "code", run = "true" })
+step({ name = "compile", phase = "compile", scope = "code", run = "true" })
 workflow("build", {
     { phase = "generate", scope = "code" },
     { phase = "compile", scope = "code" },
@@ -340,6 +342,9 @@ TEST(LuaDslTest, LoadsWorkflowWithParallelStep)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({ name = "gen-docs", phase = "generate", scope = "docs", run = "true" })
+step({ name = "gen-code", phase = "generate", scope = "code", run = "true" })
+step({ name = "compile", phase = "compile", scope = "code", run = "true" })
 workflow("ci", {
     { parallel = {
         { phase = "generate", scope = "docs" },
@@ -566,7 +571,7 @@ task("hello", "echo without env access")
     EXPECT_TRUE(loadScript(Project, registry));
 }
 
-TEST(LuaDslTest, DuplicateTaskRegistrationUsesLastDefinition)
+TEST(LuaDslTest, DuplicateTaskRegistrationFailsToLoad)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
@@ -575,13 +580,8 @@ task("build", "echo second")
 )");
 
     beez::core::Registry registry;
-    ASSERT_TRUE(loadScript(Project, registry));
-
-    const auto Found = beez::test::requireTask(registry, "build");
-    ASSERT_TRUE(Found.has_value());
-    // KNOWN_GAP: duplicate names overwrite silently; no DSL error today.
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
-    beez::test::expectShellCommand(*Found, 0, "echo second");
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findTask("build").has_value());
 }
 
 TEST(LuaDslTest, ReturnsFalseWhenTaskTableIsEmpty)
@@ -642,7 +642,7 @@ task("broken", {
     EXPECT_FALSE(registry.findTask("broken").has_value());
 }
 
-TEST(LuaDslTest, DuplicateStepRegistrationUsesLastDefinition)
+TEST(LuaDslTest, DuplicateStepRegistrationFailsToLoad)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
@@ -661,14 +661,6 @@ step({
 )");
 
     beez::core::Registry registry;
-    ASSERT_TRUE(loadScript(Project, registry));
-
-    const auto Found = registry.findStep("gen-docs");
-    ASSERT_TRUE(Found.has_value());
-    if (!Found)
-    {
-        return;
-    }
-    ASSERT_TRUE(Found->hasShellRun());
-    EXPECT_EQ(Found->shellRun.value_or(""), "echo second");
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("gen-docs").has_value());
 }

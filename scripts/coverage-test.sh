@@ -13,6 +13,13 @@ if [[ ! -d "${DEBUG_BUILD_TREE}" ]]; then
     exit 2
 fi
 
+if [[ ! -f "${DEBUG_BUILD_TREE}/.beez-coverage-configured" ]] ||
+    ! grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' "${DEBUG_BUILD_TREE}/CMakeCache.txt" 2>/dev/null; then
+    echo "error: Debug build is not configured for coverage (BUILD_COVERAGE=OFF or stale after sanitize)." >&2
+    echo "Run: beez configure:coverage && beez build:coverage" >&2
+    exit 2
+fi
+
 mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/test"
 find "${DEBUG_BUILD_TREE}" -name '*.gcda' -delete
 

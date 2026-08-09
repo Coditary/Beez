@@ -41,6 +41,7 @@ local CONAN_PROFILE = env_or("CONAN_PROFILE", "clang-release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
 local CMAKE_PRESET = (BUILD_TYPE == "Debug") and "conan-debug" or "conan-release"
 local DEBUG_BUILD_TREE = "build/build/Debug"
+local COVERAGE_STAMP = DEBUG_BUILD_TREE .. "/.beez-coverage-configured"
 local REPORTS_DIR = env_or("REPORTS_DIR", "report")
 local FUZZER_TIME = env_or("FUZZER_TIME", "30")
 local MIN_LINE_COVERAGE = env_or("MIN_LINE_COVERAGE", "85")
@@ -585,13 +586,15 @@ step({
     output = {
         DEBUG_BUILD_TREE .. "/compile_commands.json",
         DEBUG_BUILD_TREE .. "/build.ninja",
+        COVERAGE_STAMP,
     },
     description = "CMake configure with coverage instrumentation",
     run = "conan install . --output-folder=build --build=missing " ..
         "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
-        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=ON " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF",
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON -DBUILD_COVERAGE=ON " ..
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF " ..
+        "&& grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' " .. DEBUG_BUILD_TREE .. "/CMakeCache.txt " ..
+        "&& touch " .. COVERAGE_STAMP,
 })
 
 step({
@@ -603,6 +606,7 @@ step({
         "include/**/*.hpp",
         "tests/**/*.cpp",
         DEBUG_BUILD_TREE .. "/build.ninja",
+        COVERAGE_STAMP,
     },
     output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
     description = "Build Debug with coverage flags",
@@ -617,6 +621,7 @@ step({
         DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
         "src/**/*.cpp",
         "tests/**/*.cpp",
+        COVERAGE_STAMP,
     },
     output = {
         REPORTS_DIR .. "/test/coverage-test-report.ok",
@@ -670,7 +675,8 @@ step({
         "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
         " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
         "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON",
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON " ..
+        "&& rm -f " .. COVERAGE_STAMP,
 })
 
 step({

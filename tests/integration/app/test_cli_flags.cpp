@@ -142,6 +142,12 @@ TEST(CliFlagsIntegrationTest, ListWorkflowsPrintsRegisteredNames)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
+step({
+    name = "gen-code",
+    phase = "generate",
+    scope = "code",
+    run = "true",
+})
 workflow("build", {
     { phase = "generate", scope = "code" },
 })

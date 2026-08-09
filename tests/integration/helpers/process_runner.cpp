@@ -36,25 +36,25 @@ std::string shellQuote(const std::string& value)
     return quoted;
 }
 
-ProcessResult finalizeProcessStatus(const int status, std::string output)
+ProcessResult finalizeProcessStatus(const int WaitStatus, std::string output)
 {
-    if (status == -1)
+    if (WaitStatus == -1)
     {
         return {.exitCode = -1, .output = std::move(output)};
     }
 
-    if (WIFSIGNALED(status))
+    if (WIFSIGNALED(WaitStatus))
     {
         return {.exitCode = -1,
                 .terminatedBySignal = true,
-                .signalNumber = WTERMSIG(status),
+                .signalNumber = WTERMSIG(WaitStatus),
                 .output = std::move(output)};
     }
 
     int exitCode = -1;
-    if (WIFEXITED(status))
+    if (WIFEXITED(WaitStatus))
     {
-        exitCode = WEXITSTATUS(status);
+        exitCode = WEXITSTATUS(WaitStatus);
     }
 
     return {.exitCode = exitCode, .output = std::move(output)};

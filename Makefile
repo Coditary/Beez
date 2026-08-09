@@ -56,7 +56,7 @@ test: ## Tests ausführen (BUILD_TYPE=Release|Debug)
 robustness: ## System-Robustness-Tests (Crash/Edge-Case E2E, schneller als make test)
 	@test -d $(BUILD_DIR)/build/$(BUILD_TYPE) || (echo "Run make build first." && exit 1)
 	@mkdir -p $(REPORTS_DIR)/test
-	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure -R SystemRobustnessTest 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/robustness-report.txt'
+	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure -R "SystemRobustnessTest|SystemNegativeFixtureTest|SystemCacheAdversarialTest|SystemDslFieldMatrixTest" 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/robustness-report.txt'
 
 run: ## Beez ausführen (z.B. make run ARGS=build BUILD_TYPE=Debug)
 	BUILD_TYPE=$(BUILD_TYPE) CONAN_PROFILE=$(CONAN_PROFILE) $(BEEZ_BIN) $(ARGS)
