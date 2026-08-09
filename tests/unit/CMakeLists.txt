@@ -39,7 +39,7 @@ add_executable(
     core/runtime/test_context.cpp
     core/config/test_settings.cpp
     core/config/test_settings_report.cpp
-    core/test_orchestrator.cpp
+    core/orchestrator/test_orchestrator.cpp
     core/execution/test_stream_capture.cpp
     core/execution/test_progress_detail.cpp
     core/execution/test_phase_argument_parser.cpp

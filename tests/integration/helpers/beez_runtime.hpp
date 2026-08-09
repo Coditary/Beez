@@ -1,7 +1,7 @@
 #pragma once
 
 #include "beez/core/config/run_options.hpp"
-#include "beez/core/orchestrator.h"
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/plugin/host/plugin_host.hpp"

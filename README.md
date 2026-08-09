@@ -116,7 +116,7 @@ make sanitize      # ASan + UBSan debug build + tests
 
 | Path | Purpose |
 |------|---------|
-| `src/core/` | Registry, orchestrator, cache, settings |
+| `src/core/` | Core domains: `model/`, `registry/`, `config/`, `cache/`, `glob/`, `env/`, `runtime/`, `execution/`, `orchestrator/` |
 | `src/plugins/lua/` | Lua DSL loader |
 | `src/plugins/shell/` | Shell command execution |
 | `src/cli/` | CLI parsing and completion |

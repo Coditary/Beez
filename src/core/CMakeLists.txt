@@ -35,7 +35,14 @@ add_library(
     glob/pattern.cpp
     registry/registry.cpp
     registry/step_order.cpp
-    orchestrator.cpp
+    orchestrator/orchestrator.cpp
+    orchestrator/orchestrator_detail.cpp
+    orchestrator/run_stats.cpp
+    orchestrator/shell_runner.cpp
+    orchestrator/task_runner.cpp
+    orchestrator/step_runner.cpp
+    orchestrator/phase_runner.cpp
+    orchestrator/workflow_runner.cpp
     execution/phase_argument_parser.cpp
     execution/progress_detail.cpp
     execution/stream_capture.cpp
@@ -49,6 +56,7 @@ add_library(
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/report)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache)
+target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator)
 
 target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB)
 

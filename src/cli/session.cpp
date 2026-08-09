@@ -4,7 +4,7 @@
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/core/config/config_paths.hpp"
 #include "beez/core/config/run_options.hpp"
-#include "beez/core/orchestrator.h"
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/logging/backends/spdlog_logger.hpp"
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/persistence/run_log_writer.hpp"

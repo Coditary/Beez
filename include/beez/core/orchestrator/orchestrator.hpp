@@ -11,13 +11,14 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
+#include "beez/core/orchestrator/run_stats.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/contract/logger.hpp"
 #include "beez/logging/contract/run_types.hpp"
 
-#include <chrono>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -25,8 +26,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-
-#include <atomic>
 
 namespace beez::plugin
 {
@@ -37,6 +36,7 @@ namespace beez::core
 {
 
 class StepCache;
+class SuccessCache;
 
 enum class OrchestratorError : std::uint8_t
 {
@@ -133,14 +133,6 @@ class Orchestrator
                              const std::string& detail);
     void recordPeakWorkers(std::size_t workerCount);
     [[nodiscard]] logging::RunSummary buildRunSummary(double durationSeconds) const;
-
-    struct ActiveRunSegment
-    {
-        std::string label;
-        std::chrono::steady_clock::time_point started;
-        std::size_t steps = 0;
-        std::size_t cacheHits = 0;
-    };
 
     std::size_t cacheHitsSkipped_ = 0;
     std::size_t runTotalSteps_ = 0;

@@ -37,7 +37,7 @@ Refactor + quality assurance (make all, coverage ≥ 85%)
 | Area | Path | Purpose |
 |------|------|---------|
 | Headers | `include/beez/` | Public API for all modules |
-| Core | `src/core/` | Models, registry, orchestrator, plugin host |
+| Core | `src/core/` | Domain modules (model, registry, config, cache, …) — single `beez_core` library |
 | Lua plugin | `src/plugins/lua/` | DSL parsing (`build.lua`) |
 | Shell plugin | `src/plugins/shell/` | Command execution |
 | App | `src/app/` | CLI entry point |
@@ -47,7 +47,24 @@ Refactor + quality assurance (make all, coverage ≥ 85%)
 | Fuzzer | `tests/fuzz/` | Parser robustness (Lua DSL) |
 | QA reports | `report/` | Generated output from `make test`, `lint`, `analyze`, etc. |
 
-Modules are **flat** under `src/`, no nested `src/` or `include/` per module.
+Modules are **flat** under `src/` (no per-module CMake targets). Within `src/core/`, code is grouped by domain folder; `include/beez/core/` mirrors the same layout. Public headers use `.hpp`.
+
+### Core layout (`include/beez/core/` ↔ `src/core/`)
+
+| Domain | Headers | Sources | Tests (`tests/unit/core/`) |
+|--------|---------|---------|----------------------------|
+| `model/` | task, step, workflow, step_config, … | `model/` | `test_workflow.cpp` |
+| `util/` | expected, text_table, temp_directory | `util/` | `test_text_table.cpp`, `test_temp_directory.cpp` |
+| `registry/` | registry, step_order | `registry/` | `registry/` |
+| `config/` | settings, cache_options, ui_options, … | `config/` (+ `report/`, `ui/`) | `config/` |
+| `cache/` | step_cache, storage, compress, … | `cache/` | `cache/` |
+| `glob/` | pattern, expand, metadata_cache | `glob/` | `glob/` |
+| `env/` | env_file | `env/` | `env/` |
+| `runtime/` | context | `runtime/` | `runtime/` |
+| `execution/` | worker_pool, thread_pool, stream_capture, … | `execution/` | `execution/` |
+| `orchestrator/` | orchestrator, run_stats | `orchestrator/` | `orchestrator/` |
+
+Plugin host lives under `include/beez/plugin/` / `src/plugins/` (not in `core/`).
 
 ---
 
@@ -143,9 +160,9 @@ Only write production code to make failing tests pass (Green phase).
 - **Lua DSL** (`src/plugins/lua/lua_dsl.cpp`): Parse new DSL syntax and map to core models
 - **Shell executor** (`src/plugins/shell/`): Only when command execution changes
 
-#### 4c. Orchestrator / plugin host
+#### 4c. Orchestrator
 
-- Extend execution logic in `src/core/orchestrator.cpp` when the feature affects runtime behavior
+- Extend execution logic in `src/core/orchestrator/` when the feature affects runtime behavior (e.g. `step_runner.cpp`, `phase_runner.cpp`)
 
 #### 4d. CLI
 

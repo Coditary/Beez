@@ -1,7 +1,7 @@
 #include "beez/core/config/run_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
-#include "beez/core/orchestrator.h"
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_order.hpp"
 #include "beez/plugin/contract/executor.hpp"
