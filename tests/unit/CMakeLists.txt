@@ -8,6 +8,7 @@ add_executable(
     logging/test_logger.cpp
     logging/test_output_mode.cpp
     logging/test_logging_settings.cpp
+    logging/test_progress_spinner.cpp
     logging/test_worker_output_format.cpp
     cli/test_cli_app.cpp
     cli/test_list_formatter.cpp
@@ -19,6 +20,7 @@ add_executable(
     core/test_cache_options.cpp
     core/test_cache_write_coordinator.cpp
     core/test_config_schema.cpp
+    core/test_config_paths.cpp
     core/test_text_table.cpp
     core/test_cache_compress.cpp
     core/test_cache_storage.cpp

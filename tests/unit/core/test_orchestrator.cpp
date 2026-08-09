@@ -290,6 +290,52 @@ TEST(OrchestratorTest, RunTaskPropagatesExecutorExitCode)
     EXPECT_EQ(Result.error(), beez::core::OrchestratorError::ExecutionFailed);
 }
 
+TEST(OrchestratorTest, RunStepPropagatesShellExecutorExitCode)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "compile";
+    step.phase = "compile";
+    step.scope = "code";
+    step.shellRun = "exit 7";
+    registry.registerStep(std::move(step));
+
+    const auto State = std::make_shared<ExecutorState>();
+    State->exitCode = 7;
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto Result = orchestrator.runStep("compile");
+    ASSERT_FALSE(Result.hasValue());
+    EXPECT_EQ(Result.error(), beez::core::OrchestratorError::ExecutionFailed);
+}
+
+TEST(OrchestratorTest, RunWithCacheDisabledStillExecutesSteps)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Task task;
+    task.name = "build";
+    task.actions = {beez::core::makeShellAction("echo build")};
+    registry.registerTask(std::move(task));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    const beez::core::RunOptions Options {.enableCache = false};
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.run("build");
+    ASSERT_TRUE(Result.hasValue());
+    EXPECT_EQ(State->callCount, 1);
+}
+
 TEST(OrchestratorTest, RunPrefersTaskOverWorkflowWithSameName)
 {
     beez::core::Context context;

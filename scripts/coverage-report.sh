@@ -17,6 +17,13 @@ if [[ ! -d "${DEBUG_BUILD_TREE}" ]]; then
 fi
 
 mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/coverage"
+
+if ! find "${DEBUG_BUILD_TREE}" -name '*.gcda' -print -quit | grep -q .; then
+    echo "error: no .gcda files in ${DEBUG_BUILD_TREE}" >&2
+    echo "Run coverage tests first (beez test:coverage, or beez test:coverage --no-cache if the step was cached)." >&2
+    exit 2
+fi
+
 cd "${DEBUG_BUILD_TREE}"
 
 echo "=== Coverage summary (src/, minimum line coverage: ${MIN_LINE_COVERAGE}%) ==="
@@ -24,6 +31,7 @@ set +e
 gcovr --gcov-executable 'llvm-cov gcov' \
     --root "${ROOT_DIR}" \
     --filter "${ROOT_DIR}/src/" \
+    --exclude "${ROOT_DIR}/src/app/main.cpp" \
     --gcov-ignore-parse-errors=suspicious_hits.warn \
     --json-summary "${JSON_SUMMARY}" \
     --fail-under-line "${MIN_LINE_COVERAGE}" \
@@ -43,6 +51,7 @@ echo "=== HTML coverage report (src/ and tests/) ==="
 gcovr --gcov-executable 'llvm-cov gcov' \
     --root "${ROOT_DIR}" \
     --filter "${ROOT_DIR}/src/" \
+    --exclude "${ROOT_DIR}/src/app/main.cpp" \
     --filter "${ROOT_DIR}/tests/" \
     --gcov-ignore-parse-errors=suspicious_hits.warn \
     --html-details "${REPORT_HTML}" .

@@ -565,3 +565,110 @@ task("hello", "echo without env access")
     beez::core::Registry registry;
     EXPECT_TRUE(loadScript(Project, registry));
 }
+
+TEST(LuaDslTest, DuplicateTaskRegistrationUsesLastDefinition)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("build", "echo first")
+task("build", "echo second")
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "build");
+    ASSERT_TRUE(Found.has_value());
+    // KNOWN_GAP: duplicate names overwrite silently; no DSL error today.
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    beez::test::expectShellCommand(*Found, 0, "echo second");
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenTaskTableIsEmpty)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("empty", {})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findTask("empty").has_value());
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenStepMissingName)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    phase = "generate",
+    scope = "docs",
+    run = "true",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenStepRunIsInvalidType)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "broken",
+    phase = "generate",
+    scope = "docs",
+    run = 42,
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findStep("broken").has_value());
+}
+
+TEST(LuaDslTest, ReturnsFalseWhenTaskActionHasInvalidType)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("broken", {
+    42,
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_FALSE(registry.findTask("broken").has_value());
+}
+
+TEST(LuaDslTest, DuplicateStepRegistrationUsesLastDefinition)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "gen-docs",
+    phase = "generate",
+    scope = "docs",
+    run = "echo first",
+})
+step({
+    name = "gen-docs",
+    phase = "generate",
+    scope = "docs",
+    run = "echo second",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("gen-docs");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "echo second");
+}

@@ -102,6 +102,34 @@ TEST(RegistryTest, RegisterTaskOverwritesExisting)
     beez::test::expectShellCommand(*Found, 0, "echo updated");
 }
 
+TEST(RegistryTest, RegisterStepOverwritesExisting)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step first;
+    first.name = "doxygen";
+    first.phase = "generate";
+    first.scope = "docs";
+    first.shellRun = "echo first";
+    registry.registerStep(std::move(first));
+
+    beez::core::Step second;
+    second.name = "doxygen";
+    second.phase = "generate";
+    second.scope = "docs";
+    second.shellRun = "echo second";
+    registry.registerStep(std::move(second));
+
+    const auto Found = registry.findStep("doxygen");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "echo second");
+}
+
 TEST(RegistryTest, StepsForPhaseFiltersByPhaseAndScope)
 {
     beez::core::Registry registry;

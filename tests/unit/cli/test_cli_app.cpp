@@ -4,7 +4,9 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -280,4 +282,83 @@ TEST(CliAppTest, ParsesInstallCompletionFlag)
     const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
     ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
     EXPECT_TRUE(Result.options.installCompletion);
+}
+
+TEST(CliAppTest, ParsesLogFileFlag)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--log-file", "/tmp/beez-run.log"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.logFile.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.logFile.value(), std::filesystem::path("/tmp/beez-run.log"));
+    EXPECT_FALSE(Result.options.noLogFile);
+}
+
+TEST(CliAppTest, ParsesNoLogFileFlag)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--no-log-file"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.noLogFile);
+    EXPECT_FALSE(Result.options.logFile.has_value());
+}
+
+TEST(CliAppTest, RejectsInvalidDumpCompletionShell)
+{
+    const std::vector<std::string> Args = {"beez", "--dump-completion", "fish"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
+}
+
+TEST(CliAppTest, RejectsSilentAndErrorTogether)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--silent", "--error"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
+}
+
+TEST(CliAppTest, ParsesStepFlag)
+{
+    const std::vector<std::string> Args = {"beez", "-s", "compile"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.stepName.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.stepName.value(), "compile");
+}
+
+TEST(CliAppTest, ParsesPhaseFlag)
+{
+    const std::vector<std::string> Args = {"beez", "-p", "generate:code"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliApp::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.phaseRequest.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.phaseRequest->phase, "generate");
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    ASSERT_EQ(Result.options.phaseRequest->scopes.size(), 1U);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.phaseRequest->scopes[0], "code");
+}
+
+TEST(InstallCompletionTest, DumpsEmbeddedBashAndZshScripts)
+{
+    const auto BashScript = beez::cli::dumpCompletionScript("bash");
+    ASSERT_TRUE(BashScript.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_NE(BashScript->find("beez"), std::string_view::npos);
+
+    const auto ZshScript = beez::cli::dumpCompletionScript("zsh");
+    ASSERT_TRUE(ZshScript.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_NE(ZshScript->find("beez"), std::string_view::npos);
+
+    EXPECT_FALSE(beez::cli::dumpCompletionScript("fish").has_value());
 }

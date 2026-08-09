@@ -6,8 +6,11 @@ add_executable(
     core/test_orchestrator_pipeline.cpp
     core/test_step_cache_pipeline.cpp
     core/test_success_cache_pipeline.cpp
+    core/test_cache_flag_pipeline.cpp
     plugins/test_lua_shell_pipeline.cpp
     app/test_cli.cpp
+    app/test_cli_flags.cpp
+    app/test_config_runtime.cpp
     app/test_completion.cpp
     app/test_install_completion.cpp
 )

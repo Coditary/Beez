@@ -596,10 +596,13 @@ step({
         "src/**/*.cpp",
         "tests/**/*.cpp",
     },
-    output = { REPORTS_DIR .. "/test/coverage-test-report.ok" },
+    output = {
+        REPORTS_DIR .. "/test/coverage-test-report.ok",
+        REPORTS_DIR .. "/test/coverage-test-report.txt",
+        DEBUG_BUILD_TREE .. "/**/*.gcda",
+    },
     description = "Run tests and capture coverage test report",
-    run = "./scripts/coverage-test.sh build " .. REPORTS_DIR .. " && touch " .. REPORTS_DIR ..
-        "/test/coverage-test-report.ok",
+    run = "./scripts/coverage-test.sh build " .. REPORTS_DIR,
 })
 
 step({

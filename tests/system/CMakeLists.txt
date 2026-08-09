@@ -1,8 +1,16 @@
 find_package(GTest REQUIRED)
 
 add_executable(
-    beez_system_tests helpers/process_runner.cpp scenarios/test_tasks.cpp scenarios/test_phase_tasks.cpp
-                      scenarios/test_workflows.cpp scenarios/test_errors.cpp
+    beez_system_tests
+    helpers/process_runner.cpp
+    scenarios/test_tasks.cpp
+    scenarios/test_phase_tasks.cpp
+    scenarios/test_workflows.cpp
+    scenarios/test_errors.cpp
+    scenarios/test_cli_flags.cpp
+    scenarios/test_config_build_lua.cpp
+    scenarios/test_cache_usecases.cpp
+    scenarios/test_list_entities.cpp
 )
 
 add_dependencies(beez_system_tests beez)
