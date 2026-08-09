@@ -11,6 +11,7 @@ add_executable(
     scenarios/test_config_build_lua.cpp
     scenarios/test_cache_usecases.cpp
     scenarios/test_list_entities.cpp
+    scenarios/test_robustness.cpp
 )
 
 add_dependencies(beez_system_tests beez)
@@ -22,6 +23,7 @@ target_include_directories(beez_system_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 target_compile_definitions(
     beez_system_tests PRIVATE "BEEZ_EXECUTABLE=\"$<TARGET_FILE:beez>\""
                               "BEEZ_SYSTEM_FIXTURES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/fixtures\""
+                              "BEEZ_FUZZ_CORPUS_DIR=\"${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/lua_dsl\""
 )
 
 include(GoogleTest)

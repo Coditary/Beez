@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -52,6 +52,11 @@ debug: ## Debug build
 test: ## Tests ausführen (BUILD_TYPE=Release|Debug)
 	@mkdir -p $(REPORTS_DIR)/test
 	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure --verbose 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/test-report.txt'
+
+robustness: ## System-Robustness-Tests (Crash/Edge-Case E2E, schneller als make test)
+	@test -d $(BUILD_DIR)/build/$(BUILD_TYPE) || (echo "Run make build first." && exit 1)
+	@mkdir -p $(REPORTS_DIR)/test
+	bash -o pipefail -c 'cd $(BUILD_DIR)/build/$(BUILD_TYPE) && ctest --output-on-failure -R SystemRobustnessTest 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/test/robustness-report.txt'
 
 run: ## Beez ausführen (z.B. make run ARGS=build BUILD_TYPE=Debug)
 	BUILD_TYPE=$(BUILD_TYPE) CONAN_PROFILE=$(CONAN_PROFILE) $(BEEZ_BIN) $(ARGS)

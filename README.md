@@ -85,6 +85,7 @@ Copy [`scripts/config.lua.example`](scripts/config.lua.example) to `~/.config/be
 ```bash
 make help          # list all Make targets
 make test          # run tests
+make robustness    # crash/edge-case system tests only (faster than make test)
 make format        # apply clang-format + cmake-format
 make lint          # clang-tidy + cmake-format check
 make analyze       # static analysis

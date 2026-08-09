@@ -79,6 +79,7 @@ For faster iteration during development:
 
 ```bash
 make test              # run tests
+make robustness        # crash/edge-case system tests only (quick robustness check)
 make format            # apply formatting
 make lint-stale        # incremental lint
 make help              # list all Make targets
