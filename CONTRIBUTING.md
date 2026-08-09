@@ -11,6 +11,7 @@ Thank you for your interest in Beez. This file is the entry point for contributo
 | Tests | [Wiki: Testing](https://github.com/Coditary/Beez/wiki/Testing) |
 | Code quality | [Wiki: Code Quality](https://github.com/Coditary/Beez/wiki/Code-Quality) |
 | Vertical feature workflow | [`docs/vertical-feature.md`](docs/vertical-feature.md) |
+| Documentation map | [`docs/README.md`](docs/README.md) |
 | Changelog | [`CHANGELOG.md`](CHANGELOG.md) |
 
 ## Getting started
@@ -52,7 +53,8 @@ Typical flow:
 2. Write failing tests (unit, then integration, then system where appropriate)
 3. Implement the minimum to pass
 4. Refactor
-5. Run `make all` before opening a pull request
+5. Update documentation (wiki for user-visible changes, `CHANGELOG.md` and in-repo docs as needed)
+6. Run `make all` before opening a pull request (includes **≥ 85%** line coverage on `src/`)
 
 See [`docs/vertical-feature.md`](docs/vertical-feature.md) and the [Wiki: Feature Development Workflow](https://github.com/Coditary/Beez/wiki/Feature-Development-Workflow).
 
@@ -90,7 +92,7 @@ A good PR includes:
 
 - **What** changed and **why** (behavior or bug fixed)
 - **How** it was tested (new or updated tests, manual steps if needed)
-- Notes on user-visible changes (wiki update appreciated for larger features)
+- Notes on user-visible changes and **wiki updates** (required when CLI, DSL, config, cache, or UI behavior changes)
 
 Commit messages should describe intent, not only file names. There is no enforced commit message format.
 
@@ -100,8 +102,10 @@ A change is ready to merge when:
 
 - All CI checks pass
 - `make all` passes locally (or discrepancies are explained in the PR)
+- Line coverage on `src/` is **≥ 85%** (`make coverage`, enforced in CI)
 - Tests cover new behavior, including failure paths where relevant
 - DSL or parser changes include fuzz corpus updates when appropriate (`tests/fuzz/corpus/lua_dsl/`)
+- User-visible behavior is documented in the [wiki](https://github.com/Coditary/Beez/wiki) and [`CHANGELOG.md`](CHANGELOG.md) when applicable
 
 ## Continuous integration
 
@@ -147,11 +151,11 @@ For security vulnerabilities, see [`SECURITY.md`](SECURITY.md). Do not file publ
 
 ## Documentation
 
-- **User and contributor docs:** [Beez Wiki](https://github.com/Coditary/Beez/wiki)
-- **In-repo developer docs:** [`docs/`](docs/)
+- **User docs:** [Beez Wiki](https://github.com/Coditary/Beez/wiki) (separate wiki git repo; update with user-visible changes)
+- **In-repo developer docs:** [`docs/`](docs/) and [`docs/README.md`](docs/README.md)
 - **Release notes:** [`CHANGELOG.md`](CHANGELOG.md)
 
-User-facing behavior changes should be reflected in the wiki when practical.
+Keep wiki, `CHANGELOG.md`, and [`docs/vertical-feature.md`](docs/vertical-feature.md) aligned when process or behavior changes. Do not merge user-facing features with outdated wiki pages.
 
 ## License
 

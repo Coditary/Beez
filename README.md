@@ -25,6 +25,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 | CLI flags | [Wiki: CLI Flag Reference](https://github.com/Coditary/Beez/wiki/CLI-Flag-Reference) |
 | Glossary | [Wiki: Glossary](https://github.com/Coditary/Beez/wiki/Glossary) |
 | Contributor guide | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| Developer docs | [`docs/`](docs/) |
 | Vertical feature workflow | [`docs/vertical-feature.md`](docs/vertical-feature.md) |
 
 ## Requirements
