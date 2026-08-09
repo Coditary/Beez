@@ -1,6 +1,6 @@
 #include "beez/core/cache_options.hpp"
 #include "beez/core/glob_pattern.hpp"
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
 #include "beez/core/step_cache.hpp"
 
 #include "helpers/test_step_config.hpp"

@@ -16,7 +16,7 @@ add_executable(
     cli/presentation/test_entity_table.cpp
     cli/presentation/test_name_suggestion.cpp
     cli/commands/test_run.cpp
-    core/test_registry.cpp
+    core/registry/test_registry.cpp
     core/test_content_hash.cpp
     core/test_include_fingerprint.cpp
     core/test_cache_options.cpp
@@ -35,7 +35,7 @@ add_executable(
     core/test_worker_pool.cpp
     core/test_env_file.cpp
     core/test_glob_pattern.cpp
-    core/test_step_order.cpp
+    core/registry/test_step_order.cpp
     core/test_workflow.cpp
     core/test_context.cpp
     core/test_settings.cpp

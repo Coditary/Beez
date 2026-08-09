@@ -1,18 +1,15 @@
 #pragma once
 
-#include "beez/core/task_action.hpp"
-
-#include <string>
-#include <vector>
+#include "beez/core/model/phase_invocation.hpp"
 
 namespace beez::core
 {
 
+// A single phase+scope entry in a workflow execution plan.
 // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
-struct Task
+struct WorkflowStep
 {
-    std::string name;
-    std::vector<TaskAction> actions;
+    PhaseInvocation invocation;
 };
 // NOLINTEND(misc-non-private-member-variables-in-classes)
 

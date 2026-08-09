@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 
 #include <string>
 

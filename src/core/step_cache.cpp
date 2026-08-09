@@ -6,8 +6,8 @@
 #include "beez/core/glob_expand.hpp"
 #include "beez/core/glob_metadata_cache.hpp"
 #include "beez/core/glob_pattern.hpp"
-#include "beez/core/step.hpp"
-#include "beez/core/step_config.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"
 
 #include <algorithm>

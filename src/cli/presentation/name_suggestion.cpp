@@ -1,6 +1,6 @@
 #include "beez/cli/presentation/name_suggestion.hpp"
 
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 
 #include <algorithm>
 #include <cstddef>

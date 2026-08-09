@@ -1,8 +1,8 @@
 #pragma once
 
-#include "beez/core/expected.hpp"
 #include "beez/core/glob_pattern.hpp"
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/util/expected.hpp"
 
 #include <cstdint>
 #include <string>

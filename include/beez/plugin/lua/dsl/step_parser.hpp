@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
 
 #include <memory>
 #include <string>

@@ -1,5 +1,5 @@
 #include "beez/core/context.h"
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 #include "beez/plugin/shell/shell_executor.hpp"

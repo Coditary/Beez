@@ -1,7 +1,7 @@
 #include "beez/cli/presentation/entity_table.hpp"
 
-#include "beez/core/registry.h"
-#include "beez/core/text_table.hpp"
+#include "beez/core/registry/registry.hpp"
+#include "beez/core/util/text_table.hpp"
 
 #include <algorithm>
 #include <cstddef>

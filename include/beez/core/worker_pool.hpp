@@ -1,9 +1,9 @@
 #pragma once
 
 #include "beez/core/glob_pattern.hpp"
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/model/step_config.hpp"
 #include "beez/core/step_cache.hpp"
-#include "beez/core/step_config.hpp"
 #include "beez/core/thread_pool.hpp"
 
 #include <cstddef>

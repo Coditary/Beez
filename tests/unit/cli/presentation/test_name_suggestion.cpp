@@ -1,8 +1,8 @@
 #include "beez/cli/presentation/name_suggestion.hpp"
 
-#include "beez/core/registry.h"
-#include "beez/core/task.hpp"
-#include "beez/core/workflow.hpp"
+#include "beez/core/model/task.hpp"
+#include "beez/core/model/workflow.hpp"
+#include "beez/core/registry/registry.hpp"
 
 #include <gtest/gtest.h>
 

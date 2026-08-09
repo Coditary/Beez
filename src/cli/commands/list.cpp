@@ -1,7 +1,7 @@
 #include "beez/cli/commands/list.hpp"
 
 #include "beez/cli/presentation/entity_table.hpp"
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 
 #include <iostream>
 #include <string>

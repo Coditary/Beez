@@ -1,12 +1,12 @@
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 
-#include "beez/core/expected.hpp"
 #include "beez/core/glob_pattern.hpp"
-#include "beez/core/step.hpp"
-#include "beez/core/step_config.hpp"
-#include "beez/core/step_order.hpp"
-#include "beez/core/task.hpp"
-#include "beez/core/workflow.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/model/step_config.hpp"
+#include "beez/core/model/task.hpp"
+#include "beez/core/model/workflow.hpp"
+#include "beez/core/registry/step_order.hpp"
+#include "beez/core/util/expected.hpp"
 
 #include <algorithm>
 #include <optional>

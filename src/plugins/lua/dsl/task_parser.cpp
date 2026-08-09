@@ -1,6 +1,6 @@
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 
-#include "beez/core/task_action.hpp"
+#include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
 #include <memory>

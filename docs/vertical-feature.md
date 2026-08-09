@@ -268,7 +268,7 @@ Copy this checklist into the feature description or PR:
 | TDD step | File | Change |
 |----------|------|--------|
 | Red | `tests/unit/plugins/lua/test_lua_dsl.cpp` | Test parsing with/without `phase` → fails |
-| Green | `include/beez/core/task.hpp` | Add `std::optional<std::string> phase` |
+| Green | `include/beez/core/model/task.hpp` | Add `std::optional<std::string> phase` |
 | Green | `src/plugins/lua/lua_dsl.cpp` | Parse `phase` field from Lua table → unit test passes |
 | Red | `tests/integration/plugins/test_lua_shell_pipeline.cpp` | Test phase task registration → fails |
 | Green | (same DSL changes) | Integration test passes |

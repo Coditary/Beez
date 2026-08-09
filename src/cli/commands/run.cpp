@@ -2,9 +2,9 @@
 
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/cli/presentation/name_suggestion.hpp"
-#include "beez/core/expected.hpp"
 #include "beez/core/orchestrator.h"
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
+#include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
 
 #include <iostream>

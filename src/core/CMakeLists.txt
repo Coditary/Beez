@@ -16,7 +16,7 @@ add_library(
     glob_pattern.cpp
     performance_options.cpp
     ui_options.cpp
-    registry.cpp
+    registry/registry.cpp
     orchestrator.cpp
     phase_argument_parser.cpp
     settings.cpp
@@ -24,16 +24,16 @@ add_library(
     config_schema.cpp
     step_cache.cpp
     success_cache.cpp
-    text_table.cpp
+    util/text_table.cpp
     thread_pool.cpp
     worker_pool.cpp
-    step_config.cpp
+    model/step_config.cpp
     env_file.cpp
     env_settings.cpp
-    step_order.cpp
+    registry/step_order.cpp
     stream_capture.cpp
     progress_detail.cpp
-    temp_directory.cpp
+    util/temp_directory.cpp
 )
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)

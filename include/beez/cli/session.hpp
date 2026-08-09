@@ -2,7 +2,7 @@
 
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/core/context.h"
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 #include "beez/core/settings.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 

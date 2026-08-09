@@ -5,7 +5,7 @@
 #include "beez/core/content_hash.hpp"
 #include "beez/core/glob_pattern.hpp"
 #include "beez/core/include_fingerprint.hpp"
-#include "beez/core/step_config.hpp"
+#include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"
 
 #include <algorithm>

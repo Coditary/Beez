@@ -1,6 +1,6 @@
 #include "beez/core/context.h"
-#include "beez/core/registry.h"
-#include "beez/core/temp_directory.hpp"
+#include "beez/core/registry/registry.hpp"
+#include "beez/core/util/temp_directory.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 
 #include <algorithm>

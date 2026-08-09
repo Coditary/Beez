@@ -1,7 +1,7 @@
 // NOLINTBEGIN(misc-include-cleaner,concurrency-mt-unsafe,performance-no-automatic-move,bugprone-command-processor,cert-env33-c)
 #include "beez/cli/completion/install_completion.hpp"
 #include "beez/cli/completion/completion_embedded.hpp"
-#include "beez/core/temp_directory.hpp"
+#include "beez/core/util/temp_directory.hpp"
 
 #include <algorithm>
 #include <cstdlib>

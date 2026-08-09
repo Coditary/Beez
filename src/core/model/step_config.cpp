@@ -1,4 +1,4 @@
-#include "beez/core/step_config.hpp"
+#include "beez/core/model/step_config.hpp"
 
 namespace beez::core
 {

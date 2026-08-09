@@ -1,5 +1,5 @@
 #include "beez/core/config_paths.hpp"
-#include "beez/core/temp_directory.hpp"
+#include "beez/core/util/temp_directory.hpp"
 
 #include <gtest/gtest.h>
 

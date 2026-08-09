@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/workflow.hpp"
+#include "beez/core/model/workflow.hpp"
 
 #include <string>
 

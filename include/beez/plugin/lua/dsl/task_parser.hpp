@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/task_action.hpp"
+#include "beez/core/model/task_action.hpp"
 
 #include <memory>
 #include <vector>

@@ -1,5 +1,5 @@
 #include "beez/core/context.h"
-#include "beez/core/step_config.hpp"
+#include "beez/core/model/step_config.hpp"
 
 #include "helpers/test_step_config.hpp"
 

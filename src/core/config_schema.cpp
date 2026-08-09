@@ -2,8 +2,8 @@
 
 #include "beez/core/cache_options.hpp"
 #include "beez/core/performance_options.hpp"
-#include "beez/core/text_table.hpp"
 #include "beez/core/ui_options.hpp"
+#include "beez/core/util/text_table.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
 
 #include <algorithm>

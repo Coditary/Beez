@@ -4,7 +4,7 @@
 #include "beez/logging/contract/run_types.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
 
-#include "beez/core/text_table.hpp"
+#include "beez/core/util/text_table.hpp"
 
 #include <algorithm>
 #include <array>

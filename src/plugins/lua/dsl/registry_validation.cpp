@@ -1,7 +1,7 @@
 #include "beez/plugin/lua/dsl/registry_validation.hpp"
 
-#include "beez/core/registry.h"
-#include "beez/core/task_action.hpp"
+#include "beez/core/model/task_action.hpp"
+#include "beez/core/registry/registry.hpp"
 
 #include <stdexcept>
 #include <variant>

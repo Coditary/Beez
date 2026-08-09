@@ -2,7 +2,7 @@
 
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/core/orchestrator.h"
-#include "beez/core/registry.h"
+#include "beez/core/registry/registry.hpp"
 #include "beez/logging/console/output_mode.hpp"
 
 namespace beez::cli

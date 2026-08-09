@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/phase_request.hpp"
+#include "beez/core/model/phase_request.hpp"
 
 #include <optional>
 #include <string>

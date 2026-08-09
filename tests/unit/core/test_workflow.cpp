@@ -1,5 +1,5 @@
-#include "beez/core/phase_invocation.hpp"
-#include "beez/core/workflow_step.hpp"
+#include "beez/core/model/phase_invocation.hpp"
+#include "beez/core/model/workflow_step.hpp"
 
 #include <gtest/gtest.h>
 

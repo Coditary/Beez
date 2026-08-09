@@ -1,8 +1,8 @@
-#include "beez/core/step_order.hpp"
+#include "beez/core/registry/step_order.hpp"
 
-#include "beez/core/expected.hpp"
 #include "beez/core/glob_pattern.hpp"
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/util/expected.hpp"
 
 #include <algorithm>
 #include <cstddef>

@@ -1,6 +1,6 @@
 #include "beez/core/progress_detail.hpp"
 
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
 
 #include <gtest/gtest.h>
 
