@@ -1,0 +1,50 @@
+name: Documentation
+description: Report unclear, missing, or wrong documentation
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        User documentation lives in the [Wiki](https://github.com/Coditary/Beez/wiki). In-repo docs include `README.md`, `CONTRIBUTING.md`, and `docs/`.
+
+  - type: dropdown
+    id: location
+    attributes:
+      label: Where is the documentation?
+      options:
+        - Wiki
+        - README.md
+        - CONTRIBUTING.md / SECURITY.md
+        - CHANGELOG.md
+        - docs/ in the repository
+        - CLI help text (`beez --help`)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: page
+    attributes:
+      label: Page or file
+      description: Wiki page name, file path, or section heading.
+      placeholder: "Wiki: CLI Flag Reference / README.md / docs/vertical-feature.md"
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong or missing?
+      description: What did you expect to find? What was unclear or incorrect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Optional draft text or outline for a fix.
+    validations:
+      required: false

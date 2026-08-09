@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Coditary/Beez/security/advisories/new
+    about: Report security issues privately (do not use public issues)
+  - name: Wiki documentation
+    url: https://github.com/Coditary/Beez/wiki
+    about: User guides, CLI reference, and troubleshooting
+  - name: Contributing guide
+    url: https://github.com/Coditary/Beez/blob/main/CONTRIBUTING.md
+    about: How to build, test, and open pull requests
