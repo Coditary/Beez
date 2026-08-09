@@ -4,9 +4,9 @@
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
 #include "beez/core/run_options.hpp"
-#include "beez/plugin/lua/lua_dsl.h"
-#include "beez/plugin/plugin_host.h"
-#include "beez/plugin/shell/shell_executor.h"
+#include "beez/plugin/host/plugin_host.hpp"
+#include "beez/plugin/lua/lua_dsl.hpp"
+#include "beez/plugin/shell/shell_executor.hpp"
 
 #include <filesystem>
 #include <memory>

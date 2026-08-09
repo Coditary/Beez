@@ -19,7 +19,6 @@ add_library(
     registry.cpp
     orchestrator.cpp
     phase_argument_parser.cpp
-    plugin_host.cpp
     settings.cpp
     settings_report.cpp
     config_schema.cpp

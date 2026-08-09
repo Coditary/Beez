@@ -1,8 +1,8 @@
-#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/host/plugin_host.hpp"
 
-#include "beez/plugin/dsl_loader.hpp"
-#include "beez/plugin/executor.hpp"
-#include "beez/plugin/plugin.hpp"
+#include "beez/plugin/contract/dsl_loader.hpp"
+#include "beez/plugin/contract/executor.hpp"
+#include "beez/plugin/contract/plugin.hpp"
 
 #include <memory>
 #include <utility>

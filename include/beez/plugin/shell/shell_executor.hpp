@@ -1,7 +1,7 @@
 #pragma once
 
-#include "beez/plugin/executor.hpp"
-#include "beez/plugin/plugin.hpp"
+#include "beez/plugin/contract/executor.hpp"
+#include "beez/plugin/contract/plugin.hpp"
 
 #include <string>
 

@@ -1,7 +1,7 @@
 #include "beez/core/context.h"
 #include "beez/core/registry.h"
 #include "beez/core/temp_directory.hpp"
-#include "beez/plugin/lua/lua_dsl.h"
+#include "beez/plugin/lua/lua_dsl.hpp"
 
 #include <algorithm>
 #include <array>

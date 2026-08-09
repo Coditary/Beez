@@ -4,7 +4,7 @@
 #include "beez/core/context.h"
 #include "beez/core/registry.h"
 #include "beez/core/settings.hpp"
-#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include <filesystem>
 #include <optional>

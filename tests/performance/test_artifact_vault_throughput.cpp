@@ -4,8 +4,8 @@
 #include "beez/core/run_options.hpp"
 #include "beez/core/step.hpp"
 #include "beez/core/step_order.hpp"
-#include "beez/plugin/executor.hpp"
-#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/contract/executor.hpp"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include "helpers/artifact_vault.hpp"
 #include "helpers/performance_workspace.hpp"

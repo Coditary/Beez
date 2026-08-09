@@ -1,8 +1,8 @@
 #pragma once
 
 #include "beez/core/settings.hpp"
-#include "beez/plugin/dsl_loader.hpp"
-#include "beez/plugin/plugin.hpp"
+#include "beez/plugin/contract/dsl_loader.hpp"
+#include "beez/plugin/contract/plugin.hpp"
 
 #include <memory>
 #include <string>

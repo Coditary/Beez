@@ -5,7 +5,7 @@
 #include "beez/core/registry.h"
 #include "beez/core/task.hpp"
 #include "beez/logging/console/output_mode.hpp"
-#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include <gtest/gtest.h>
 

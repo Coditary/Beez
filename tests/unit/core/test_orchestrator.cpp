@@ -9,9 +9,9 @@
 #include "beez/core/task_action.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
-#include "beez/plugin/dsl_loader.hpp"
-#include "beez/plugin/executor.hpp"
-#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/contract/dsl_loader.hpp"
+#include "beez/plugin/contract/executor.hpp"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include "beez/core/run_options.hpp"
 #include "beez/logging/backends/recording_logger.hpp"

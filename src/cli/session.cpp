@@ -9,10 +9,10 @@
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/persistence/run_log_writer.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
-#include "beez/plugin/lua/lua_dsl.h"
-#include "beez/plugin/lua/lua_settings.hpp"
-#include "beez/plugin/plugin_host.h"
-#include "beez/plugin/shell/shell_executor.h"
+#include "beez/plugin/host/plugin_host.hpp"
+#include "beez/plugin/lua/lua_dsl.hpp"
+#include "beez/plugin/lua/settings/lua_settings.hpp"
+#include "beez/plugin/shell/shell_executor.hpp"
 
 #include <filesystem>
 #include <functional>

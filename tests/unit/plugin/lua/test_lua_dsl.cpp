@@ -1,6 +1,6 @@
 #include "beez/core/context.h"
 #include "beez/core/registry.h"
-#include "beez/plugin/lua/lua_dsl.h"
+#include "beez/plugin/lua/lua_dsl.hpp"
 
 #include "helpers/temp_project.hpp"
 #include "helpers/test_helpers.hpp"

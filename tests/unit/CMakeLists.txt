@@ -46,11 +46,11 @@ add_executable(
     core/test_phase_argument_parser.cpp
     core/test_performance_options.cpp
     core/test_ui_options.cpp
-    core/test_plugin_host.cpp
-    plugins/lua/test_lua_dsl.cpp
-    plugins/lua/test_lua_dsl_fields.cpp
-    plugins/lua/test_lua_settings.cpp
-    plugins/shell/test_shell_executor.cpp
+    plugin/host/test_plugin_host.cpp
+    plugin/lua/test_lua_dsl.cpp
+    plugin/lua/test_lua_dsl_fields.cpp
+    plugin/lua/test_lua_settings.cpp
+    plugin/shell/test_shell_executor.cpp
 )
 
 target_link_libraries(

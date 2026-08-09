@@ -26,8 +26,8 @@
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/contract/logger.hpp"
 #include "beez/logging/contract/run_types.hpp"
-#include "beez/plugin/dsl_loader.hpp"
-#include "beez/plugin/plugin_host.h"
+#include "beez/plugin/contract/dsl_loader.hpp"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include <algorithm>
 #include <atomic>

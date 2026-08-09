@@ -1,5 +1,5 @@
 #include "beez/core/context.h"
-#include "beez/plugin/shell/shell_executor.h"
+#include "beez/plugin/shell/shell_executor.hpp"
 
 #include <gtest/gtest.h>
 
