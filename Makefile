@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -94,9 +94,14 @@ analyze: ## Static Analysis (cppcheck + clang-tidy)
 	@mkdir -p $(REPORTS_DIR)/analyze
 	bash -o pipefail -c './scripts/analyze.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/analyze/analyze-report.txt'
 
-security: ## Security Checks
+security: ## Security Checks (code + dependency audit)
 	@mkdir -p $(REPORTS_DIR)/security
 	bash -o pipefail -c './scripts/security.sh $(BUILD_DIR) 2>&1 | tee $(REPORTS_DIR)/security/security-report.txt'
+	bash -o pipefail -c './scripts/dependency-audit.sh $(BUILD_DIR) $(REPORTS_DIR) 2>&1 | tee $(REPORTS_DIR)/security/dependency-audit.txt'
+
+dependency-audit: ## Conan-Abhängigkeiten gegen OSV prüfen
+	@mkdir -p $(REPORTS_DIR)/security
+	bash -o pipefail -c './scripts/dependency-audit.sh $(BUILD_DIR) $(REPORTS_DIR) 2>&1 | tee $(REPORTS_DIR)/security/dependency-audit.txt'
 
 clean: ## Build artifacts löschen
 	rm -rf $(BUILD_DIR)

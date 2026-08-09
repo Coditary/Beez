@@ -48,6 +48,9 @@ jobs:
           pipx inject cmakelang pyyaml
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Install osv-scanner
+        run: ./scripts/ci-install-osv-scanner.sh
+
       - name: Prepare Conan profile
         run: |
           PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"

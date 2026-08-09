@@ -88,7 +88,8 @@ make test          # run tests
 make format        # apply clang-format + cmake-format
 make lint          # clang-tidy + cmake-format check
 make analyze       # static analysis
-make security      # security-focused checks
+make security      # code security checks + OSV dependency audit
+make dependency-audit  # Conan SBOM vulnerability scan only
 make coverage      # coverage report (fails below 85% line coverage on src/)
 make sbom          # CycloneDX SBOM from Conan dependencies
 make all           # full QA pipeline (same as CI)

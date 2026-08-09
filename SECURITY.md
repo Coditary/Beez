@@ -52,7 +52,7 @@ Out of scope (use regular [issues](https://github.com/Coditary/Beez/issues) inst
 
 ## Security practices in this repository
 
-- **CI:** `make security` runs clang-tidy security checks and cppcheck security rules (see `scripts/security.sh`)
+- **CI:** `make security` runs clang-tidy security checks, cppcheck security rules (`scripts/security.sh`), and an OSV dependency audit of Conan packages via CycloneDX SBOM (`scripts/dependency-audit.sh`)
 - **CodeQL:** C++ analysis on pushes to `main` and `develop`, on PRs to `main`, and weekly (`.github/workflows/codeql.yml`)
 - **Sanitizers:** ASan/UBSan test runs in CI (`make sanitize`)
 - **Fuzzer:** Lua DSL fuzz smoke tests in CI (`make fuzzer-smoke`)

@@ -474,6 +474,28 @@ step({
     run = "mkdir -p report/security && scripts/cppcheck-security.sh && touch report/security/cppcheck.ok",
 })
 
+step({
+    name = "qa:dependency-audit",
+    phase = "qa",
+    scope = "code",
+    input = {
+        "conanfile.py",
+        "scripts/sbom-generate.sh",
+        "scripts/conan-graph-to-cyclonedx.py",
+        "scripts/dependency-audit.sh",
+        "scripts/ci-conan-profile.sh",
+        "conan/profiles/**",
+    },
+    output = {
+        "report/security/dependency-audit.ok",
+        "report/security/dependency-audit.txt",
+        "report/sbom/cyclonedx.json",
+        "report/sbom/conan-graph.json",
+    },
+    description = "Dependency vulnerability scan (OSV, Conan SBOM)",
+    run = "scripts/dependency-audit.sh build report && touch report/security/dependency-audit.ok",
+})
+
 configure_step("qa:security-tidy", {
     compdb = BUILD_TREE,
     header_filter = "(src|include|tests)/.*",
