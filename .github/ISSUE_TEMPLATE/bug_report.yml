@@ -1,0 +1,75 @@
+name: Bug Report
+description: Something is broken or behaves incorrectly
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. For security vulnerabilities, use [GitHub Security Advisories](https://github.com/Coditary/Beez/security/advisories/new) instead of this form.
+
+        See also [CONTRIBUTING.md](https://github.com/Coditary/Beez/blob/main/CONTRIBUTING.md#reporting-issues).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly. Include any error messages.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Commands you ran, minimal `build.lua`, or a link to a small repo.
+      placeholder: |
+        1. cd my-project
+        2. beez build --verbose
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Beez version or commit
+      description: Output of `beez --version` or `git rev-parse HEAD` if built from source.
+      placeholder: "Beez 0.1.0 / commit abc1234"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, compiler (`clang++ --version`), Conan/CMake versions if relevant.
+      placeholder: "Fedora 44, clang 21, Conan 2.x"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: CLI output (`beez --verbose`), run log (`.cache/logs/latest.log`), or worker logs if applicable.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for duplicates
+          required: true
+        - label: This is not a security vulnerability
+          required: true
