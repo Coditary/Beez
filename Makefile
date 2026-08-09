@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus fuzzer-seed-verify fuzzer-torture fuzz-seeds install-beez install-beez-completion uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-tsan setup-fuzzer build debug test robustness lint lint-stale lint-stale-clean format analyze security dependency-audit clean clean-reports coverage sbom all sanitize tsan tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus fuzzer-seed-verify fuzzer-torture fuzz-seeds install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -36,7 +36,10 @@ setup-coverage: setup-debug ## CMake configure für Coverage
 	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=ON -DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF
 
 setup-sanitize: setup-debug ## CMake configure für Sanitizer-Build
-	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON
+	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON -DENABLE_TSAN=OFF
+
+setup-tsan: setup-debug ## CMake configure für ThreadSanitizer-Build
+	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF -DENABLE_TSAN=ON
 
 setup-fuzzer: setup-debug ## CMake configure für Fuzzer
 	cmake --preset conan-debug -DBUILD_TESTING=OFF -DBUILD_COVERAGE=OFF -DBUILD_FUZZER=ON -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF
@@ -126,6 +129,11 @@ sanitize: setup-sanitize ## Debug-Build mit ASan/UBSan + Tests
 	cmake --build --preset conan-debug
 	@mkdir -p $(REPORTS_DIR)/sanitize
 	bash -o pipefail -c 'cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/sanitize/sanitize-report.txt'
+
+tsan: setup-tsan ## Debug-Build mit ThreadSanitizer + Tests
+	cmake --build --preset conan-debug
+	@mkdir -p $(REPORTS_DIR)/tsan
+	bash -o pipefail -c 'cd $(BUILD_DIR)/build/Debug && ctest --output-on-failure 2>&1 | tee $(CURDIR)/$(REPORTS_DIR)/tsan/tsan-report.txt'
 
 fuzzer: setup-fuzzer ## Fuzzer bauen
 	cmake --build --preset conan-debug --target fuzz_lua_dsl

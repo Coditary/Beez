@@ -8,6 +8,7 @@ add_executable(
     core/test_success_cache_pipeline.cpp
     core/test_cache_flag_pipeline.cpp
     plugins/test_lua_shell_pipeline.cpp
+    plugins/test_parallel_lua_steps.cpp
     app/test_cli.cpp
     app/test_cli_flags.cpp
     app/test_config_runtime.cpp

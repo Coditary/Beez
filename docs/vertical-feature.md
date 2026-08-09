@@ -218,6 +218,7 @@ This includes:
 | Security | `security` | Snyk / security scripts |
 | Coverage | `coverage` | Line coverage on `src/` ≥ **85%** (enforced by `scripts/coverage-report.sh`) |
 | Sanitizer | `sanitize` | ASan + UBSan |
+| ThreadSanitizer | `tsan` | Data races / thread safety |
 | Fuzzer | `fuzzer-smoke` | Lua DSL robustness |
 
 Check coverage locally:

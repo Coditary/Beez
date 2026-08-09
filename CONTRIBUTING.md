@@ -80,6 +80,7 @@ For faster iteration during development:
 ```bash
 make test              # run tests
 make robustness        # crash/edge-case system tests only (quick robustness check)
+make tsan              # ThreadSanitizer build + tests
 make format            # apply formatting
 make lint-stale        # incremental lint
 make help              # list all Make targets
@@ -122,6 +123,7 @@ GitHub Actions workflow **Quality Assurance** (`.github/workflows/ci.yml`) runs 
 | Security | `make security` |
 | Coverage | `make coverage` |
 | Sanitizers | `make sanitize` |
+| ThreadSanitizer | `make tsan` |
 | Fuzzer | `make fuzzer-smoke` |
 
 Environment: Ubuntu 24.04, Clang (LLVM 22), Conan 2, Ninja.

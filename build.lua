@@ -6,6 +6,7 @@
 --   beez debug              Debug configure + build
 --   beez coverage           Coverage configure, build, tests, HTML report
 --   beez sanitize           ASan/UBSan configure, build, tests
+--   beez tsan               ThreadSanitizer configure, build, tests
 --   beez fuzzer_smoke       Build fuzzer + short fuzz run (FUZZER_TIME, default 30s)
 --   beez fuzzer_corpus      Build fuzzer + longer corpus run (60s)
 --   beez clean              remove build/, report/, .cache/
@@ -21,7 +22,7 @@
 -- Scopes group steps for workflow/CLI selection (phase + scope), not file domains.
 --   code     — programming: configure (Release), build, test, qa, format:apply
 --   debug    — Debug configure + build (isolated from Release configure)
---   coverage / sanitize / fuzz — specialized code toolchains (own configure tree)
+--   coverage / sanitize / tsan / fuzz — specialized code toolchains (own configure tree)
 --   smoke / corpus         — fuzz run variants (phase fuzz, separate workflow targets)
 --   repo                   — repository-wide clean (future: book, docs, …)
 -- Steps in the same phase+scope are ordered via order(); independent steps run in parallel.
@@ -714,6 +715,66 @@ step({
 -- order("configure:sanitize", "build:sanitize")
 -- order("build:sanitize", "test:sanitize")
 
+-- ── ThreadSanitizer ──────────────────────────────────────────────────────────
+
+step({
+    name = "configure:tsan",
+    phase = "configure",
+    scope = "tsan",
+    input = {
+        "conanfile.py",
+        "CMakeLists.txt",
+        "cmake/**",
+        "src/**/CMakeLists.txt",
+        "tests/**/CMakeLists.txt",
+    },
+    output = {
+        DEBUG_BUILD_TREE .. "/compile_commands.json",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    description = "CMake configure with ThreadSanitizer",
+    run = "conan install . --output-folder=build --build=missing " ..
+        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
+        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
+        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
+        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF -DENABLE_TSAN=ON " ..
+        "&& rm -f " .. COVERAGE_STAMP,
+})
+
+step({
+    name = "build:tsan",
+    phase = "build",
+    scope = "tsan",
+    input = {
+        "src/**/*.cpp",
+        "include/**/*.hpp",
+        "tests/**/*.cpp",
+        DEBUG_BUILD_TREE .. "/build.ninja",
+    },
+    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
+    description = "Build Debug with ThreadSanitizer",
+    run = "cmake --build --preset conan-debug",
+})
+
+step({
+    name = "test:tsan",
+    phase = "test",
+    scope = "tsan",
+    input = {
+        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
+        "src/**/*.cpp",
+        "tests/**/*.cpp",
+    },
+    output = { REPORTS_DIR .. "/tsan/tsan-report.ok" },
+    description = "Run tests under ThreadSanitizer",
+    run = "mkdir -p " .. REPORTS_DIR .. "/tsan && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
+        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
+        "/tsan/tsan-report.txt' && touch " .. REPORTS_DIR .. "/tsan/tsan-report.ok",
+})
+
+-- order("configure:tsan", "build:tsan")
+-- order("build:tsan", "test:tsan")
+
 -- ── Fuzzer ───────────────────────────────────────────────────────────────────
 
 step({
@@ -864,6 +925,12 @@ workflow("sanitize", {
     { phase = "configure", scope = "sanitize" },
     { phase = "build", scope = "sanitize" },
     { phase = "test", scope = "sanitize" },
+})
+
+workflow("tsan", {
+    { phase = "configure", scope = "tsan" },
+    { phase = "build", scope = "tsan" },
+    { phase = "test", scope = "tsan" },
 })
 
 workflow("fuzzer_smoke", {
