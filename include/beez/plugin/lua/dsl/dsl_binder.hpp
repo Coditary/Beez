@@ -1,8 +1,8 @@
 #pragma once
 
 #include "beez/core/config/settings.hpp"
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/runtime/context.hpp"
 
 #include <memory>
 

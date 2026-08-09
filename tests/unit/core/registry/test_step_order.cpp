@@ -1,7 +1,7 @@
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/registry/step_order.hpp"
+#include "beez/core/runtime/context.hpp"
 
 #include <gtest/gtest.h>
 

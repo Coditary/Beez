@@ -30,8 +30,8 @@ add_executable(
     core/glob/test_metadata_cache.cpp
     core/cache/test_step_cache.cpp
     core/cache/test_success_cache.cpp
-    core/test_thread_pool.cpp
-    core/test_worker_pool.cpp
+    core/execution/test_thread_pool.cpp
+    core/execution/test_worker_pool.cpp
     core/env/test_env_file.cpp
     core/glob/test_pattern.cpp
     core/registry/test_step_order.cpp
@@ -40,9 +40,9 @@ add_executable(
     core/config/test_settings.cpp
     core/config/test_settings_report.cpp
     core/test_orchestrator.cpp
-    core/test_stream_capture.cpp
-    core/test_progress_detail.cpp
-    core/test_phase_argument_parser.cpp
+    core/execution/test_stream_capture.cpp
+    core/execution/test_progress_detail.cpp
+    core/execution/test_phase_argument_parser.cpp
     core/config/test_performance_options.cpp
     core/config/test_ui_options.cpp
     core/config/test_config_schema.cpp

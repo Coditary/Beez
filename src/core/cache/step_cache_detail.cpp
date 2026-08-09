@@ -1,4 +1,3 @@
-#include "beez/core/cache/step_cache.hpp"
 #include "step_cache_detail.hpp"
 
 #include "beez/core/cache/content_hash.hpp"
@@ -9,27 +8,20 @@
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
-#include "beez/version.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <memory>
 #include <optional>
-#include <ranges>
+#include <ranges>  // NOLINT(misc-include-cleaner) -- std::ranges algorithms
 #include <sstream>
 #include <string>
 #include <system_error>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-namespace beez::core
-{
-
-namespace step_cache_detail
+namespace beez::core::step_cache_detail
 {
 
 [[nodiscard]] bool outputsExist(const std::vector<std::string>& outputs,
@@ -284,6 +276,4 @@ void writeCacheIndex(const std::filesystem::path& indexPath,
     writeCacheFile(indexPath, stream.str(), options);
 }
 
-}  // namespace step_cache_detail
-
-}  // namespace beez::core
+}  // namespace beez::core::step_cache_detail

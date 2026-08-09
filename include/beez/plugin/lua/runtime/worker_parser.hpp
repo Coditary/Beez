@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/worker_pool.hpp"
+#include "beez/core/execution/worker_pool.hpp"
 
 #include <vector>
 

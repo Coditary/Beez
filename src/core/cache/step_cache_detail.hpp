@@ -23,7 +23,7 @@ namespace beez::core::step_cache_detail
 {
 
 [[nodiscard]] bool outputsExist(const std::vector<std::string>& outputs,
-                              const std::filesystem::path& projectRoot);
+                                const std::filesystem::path& projectRoot);
 
 [[nodiscard]] bool stepHasArtifacts(const Step& step);
 
@@ -41,7 +41,8 @@ namespace beez::core::step_cache_detail
 
 [[nodiscard]] std::vector<std::string> artifactPatternsForInputs(const Step& step);
 
-void addDirectoryFromPattern(const std::string& pattern, std::unordered_set<std::string>& directories);
+void addDirectoryFromPattern(const std::string& pattern,
+                             std::unordered_set<std::string>& directories);
 
 struct InputStamp
 {

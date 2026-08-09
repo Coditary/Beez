@@ -1,24 +1,15 @@
 #include "beez/core/cache/step_cache.hpp"
 #include "step_cache_detail.hpp"
 
-#include "beez/core/cache/content_hash.hpp"
-#include "beez/core/cache/storage.hpp"
-#include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
-#include "beez/core/model/step_config.hpp"
-#include "beez/version.hpp"
 
 #include <algorithm>
-#include <cstddef>
-#include <cstdint>
 #include <filesystem>
-#include <memory>
-#include <optional>
-#include <ranges>
-#include <sstream>
+#include <iterator>
+#include <ranges>  // NOLINT(misc-include-cleaner) -- std::ranges::sort, std::ranges::transform
 #include <string>
 #include <system_error>
 #include <unordered_map>
@@ -26,10 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace beez::core
-{
-
-namespace step_cache_detail
+namespace beez::core::step_cache_detail
 {
 
 void addDirectoryFromPattern(const std::string& pattern,
@@ -43,7 +31,10 @@ void addDirectoryFromPattern(const std::string& pattern,
     directories.insert(pattern.substr(0, slashIndex));
 }
 
-}  // namespace step_cache_detail
+}  // namespace beez::core::step_cache_detail
+
+namespace beez::core
+{
 
 OutputTracker::OutputTracker(std::filesystem::path projectRoot,
                              const IGlobMatcher& matcher,

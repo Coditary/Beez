@@ -1,10 +1,10 @@
 #include "beez/core/cache/success_cache.hpp"
 
+#include "beez/core/cache/content_hash.hpp"
+#include "beez/core/cache/include_fingerprint.hpp"
 #include "beez/core/cache/storage.hpp"
 #include "beez/core/config/cache_options.hpp"
-#include "beez/core/cache/content_hash.hpp"
 #include "beez/core/glob/pattern.hpp"
-#include "beez/core/cache/include_fingerprint.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"
 

@@ -1,7 +1,7 @@
 #include "beez/plugin/lua/lua_dsl.hpp"
 
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 #include "beez/plugin/lua/dsl/dsl_binder.hpp"
 #include "beez/plugin/lua/dsl/registry_validation.hpp"

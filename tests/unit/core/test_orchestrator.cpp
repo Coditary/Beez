@@ -1,4 +1,3 @@
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
 #include "beez/core/model/step.hpp"
@@ -9,6 +8,7 @@
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
 #include "beez/plugin/contract/executor.hpp"
 #include "beez/plugin/host/plugin_host.hpp"

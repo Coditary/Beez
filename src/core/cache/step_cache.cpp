@@ -2,27 +2,16 @@
 #include "step_cache_detail.hpp"
 
 #include "beez/core/cache/content_hash.hpp"
-#include "beez/core/cache/storage.hpp"
 #include "beez/core/config/cache_options.hpp"
-#include "beez/core/glob/expand.hpp"
-#include "beez/core/glob/metadata_cache.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"
 
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <ranges>
-#include <sstream>
 #include <string>
-#include <system_error>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -139,9 +128,8 @@ std::optional<CacheLookupResult> StepCache::lookupViaIndex(const Step& step,
         return std::nullopt;
     }
 
-    if (IndexEntry->command !=
-            step_cache_detail::stepCommandFingerprint(
-                step, projectRoot, *makeContentHasher(cacheOptions_.hash)) ||
+    if (IndexEntry->command != step_cache_detail::stepCommandFingerprint(
+                                   step, projectRoot, *makeContentHasher(cacheOptions_.hash)) ||
         IndexEntry->config != step_cache_detail::configFingerprint(config) ||
         IndexEntry->version != version::VersionString)
     {
@@ -176,8 +164,8 @@ void StepCache::writeIndex(const Step& step,
 {
     step_cache_detail::CacheIndexEntry indexEntry;
     indexEntry.key = key;
-    indexEntry.command =
-        step_cache_detail::stepCommandFingerprint(step, projectRoot, *makeContentHasher(cacheOptions_.hash));
+    indexEntry.command = step_cache_detail::stepCommandFingerprint(
+        step, projectRoot, *makeContentHasher(cacheOptions_.hash));
     indexEntry.config = step_cache_detail::configFingerprint(config);
     indexEntry.version = version::VersionString;
     indexEntry.durationSeconds = DurationSeconds;

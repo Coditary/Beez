@@ -1,4 +1,4 @@
-#include "beez/core/thread_pool.hpp"
+#include "beez/core/execution/thread_pool.hpp"
 
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/task_arena.h>

@@ -1,4 +1,4 @@
-#include "beez/core/stream_capture.hpp"
+#include "beez/core/execution/stream_capture.hpp"
 
 #include <array>
 #include <cstdio>

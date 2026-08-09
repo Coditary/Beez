@@ -1,4 +1,4 @@
-#include "beez/core/thread_pool.hpp"
+#include "beez/core/execution/thread_pool.hpp"
 
 #include <gtest/gtest.h>
 

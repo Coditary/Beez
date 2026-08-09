@@ -4,8 +4,8 @@
 
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/config/settings.hpp"
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 #include "helpers/temp_project.hpp"

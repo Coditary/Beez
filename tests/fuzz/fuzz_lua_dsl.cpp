@@ -1,5 +1,5 @@
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/util/temp_directory.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 

@@ -1,7 +1,7 @@
+#include "beez/core/cache/success_cache.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step_config.hpp"
-#include "beez/core/cache/success_cache.hpp"
 
 #include "helpers/test_step_config.hpp"
 

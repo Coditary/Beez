@@ -2,7 +2,6 @@
 #include "step_cache_detail.hpp"
 
 #include "beez/core/cache/content_hash.hpp"
-#include "beez/core/cache/storage.hpp"
 #include "beez/core/config/cache_options.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
@@ -12,17 +11,11 @@
 #include "beez/version.hpp"
 
 #include <algorithm>
-#include <cstddef>
-#include <cstdint>
 #include <filesystem>
 #include <memory>
-#include <optional>
-#include <ranges>
+#include <ranges>  // NOLINT(misc-include-cleaner) -- std::ranges::sort
 #include <sstream>
 #include <string>
-#include <system_error>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -48,11 +41,11 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
                                          const StepConfigPtr& config,
                                          const IGlobMatcher& matcher) const override
     {
-        const auto InputFiles = expandGlobPatterns(
-            step_cache_detail::artifactPatternsForInputs(step),
-            projectRoot,
-            matcher,
-            globMetadataCache_);
+        const auto InputFiles =
+            expandGlobPatterns(step_cache_detail::artifactPatternsForInputs(step),
+                               projectRoot,
+                               matcher,
+                               globMetadataCache_);
 
         std::vector<std::string> fileParts;
         fileParts.reserve(InputFiles.size());
@@ -70,12 +63,13 @@ class ContentAddressedCacheKeyStrategy final : public ICacheKeyStrategy
             fileStream << part << '\0';
         }
 
-        return hasher_->combine({step_cache_detail::stepExecutionIdentity(step),
-                                 step_cache_detail::buildScriptFingerprint(step, projectRoot, *hasher_),
-                                 fileStream.str(),
-                                 step_cache_detail::configFingerprint(config),
-                                 envHashFingerprint_,
-                                 version::VersionString});
+        return hasher_->combine(
+            {step_cache_detail::stepExecutionIdentity(step),
+             step_cache_detail::buildScriptFingerprint(step, projectRoot, *hasher_),
+             fileStream.str(),
+             step_cache_detail::configFingerprint(config),
+             envHashFingerprint_,
+             version::VersionString});
     }
 
   private:

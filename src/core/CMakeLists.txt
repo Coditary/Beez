@@ -36,13 +36,13 @@ add_library(
     registry/registry.cpp
     registry/step_order.cpp
     orchestrator.cpp
-    phase_argument_parser.cpp
-    util/text_table.cpp
-    thread_pool.cpp
-    worker_pool.cpp
+    execution/phase_argument_parser.cpp
+    execution/progress_detail.cpp
+    execution/stream_capture.cpp
+    execution/thread_pool.cpp
+    execution/worker_pool.cpp
     model/step_config.cpp
-    stream_capture.cpp
-    progress_detail.cpp
+    util/text_table.cpp
     util/temp_directory.cpp
 )
 
