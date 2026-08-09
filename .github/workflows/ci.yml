@@ -230,3 +230,56 @@ jobs:
 
           git commit -m "chore: update coverage badge [skip ci]"
           git push
+
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python tools
+        run: |
+          pipx install conan
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare Conan profile
+        run: |
+          PROFILE_PATH="$(./scripts/ci-conan-profile.sh)"
+          echo "CONAN_PROFILE=${PROFILE_PATH}" >> "$GITHUB_ENV"
+          echo "Using Conan profile at ${PROFILE_PATH}"
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-${{ runner.os }}-
+
+      - name: Generate SBOM
+        run: ./scripts/sbom-generate.sh build report
+
+      - name: SBOM summary
+        run: |
+          COMPONENT_COUNT="$(python3 -c "import json; print(len(json.load(open('report/sbom/cyclonedx.json'))['components']))")"
+          {
+            echo "## SBOM"
+            echo "Generated CycloneDX SBOM with **${COMPONENT_COUNT}** Conan dependencies."
+            echo ""
+            echo "Submitted to GitHub Dependency Graph for this commit."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Submit SBOM to GitHub Dependency Graph
+        uses: evryfs/sbom-dependency-submission-action@v0.0.14
+        with:
+          sbom-files: report/sbom/cyclonedx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: report/sbom/
+          if-no-files-found: error

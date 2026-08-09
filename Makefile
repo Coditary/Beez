@@ -1,4 +1,4 @@
-.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
+.PHONY: help setup setup-debug setup-coverage setup-sanitize setup-fuzzer build debug test lint lint-stale lint-stale-clean format analyze security clean clean-reports coverage sbom all sanitize tidy format-check run fuzzer fuzzer-smoke fuzzer-run fuzzer-corpus install-beez install-beez-completion uninstall-beez
 
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
@@ -108,6 +108,9 @@ coverage: setup-coverage ## Code-Coverage-Report (bricht ab unter $(MIN_LINE_COV
 	cmake --build --preset conan-debug
 	./scripts/coverage-test.sh $(BUILD_DIR) $(REPORTS_DIR)
 	./scripts/coverage-report.sh $(BUILD_DIR) $(REPORTS_DIR)
+
+sbom: ## CycloneDX-SBOM aus Conan-Abhängigkeiten erzeugen
+	./scripts/sbom-generate.sh $(BUILD_DIR) $(REPORTS_DIR)
 
 sanitize: setup-sanitize ## Debug-Build mit ASan/UBSan + Tests
 	cmake --build --preset conan-debug

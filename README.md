@@ -90,6 +90,7 @@ make lint          # clang-tidy + cmake-format check
 make analyze       # static analysis
 make security      # security-focused checks
 make coverage      # coverage report (fails below 85% line coverage on src/)
+make sbom          # CycloneDX SBOM from Conan dependencies
 make all           # full QA pipeline (same as CI)
 ```
 
@@ -100,6 +101,8 @@ STRICT_CI=1 ./scripts/ci.sh
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for pull request expectations, code style, and the full CI matrix.
+
+CI also generates a CycloneDX SBOM from Conan dependencies and submits it to GitHub's **Dependency Graph** (Repository → **Insights** → **Dependency graph**). Run `make sbom` locally to produce `report/sbom/cyclonedx.json`.
 
 Debug build with sanitizers:
 
