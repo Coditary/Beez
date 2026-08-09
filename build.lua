@@ -301,11 +301,6 @@ make_test_step(
     "report/test/performance.ok"
 )
 
--- order("build:compile", "test:unit")
--- order("build:compile", "test:integration")
--- order("build:compile", "test:system")
--- order("build:compile", "test:performance")
-
 -- ── Format (check + apply) ───────────────────────────────────────────────────
 
 configure_step("qa:format-check", {
@@ -523,12 +518,6 @@ step({
     end,
 })
 
--- Lua callback steps share one interpreter — the engine serializes them automatically.
--- Explicit order() is only needed for mutate conflicts that cannot be inferred from patterns.
--- order("qa:format-check", "qa:lint")
--- order("qa:lint", "qa:analyze-tidy")
--- order("qa:analyze-tidy", "qa:security-tidy")
-
 -- ── Debug build ──────────────────────────────────────────────────────────────
 
 step({
@@ -568,8 +557,6 @@ step({
     description = "CMake Debug build",
     run = "cmake --build --preset conan-debug",
 })
-
--- order("configure:debug", "build:debug")
 
 -- ── Coverage ─────────────────────────────────────────────────────────────────
 
@@ -650,10 +637,6 @@ step({
         REPORTS_DIR,
 })
 
--- order("configure:coverage", "build:coverage")
--- order("build:coverage", "test:coverage")
--- order("test:coverage", "report:coverage")
-
 -- ── Sanitizer ────────────────────────────────────────────────────────────────
 
 step({
@@ -712,9 +695,6 @@ step({
         "/sanitize/sanitize-report.ok",
 })
 
--- order("configure:sanitize", "build:sanitize")
--- order("build:sanitize", "test:sanitize")
-
 -- ── ThreadSanitizer ──────────────────────────────────────────────────────────
 
 step({
@@ -771,9 +751,6 @@ step({
         " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
         "/tsan/tsan-report.txt' && touch " .. REPORTS_DIR .. "/tsan/tsan-report.ok",
 })
-
--- order("configure:tsan", "build:tsan")
--- order("build:tsan", "test:tsan")
 
 -- ── Fuzzer ───────────────────────────────────────────────────────────────────
 
@@ -874,12 +851,6 @@ step({
     run = "FUZZER_TIME=" .. (beez.env("FUZZER_TORTURE_TIME") or "300") ..
         " REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-torture.sh build",
 })
-
--- order("configure:fuzzer", "build:fuzzer")
--- order("build:fuzzer", "fuzz:smoke")
--- order("build:fuzzer", "fuzz:corpus")
--- order("build:fuzzer", "fuzz:seed-verify")
--- order("build:fuzzer", "fuzz:torture")
 
 workflow("fuzzer_torture", {
     { phase = "configure", scope = "fuzz" },
