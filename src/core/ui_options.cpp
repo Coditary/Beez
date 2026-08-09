@@ -1,8 +1,8 @@
 // NOLINTBEGIN(misc-include-cleaner,readability-identifier-naming,readability-math-missing-parentheses,performance-no-automatic-move,modernize-return-braced-init-list,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-avoid-magic-numbers,bugprone-easily-swappable-parameters,readability-avoid-nested-conditional-operator)
 #include "beez/core/ui_options.hpp"
 
-#include "beez/logging/logger.hpp"
-#include "beez/logging/logging_settings.hpp"
+#include "beez/logging/contract/run_types.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include "beez/core/text_table.hpp"
 

@@ -3,7 +3,7 @@
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/core/orchestrator.h"
 #include "beez/core/registry.h"
-#include "beez/logging/output_mode.hpp"
+#include "beez/logging/console/output_mode.hpp"
 
 namespace beez::cli
 {

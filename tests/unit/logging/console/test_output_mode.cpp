@@ -1,4 +1,4 @@
-#include "beez/logging/output_mode.hpp"
+#include "beez/logging/console/output_mode.hpp"
 
 #include <gtest/gtest.h>
 

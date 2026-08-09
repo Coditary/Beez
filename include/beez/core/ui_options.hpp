@@ -1,7 +1,7 @@
 #pragma once
 
-#include "beez/logging/logger.hpp"
-#include "beez/logging/logging_settings.hpp"
+#include "beez/logging/contract/run_types.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include <cstddef>
 #include <cstdint>

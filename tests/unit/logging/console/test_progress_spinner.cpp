@@ -1,7 +1,7 @@
-#include "beez/logging/progress_spinner.hpp"
+#include "beez/logging/console/progress_spinner.hpp"
 
 #include "beez/core/ui_options.hpp"
-#include "beez/logging/logger.hpp"
+#include "beez/logging/contract/run_types.hpp"
 
 #include <gtest/gtest.h>
 

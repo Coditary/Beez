@@ -3,9 +3,9 @@
 #include "beez/core/cache_options.hpp"
 #include "beez/core/performance_options.hpp"
 #include "beez/core/ui_options.hpp"
-#include "beez/logging/logging_settings.hpp"
-#include "beez/logging/output_mode.hpp"
-#include "beez/logging/run_log_writer.hpp"
+#include "beez/logging/console/output_mode.hpp"
+#include "beez/logging/persistence/run_log_writer.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include <cstddef>
 #include <optional>

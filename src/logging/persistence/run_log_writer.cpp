@@ -1,6 +1,6 @@
-#include "beez/logging/run_log_writer.hpp"
+#include "beez/logging/persistence/run_log_writer.hpp"
 
-#include "beez/logging/logging_settings.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include <fstream>
 #include <mutex>

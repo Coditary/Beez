@@ -5,11 +5,13 @@ find_package(TBB REQUIRED)
 add_executable(
     beez_tests
     version/test_version.cpp
-    logging/test_logger.cpp
-    logging/test_output_mode.cpp
-    logging/test_logging_settings.cpp
-    logging/test_progress_spinner.cpp
-    logging/test_worker_output_format.cpp
+    logging/backends/test_recording_logger.cpp
+    logging/backends/test_spdlog_logger.cpp
+    logging/console/test_output_mode.cpp
+    logging/settings/test_logging_settings.cpp
+    logging/console/test_progress_spinner.cpp
+    logging/console/test_worker_output_format.cpp
+    logging/persistence/test_run_log_writer.cpp
     cli/parsing/test_cli_parser.cpp
     cli/presentation/test_entity_table.cpp
     cli/presentation/test_name_suggestion.cpp

@@ -1,18 +1,15 @@
 // NOLINTBEGIN(misc-include-cleaner,readability-identifier-length,readability-identifier-naming,cppcoreguidelines-special-member-functions)
-#include "beez/logging/spdlog_backend.hpp"
+#include "beez/logging/backends/spdlog_logger.hpp"
+#include "beez/logging/backends/spdlog_setup.hpp"
 
 #include "beez/core/ui_options.hpp"
-#include "beez/logging/logger.hpp"
-#include "beez/logging/logging_settings.hpp"
-#include "beez/logging/output_mode.hpp"
-#include "beez/logging/progress_spinner.hpp"
-#include "beez/logging/worker_output_format.hpp"
+#include "beez/logging/console/output_mode.hpp"
+#include "beez/logging/console/progress_spinner.hpp"
+#include "beez/logging/console/worker_output_format.hpp"
+#include "beez/logging/contract/logger.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
-#include <spdlog/common.h>
 #include <spdlog/logger.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/dist_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <unistd.h>
 
@@ -30,41 +27,6 @@ namespace beez::logging
 
 namespace
 {
-
-[[nodiscard]] spdlog::level::level_enum toSpdlogLevel(const core::UiLogLevel level)
-{
-    switch (level)
-    {
-    case core::UiLogLevel::Warn:
-        return spdlog::level::warn;
-    case core::UiLogLevel::Error:
-        return spdlog::level::err;
-    case core::UiLogLevel::Info:
-        break;
-    }
-
-    return spdlog::level::info;
-}
-
-[[nodiscard]] std::shared_ptr<spdlog::logger> makeConsoleLogger(const core::UiSettings& uiSettings)
-{
-    auto logger = spdlog::stdout_color_mt("beez");
-    logger->set_pattern("%v");
-    logger->set_level(toSpdlogLevel(uiSettings.logLevel));
-    return logger;
-}
-
-[[nodiscard]] std::shared_ptr<spdlog::logger> makeFileLogger(const std::filesystem::path& logFile,
-                                                             const core::UiSettings& uiSettings)
-{
-    std::error_code errorCode;
-    std::filesystem::create_directories(logFile.parent_path(), errorCode);
-
-    auto logger = spdlog::basic_logger_mt("beez_file", logFile.string(), true);
-    logger->set_pattern("%v");
-    logger->set_level(toSpdlogLevel(uiSettings.logLevel));
-    return logger;
-}
 
 class SpdlogLogger final : public ILogger
 {

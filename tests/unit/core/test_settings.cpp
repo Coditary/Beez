@@ -3,7 +3,7 @@
 #include "beez/core/context.h"
 #include "beez/core/env_settings.hpp"
 #include "beez/core/settings.hpp"
-#include "beez/logging/output_mode.hpp"
+#include "beez/logging/console/output_mode.hpp"
 
 #include <gtest/gtest.h>
 

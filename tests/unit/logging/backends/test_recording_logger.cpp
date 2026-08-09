@@ -1,4 +1,5 @@
-#include "beez/logging/logger.hpp"
+#include "beez/logging/backends/null_logger.hpp"
+#include "beez/logging/backends/recording_logger.hpp"
 
 #include <gtest/gtest.h>
 

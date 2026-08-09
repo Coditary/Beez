@@ -23,8 +23,9 @@
 #include "beez/core/worker_pool.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
-#include "beez/logging/logger.hpp"
-#include "beez/logging/output_mode.hpp"
+#include "beez/logging/console/output_mode.hpp"
+#include "beez/logging/contract/logger.hpp"
+#include "beez/logging/contract/run_types.hpp"
 #include "beez/plugin/dsl_loader.hpp"
 #include "beez/plugin/plugin_host.h"
 

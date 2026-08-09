@@ -1,4 +1,4 @@
-#include "beez/logging/worker_output_format.hpp"
+#include "beez/logging/console/worker_output_format.hpp"
 
 #include <gtest/gtest.h>
 

@@ -1,4 +1,4 @@
-#include "beez/logging/worker_output_format.hpp"
+#include "beez/logging/console/worker_output_format.hpp"
 
 // NOLINTBEGIN(misc-include-cleaner) -- TIOCGWINSZ and winsize come from platform ioctl headers
 #include <sys/ioctl.h>

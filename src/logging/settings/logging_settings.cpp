@@ -1,4 +1,4 @@
-#include "beez/logging/logging_settings.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include <filesystem>
 #include <stdexcept>

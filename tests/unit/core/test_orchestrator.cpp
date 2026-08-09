@@ -14,8 +14,8 @@
 #include "beez/plugin/plugin_host.h"
 
 #include "beez/core/run_options.hpp"
-#include "beez/logging/logger.hpp"
-#include "beez/logging/output_mode.hpp"
+#include "beez/logging/backends/recording_logger.hpp"
+#include "beez/logging/console/output_mode.hpp"
 
 #include <atomic>
 #include <chrono>

@@ -1,4 +1,6 @@
-#include "beez/logging/logger.hpp"
+#include "beez/logging/backends/recording_logger.hpp"
+#include "beez/logging/contract/logger.hpp"
+#include "beez/logging/contract/run_types.hpp"
 
 #include <string>
 #include <string_view>

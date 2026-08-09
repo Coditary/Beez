@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/logging/logging_settings.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include <mutex>
 #include <string>

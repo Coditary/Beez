@@ -14,7 +14,8 @@
 #include "beez/core/thread_pool.hpp"
 #include "beez/core/workflow.hpp"
 #include "beez/core/workflow_step.hpp"
-#include "beez/logging/logger.hpp"
+#include "beez/logging/contract/logger.hpp"
+#include "beez/logging/contract/run_types.hpp"
 
 #include <chrono>
 #include <cstddef>

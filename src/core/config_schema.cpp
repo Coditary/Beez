@@ -4,7 +4,7 @@
 #include "beez/core/performance_options.hpp"
 #include "beez/core/text_table.hpp"
 #include "beez/core/ui_options.hpp"
-#include "beez/logging/logging_settings.hpp"
+#include "beez/logging/settings/logging_settings.hpp"
 
 #include <algorithm>
 #include <cstdint>
