@@ -5,12 +5,30 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
 
 namespace beez::plugin::lua
 {
+
+namespace
+{
+
+sol::table algorithmsToTable(const std::shared_ptr<sol::state>& luaState,
+                           const std::vector<std::string>& algorithms)
+{
+    sol::table result = luaState->create_table();
+    for (std::size_t index = 0; index < algorithms.size(); ++index)
+    {
+        result.set(static_cast<int>(index + 1), algorithms.at(index));
+    }
+
+    return result;
+}
+
+}  // namespace
 
 sol::table bindCrypto(const std::shared_ptr<sol::state>& luaState, const core::Context& context)
 {
@@ -21,6 +39,12 @@ sol::table bindCrypto(const std::shared_ptr<sol::state>& luaState, const core::C
 
     cryptoTable["is_encoding_algo"] = [](const std::string& algorithm) -> bool
     { return api_detail::isEncodingAlgorithm(algorithm); };
+
+    cryptoTable["list_hash_algo"] = [luaState]() -> sol::table
+    { return algorithmsToTable(luaState, api_detail::supportedHashAlgorithms()); };
+
+    cryptoTable["list_encode_algo"] = [luaState]() -> sol::table
+    { return algorithmsToTable(luaState, api_detail::supportedEncodingAlgorithms()); };
 
     cryptoTable["hash_string"] =
         [](const std::string& text, sol::optional<std::string> algorithm) -> std::string

@@ -30,6 +30,38 @@ void writeFile(const std::filesystem::path& path, const std::string& content)
 
 }  // namespace
 
+TEST(LuaCryptoApiTest, ListHashAlgoReturnsSupportedAlgorithms)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local algos = beez.crypto.list_hash_algo()
+task("check", "echo " .. algos[1] .. "," .. algos[#algos])
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(*Found, 0, "echo sha256,sdbm");
+}
+
+TEST(LuaCryptoApiTest, ListEncodeAlgoReturnsSupportedAlgorithms)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local algos = beez.crypto.list_encode_algo()
+task("check", "echo " .. algos[1] .. "," .. algos[2])
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(*Found, 0, "echo hex,base64");
+}
+
 TEST(LuaCryptoApiTest, IsHashRecognizesSupportedAlgorithms)
 {
     const beez::test::TempProject Project;
