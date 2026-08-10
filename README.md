@@ -26,7 +26,8 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 | CLI flags | [Wiki: CLI Flag Reference](https://github.com/Coditary/Beez/wiki/CLI-Flag-Reference) |
 | Glossary | [Wiki: Glossary](https://github.com/Coditary/Beez/wiki/Glossary) |
 | Contributor guide | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Developer docs | [`docs/`](docs/) (incl. [`worker-api.md`](docs/worker-api.md), [`net-api.md`](docs/net-api.md), [`archive-api.md`](docs/archive-api.md), [`text-api.md`](docs/text-api.md)) |
+| Lua API reference | [Wiki: Lua API Overview](https://github.com/Coditary/Beez/wiki/Lua-API-Overview) · [`docs/lua-api-overview.md`](docs/lua-api-overview.md) |
+| Developer docs | [`docs/`](docs/) (per-module `*-api.md`, [`worker-api.md`](docs/worker-api.md)) |
 | Vertical feature workflow | [`docs/vertical-feature.md`](docs/vertical-feature.md) |
 
 ## Requirements

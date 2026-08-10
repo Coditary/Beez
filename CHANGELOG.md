@@ -9,14 +9,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Lua API overview
+
+- Global `beez` table in `build.lua` and Lua step callbacks, with modular namespaces documented in [`docs/lua-api-overview.md`](docs/lua-api-overview.md)
+- Wiki chapter: [Lua API Overview](https://github.com/Coditary/Beez/wiki/Lua-API-Overview) with per-module pages (Environment, Filesystem, Crypto, System, Time/Date, Data + validation schemas, Network, Archive, Text, Workers); in-repo mirror under [`wiki/`](wiki/) — push via [`wiki/README.md`](wiki/README.md)
+
+#### Environment (`beez.env`)
+
+- `beez.env(key)` — read process environment or project `.env` file
+- [`docs/env-api.md`](docs/env-api.md)
+
+#### Filesystem (`beez.fs`)
+
+- `glob` — project-root glob patterns (`**`, `*`, `?`)
+- `exists`, `join`, `copy`, `remove` — path helpers (all paths relative to project root)
+- [`docs/fs-api.md`](docs/fs-api.md)
+
+#### Crypto (`beez.crypto`)
+
+- `list_hash_algo` / `list_encode_algo` / `is_hash` / `is_encoding_algo` — discover algorithms
+- `hash_string` / `hash_file` — SHA-256/512/1, MD5, and fingerprint hashes (`fnv1a64`, `fnv1a32`, `crc32`, `djb2`, `sdbm`)
+- `encode` — hex, base64, and HMAC (key + hash algorithm overload)
+- [`docs/crypto-api.md`](docs/crypto-api.md)
+
+#### System (`beez.sys`)
+
+- `cpu_cores`, `cpu_threads`, `ram_total`, `ram_free`
+- `cwd`, `tmp_dir`, `path_separator`, `pid`, `user`, `is_tty`
+- [`docs/sys-api.md`](docs/sys-api.md)
+
+#### Time (`beez.time`)
+
+- `now`, `uptime`, `iso` — wall clock and uptime
+- `sleep`, `sleep_s` — blocking delays
+- [`docs/time-api.md`](docs/time-api.md)
+
+#### Date (`beez.date`)
+
+- `info` — calendar fields (year, month, day, wday, …)
+- `format` — `strftime`-style local formatting
+- `epoch`, `utc`, `utc_offset`
+- [`docs/date-api.md`](docs/date-api.md)
+
+#### Data (`beez.data`)
+
+- `deserialize_string` / `serialize_string` / `deserialize_file` / `serialize_file` — JSON, YAML, XML, CSV, TOML
+- `merge`, `clone`, `get`, `set`, `diff` — table operations (dot paths for get/set)
+- `validate` — JSON Schema subset (`type`, `enum`, `required`, `properties`, `additionalProperties`, `items`)
+- [`docs/data-api.md`](docs/data-api.md)
+
 #### Text API (`beez.text`)
 
 - `contains` / `starts_with` / `ends_with` — string predicates
 - `to_lowercase` / `to_uppercase` / `to_case` — case transforms (title case for `to_case`)
 - `replace` / `replace_all` — substring replacement
 - `split` / `join` / `trim` — split/join and whitespace trim
-- `regex_match` / `regex_replace` — ECMAScript regex helpers
-- `template` — placeholder wrapper (returns template unchanged until engine is integrated)
+- `regex_match` / `regex_replace` — ECMAScript regex helpers (`std::regex`)
+- `template` — [Prebyte](https://github.com/Coditary/Prebyte) template engine (lazy init; Lua 1-based array indexing in templates)
 - `diff` — line-based text diff (`equal` / `insert` / `delete` chunks)
 - [`docs/text-api.md`](docs/text-api.md)
 
@@ -44,13 +93,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic worker names `{step-name}-{n}` (for example `compile-1`, `compile-2`); `name` is no longer required in `ctx:spawn`
 - [`docs/worker-api.md`](docs/worker-api.md) — spawn, wait, and wait_all reference
 
+#### Tests and quality
+
+- Unit tests for all Lua API modules under `tests/unit/plugin/lua/api/`
+- Direct C++ tests for `crypto_ops` (`tests/unit/plugin/lua/api/crypto/test_crypto_ops.cpp`)
+- Line coverage on `src/` raised to **≥ 85%** (enforced by `beez all` / CI)
+
 ### Changed
+
+#### Lua API structure
+
+- API split into per-domain modules (`beez.fs`, `beez.crypto`, `beez.data`, …) with dedicated bind files under `src/plugins/lua/api/`
+- Prebyte integrated for `beez.text.template` (replaces no-op placeholder)
+- Lua sequential arrays passed to Prebyte templates use **1-based** indexing (`items[1]` matches Lua table index 1)
 
 #### Worker API (breaking)
 
 - `ctx:wait(handle)` no longer returns an exit code; use `ctx:wait(handle, { exitCode = true })` and read `result.exitCode`
 - `ctx:wait_all(handles)` no longer returns an exit code; use `ctx:wait_all(handles, { exitCode = true })` or wait on individual handles
 - `ctx:spawn` no longer requires `name`; an explicit `name` remains supported for logging overrides
+
+### Fixed
+
+- ODR collision: `beez.text.join` vs `beez.fs.join` — text join bound as `bindTextJoin`
+- Prebyte backend: Lua array indexing in templates (`items[1]` now resolves to the first Lua element)
+- QA pipeline: clang-tidy, clang-format, and analyzer warnings across `src/`, `include/`, and `tests/`
+- Multithreading bug in worker pool (from earlier branch work)
 
 ---
 
