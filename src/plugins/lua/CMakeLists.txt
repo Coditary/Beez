@@ -67,10 +67,27 @@ add_library(
     api/data/detail/toml_convert.cpp
     api/data/detail/codec.cpp
     api/net/net_table.cpp
+    api/net/get.cpp
+    api/net/post.cpp
+    api/net/put.cpp
+    api/net/delete.cpp
+    api/net/request.cpp
+    api/net/upload.cpp
+    api/net/download.cpp
+    api/net/download_and_verify.cpp
+    api/net/ping.cpp
+    api/net/is_online.cpp
+    api/net/set_proxy.cpp
     api/net/detail/http_client.cpp
     api/net/detail/headers.cpp
+    api/net/detail/bind_helpers.cpp
     api/archive/archive_table.cpp
-    api/archive/detail/archive_ops.cpp
+    api/archive/extract.cpp
+    api/archive/compress.cpp
+    api/archive/list.cpp
+    api/archive/extract_file.cpp
+    api/archive/read_text.cpp
+    api/archive/detail/archive_common.cpp
     api/text/text_table.cpp
     api/text/contains.cpp
     api/text/starts_with.cpp
