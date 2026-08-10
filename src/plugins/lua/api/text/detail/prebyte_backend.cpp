@@ -30,7 +30,7 @@ namespace
 {
     if (!object.valid() || object.is<sol::lua_nil_t>())
     {
-        return prebyte::Data{};
+        return prebyte::Data {};
     }
 
     if (object.is<bool>())
@@ -73,9 +73,8 @@ namespace
         }
 
         prebyte::Data::Map map;
-        Table.for_each(
-            [&map](const sol::object& key, const sol::object& value)
-            { map[key.as<std::string>()] = luaObjectToData(value); });
+        Table.for_each([&map](const sol::object& key, const sol::object& value)
+                       { map[key.as<std::string>()] = luaObjectToData(value); });
         return prebyte::Data(std::move(map));
     }
 
@@ -90,9 +89,8 @@ namespace
 [[nodiscard]] prebyte::RenderContext buildRenderContext(const sol::table& variables)
 {
     prebyte::RenderContext context;
-    variables.for_each(
-        [&context](const sol::object& key, const sol::object& value)
-        { context.set(key.as<std::string>(), luaObjectToValue(value)); });
+    variables.for_each([&context](const sol::object& key, const sol::object& value)
+                       { context.set(key.as<std::string>(), luaObjectToValue(value)); });
     return context;
 }
 

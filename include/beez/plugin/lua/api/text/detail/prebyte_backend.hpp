@@ -9,6 +9,7 @@
 namespace beez::plugin::lua::text_detail
 {
 
-[[nodiscard]] std::string renderTemplateString(const std::string& templateString, const sol::table& variables);
+[[nodiscard]] std::string renderTemplateString(const std::string& templateString,
+                                               const sol::table& variables);
 
 }  // namespace beez::plugin::lua::text_detail

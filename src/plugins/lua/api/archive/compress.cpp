@@ -155,7 +155,8 @@ parseFormatOption(const sol::optional<sol::table>& optionsTable)
         return {.format = ARCHIVE_FORMAT_TAR, .filter = ARCHIVE_FILTER_XZ};
     }
 
-    throw std::invalid_argument("could not detect archive format from path: " + archivePath.string());
+    throw std::invalid_argument("could not detect archive format from path: " +
+                                archivePath.string());
 }
 
 void addFileToArchive(archive* writer,
@@ -184,7 +185,8 @@ void addFileToArchive(archive* writer,
     stream.seekg(0, std::ios::beg);
     archive_entry_set_size(entry, size);
 
-    archive_detail::throwOnArchiveError(writer, archive_write_header(writer, entry), "failed to write archive header");
+    archive_detail::throwOnArchiveError(
+        writer, archive_write_header(writer, entry), "failed to write archive header");
 
     std::array<char, ReadBufferSize> buffer {};
     while (stream)
@@ -198,7 +200,8 @@ void addFileToArchive(archive* writer,
 
         archive_detail::throwOnArchiveError(
             writer,
-            static_cast<int>(archive_write_data(writer, buffer.data(), static_cast<std::size_t>(read))),
+            static_cast<int>(
+                archive_write_data(writer, buffer.data(), static_cast<std::size_t>(read))),
             "failed to write archive data");
     }
 
@@ -214,8 +217,9 @@ void addDirectoryToArchive(archive* writer,
              currentPath, std::filesystem::directory_options::skip_permission_denied))
     {
         const std::filesystem::path relative = std::filesystem::relative(entry.path(), rootPath);
-        const std::string entryName =
-            entryPrefix.empty() ? relative.generic_string() : entryPrefix + "/" + relative.generic_string();
+        const std::string entryName = entryPrefix.empty()
+                                          ? relative.generic_string()
+                                          : entryPrefix + "/" + relative.generic_string();
 
         if (entry.is_directory())
         {
@@ -252,17 +256,19 @@ void compress(const std::filesystem::path& sourcePath,
 
     archive* writer = archive_write_new();
     ArchiveWriteHandle handle(writer);
-    archive_detail::throwOnArchiveError(writer, archive_write_set_format(writer, format.format), "failed to set archive format");
+    archive_detail::throwOnArchiveError(
+        writer, archive_write_set_format(writer, format.format), "failed to set archive format");
     if (format.filter != ARCHIVE_FILTER_NONE)
     {
         archive_detail::throwOnArchiveError(writer,
-                                          archive_write_add_filter(writer, format.filter),
-                                          "failed to set archive filter");
+                                            archive_write_add_filter(writer, format.filter),
+                                            "failed to set archive filter");
     }
 
-    archive_detail::throwOnArchiveError(writer,
-                                        archive_write_open_filename(writer, archivePath.string().c_str()),
-                                        "failed to open archive for writing");
+    archive_detail::throwOnArchiveError(
+        writer,
+        archive_write_open_filename(writer, archivePath.string().c_str()),
+        "failed to open archive for writing");
 
     if (std::filesystem::is_directory(sourcePath))
     {
@@ -295,7 +301,8 @@ void bindArchiveCompress(sol::table& archiveTable,
         result["path"] = resolvedArchive.generic_string();
         if (std::filesystem::exists(resolvedArchive))
         {
-            result["bytes"] = static_cast<std::uint64_t>(std::filesystem::file_size(resolvedArchive));
+            result["bytes"] =
+                static_cast<std::uint64_t>(std::filesystem::file_size(resolvedArchive));
         }
         return result;
     };

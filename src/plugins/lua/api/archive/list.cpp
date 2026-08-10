@@ -49,8 +49,7 @@ void bindArchiveList(sol::table& archiveTable,
                      const std::shared_ptr<sol::state>& luaState,
                      const core::Context& context)
 {
-    archiveTable["list"] =
-        [luaState, &context](const std::string& archivePath) -> sol::table
+    archiveTable["list"] = [luaState, &context](const std::string& archivePath) -> sol::table
     {
         const std::filesystem::path resolvedArchive =
             api_detail::resolvePath(context.projectRoot(), archivePath);

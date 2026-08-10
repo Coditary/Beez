@@ -77,8 +77,8 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
         if (result.exitCode != 0 && !result.capturedOutput.empty())
         {
             const std::scoped_lock Lock(workerFailureOutputMutex);
-            workerFailureOutputs.push_back(WorkerFailureOutput {
-                .workerName = worker.name, .output = result.capturedOutput});
+            workerFailureOutputs.push_back(
+                WorkerFailureOutput {.workerName = worker.name, .output = result.capturedOutput});
         }
 
         return {.exitCode = result.exitCode, .output = std::move(result.capturedOutput)};

@@ -81,8 +81,8 @@ struct CacheStatsTracker
                                                            CacheStatsTracker& tracker)
 {
     return {projectRoot,
-            [&projectRoot](const std::string& /*command*/,
-                           const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
+            [&projectRoot](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/)
+                -> beez::core::WorkerCommandResult
             {
                 writeFile(projectRoot / "build" / "main.o", "fresh-object\n");
                 return {.exitCode = 0};
@@ -103,8 +103,8 @@ TEST(WorkerPoolTest, SpawnAndWaitExecutesCommand)
     std::vector<std::string> commands;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&commands](const std::string& command,
+                    const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             commands.push_back(command);
             return {.exitCode = 0};
@@ -130,8 +130,8 @@ TEST(WorkerPoolTest, WaitAllExecutesMultipleWorkersSequentially)
     std::vector<std::string> commands;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&commands](const std::string& command,
+                    const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             commands.push_back(command);
             return {.exitCode = 0};
@@ -156,8 +156,8 @@ TEST(WorkerPoolTest, WorkerExecutesMultipleCommandsInOrder)
     std::vector<std::string> commands;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&commands](const std::string& command,
+                    const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             commands.push_back(command);
             return {.exitCode = 0};
@@ -181,8 +181,8 @@ TEST(WorkerPoolTest, DrainAllExecutesRemainingWorkers)
     int executed = 0;
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&executed](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&executed](const std::string& /*command*/,
+                    const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             ++executed;
             return {.exitCode = 0};
@@ -204,8 +204,8 @@ TEST(WorkerPoolTest, FailedWorkerReturnsNonZeroExitCode)
 {
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [](const std::string& /*command*/,
+           const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         { return {.exitCode = 1}; },
         nullptr,
         beez::core::defaultGlobMatcher(),
@@ -228,9 +228,9 @@ TEST(WorkerPoolTest, CachedWorkerSkipsExecutionWhenOutputsExist)
     const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool pool(
         Project.path(),
-        [&executed, &Project](const std::string& /*command*/,
-                              const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&executed,
+         &Project](const std::string& /*command*/,
+                   const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             ++executed;
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
@@ -274,9 +274,9 @@ TEST(WorkerPoolTest, DrainAllRunsWorkersInParallelWhenThreadPoolAllows)
 
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&concurrent, &peak](const std::string& /*command*/,
-                             const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&concurrent,
+         &peak](const std::string& /*command*/,
+                const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             const int Current = concurrent.fetch_add(1) + 1;
             int observed = peak.load();
@@ -311,8 +311,8 @@ TEST(WorkerPoolTest, DrainAllStaysSequentialWithSingleThreadPool)
 
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [&commands](const std::string& command, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&commands](const std::string& command,
+                    const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             commands.push_back(command);
             return {.exitCode = 0};
@@ -343,8 +343,8 @@ TEST(WorkerPoolTest, AccumulatesExecutionAndSavedSeconds)
     const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool pool(
         Project.path(),
-        [&Project](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&Project](const std::string& /*command*/,
+                   const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -408,9 +408,9 @@ TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
     const beez::core::StepCache Cache(cacheOptions, beez::core::defaultGlobMatcher());
     beez::core::WorkerPool poolV1(
         Project.path(),
-        [&executed, &Project](const std::string& /*command*/,
-                              const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&executed,
+         &Project](const std::string& /*command*/,
+                   const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             ++executed;
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
@@ -438,9 +438,9 @@ TEST(WorkerPoolTest, CachedWorkerInvalidatesWhenParentConfigChanges)
 
     beez::core::WorkerPool poolV2(
         Project.path(),
-        [&executed, &Project](const std::string& /*command*/,
-                              const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [&executed,
+         &Project](const std::string& /*command*/,
+                   const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         {
             ++executed;
             writeFile(Project.path() / "build" / "main.o", "fresh-object\n");
@@ -465,8 +465,9 @@ TEST(WorkerPoolTest, AutoNamesWorkersFromParentStep)
 {
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult { return {.exitCode = 0}; },
+        [](const std::string& /*command*/,
+           const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
+        { return {.exitCode = 0}; },
         nullptr,
         beez::core::defaultGlobMatcher(),
         "compile",
@@ -488,8 +489,8 @@ TEST(WorkerPoolTest, WorkerSnapshotCapturesCommandOutput)
 {
     beez::core::WorkerPool pool(
         std::filesystem::current_path(),
-        [](const std::string& /*command*/, const beez::core::WorkerSpec& /*worker*/)
-            -> beez::core::WorkerCommandResult
+        [](const std::string& /*command*/,
+           const beez::core::WorkerSpec& /*worker*/) -> beez::core::WorkerCommandResult
         { return {.exitCode = 0, .output = "worker-output\n"}; },
         nullptr,
         beez::core::defaultGlobMatcher(),

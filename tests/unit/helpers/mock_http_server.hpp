@@ -163,7 +163,8 @@ class MockHttpServer
             constexpr std::string_view Prefix = "Content-Length:";
             if (HeaderLine.rfind(Prefix.data(), 0) == 0)
             {
-                contentLength = static_cast<std::size_t>(std::stoul(HeaderLine.substr(Prefix.size())));
+                contentLength =
+                    static_cast<std::size_t>(std::stoul(HeaderLine.substr(Prefix.size())));
             }
         }
 
@@ -186,10 +187,10 @@ class MockHttpServer
             }
         }
 
-        const std::string Response = "HTTP/1.1 " + std::to_string(statusCode_) + " OK\r\n"
-                                     + "Content-Type: " + contentType_ + "\r\n"
-                                     + "Content-Length: " + std::to_string(body_.size()) + "\r\n"
-                                     + "Connection: close\r\n\r\n" + body_;
+        const std::string Response = "HTTP/1.1 " + std::to_string(statusCode_) + " OK\r\n" +
+                                     "Content-Type: " + contentType_ + "\r\n" +
+                                     "Content-Length: " + std::to_string(body_.size()) + "\r\n" +
+                                     "Connection: close\r\n\r\n" + body_;
         (void)::send(clientFd, Response.data(), Response.size(), 0);
     }
 

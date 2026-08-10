@@ -36,7 +36,8 @@ namespace
     return parts;
 }
 
-[[nodiscard]] std::string joinStrings(const std::vector<std::string>& parts, const std::string& delimiter)
+[[nodiscard]] std::string joinStrings(const std::vector<std::string>& parts,
+                                      const std::string& delimiter)
 {
     if (parts.empty())
     {

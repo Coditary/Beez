@@ -22,7 +22,8 @@ void bindRegexMatch(sol::table& textTable)
         }
         catch (const std::regex_error& error)
         {
-            throw std::runtime_error(std::string("beez.text.regex_match: invalid pattern: ") + error.what());
+            throw std::runtime_error(std::string("beez.text.regex_match: invalid pattern: ") +
+                                     error.what());
         }
     };
 }

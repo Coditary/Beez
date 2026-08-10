@@ -13,17 +13,17 @@ namespace beez::plugin::lua
 
 void bindPut(sol::table& netTable, const std::shared_ptr<sol::state>& luaState)
 {
-    netTable["put"] =
-        [luaState](const std::string& url,
-                   const std::string& body,
-                   const sol::optional<sol::table>& headersTable) -> sol::table
+    netTable["put"] = [luaState](const std::string& url,
+                                 const std::string& body,
+                                 const sol::optional<sol::table>& headersTable) -> sol::table
     {
         net_detail::RequestOptions options;
         options.method = "PUT";
         options.url = url;
         options.body = body;
-        options.headers = headersTable.has_value() ? net_detail::parseHeadersTable(headersTable.value())
-                                                   : net_detail::HeaderList {};
+        options.headers = headersTable.has_value()
+                              ? net_detail::parseHeadersTable(headersTable.value())
+                              : net_detail::HeaderList {};
         return net_detail::responseToTable(
             luaState,
             net_detail::performOrThrow(net_detail::HttpClient::instance().perform(options)));

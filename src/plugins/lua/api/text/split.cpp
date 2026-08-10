@@ -44,7 +44,8 @@ namespace
 
 void bindSplit(sol::table& textTable, const std::shared_ptr<sol::state>& luaState)
 {
-    textTable["split"] = [luaState](const std::string& text, const std::string& delimiter) -> sol::table
+    textTable["split"] = [luaState](const std::string& text,
+                                    const std::string& delimiter) -> sol::table
     {
         const std::vector<std::string> parts = splitText(text, delimiter);
         sol::table result = luaState->create_table(static_cast<int>(parts.size()), 0);

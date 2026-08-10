@@ -11,11 +11,11 @@ namespace beez::plugin::lua
 
 void bindPing(sol::table& netTable, const std::shared_ptr<sol::state>& luaState)
 {
-    netTable["ping"] =
-        [luaState](const std::string& url, const sol::optional<long>& timeoutSeconds) -> sol::table
+    netTable["ping"] = [luaState](const std::string& url,
+                                  const sol::optional<long>& timeoutSeconds) -> sol::table
     {
-        const net_detail::PingResult result = net_detail::HttpClient::instance().ping(
-            url, timeoutSeconds.value_or(10));
+        const net_detail::PingResult result =
+            net_detail::HttpClient::instance().ping(url, timeoutSeconds.value_or(10));
         sol::table response = luaState->create_table();
         response["ok"] = result.reachable;
         response["status"] = result.statusCode;

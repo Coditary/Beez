@@ -16,8 +16,8 @@ void bindEndsWith(sol::table& textTable)
     {
         const std::string_view TextView = text;
         const std::string_view SuffixView = suffix;
-        return TextView.size() >= SuffixView.size()
-               && TextView.substr(TextView.size() - SuffixView.size()) == SuffixView;
+        return TextView.size() >= SuffixView.size() &&
+               TextView.substr(TextView.size() - SuffixView.size()) == SuffixView;
     };
 }
 

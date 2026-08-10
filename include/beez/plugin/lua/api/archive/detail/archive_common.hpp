@@ -11,7 +11,8 @@
 namespace beez::plugin::lua::archive_detail
 {
 
-constexpr int ExtractFlags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_SECURE_NODOTDOT |
+constexpr int ExtractFlags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM |
+                             ARCHIVE_EXTRACT_SECURE_NODOTDOT |
                              ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS;
 
 struct ArchiveEntryInfo

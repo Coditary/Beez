@@ -34,7 +34,8 @@ sol::table headersToTable(const std::shared_ptr<sol::state>& luaState,
     return headerTable;
 }
 
-sol::table responseToTable(const std::shared_ptr<sol::state>& luaState, const HttpResponse& response)
+sol::table responseToTable(const std::shared_ptr<sol::state>& luaState,
+                           const HttpResponse& response)
 {
     sol::table result = luaState->create_table();
     result["status"] = response.statusCode;

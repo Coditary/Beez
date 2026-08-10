@@ -52,8 +52,9 @@ struct TextDiffChunk
     return lines;
 }
 
-[[nodiscard]] std::vector<std::size_t> longestCommonSubsequenceTable(const std::vector<std::string>& left,
-                                                                     const std::vector<std::string>& right)
+[[nodiscard]] std::vector<std::size_t>
+longestCommonSubsequenceTable(const std::vector<std::string>& left,
+                              const std::vector<std::string>& right)
 {
     const std::size_t leftSize = left.size();
     const std::size_t rightSize = right.size();
@@ -71,7 +72,7 @@ struct TextDiffChunk
             else
             {
                 table[index] = std::max(table[((i - 1U) * (rightSize + 1U)) + j],
-                                      table[(i * (rightSize + 1U)) + (j - 1U)]);
+                                        table[(i * (rightSize + 1U)) + (j - 1U)]);
             }
         }
     }
@@ -79,7 +80,8 @@ struct TextDiffChunk
     return table;
 }
 
-[[nodiscard]] std::vector<TextDiffChunk> diffText(std::string_view oldText, std::string_view newText)
+[[nodiscard]] std::vector<TextDiffChunk> diffText(std::string_view oldText,
+                                                  std::string_view newText)
 {
     const std::vector<std::string> oldLines = splitLines(oldText);
     const std::vector<std::string> newLines = splitLines(newText);
@@ -91,28 +93,29 @@ struct TextDiffChunk
 
     while (leftIndex > 0 || rightIndex > 0)
     {
-        if (leftIndex > 0 && rightIndex > 0 && oldLines[leftIndex - 1U] == newLines[rightIndex - 1U])
+        if (leftIndex > 0 && rightIndex > 0 &&
+            oldLines[leftIndex - 1U] == newLines[rightIndex - 1U])
         {
-            chunks.push_back(TextDiffChunk{.op = "equal", .text = oldLines[leftIndex - 1U]});
+            chunks.push_back(TextDiffChunk {.op = "equal", .text = oldLines[leftIndex - 1U]});
             --leftIndex;
             --rightIndex;
             continue;
         }
 
         const std::size_t rightSize = newLines.size();
-        const std::size_t up = (leftIndex > 0)
-                                   ? table[((leftIndex - 1U) * (rightSize + 1U)) + rightIndex]
-                                   : 0U;
-        const std::size_t left = (rightIndex > 0) ? table[(leftIndex * (rightSize + 1U)) + (rightIndex - 1U)] : 0U;
+        const std::size_t up =
+            (leftIndex > 0) ? table[((leftIndex - 1U) * (rightSize + 1U)) + rightIndex] : 0U;
+        const std::size_t left =
+            (rightIndex > 0) ? table[(leftIndex * (rightSize + 1U)) + (rightIndex - 1U)] : 0U;
 
         if (leftIndex > 0 && (rightIndex == 0 || up >= left))
         {
-            chunks.push_back(TextDiffChunk{.op = "delete", .text = oldLines[leftIndex - 1U]});
+            chunks.push_back(TextDiffChunk {.op = "delete", .text = oldLines[leftIndex - 1U]});
             --leftIndex;
         }
         else
         {
-            chunks.push_back(TextDiffChunk{.op = "insert", .text = newLines[rightIndex - 1U]});
+            chunks.push_back(TextDiffChunk {.op = "insert", .text = newLines[rightIndex - 1U]});
             --rightIndex;
         }
     }
@@ -125,7 +128,8 @@ struct TextDiffChunk
 
 void bindDiff(sol::table& textTable, const std::shared_ptr<sol::state>& luaState)
 {
-    textTable["diff"] = [luaState](const std::string& oldText, const std::string& newText) -> sol::table
+    textTable["diff"] = [luaState](const std::string& oldText,
+                                   const std::string& newText) -> sol::table
     {
         const std::vector<TextDiffChunk> chunks = diffText(oldText, newText);
         sol::table result = luaState->create_table(static_cast<int>(chunks.size()), 0);

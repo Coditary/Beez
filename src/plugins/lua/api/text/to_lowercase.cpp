@@ -15,7 +15,9 @@ void bindToLowercase(sol::table& textTable)
 {
     textTable["to_lowercase"] = [](std::string text) -> std::string
     {
-        std::ranges::transform(text, text.begin(), [](const unsigned char character) -> char
+        std::ranges::transform(text,
+                               text.begin(),
+                               [](const unsigned char character) -> char
                                { return static_cast<char>(std::tolower(character)); });
         return text;
     };

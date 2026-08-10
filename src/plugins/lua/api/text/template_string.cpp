@@ -13,7 +13,8 @@ namespace beez::plugin::lua
 
 void bindTemplateString(sol::table& textTable)
 {
-    textTable["template"] = [](const std::string& templateString, const sol::table& variables) -> std::string
+    textTable["template"] = [](const std::string& templateString,
+                               const sol::table& variables) -> std::string
     { return text_detail::renderTemplateString(templateString, variables); };
 }
 

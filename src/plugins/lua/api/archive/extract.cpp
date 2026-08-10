@@ -35,15 +35,16 @@ namespace
             {
                 break;
             }
-            archive_detail::throwOnArchiveError(handle.reader, result, "failed to read archive header");
+            archive_detail::throwOnArchiveError(
+                handle.reader, result, "failed to read archive header");
 
-            const std::string relativePath = archive_detail::normalizeEntryPath(archive_entry_pathname(entry));
+            const std::string relativePath =
+                archive_detail::normalizeEntryPath(archive_entry_pathname(entry));
             archive_entry_set_pathname(entry, relativePath.c_str());
-            archive_detail::throwOnArchiveError(handle.reader,
-                                                archive_read_extract(handle.reader,
-                                                                     entry,
-                                                                     archive_detail::ExtractFlags),
-                                                "failed to extract archive entry");
+            archive_detail::throwOnArchiveError(
+                handle.reader,
+                archive_read_extract(handle.reader, entry, archive_detail::ExtractFlags),
+                "failed to extract archive entry");
             ++extractedCount;
         }
     }
@@ -63,8 +64,8 @@ void bindArchiveExtract(sol::table& archiveTable,
                         const std::shared_ptr<sol::state>& luaState,
                         const core::Context& context)
 {
-    archiveTable["extract"] =
-        [luaState, &context](const std::string& archivePath, const std::string& destinationDir) -> sol::table
+    archiveTable["extract"] = [luaState, &context](const std::string& archivePath,
+                                                   const std::string& destinationDir) -> sol::table
     {
         const std::filesystem::path resolvedArchive =
             api_detail::resolvePath(context.projectRoot(), archivePath);

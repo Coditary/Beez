@@ -14,10 +14,9 @@ namespace beez::plugin::lua
 
 void bindRequest(sol::table& netTable, const std::shared_ptr<sol::state>& luaState)
 {
-    netTable["request"] =
-        [luaState](const std::string& method,
-                   const std::string& url,
-                   const sol::optional<sol::table>& optionsTable) -> sol::table
+    netTable["request"] = [luaState](const std::string& method,
+                                     const std::string& url,
+                                     const sol::optional<sol::table>& optionsTable) -> sol::table
     {
         if (method.empty())
         {

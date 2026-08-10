@@ -3,8 +3,8 @@
 #include <curl/curl.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cctype>
+#include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <memory>
@@ -50,10 +50,8 @@ class CurlGlobalInit
     return value;
 }
 
-[[nodiscard]] std::size_t appendToString(char* buffer,
-                                         std::size_t size,
-                                         std::size_t count,
-                                         void* userData)
+[[nodiscard]] std::size_t
+appendToString(char* buffer, std::size_t size, std::size_t count, void* userData)
 {
     auto* output = static_cast<std::string*>(userData);
     if (size > 0)
@@ -63,10 +61,8 @@ class CurlGlobalInit
     return count;
 }
 
-[[nodiscard]] std::size_t appendHeader(char* buffer,
-                                       std::size_t size,
-                                       std::size_t count,
-                                       void* userData)
+[[nodiscard]] std::size_t
+appendHeader(char* buffer, std::size_t size, std::size_t count, void* userData)
 {
     auto* headers = static_cast<std::unordered_map<std::string, std::string>*>(userData);
     if (size == 0 || count == 0)
@@ -161,7 +157,8 @@ void applyCommonOptions(CURL* handle,
 void freeHeaderList(CURL* handle)
 {
     void* privateData = nullptr;
-    if (curl_easy_getinfo(handle, CURLINFO_PRIVATE, &privateData) == CURLE_OK && privateData != nullptr)
+    if (curl_easy_getinfo(handle, CURLINFO_PRIVATE, &privateData) == CURLE_OK &&
+        privateData != nullptr)
     {
         curl_slist_free_all(static_cast<curl_slist*>(privateData));
         curl_easy_setopt(handle, CURLOPT_PRIVATE, nullptr);
@@ -216,7 +213,8 @@ HttpResponse HttpClient::perform(RequestOptions options)
     if (!options.body.empty())
     {
         curl_easy_setopt(handle.get(), CURLOPT_POSTFIELDS, options.body.c_str());
-        curl_easy_setopt(handle.get(), CURLOPT_POSTFIELDSIZE_LARGE,
+        curl_easy_setopt(handle.get(),
+                         CURLOPT_POSTFIELDSIZE_LARGE,
                          static_cast<curl_off_t>(options.body.size()));
     }
 
@@ -350,8 +348,7 @@ PingResult HttpClient::ping(const std::string& url, const long timeoutSeconds)
 
     PingResult result;
     result.statusCode = Response.statusCode;
-    result.milliseconds =
-        std::chrono::duration<double, std::milli>(End - Start).count();
+    result.milliseconds = std::chrono::duration<double, std::milli>(End - Start).count();
     result.error = Response.error;
     result.reachable = Response.error.empty() && Response.statusCode > 0;
     return result;

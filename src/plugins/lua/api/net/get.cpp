@@ -13,14 +13,15 @@ namespace beez::plugin::lua
 
 void bindGet(sol::table& netTable, const std::shared_ptr<sol::state>& luaState)
 {
-    netTable["get"] =
-        [luaState](const std::string& url, const sol::optional<sol::table>& headersTable) -> sol::table
+    netTable["get"] = [luaState](const std::string& url,
+                                 const sol::optional<sol::table>& headersTable) -> sol::table
     {
         net_detail::RequestOptions options;
         options.method = "GET";
         options.url = url;
-        options.headers = headersTable.has_value() ? net_detail::parseHeadersTable(headersTable.value())
-                                                   : net_detail::HeaderList {};
+        options.headers = headersTable.has_value()
+                              ? net_detail::parseHeadersTable(headersTable.value())
+                              : net_detail::HeaderList {};
         return net_detail::responseToTable(
             luaState,
             net_detail::performOrThrow(net_detail::HttpClient::instance().perform(options)));

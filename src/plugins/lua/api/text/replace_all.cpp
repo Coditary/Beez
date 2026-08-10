@@ -12,8 +12,9 @@ namespace beez::plugin::lua
 
 void bindReplaceAll(sol::table& textTable)
 {
-    textTable["replace_all"] =
-        [](std::string text, const std::string& search, const std::string& replacement) -> std::string
+    textTable["replace_all"] = [](std::string text,
+                                  const std::string& search,
+                                  const std::string& replacement) -> std::string
     {
         if (search.empty())
         {

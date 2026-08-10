@@ -11,8 +11,7 @@ namespace beez::plugin::lua
 
 void bindIsOnline(sol::table& netTable)
 {
-    netTable["is_online"] =
-        [](const sol::optional<long>& timeoutSeconds) -> bool
+    netTable["is_online"] = [](const sol::optional<long>& timeoutSeconds) -> bool
     { return net_detail::HttpClient::instance().isOnline(timeoutSeconds.value_or(3)); };
 }
 

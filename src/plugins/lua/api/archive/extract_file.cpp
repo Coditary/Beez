@@ -54,7 +54,8 @@ void extractFile(const std::filesystem::path& archivePath,
         std::ofstream output(destinationPath, std::ios::binary | std::ios::trunc);
         if (!output)
         {
-            throw std::runtime_error("failed to open destination file: " + destinationPath.string());
+            throw std::runtime_error("failed to open destination file: " +
+                                     destinationPath.string());
         }
 
         std::array<char, ReadBufferSize> buffer {};
@@ -67,8 +68,8 @@ void extractFile(const std::filesystem::path& archivePath,
             }
             if (read < 0)
             {
-                throw std::runtime_error("failed to read archive entry: "
-                                         + archive_detail::archiveError(handle.reader));
+                throw std::runtime_error("failed to read archive entry: " +
+                                         archive_detail::archiveError(handle.reader));
             }
             output.write(buffer.data(), read);
         }
@@ -89,10 +90,10 @@ void bindArchiveExtractFile(sol::table& archiveTable,
                             const std::shared_ptr<sol::state>& luaState,
                             const core::Context& context)
 {
-    archiveTable["extract_file"] =
-        [luaState, &context](const std::string& archivePath,
-                             const std::string& fileInArchive,
-                             const std::string& destinationPath) -> sol::table
+    archiveTable["extract_file"] = [luaState,
+                                    &context](const std::string& archivePath,
+                                              const std::string& fileInArchive,
+                                              const std::string& destinationPath) -> sol::table
     {
         const std::filesystem::path resolvedArchive =
             api_detail::resolvePath(context.projectRoot(), archivePath);
@@ -104,7 +105,8 @@ void bindArchiveExtractFile(sol::table& archiveTable,
         result["path"] = resolvedDestination.generic_string();
         if (std::filesystem::exists(resolvedDestination))
         {
-            result["bytes"] = static_cast<std::uint64_t>(std::filesystem::file_size(resolvedDestination));
+            result["bytes"] =
+                static_cast<std::uint64_t>(std::filesystem::file_size(resolvedDestination));
         }
         return result;
     };

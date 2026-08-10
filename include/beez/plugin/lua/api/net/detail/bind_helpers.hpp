@@ -15,8 +15,9 @@ namespace beez::plugin::lua::net_detail
 
 [[nodiscard]] std::string toLower(std::string value);
 
-[[nodiscard]] sol::table headersToTable(const std::shared_ptr<sol::state>& luaState,
-                                        const std::unordered_map<std::string, std::string>& headers);
+[[nodiscard]] sol::table
+headersToTable(const std::shared_ptr<sol::state>& luaState,
+               const std::unordered_map<std::string, std::string>& headers);
 
 [[nodiscard]] sol::table responseToTable(const std::shared_ptr<sol::state>& luaState,
                                          const HttpResponse& response);

@@ -89,9 +89,10 @@ ArchiveReadHandle openArchiveReader(const std::filesystem::path& archivePath)
     }
 
     ArchiveReadHandle handle;
-    throwOnArchiveError(handle.reader,
-                        archive_read_open_filename(handle.reader, archivePath.string().c_str(), 10240),
-                        "failed to open archive");
+    throwOnArchiveError(
+        handle.reader,
+        archive_read_open_filename(handle.reader, archivePath.string().c_str(), 10240),
+        "failed to open archive");
     return handle;
 }
 

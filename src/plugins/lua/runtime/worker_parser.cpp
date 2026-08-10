@@ -127,13 +127,8 @@ core::WorkerSpec parseWorkerSpec(const sol::table& options)
 
 WorkerWaitOptions parseWorkerWaitOptions(const sol::table& options)
 {
-    static const std::unordered_set<std::string> AllowedKeys = {"exitCode",
-                                                                "output",
-                                                                "duration",
-                                                                "cached",
-                                                                "name",
-                                                                "id",
-                                                                "dryRun"};
+    static const std::unordered_set<std::string> AllowedKeys = {
+        "exitCode", "output", "duration", "cached", "name", "id", "dryRun"};
 
     WorkerWaitOptions waitOptions;
     options.for_each(

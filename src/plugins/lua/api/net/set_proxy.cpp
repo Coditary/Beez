@@ -13,8 +13,7 @@ namespace beez::plugin::lua
 
 void bindSetProxy(sol::table& netTable)
 {
-    netTable["set_proxy"] =
-        [](const sol::object& proxyValue)
+    netTable["set_proxy"] = [](const sol::object& proxyValue)
     {
         if (!proxyValue.valid() || proxyValue.is<sol::lua_nil_t>())
         {

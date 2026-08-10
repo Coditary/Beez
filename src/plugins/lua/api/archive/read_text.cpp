@@ -23,7 +23,8 @@ namespace
 constexpr std::size_t ReadBufferSize = 64 * 1024;
 constexpr std::size_t MaxTextReadBytes = 16 * 1024 * 1024;
 
-[[nodiscard]] std::string readText(const std::filesystem::path& archivePath, const std::string& entryPath)
+[[nodiscard]] std::string readText(const std::filesystem::path& archivePath,
+                                   const std::string& entryPath)
 {
     archive_detail::ArchiveReadHandle handle = archive_detail::openArchiveReader(archivePath);
     archive_entry* entry = nullptr;
@@ -66,8 +67,8 @@ constexpr std::size_t MaxTextReadBytes = 16 * 1024 * 1024;
             }
             if (read < 0)
             {
-                throw std::runtime_error("failed to read archive entry: "
-                                         + archive_detail::archiveError(handle.reader));
+                throw std::runtime_error("failed to read archive entry: " +
+                                         archive_detail::archiveError(handle.reader));
             }
             content.append(buffer.data(), static_cast<std::size_t>(read));
         }
@@ -82,8 +83,8 @@ constexpr std::size_t MaxTextReadBytes = 16 * 1024 * 1024;
 
 void bindArchiveReadText(sol::table& archiveTable, const core::Context& context)
 {
-    archiveTable["read_text"] =
-        [&context](const std::string& archivePath, const std::string& fileInArchive) -> std::string
+    archiveTable["read_text"] = [&context](const std::string& archivePath,
+                                           const std::string& fileInArchive) -> std::string
     {
         const std::filesystem::path resolvedArchive =
             api_detail::resolvePath(context.projectRoot(), archivePath);

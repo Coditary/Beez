@@ -16,7 +16,8 @@ void bindStartsWith(sol::table& textTable)
     {
         const std::string_view TextView = text;
         const std::string_view PrefixView = prefix;
-        return TextView.size() >= PrefixView.size() && TextView.substr(0, PrefixView.size()) == PrefixView;
+        return TextView.size() >= PrefixView.size() &&
+               TextView.substr(0, PrefixView.size()) == PrefixView;
     };
 }
 

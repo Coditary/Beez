@@ -39,7 +39,8 @@ TEST(LuaNetApiTest, GetReadsLocalFileUrl)
     writeFile(Project.path() / "payload.txt", "beez-net-payload");
     const std::string Url = "file://" + (Project.path() / "payload.txt").string();
     Project.writeBuildLua(R"(
-local response = beez.net.get(")" + Url + R"(")
+local response = beez.net.get(")" +
+                          Url + R"(")
 local ok = response.ok and response.body == "beez-net-payload"
 task("check", "echo " .. tostring(ok))
 )");
@@ -58,7 +59,8 @@ TEST(LuaNetApiTest, DownloadCopiesLocalFile)
     writeFile(Project.path() / "source.bin", "download-me");
     const std::string Url = "file://" + (Project.path() / "source.bin").string();
     Project.writeBuildLua(R"(
-local result = beez.net.download(")" + Url + R"(", "copied.bin")
+local result = beez.net.download(")" +
+                          Url + R"(", "copied.bin")
 local ok = result.bytes == 11 and beez.fs.exists("copied.bin")
 task("check", "echo " .. tostring(ok))
 )");
@@ -79,7 +81,8 @@ TEST(LuaNetApiTest, RestMethodsUseHeaderTable)
     const beez::test::TempProject Project;
     writeFile(Project.path() / "upload.txt", "upload-body");
     const std::string Script = R"(
-local base = ")" + Server.baseUrl() + R"("
+local base = ")" + Server.baseUrl() +
+                               R"("
 local headers = {
     ["X-Test"] = "beez",
     Authorization = "token",
@@ -118,8 +121,8 @@ TEST(LuaNetApiTest, DownloadAndVerifyChecksHash)
     const std::string Url = "file://" + (Project.path() / "hash-source.txt").string();
 
     Project.writeBuildLua(R"(
-local result = beez.net.download_and_verify(")" + Url + R"(", "verified.txt", "sha256", ")" +
-                                        Hash + R"(")
+local result = beez.net.download_and_verify(")" +
+                          Url + R"(", "verified.txt", "sha256", ")" + Hash + R"(")
 local ok = result.verified == true
 task("check", "echo " .. tostring(ok))
 )");
@@ -139,7 +142,8 @@ TEST(LuaNetApiTest, PingLocalServer)
 
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-local result = beez.net.ping(")" + Server.baseUrl() + R"(")
+local result = beez.net.ping(")" +
+                          Server.baseUrl() + R"(")
 local ok = result.ok and result.status == 204
 task("check", "echo " .. tostring(ok))
 )");
