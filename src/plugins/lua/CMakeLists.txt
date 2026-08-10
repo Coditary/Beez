@@ -32,6 +32,20 @@ add_library(
     api/sys/user.cpp
     api/sys/detail/cpu.cpp
     api/sys/detail/ram.cpp
+    api/time/time_table.cpp
+    api/time/now.cpp
+    api/time/uptime.cpp
+    api/time/iso.cpp
+    api/time/sleep.cpp
+    api/time/sleep_s.cpp
+    api/time/detail/clock.cpp
+    api/date/date_table.cpp
+    api/date/format.cpp
+    api/date/info.cpp
+    api/date/epoch.cpp
+    api/date/utc.cpp
+    api/date/utc_offset.cpp
+    api/date/detail/time_point.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
