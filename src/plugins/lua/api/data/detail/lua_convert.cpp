@@ -129,12 +129,11 @@ namespace
     {
         sol::table objectTable = luaState.create_table();
         yyjson_val* key = nullptr;
-        yyjson_val* item = nullptr;
         yyjson_obj_iter iterator = {};
         yyjson_obj_iter_init(value, &iterator);
         while ((key = yyjson_obj_iter_next(&iterator)) != nullptr)
         {
-            item = yyjson_obj_iter_get_val(key);
+            yyjson_val* item = yyjson_obj_iter_get_val(key);
             objectTable[std::string(yyjson_get_str(key), yyjson_get_len(key))] =
                 yyjsonImmutableValueToLua(luaState, item);
         }
@@ -196,12 +195,11 @@ namespace
     {
         sol::table objectTable = luaState.create_table();
         yyjson_mut_val* key = nullptr;
-        yyjson_mut_val* item = nullptr;
         yyjson_mut_obj_iter iterator = {};
         yyjson_mut_obj_iter_init(value, &iterator);
         while ((key = yyjson_mut_obj_iter_next(&iterator)) != nullptr)
         {
-            item = yyjson_mut_obj_iter_get_val(key);
+            yyjson_mut_val* item = yyjson_mut_obj_iter_get_val(key);
             objectTable[std::string(yyjson_mut_get_str(key), yyjson_mut_get_len(key))] =
                 yyjsonMutableValueToLua(luaState, item);
         }

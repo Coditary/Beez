@@ -111,7 +111,7 @@ RequestOptions parseRequestOptions(const std::string& method,
     return options;
 }
 
-HttpResponse performOrThrow(HttpResponse response)
+HttpResponse performOrThrow(const HttpResponse& response)
 {
     if (!response.error.empty())
     {

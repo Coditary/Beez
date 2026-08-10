@@ -20,11 +20,11 @@ namespace beez::plugin::lua::data_detail
 [[nodiscard]] DataFormat resolveFormat(const sol::object& options);
 
 [[nodiscard]] sol::table
-deserializeString(sol::state& luaState, const std::string& content, DataFormat format);
+deserializeString(const sol::state& luaState, const std::string& content, DataFormat format);
 [[nodiscard]] std::string serializeString(const sol::table& table, DataFormat format);
 
 void serializeFile(const std::filesystem::path& path, const sol::table& table, DataFormat format);
 [[nodiscard]] sol::table
-deserializeFile(sol::state& luaState, const std::filesystem::path& path, DataFormat format);
+deserializeFile(const sol::state& luaState, const std::filesystem::path& path, DataFormat format);
 
 }  // namespace beez::plugin::lua::data_detail

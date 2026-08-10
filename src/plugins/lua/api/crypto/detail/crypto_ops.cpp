@@ -58,15 +58,8 @@ namespace
 [[nodiscard]] bool isFingerprintHash(std::string_view algorithm)
 {
     const std::string Normalized = toLower(std::string(algorithm));
-    for (const char* Name : core::contentHashAlgorithmNames())
-    {
-        if (Normalized == Name)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    const auto Names = core::contentHashAlgorithmNames();
+    return std::any_of(Names.begin(), Names.end(), [&](const char* Name) { return Normalized == Name; });
 }
 
 [[nodiscard]] std::string hashFingerprint(std::string_view data, std::string_view algorithm)
@@ -201,7 +194,7 @@ void md5Update(Md5Context& context, const std::uint8_t* input, std::size_t lengt
 
 void md5Final(Md5Context& context, std::uint8_t digest[16])
 {
-    std::uint8_t padding[64] = {0x80};
+    const std::uint8_t padding[64] = {0x80};
     std::uint8_t bits[8];
     for (int index = 0; index < 8; ++index)
     {
@@ -348,7 +341,7 @@ void sha1Update(Sha1Context& context, const std::uint8_t* input, std::size_t len
 
 void sha1Final(Sha1Context& context, std::uint8_t digest[20])
 {
-    std::uint8_t padding[64] = {0x80};
+    const std::uint8_t padding[64] = {0x80};
     std::uint8_t bits[8];
     for (int index = 0; index < 8; ++index)
     {
@@ -515,7 +508,6 @@ void sha256Final(Sha256Context& context, std::uint8_t digest[32])
 
         sha256Transform(context, context.data);
         std::fill_n(context.data, 56, 0U);
-        index = 56U;
     }
 
     context.bitlen += context.datalen * 8U;
@@ -709,7 +701,6 @@ void sha512Final(Sha512Context& context, std::uint8_t digest[64])
 
         sha512Transform(context, context.data);
         std::fill_n(context.data, 112, 0U);
-        index = 112U;
     }
 
     const std::uint64_t LowBits = context.bitlen[0] + (context.datalen * 8U);
@@ -941,10 +932,8 @@ hmacDigestBytes(CryptoDigestAlgorithm algorithm, std::string_view key, std::stri
 std::vector<std::string> supportedHashAlgorithms()
 {
     std::vector<std::string> algorithms = {"sha256", "sha512", "sha1", "md5"};
-    for (const char* Name : core::contentHashAlgorithmNames())
-    {
-        algorithms.emplace_back(Name);
-    }
+    const auto Names = core::contentHashAlgorithmNames();
+    algorithms.insert(algorithms.end(), Names.begin(), Names.end());
 
     return algorithms;
 }

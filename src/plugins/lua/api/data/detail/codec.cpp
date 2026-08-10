@@ -108,7 +108,7 @@ DataFormat resolveFormat(const sol::object& options)
 }
 
 sol::table
-deserializeString(sol::state& luaState, const std::string& content, const DataFormat format)
+deserializeString(const sol::state& luaState, const std::string& content, const DataFormat format)
 {
     switch (format)
     {
@@ -166,7 +166,7 @@ void serializeFile(const std::filesystem::path& path,
 }
 
 sol::table
-deserializeFile(sol::state& luaState, const std::filesystem::path& path, const DataFormat format)
+deserializeFile(const sol::state& luaState, const std::filesystem::path& path, const DataFormat format)
 {
     return deserializeString(luaState, readFile(path), format);
 }

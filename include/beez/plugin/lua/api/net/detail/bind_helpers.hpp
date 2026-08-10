@@ -28,6 +28,6 @@ headersToTable(const std::shared_ptr<sol::state>& luaState,
                                                  const std::string& url,
                                                  const sol::optional<sol::table>& optionsTable);
 
-[[nodiscard]] HttpResponse performOrThrow(HttpResponse response);
+[[nodiscard]] HttpResponse performOrThrow(const HttpResponse& response);
 
 }  // namespace beez::plugin::lua::net_detail

@@ -60,14 +60,28 @@ if [[ ! -f "${SBOM_JSON}" ]]; then
     exit 2
 fi
 
+LOCKFILE="${DEPENDENCY_AUDIT_LOCKFILE:-${ROOT_DIR}/conan.lock}"
+if [[ ! -f "${LOCKFILE}" ]] || [[ "${ROOT_DIR}/conanfile.py" -nt "${LOCKFILE}" ]]; then
+    if [[ -z "${CONAN_PROFILE:-}" ]]; then
+        CONAN_PROFILE="$("${ROOT_DIR}/scripts/ci-conan-profile.sh")"
+    fi
+
+    echo "=== Generating Conan lockfile for dependency audit ==="
+    conan lock create "${ROOT_DIR}" \
+        -pr "${CONAN_PROFILE}" \
+        -pr:b "${CONAN_PROFILE}" \
+        --lockfile-out="${LOCKFILE}"
+fi
+
 echo ""
 echo "=== Dependency vulnerability scan (OSV database) ==="
 echo "SBOM: ${SBOM_JSON}"
+echo "Lockfile: ${LOCKFILE}"
 echo "Scanner: ${OSV_SCANNER} $("${OSV_SCANNER}" --version 2>/dev/null | head -n1)"
 echo ""
 
 set +e
-"${OSV_SCANNER}" scan --sbom="${SBOM_JSON}" --format=vertical --verbosity=warn 2>&1 | tee "${AUDIT_REPORT}"
+"${OSV_SCANNER}" scan --lockfile="${LOCKFILE}" --format=vertical --verbosity=warn 2>&1 | tee "${AUDIT_REPORT}"
 SCAN_STATUS=$?
 set -e
 

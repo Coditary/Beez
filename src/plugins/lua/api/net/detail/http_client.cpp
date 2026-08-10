@@ -235,7 +235,7 @@ HttpResponse HttpClient::perform(RequestOptions options)
 
 HttpResponse HttpClient::uploadFile(const std::string& url,
                                     const std::filesystem::path& filePath,
-                                    HeaderList headers)
+                                    const HeaderList& headers)
 {
     if (url.empty())
     {
@@ -361,16 +361,12 @@ bool HttpClient::isOnline(const long timeoutSeconds)
         "https://www.google.com/generate_204",
     };
 
-    for (const char* probe : Probes)
-    {
-        const PingResult Result = ping(probe, timeoutSeconds);
-        if (Result.reachable && Result.statusCode >= 200 && Result.statusCode < 400)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::any_of(std::begin(Probes), std::end(Probes), [&](const char* probe)
+                       {
+                           const PingResult Result = ping(probe, timeoutSeconds);
+                           return Result.reachable && Result.statusCode >= 200 &&
+                                  Result.statusCode < 400;
+                       });
 }
 
 }  // namespace beez::plugin::lua::net_detail

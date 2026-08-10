@@ -59,7 +59,7 @@ class HttpClient
     [[nodiscard]] HttpResponse perform(RequestOptions options);
     [[nodiscard]] HttpResponse uploadFile(const std::string& url,
                                           const std::filesystem::path& filePath,
-                                          HeaderList headers = {});
+                                          const HeaderList& headers = {});
     [[nodiscard]] std::uintmax_t download(const std::string& url,
                                           const std::filesystem::path& destination,
                                           DownloadOptions options = {});

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -21,13 +22,12 @@ namespace beez::plugin::lua::api_detail
 
 [[nodiscard]] inline std::string joinPathSegments(const std::vector<std::string>& segments)
 {
-    std::filesystem::path result;
-    for (const auto& segment : segments)
-    {
-        result /= segment;
-    }
-
-    return result.generic_string();
+    return std::accumulate(segments.begin(),
+                           segments.end(),
+                           std::filesystem::path {},
+                           [](std::filesystem::path result, const std::string& segment)
+                           { return result / segment; })
+        .generic_string();
 }
 
 }  // namespace beez::plugin::lua::api_detail
