@@ -69,6 +69,8 @@ add_library(
     api/net/net_table.cpp
     api/net/detail/http_client.cpp
     api/net/detail/headers.cpp
+    api/archive/archive_table.cpp
+    api/archive/detail/archive_ops.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
@@ -94,4 +96,5 @@ target_link_libraries(
            fast-cpp-csv-parser::fast-cpp-csv-parser
            tomlplusplus::tomlplusplus
            CURL::libcurl
+           LibArchive::LibArchive
 )

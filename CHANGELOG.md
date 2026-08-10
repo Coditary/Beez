@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Archive API (`beez.archive`)
+
+- `compress` / `extract` — create and unpack zip/tar/tar.gz/tar.bz2/tar.xz archives (libarchive)
+- `list` — enumerate archive entries with `path`, `size`, `is_dir`
+- `extract_file` / `read_text` — single-entry access
+- [`docs/archive-api.md`](docs/archive-api.md)
+
 #### Network API (`beez.net`)
 
 - `beez.net.get/post/put/delete/request` — REST with shared header table shape

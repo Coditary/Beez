@@ -5,6 +5,7 @@ find_package(rapidxml REQUIRED)
 find_package(fast-cpp-csv-parser REQUIRED)
 find_package(tomlplusplus REQUIRED)
 find_package(CURL REQUIRED)
+find_package(LibArchive REQUIRED CONFIG)
 
 include(FetchContent)
 

@@ -33,6 +33,7 @@ class BeezConan(ConanFile):
         self.requires("fast-cpp-csv-parser/cci.20240102")
         self.requires("tomlplusplus/3.4.0")
         self.requires("libcurl/8.12.1")
+        self.requires("libarchive/3.7.7")
 
     def layout(self):
         cmake_layout(self)

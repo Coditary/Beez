@@ -9,6 +9,7 @@ Developer-focused docs live here. User guides and reference material live in the
 | [`vertical-feature.md`](vertical-feature.md) | End-to-end feature workflow: TDD, QA, wiki updates, coverage target |
 | [`worker-api.md`](worker-api.md) | Lua step context: `ctx:spawn`, `ctx:wait`, `ctx:wait_all` |
 | [`net-api.md`](net-api.md) | HTTP/REST and downloads: `beez.net.*` |
+| [`archive-api.md`](archive-api.md) | Archives: `beez.archive.*` |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | How to contribute, PR expectations, CI |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Release notes |
 | [`../README.md`](../README.md) | Project overview and quick start |
