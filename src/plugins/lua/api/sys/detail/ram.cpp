@@ -16,6 +16,8 @@ namespace beez::plugin::lua::sys_detail
 namespace
 {
 
+constexpr std::uint64_t BytesPerKilobyte = 1024U;
+
 [[nodiscard]] bool parseMemInfoValueKb(const std::string& key, std::uint64_t& value)
 {
     std::ifstream stream("/proc/meminfo");
@@ -35,7 +37,7 @@ namespace
         std::istringstream parser(line.substr(key.size()));
         std::uint64_t kilobytes = 0;
         parser >> kilobytes;
-        value = kilobytes * 1024U;
+        value = kilobytes * BytesPerKilobyte;
         return true;
     }
 
@@ -43,27 +45,29 @@ namespace
 }
 
 #ifdef __linux__
+// NOLINTBEGIN(misc-include-cleaner)
 [[nodiscard]] std::uint64_t ramTotalFromSysInfo()
 {
-    struct sysinfo Info {};
-    if (sysinfo(&Info) != 0)
+    struct sysinfo info {};
+    if (sysinfo(&info) != 0)
     {
         return 0;
     }
 
-    return static_cast<std::uint64_t>(Info.totalram) * Info.mem_unit;
+    return static_cast<std::uint64_t>(info.totalram) * info.mem_unit;
 }
 
 [[nodiscard]] std::uint64_t ramFreeFromSysInfo()
 {
-    struct sysinfo Info {};
-    if (sysinfo(&Info) != 0)
+    struct sysinfo info {};
+    if (sysinfo(&info) != 0)
     {
         return 0;
     }
 
-    return static_cast<std::uint64_t>(Info.freeram) * Info.mem_unit;
+    return static_cast<std::uint64_t>(info.freeram) * info.mem_unit;
 }
+// NOLINTEND(misc-include-cleaner)
 #endif
 
 }  // namespace

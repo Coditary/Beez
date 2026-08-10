@@ -2,6 +2,8 @@
 
 #include "beez/core/runtime/context.hpp"
 
+#include <memory>
+
 // NOLINTBEGIN(misc-include-cleaner)
 #include <sol/forward.hpp>
 // NOLINTEND(misc-include-cleaner)

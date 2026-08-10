@@ -1,7 +1,7 @@
 #include "beez/plugin/lua/api/sys/detail/cpu.hpp"
 
+#include <cstddef>
 #include <set>
-#include <sstream>
 #include <string>
 #include <thread>
 
@@ -37,7 +37,7 @@ namespace
     std::string physicalId;
     std::string coreId;
 
-    const auto flushCore = [&cores, &physicalId, &coreId]()
+    const auto FlushCore = [&cores, &physicalId, &coreId]()
     {
         if (!coreId.empty())
         {
@@ -52,13 +52,13 @@ namespace
     {
         if (line.empty())
         {
-            flushCore();
+            FlushCore();
             continue;
         }
 
         if (line.starts_with("physical id"))
         {
-            flushCore();
+            FlushCore();
             const auto Delimiter = line.find(':');
             if (Delimiter != std::string::npos)
             {
@@ -88,7 +88,7 @@ namespace
         }
     }
 
-    flushCore();
+    FlushCore();
     return cores.empty() ? 0U : cores.size();
 }
 

@@ -12,7 +12,7 @@ namespace beez::plugin::lua
 void bindPathSeparator(sol::table& sysTable)
 {
     sysTable["path_separator"] = []() -> std::string
-    { return std::string(1, std::filesystem::path::preferred_separator); };
+    { return {std::filesystem::path::preferred_separator}; };
 }
 
 }  // namespace beez::plugin::lua
