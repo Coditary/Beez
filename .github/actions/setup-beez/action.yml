@@ -52,13 +52,15 @@ runs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends "${PACKAGES[@]}"
 
-    - name: Cache cppcheck binary
+    - name: Cache cppcheck install
       if: inputs.install-cppcheck == 'true'
       id: cppcheck-cache
       uses: actions/cache@v4
       with:
-        path: ~/.local/bin/cppcheck
-        key: cppcheck-${{ env.CPPCHECK_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+        path: |
+          ~/.local/bin/cppcheck
+          ~/.local/share/Cppcheck
+        key: cppcheck-${{ env.CPPCHECK_VERSION }}-full-${{ runner.os }}-${{ runner.arch }}
 
     - name: Install cppcheck
       if: inputs.install-cppcheck == 'true' && steps.cppcheck-cache.outputs.cache-hit != 'true'
