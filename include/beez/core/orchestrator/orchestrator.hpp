@@ -1,7 +1,5 @@
 #pragma once
 
-#include "beez/core/cache/step/step_cache.hpp"
-#include "beez/core/cache/step/types.hpp"
 #include "beez/core/cache/storage/write_coordinator.hpp"
 #include "beez/core/config/settings/run_options.hpp"
 #include "beez/core/execution/concurrency/thread_pool.hpp"
@@ -13,6 +11,7 @@
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
 #include "beez/core/orchestrator/run/stats.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
@@ -34,19 +33,6 @@ namespace beez::core
 
 class StepCache;
 class SuccessCache;
-class Orchestrator;
-
-void recordStepCacheSkip(Orchestrator& orchestrator,
-                         const Step& step,
-                         const CacheLookupResult& lookup,
-                         ProgressState& progress,
-                         const std::string& category,
-                         const std::string& detail);
-
-namespace step_callback_detail
-{
-Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& step);
-}  // namespace step_callback_detail
 
 class Orchestrator
 {
@@ -102,18 +88,13 @@ class Orchestrator
                      double savedSeconds = 0.0,
                      bool updateCacheStats = true);
 
+  private:
     void flushBufferedCacheWrites();
     void flushBufferedCacheWritesForPhase();
+    void flushBufferedCacheWritesIfEndStrategy();
+    void flushBufferedCacheWritesAtRunEnd();
 
-  private:
-    friend void recordStepCacheSkip(Orchestrator& orchestrator,
-                                    const Step& step,
-                                    const CacheLookupResult& lookup,
-                                    ProgressState& progress,
-                                    const std::string& category,
-                                    const std::string& detail);
-    friend Expected<int, OrchestratorError> step_callback_detail::run(Orchestrator& orchestrator,
-                                                                      const Step& step);
+    [[nodiscard]] LoggedRunScope beginLoggedRun(const std::string& runType, const std::string& name);
 
     [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task,
                                                            ProgressState& progress);

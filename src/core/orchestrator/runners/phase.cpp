@@ -1,6 +1,5 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/run/lifecycle.hpp"
 #include "beez/core/orchestrator/types.hpp"
 
 #include "beez/core/config/performance/performance_options.hpp"
@@ -137,12 +136,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         return OrchestratorError::InvalidPhaseRequest;
     }
 
-    LoggedRunScope runScope(pluginHost_,
-                            runOptions_.performance.optimizeGcForThroughput,
-                            stats_,
-                            runOptions_.logger,
-                            "Phase",
-                            request.phase);
+    auto runScope = beginLoggedRun("Phase", request.phase);
 
     std::vector<std::string> scopes = request.scopes;
     if (scopes.empty())
@@ -173,10 +167,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     runScope.finish(true, workerThreads());
 
-    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
-    {
-        flushBufferedCacheWrites();
-    }
+    flushBufferedCacheWritesIfEndStrategy();
 
     return 0;
 }

@@ -105,6 +105,20 @@ void Orchestrator::flushBufferedCacheWritesForPhase()
     }
 }
 
+void Orchestrator::flushBufferedCacheWritesIfEndStrategy()
+{
+    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
+    {
+        flushBufferedCacheWrites();
+    }
+}
+
+void Orchestrator::flushBufferedCacheWritesAtRunEnd()
+{
+    flushBufferedCacheWritesForPhase();
+    flushBufferedCacheWritesIfEndStrategy();
+}
+
 void Orchestrator::recordCacheUnit(bool hit, double savedSeconds)
 {
     stats_.recordCacheUnit(hit, savedSeconds);
@@ -120,44 +134,37 @@ void Orchestrator::recordPeakWorkers(std::size_t workerCount)
     stats_.recordPeakWorkers(workerCount);
 }
 
+LoggedRunScope Orchestrator::beginLoggedRun(const std::string& runType, const std::string& name)
+{
+    return LoggedRunScope(pluginHost_,
+                          runOptions_.performance.optimizeGcForThroughput,
+                          stats_,
+                          runOptions_.logger,
+                          runType,
+                          name);
+}
+
 Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 {
-    const auto FlushAtRunEnd = [this](const auto& result)
-    {
-        if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
-        {
-            flushBufferedCacheWrites();
-        }
-        return result;
-    };
-
     if (const auto FoundTask = registry_.findTask(name))
     {
-        LoggedRunScope runScope(pluginHost_,
-                                runOptions_.performance.optimizeGcForThroughput,
-                                stats_,
-                                runOptions_.logger,
-                                "Task",
-                                name);
+        auto runScope = beginLoggedRun("Task", name);
         runScope.beginSegment(name);
         ProgressState progress {.total = FoundTask->actions.size()};
         const auto Result = runTask(*FoundTask, progress);
         runScope.endSegment(static_cast<bool>(Result));
         runScope.finish(static_cast<bool>(Result), workerThreads());
-        return FlushAtRunEnd(Result);
+        flushBufferedCacheWritesIfEndStrategy();
+        return Result;
     }
 
     if (const auto FoundWorkflow = registry_.findWorkflow(name))
     {
-        LoggedRunScope runScope(pluginHost_,
-                                runOptions_.performance.optimizeGcForThroughput,
-                                stats_,
-                                runOptions_.logger,
-                                "Workflow",
-                                name);
+        auto runScope = beginLoggedRun("Workflow", name);
         const auto Result = runWorkflow(*FoundWorkflow);
         runScope.finish(static_cast<bool>(Result), workerThreads());
-        return FlushAtRunEnd(Result);
+        flushBufferedCacheWritesIfEndStrategy();
+        return Result;
     }
 
     return OrchestratorError::NotFound;

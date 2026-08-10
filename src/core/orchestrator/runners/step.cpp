@@ -1,4 +1,5 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "orchestrator_internal.hpp"
 
 #include "beez/core/cache/step/output_tracker.hpp"
 #include "beez/core/cache/step/step_cache.hpp"
@@ -98,23 +99,14 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
         return OrchestratorError::NotFound;
     }
 
-    LoggedRunScope runScope(pluginHost_,
-                            runOptions_.performance.optimizeGcForThroughput,
-                            stats_,
-                            runOptions_.logger,
-                            "Step",
-                            name);
+    auto runScope = beginLoggedRun("Step", name);
     runScope.beginSegment(name);
     ProgressState progress {.total = 1};
     const auto Result = runStepInstance(*FoundStep, progress);
     runScope.endSegment(static_cast<bool>(Result));
     runScope.finish(static_cast<bool>(Result), workerThreads());
 
-    flushBufferedCacheWritesForPhase();
-    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
-    {
-        flushBufferedCacheWrites();
-    }
+    flushBufferedCacheWritesAtRunEnd();
 
     return Result;
 }
