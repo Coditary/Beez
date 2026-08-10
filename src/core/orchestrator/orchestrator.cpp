@@ -11,6 +11,8 @@
 #include "beez/core/execution/concurrency/thread_pool.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/task.hpp"
+#include "beez/core/model/workflow.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
@@ -73,6 +75,26 @@ Orchestrator::~Orchestrator()
 {
     flushBufferedCacheWrites();
     context_.clearGlobMetadataCache();
+}
+
+Context& Orchestrator::context()
+{
+    return context_;
+}
+
+const Context& Orchestrator::context() const
+{
+    return context_;
+}
+
+plugin::PluginHost& Orchestrator::pluginHost()
+{
+    return pluginHost_;
+}
+
+std::size_t Orchestrator::workerThreads() const
+{
+    return threadPool_.maxConcurrency();
 }
 
 Expected<void, OrchestratorError> Orchestrator::loadBuildScript()

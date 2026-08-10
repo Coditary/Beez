@@ -4,36 +4,46 @@
 #include "beez/core/config/settings/run_options.hpp"
 #include "beez/core/execution/concurrency/thread_pool.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
-#include "beez/core/model/phase_invocation.hpp"
-#include "beez/core/model/phase_request.hpp"
-#include "beez/core/model/step.hpp"
-#include "beez/core/model/task.hpp"
-#include "beez/core/model/workflow.hpp"
-#include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
-#include "beez/core/orchestrator/run/lifecycle.hpp"
-#include "beez/core/orchestrator/run/step_execution.hpp"
 #include "beez/core/orchestrator/run/stats.hpp"
 #include "beez/core/orchestrator/types.hpp"
-#include "beez/core/registry/registry.hpp"
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
-#include "beez/logging/contract/logger.hpp"
 
 #include <cstddef>
 #include <memory>
 #include <string>
 
+namespace beez::logging
+{
+struct LogChannelId;
+}
+
 namespace beez::plugin
 {
 class PluginHost;
-}  // namespace beez::plugin
+}
 
 namespace beez::core
 {
 
+class Context;
+class Registry;
+class Step;
 class StepCache;
 class SuccessCache;
+class Task;
+class Workflow;
+class WorkflowStep;
+struct PhaseInvocation;
+struct PhaseRequest;
+
+class LoggedRunScope;
+
+namespace step_execution_detail
+{
+struct StepCacheSession;
+struct StepCachePrepareResult;
+}
 
 class Orchestrator
 {
@@ -58,14 +68,9 @@ class Orchestrator
     {
         return runOptions_;
     }
-    [[nodiscard]] Context& context()
-    {
-        return context_;
-    }
-    [[nodiscard]] plugin::PluginHost& pluginHost()
-    {
-        return pluginHost_;
-    }
+    [[nodiscard]] Context& context();
+    [[nodiscard]] const Context& context() const;
+    [[nodiscard]] plugin::PluginHost& pluginHost();
     [[nodiscard]] ThreadPool& threadPool()
     {
         return threadPool_;
@@ -74,10 +79,7 @@ class Orchestrator
     {
         return stats_;
     }
-    [[nodiscard]] std::size_t workerThreads() const
-    {
-        return threadPool_.maxConcurrency();
-    }
+    [[nodiscard]] std::size_t workerThreads() const;
 
     void recordCacheUnit(bool hit, double savedSeconds = 0.0);
     void recordCacheBulk(std::size_t totalUnits, std::size_t hits, double savedSeconds = 0.0);

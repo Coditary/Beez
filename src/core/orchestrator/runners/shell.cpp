@@ -1,9 +1,11 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/types.hpp"
 #include "beez/core/orchestrator/run/shell_execution.hpp"
-
+#include "beez/core/orchestrator/types.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
+#include "beez/logging/contract/logger.hpp"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include <cstddef>
 #include <string>
