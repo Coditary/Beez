@@ -158,7 +158,11 @@ void runThroughputScenario(const beez::perf::PipelineScenario& scenario)
     beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
 
     const auto OrchestratorStart = std::chrono::steady_clock::now();
-    const auto PhaseResult = orchestrator.runPhase({.phase = "stress", .scopes = {"vault"}});
+    const beez::core::PhaseRequest PhaseRequestArg {
+        .phase = "stress",
+        .scopes = {"vault"},
+    };
+    const auto PhaseResult = orchestrator.runPhase(PhaseRequestArg);
     const auto OrchestratorEnd = std::chrono::steady_clock::now();
 
     ASSERT_TRUE(PhaseResult.hasValue());

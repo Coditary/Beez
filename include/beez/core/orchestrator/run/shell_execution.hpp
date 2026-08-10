@@ -6,12 +6,13 @@
 #include "beez/logging/contract/logger.hpp"
 #include "beez/plugin/contract/executor.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace beez::core::shell_execution_detail
 {
 
-enum class CapturePolicy
+enum class CapturePolicy : std::uint8_t
 {
     Always,
     UnlessVerbose,
@@ -25,7 +26,7 @@ struct CommandResult
 
 [[nodiscard]] CommandResult run(plugin::IExecutor& executor,
                                 const std::string& command,
-                                Context& context,
+                                const Context& context,
                                 logging::OutputMode outputMode,
                                 CapturePolicy capturePolicy);
 

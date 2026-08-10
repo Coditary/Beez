@@ -13,7 +13,8 @@ void flushBufferedCacheWrites(Orchestrator& orchestrator)
 
 void flushBufferedCacheWritesForPhase(Orchestrator& orchestrator)
 {
-    if (Access::runOptions(orchestrator).performance.cacheWriteStrategy == CacheWriteStrategy::Phase)
+    if (Access::runOptions(orchestrator).performance.cacheWriteStrategy ==
+        CacheWriteStrategy::Phase)
     {
         flushBufferedCacheWrites(orchestrator);
     }

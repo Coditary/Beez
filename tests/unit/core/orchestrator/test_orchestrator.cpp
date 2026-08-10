@@ -6,6 +6,7 @@
 #include "beez/core/model/task_action.hpp"
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"

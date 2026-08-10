@@ -1,3 +1,4 @@
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 
 #include "helpers/beez_runtime.hpp"

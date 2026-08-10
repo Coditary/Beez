@@ -1,5 +1,5 @@
-#include "beez/core/orchestrator/orchestrator_access.hpp"
 #include "beez/core/orchestrator/run/step_count.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
 
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
@@ -19,8 +19,9 @@ namespace beez::core::orchestrator_detail
 std::size_t countPhaseInvocationSteps(const Orchestrator& orchestrator,
                                       const PhaseInvocation& invocation)
 {
-    const auto MatchedSteps = Access::registry(orchestrator).stepsForPhase(
-        invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
+    const auto MatchedSteps =
+        Access::registry(orchestrator)
+            .stepsForPhase(invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
     if (!MatchedSteps.hasValue())
     {
         return 0;
@@ -41,23 +42,21 @@ std::size_t countPhaseRequestSteps(const Orchestrator& orchestrator, const Phase
                            std::size_t {0},
                            [&orchestrator, &request](std::size_t total, const std::string& scope)
                            {
-                               return total + countPhaseInvocationSteps(
-                                                  orchestrator,
-                                                  PhaseInvocation {
-                                                      .phase = request.phase, .scope = scope});
+                               return total +
+                                      countPhaseInvocationSteps(
+                                          orchestrator,
+                                          PhaseInvocation {.phase = request.phase, .scope = scope});
                            });
 }
 
 std::size_t countWorkflowSteps(const Orchestrator& orchestrator, const Workflow& workflow)
 {
-    return std::accumulate(workflow.steps.begin(),
-                           workflow.steps.end(),
-                           std::size_t {0},
-                           [&orchestrator](std::size_t total, const WorkflowStep& step)
-                           {
-                               return total +
-                                      countPhaseInvocationSteps(orchestrator, step.invocation);
-                           });
+    return std::accumulate(
+        workflow.steps.begin(),
+        workflow.steps.end(),
+        std::size_t {0},
+        [&orchestrator](std::size_t total, const WorkflowStep& step)
+        { return total + countPhaseInvocationSteps(orchestrator, step.invocation); });
 }
 
 }  // namespace beez::core::orchestrator_detail

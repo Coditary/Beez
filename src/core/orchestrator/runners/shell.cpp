@@ -1,10 +1,9 @@
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/shell_execution.hpp"
 #include "beez/core/orchestrator/types.hpp"
-#include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/contract/logger.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
@@ -41,8 +40,7 @@ Expected<int, OrchestratorError> runShellCommand(Orchestrator& orchestrator,
                                                     shell_execution_detail::CapturePolicy::Always);
     shell_execution_detail::persistOutput(
         runOptions, label.detail, "shell", Result.capturedOutput, Result.exitCode);
-    shell_execution_detail::logOutput(
-        runOptions, Result.capturedOutput, Result.exitCode, channel);
+    shell_execution_detail::logOutput(runOptions, Result.capturedOutput, Result.exitCode, channel);
 
     if (Result.exitCode != 0)
     {

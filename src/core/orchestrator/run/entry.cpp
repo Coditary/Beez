@@ -3,29 +3,30 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
 #include "beez/core/orchestrator/run/cache_flush.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
+#include <string>
 
 namespace beez::core::orchestrator_detail
 {
 
-LoggedRunScope beginLoggedRun(Orchestrator& orchestrator,
-                            const std::string& runType,
-                            const std::string& name)
+LoggedRunScope
+beginLoggedRun(Orchestrator& orchestrator, const std::string& runType, const std::string& name)
 {
     const auto& runOptions = Access::runOptions(orchestrator);
-    return LoggedRunScope(Access::pluginHost(orchestrator),
-                          runOptions.performance.optimizeGcForThroughput,
-                          Access::stats(orchestrator),
-                          runOptions.logger,
-                          runType,
-                          name);
+    return {Access::pluginHost(orchestrator),
+            runOptions.performance.optimizeGcForThroughput,
+            Access::stats(orchestrator),
+            runOptions.logger,
+            runType,
+            name};
 }
 
 ScopedLoggedRun::ScopedLoggedRun(Orchestrator& orchestrator,
                                  const std::string& runType,
                                  const std::string& name,
-                                 const RunCacheFlushPolicy flushPolicy)
+                                 const RunCacheFlushPolicy FlushPolicy)
     : orchestrator_(orchestrator), scope_(beginLoggedRun(orchestrator, runType, name)),
-      flushPolicy_(flushPolicy)
+      flushPolicy_(FlushPolicy)
 {
 }
 

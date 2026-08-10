@@ -1,22 +1,27 @@
+#include "beez/core/cache/step/output_tracker.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/cache/step/step_cache.hpp"
-#include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/step_execution.hpp"
 
+#include "beez/core/orchestrator/run/cache_skip.hpp"
+#include "beez/core/orchestrator/runners/phase.hpp"
+#include "beez/core/orchestrator/runners/step_callback.hpp"
+#include "beez/core/orchestrator/types.hpp"
+#include "beez/core/util/expected.hpp"
 #include <string>
 
 namespace beez::core::orchestrator_detail
 {
 
-step_execution_detail::StepCachePrepareResult
-prepareStepCache(Orchestrator& orchestrator,
-                 const Step& step,
-                 ProgressState& progress,
-                 const std::string& category,
-                 const std::string& detail)
+step_execution_detail::StepCachePrepareResult prepareStepCache(Orchestrator& orchestrator,
+                                                               const Step& step,
+                                                               ProgressState& progress,
+                                                               const std::string& category,
+                                                               const std::string& detail)
 {
     step_execution_detail::StepCachePrepareResult result;
     const auto& runOptions = Access::runOptions(orchestrator);
@@ -72,7 +77,7 @@ Expected<int, OrchestratorError> executeStepBody(Orchestrator& orchestrator,
 void finalizeStepCache(Orchestrator& orchestrator,
                        step_execution_detail::StepCacheSession& session,
                        const Step& step,
-                       const double durationSeconds)
+                       const double DurationSeconds)
 {
     if (!session.outputTracker.has_value() || session.stepCache == nullptr)
     {
@@ -84,7 +89,7 @@ void finalizeStepCache(Orchestrator& orchestrator,
                              context.projectRoot(),
                              step.config,
                              session.outputTracker->end(step),
-                             durationSeconds);
+                             DurationSeconds);
 }
 
 }  // namespace beez::core::orchestrator_detail

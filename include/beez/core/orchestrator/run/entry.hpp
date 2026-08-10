@@ -4,7 +4,9 @@
 #include "beez/core/orchestrator/run/lifecycle.hpp"
 #include "beez/core/util/expected.hpp"
 
+#include <cstdint>
 #include <string>
+#include <utility>
 
 namespace beez::core
 {
@@ -14,16 +16,15 @@ class Orchestrator;
 namespace orchestrator_detail
 {
 
-enum class RunCacheFlushPolicy
+enum class RunCacheFlushPolicy : std::uint8_t
 {
     Never,
     IfEndStrategy,
     AtRunEnd,
 };
 
-[[nodiscard]] LoggedRunScope beginLoggedRun(Orchestrator& orchestrator,
-                                            const std::string& runType,
-                                            const std::string& name);
+[[nodiscard]] LoggedRunScope
+beginLoggedRun(Orchestrator& orchestrator, const std::string& runType, const std::string& name);
 
 class ScopedLoggedRun
 {
@@ -40,21 +41,21 @@ class ScopedLoggedRun
 
     void finish(bool success);
 
-    template<typename RunFn>
+    template <typename RunFn>
     [[nodiscard]] Expected<int, OrchestratorError> withSegment(const std::string& label,
                                                                RunFn&& runFn)
     {
         scope_.beginSegment(label);
-        const auto Result = runFn();
+        const auto Result = std::forward<RunFn>(runFn)();
         scope_.endSegment(static_cast<bool>(Result));
         finish(static_cast<bool>(Result));
         return Result;
     }
 
-    template<typename RunFn>
+    template <typename RunFn>
     [[nodiscard]] Expected<int, OrchestratorError> withoutSegment(RunFn&& runFn)
     {
-        const auto Result = runFn();
+        const auto Result = std::forward<RunFn>(runFn)();
         finish(static_cast<bool>(Result));
         return Result;
     }

@@ -16,9 +16,8 @@ class Step;
 namespace orchestrator_detail
 {
 
-[[nodiscard]] Expected<int, OrchestratorError> runStepInstance(Orchestrator& orchestrator,
-                                                               const Step& step,
-                                                               ProgressState& progress);
+[[nodiscard]] Expected<int, OrchestratorError>
+runStepInstance(Orchestrator& orchestrator, const Step& step, ProgressState& progress);
 [[nodiscard]] step_execution_detail::StepCachePrepareResult
 prepareStepCache(Orchestrator& orchestrator,
                  const Step& step,

@@ -13,9 +13,8 @@ class Task;
 namespace orchestrator_detail
 {
 
-[[nodiscard]] Expected<int, OrchestratorError> runTask(Orchestrator& orchestrator,
-                                                       const Task& task,
-                                                       ProgressState& progress);
+[[nodiscard]] Expected<int, OrchestratorError>
+runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress);
 
 }  // namespace orchestrator_detail
 }  // namespace beez::core

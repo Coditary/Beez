@@ -1,6 +1,10 @@
 #pragma once
 
+#include "beez/core/cache/storage/write_coordinator.hpp"
+#include "beez/core/config/settings/run_options.hpp"
+#include "beez/core/execution/concurrency/thread_pool.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/orchestrator/run/stats.hpp"
 
 namespace beez::core::orchestrator_detail
 {

@@ -4,6 +4,7 @@
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/logging/contract/logger.hpp"
 
+#include "beez/logging/contract/run_types.hpp"
 #include <cstddef>
 #include <string>
 
@@ -26,14 +27,14 @@ void Orchestrator::logProgress(ProgressState& progress,
     }
     (void)progress.index.fetch_add(1);
 
-    const auto& runOptions = orchestrator_detail::Access::runOptions(*this);
-    if (runOptions.logger == nullptr)
+    const auto& options = orchestrator_detail::Access::runOptions(*this);
+    if (options.logger == nullptr)
     {
         return;
     }
 
     const std::size_t CurrentIndex = progress.index.load();
-    runOptions.logger->logProgress(logging::ExecutionProgress {
+    options.logger->logProgress(logging::ExecutionProgress {
         .index = CurrentIndex,
         .total = progress.total,
         .category = category,

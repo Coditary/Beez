@@ -1,10 +1,12 @@
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/run/step_count.hpp"
+#include "beez/core/orchestrator/runners/phase.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/contract/logger.hpp"
@@ -100,12 +102,13 @@ Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator, const W
         nodes.push_back(std::move(node));
     }
 
-    Access::threadPool(orchestrator).execute(
-        [&]
-        {
-            nodes.front()->try_put(tbb::flow::continue_msg {});
-            graph.wait_for_all();
-        });
+    Access::threadPool(orchestrator)
+        .execute(
+            [&]
+            {
+                nodes.front()->try_put(tbb::flow::continue_msg {});
+                graph.wait_for_all();
+            });
 
     if (executionState.failed.load())
     {

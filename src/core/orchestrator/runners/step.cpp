@@ -1,11 +1,11 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/entry.hpp"
 #include "beez/core/orchestrator/run/time.hpp"
+#include "beez/core/orchestrator/runners/step.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/util/expected.hpp"
@@ -16,15 +16,14 @@
 namespace beez::core::orchestrator_detail
 {
 
-Expected<int, OrchestratorError> runStepInstance(Orchestrator& orchestrator,
-                                                 const Step& step,
-                                                 ProgressState& progress)
+Expected<int, OrchestratorError>
+runStepInstance(Orchestrator& orchestrator, const Step& step, ProgressState& progress)
 {
     const std::string Detail = stepProgressDetail(step);
     const std::string Category = step.phase.empty() ? "step" : step.phase;
 
-    auto Prepare = prepareStepCache(orchestrator, step, progress, Category, Detail);
-    if (Prepare.skipped)
+    auto prepare = prepareStepCache(orchestrator, step, progress, Category, Detail);
+    if (prepare.skipped)
     {
         return 0;
     }
@@ -36,7 +35,7 @@ Expected<int, OrchestratorError> runStepInstance(Orchestrator& orchestrator,
         return Result.error();
     }
 
-    finalizeStepCache(orchestrator, Prepare.session, step, elapsedSeconds(StepStart));
+    finalizeStepCache(orchestrator, prepare.session, step, elapsedSeconds(StepStart));
 
     return Result.value();
 }

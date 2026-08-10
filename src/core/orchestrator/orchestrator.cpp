@@ -1,6 +1,5 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/success/success_cache.hpp"
@@ -10,8 +9,11 @@
 #include "beez/core/execution/concurrency/thread_pool.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/task.hpp"
-#include "beez/core/model/workflow.hpp"
 #include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/cache_flush.hpp"
+#include "beez/core/orchestrator/run/entry.hpp"
+#include "beez/core/orchestrator/runners/task.hpp"
+#include "beez/core/orchestrator/runners/workflow.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
@@ -149,7 +151,8 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
     {
         return orchestrator_detail::ScopedLoggedRun(
                    *this, "Workflow", name, orchestrator_detail::RunCacheFlushPolicy::IfEndStrategy)
-            .withoutSegment([&] { return orchestrator_detail::runWorkflow(*this, *FoundWorkflow); });
+            .withoutSegment([&]
+                            { return orchestrator_detail::runWorkflow(*this, *FoundWorkflow); });
     }
 
     return OrchestratorError::NotFound;

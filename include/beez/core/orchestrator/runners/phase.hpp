@@ -17,10 +17,9 @@ struct PhaseInvocation;
 namespace orchestrator_detail
 {
 
-[[nodiscard]] Expected<int, OrchestratorError>
-runPhaseInvocation(Orchestrator& orchestrator,
-                   const PhaseInvocation& invocation,
-                   ProgressState& progress);
+[[nodiscard]] Expected<int, OrchestratorError> runPhaseInvocation(Orchestrator& orchestrator,
+                                                                  const PhaseInvocation& invocation,
+                                                                  ProgressState& progress);
 [[nodiscard]] Expected<int, OrchestratorError> runShellCommand(Orchestrator& orchestrator,
                                                                const std::string& command,
                                                                const ProgressLabel& label,

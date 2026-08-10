@@ -2,6 +2,7 @@
 
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/cli/presentation/name_suggestion.hpp"
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/util/expected.hpp"

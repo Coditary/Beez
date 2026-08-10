@@ -1,10 +1,13 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
 #include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/cache_flush.hpp"
+#include "beez/core/orchestrator/run/entry.hpp"
+#include "beez/core/orchestrator/run/step_count.hpp"
+#include "beez/core/orchestrator/runners/step.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/util/expected.hpp"
@@ -24,8 +27,10 @@ Expected<int, OrchestratorError> runPhaseInvocation(Orchestrator& orchestrator,
                                                     const PhaseInvocation& invocation,
                                                     ProgressState& progress)
 {
-    const auto StepLevels = Access::registry(orchestrator).stepLevelsForPhase(
-        invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
+    const auto StepLevels =
+        Access::registry(orchestrator)
+            .stepLevelsForPhase(invocation.phase,
+                                invocation.scope.empty() ? "*" : invocation.scope);
 
     if (!StepLevels.hasValue())
     {
@@ -62,26 +67,24 @@ Expected<int, OrchestratorError> runPhaseInvocation(Orchestrator& orchestrator,
         OrchestratorError levelError = OrchestratorError::ExecutionFailed;
         std::mutex levelErrorMutex;
 
-        Access::threadPool(orchestrator).parallelFor(level.size(),
-                                                     [&](std::size_t index)
-                                                     {
-                                                         if (levelFailed.load())
-                                                         {
-                                                             return;
-                                                         }
+        Access::threadPool(orchestrator)
+            .parallelFor(level.size(),
+                         [&](std::size_t index)
+                         {
+                             if (levelFailed.load())
+                             {
+                                 return;
+                             }
 
-                                                         const auto Result =
-                                                             runStepInstance(orchestrator,
-                                                                             level.at(index),
-                                                                             progress);
-                                                         if (!Result)
-                                                         {
-                                                             levelFailed.store(true);
-                                                             const std::scoped_lock Lock(
-                                                                 levelErrorMutex);
-                                                             levelError = Result.error();
-                                                         }
-                                                     });
+                             const auto Result =
+                                 runStepInstance(orchestrator, level.at(index), progress);
+                             if (!Result)
+                             {
+                                 levelFailed.store(true);
+                                 const std::scoped_lock Lock(levelErrorMutex);
+                                 levelError = Result.error();
+                             }
+                         });
 
         if (levelFailed.load())
         {
