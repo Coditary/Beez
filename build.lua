@@ -131,7 +131,6 @@ local function run_per_file_success_cache(ctx, opts)
 
             local cmd = opts.command_fn(config, source_path)
             pending_jobs[#pending_jobs + 1] = ctx:spawn({
-                name = worker_prefix .. index,
                 cmd = cmd,
             })
             pending_paths[#pending_paths + 1] = source_path
@@ -139,13 +138,11 @@ local function run_per_file_success_cache(ctx, opts)
     end
 
     if #pending_jobs > 0 then
-        ctx:wait_all(pending_jobs)
-
         for job_index, job in ipairs(pending_jobs) do
             local source_path = pending_paths[job_index]
-            local code = ctx:wait(job)
+            local result = ctx:wait(job, { exitCode = true })
 
-            if code ~= 0 then
+            if result.exitCode ~= 0 then
                 ctx.record_file_cache_miss(source_path)
                 failed = failed + 1
             else

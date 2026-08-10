@@ -179,11 +179,10 @@ step({
     scope = "code",
     run = function(ctx)
         local job = ctx:spawn({
-            name = "compile_main",
             cmd = "mkdir -p build && touch build/main.o",
             outputs = { "build/main.o" },
         })
-        return ctx:wait(job)
+        return ctx:wait(job, { exitCode = true }).exitCode
     end,
 })
 )");
@@ -207,18 +206,17 @@ step({
     run = function(ctx)
         local jobs = {}
         local job_a = ctx:spawn({
-            name = "compile_a",
             cmd = "mkdir -p build && touch build/a.o",
             outputs = { "build/a.o" },
         })
         local job_b = ctx:spawn({
-            name = "compile_b",
             cmd = "mkdir -p build && touch build/b.o",
             outputs = { "build/b.o" },
         })
         jobs[1] = job_a
         jobs[2] = job_b
-        return ctx:wait_all(jobs)
+        ctx:wait_all(jobs)
+        return 0
     end,
 })
 )");
@@ -242,7 +240,6 @@ step({
     scope = "code",
     run = function(ctx)
         ctx:spawn({
-            name = "compile_main",
             cmd = "mkdir -p build && touch build/main.o",
             outputs = { "build/main.o" },
         })
@@ -269,7 +266,6 @@ step({
     scope = "code",
     run = function(ctx)
         local job = ctx:spawn({
-            name = "compile_main",
             cmd = {
                 "mkdir -p build",
                 "touch build/main.o",
@@ -277,7 +273,7 @@ step({
             },
             outputs = { "build/main.o", "build/main.done" },
         })
-        return ctx:wait(job)
+        return ctx:wait(job, { exitCode = true }).exitCode
     end,
 })
 )");

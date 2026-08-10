@@ -236,7 +236,9 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
 
     stepContext.set_function(
         "wait",
-        [&context](const sol::table& /*self*/, const sol::object& handleValue) -> int
+        [luaState, &context](const sol::table& /*self*/,
+                             const sol::object& handleValue,
+                             sol::optional<sol::table> optionsTable) -> sol::object
         {
             core::WorkerPool* pool = context.workerPool();
             if (pool == nullptr)
@@ -251,12 +253,20 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                 context.setPendingWorkerDuration(pool->workerDuration(Handle.id));
             }
 
-            return ExitCode;
+            if (!optionsTable.has_value())
+            {
+                return sol::lua_nil;
+            }
+
+            const WorkerWaitOptions Options = parseWorkerWaitOptions(optionsTable.value());
+            return buildWorkerWaitResult(luaState, pool->workerSnapshot(Handle.id), Options);
         });
 
     stepContext.set_function(
         "wait_all",
-        [&context](const sol::table& /*self*/, const sol::object& handlesArg) -> int
+        [luaState, &context](const sol::table& /*self*/,
+                             sol::optional<sol::object> handlesArg,
+                             sol::optional<sol::table> optionsTable) -> sol::object
         {
             core::WorkerPool* pool = context.workerPool();
             if (pool == nullptr)
@@ -264,24 +274,57 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                 throw std::runtime_error("worker pool is not available in this step context");
             }
 
-            if (!handlesArg.valid() || handlesArg.is<sol::lua_nil_t>())
+            std::vector<core::WorkerHandle> handles;
+            if (!handlesArg.has_value() || !handlesArg->valid() || handlesArg->is<sol::lua_nil_t>())
             {
-                return pool->drainAll();
+                (void)pool->drainAll();
+                for (std::size_t index = 0; index < pool->workerCount(); ++index)
+                {
+                    handles.push_back(core::WorkerHandle {.id = index});
+                }
             }
-
-            if (!handlesArg.is<sol::table>())
+            else if (handlesArg->is<sol::table>())
+            {
+                handles = parseWorkerHandleList(handlesArg->as<sol::table>());
+                if (handles.empty())
+                {
+                    (void)pool->drainAll();
+                    for (std::size_t index = 0; index < pool->workerCount(); ++index)
+                    {
+                        handles.push_back(core::WorkerHandle {.id = index});
+                    }
+                }
+                else
+                {
+                    (void)pool->waitAll(handles);
+                }
+            }
+            else
             {
                 throw std::runtime_error("wait_all expects a table of worker handles");
             }
 
-            const std::vector<core::WorkerHandle> Handles =
-                parseWorkerHandleList(handlesArg.as<sol::table>());
-            if (Handles.empty())
+            if (!optionsTable.has_value())
             {
-                return pool->drainAll();
+                return sol::lua_nil;
             }
 
-            return pool->waitAll(Handles);
+            const WorkerWaitOptions Options = parseWorkerWaitOptions(optionsTable.value());
+            if (!Options.wantsResult())
+            {
+                return sol::lua_nil;
+            }
+
+            sol::table results = luaState->create_table();
+            for (std::size_t index = 0; index < handles.size(); ++index)
+            {
+                const core::WorkerHandle& handle = handles.at(index);
+                const sol::object Entry =
+                    buildWorkerWaitResult(luaState, pool->workerSnapshot(handle.id), Options);
+                results.set(static_cast<int>(index + 1), Entry);
+            }
+
+            return sol::make_object(*luaState, results);
         });
 
     stepContext["success_cached"] = [&context](const std::string& key) -> bool

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Worker API (Lua step context)
+
+- `ctx:wait(handle, options)` — optional second argument requests fields to return (`exitCode`, `output`, `duration`, `cached`, `name`, `id`, `dryRun`); omit options to wait without a return value
+- `ctx:wait_all(handles, options)` — one shared options table for all workers; returns a 1-based array of per-worker result tables in handle order
+- Worker shell output is captured and exposed through the `output` field after `wait` or `wait_all`
+- Automatic worker names `{step-name}-{n}` (for example `compile-1`, `compile-2`); `name` is no longer required in `ctx:spawn`
+- [`docs/worker-api.md`](docs/worker-api.md) — spawn, wait, and wait_all reference
+
+### Changed
+
+#### Worker API (breaking)
+
+- `ctx:wait(handle)` no longer returns an exit code; use `ctx:wait(handle, { exitCode = true })` and read `result.exitCode`
+- `ctx:wait_all(handles)` no longer returns an exit code; use `ctx:wait_all(handles, { exitCode = true })` or wait on individual handles
+- `ctx:spawn` no longer requires `name`; an explicit `name` remains supported for logging overrides
+
+---
+
 Milestone 14: Codebase Refactoring
 
 ### Added

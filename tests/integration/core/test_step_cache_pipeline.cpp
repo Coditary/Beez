@@ -80,10 +80,9 @@ step({
     output = { "build/out.txt" },
     run = function(ctx)
         local job = ctx:spawn({
-            name = "write_out",
             cmd = "mkdir -p build && echo ok > build/out.txt && echo run >> build/runs.txt",
         })
-        return ctx:wait(job)
+        return ctx:wait(job, { exitCode = true }).exitCode
     end,
 })
 )");
@@ -115,12 +114,12 @@ step({
     scope = "demo",
     run = function(ctx)
         ctx:spawn({
-            name = "worker",
             cmd = "mkdir -p build && echo run >> build/worker_runs.txt && echo ok > build/worker.out",
             inputs = { "src/main.cpp" },
             outputs = { "build/worker.out" },
         })
-        return ctx:wait_all()
+        ctx:wait_all()
+        return 0
     end,
 })
 )");

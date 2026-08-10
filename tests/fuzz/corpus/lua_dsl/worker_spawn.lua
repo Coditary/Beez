@@ -9,13 +9,13 @@ step({
         for _, source_file in ipairs({ "main.cpp", "util.cpp" }) do
             local obj_file = source_file:gsub("%.cpp$", ".o")
             local job = ctx:spawn({
-                name = "compile_" .. source_file,
                 cmd = "echo compile " .. source_file,
                 inputs = { source_file },
                 outputs = { "build/" .. obj_file },
             })
             table.insert(jobs, job)
         end
-        return ctx:wait_all(jobs)
+        ctx:wait_all(jobs)
+        return 0
     end,
 })

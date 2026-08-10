@@ -9,7 +9,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 
 ## Features
 
-- **Lua DSL** (`build.lua`): steps, tasks, workflows, `order()`, per-step config
+- **Lua DSL** (`build.lua`): steps, tasks, workflows, `order()`, per-step config, in-step **workers** (`ctx:spawn` / `ctx:wait`)
 - **Parallel execution** with worker threads (`-j`) for independent steps within a phase+scope
 - **Caching**: step cache, success cache (Lua callbacks), configurable hash and compression
 - **Phases and scopes** for filtering and organizing work (`beez -p compile:code`)
@@ -26,7 +26,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 | CLI flags | [Wiki: CLI Flag Reference](https://github.com/Coditary/Beez/wiki/CLI-Flag-Reference) |
 | Glossary | [Wiki: Glossary](https://github.com/Coditary/Beez/wiki/Glossary) |
 | Contributor guide | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Developer docs | [`docs/`](docs/) |
+| Developer docs | [`docs/`](docs/) (incl. [`docs/worker-api.md`](docs/worker-api.md)) |
 | Vertical feature workflow | [`docs/vertical-feature.md`](docs/vertical-feature.md) |
 
 ## Requirements
