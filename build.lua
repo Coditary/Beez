@@ -138,15 +138,15 @@ local function run_per_file_success_cache(ctx, opts)
     end
 
     if #pending_jobs > 0 then
-        for job_index, job in ipairs(pending_jobs) do
+        local results = ctx:wait_all(pending_jobs, { exitCode = true, duration = true })
+        for job_index, result in ipairs(results) do
             local source_path = pending_paths[job_index]
-            local result = ctx:wait(job, { exitCode = true })
 
             if result.exitCode ~= 0 then
                 ctx.record_file_cache_miss(source_path)
                 failed = failed + 1
             else
-                ctx.cache_file_success(source_path)
+                ctx.cache_file_success(source_path, result.duration)
             end
         end
     end

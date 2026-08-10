@@ -372,7 +372,8 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
         session->cacheSuccess(key);
     };
 
-    stepContext["cache_file_success"] = [&context](const std::string& relativePath)
+    stepContext["cache_file_success"] =
+        [&context](const std::string& relativePath, sol::optional<double> durationSeconds)
     {
         core::SuccessCacheSession* session = context.successCacheSession();
         if (session == nullptr)
@@ -380,7 +381,8 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
             return;
         }
 
-        session->cacheFileSuccess(relativePath, context.consumePendingWorkerDuration());
+        const double Duration = durationSeconds.value_or(context.consumePendingWorkerDuration());
+        session->cacheFileSuccess(relativePath, Duration);
     };
 
     stepContext["record_cache_miss"] = [&context](const std::string& key)
