@@ -44,9 +44,8 @@ namespace
     return stream.str();
 }
 
-[[nodiscard]] std::string formatIso8601WithOffset(const std::tm& localTime,
-                                                  const int millis,
-                                                  const int offsetMinutes)
+[[nodiscard]] std::string
+formatIso8601WithOffset(const std::tm& localTime, const int millis, const int offsetMinutes)
 {
     const int AbsoluteMinutes = std::abs(offsetMinutes);
     const int OffsetHours = AbsoluteMinutes / 60;
@@ -112,7 +111,8 @@ std::string utcIso8601(const std::time_t epochSeconds)
 {
     const auto TimePoint = std::chrono::system_clock::from_time_t(epochSeconds);
     const auto Millis =
-        std::chrono::duration_cast<std::chrono::milliseconds>(TimePoint.time_since_epoch()).count() %
+        std::chrono::duration_cast<std::chrono::milliseconds>(TimePoint.time_since_epoch())
+            .count() %
         1000;
     return formatIso8601FromUtcTm(toUtcTime(epochSeconds), static_cast<int>(Millis));
 }
@@ -122,11 +122,11 @@ std::string utcIso8601WithOffset(const std::time_t epochSeconds, const int offse
     const std::time_t ShiftedEpoch = epochSeconds + (static_cast<std::time_t>(offsetMinutes) * 60);
     const auto TimePoint = std::chrono::system_clock::from_time_t(ShiftedEpoch);
     const auto Millis =
-        std::chrono::duration_cast<std::chrono::milliseconds>(TimePoint.time_since_epoch()).count() %
+        std::chrono::duration_cast<std::chrono::milliseconds>(TimePoint.time_since_epoch())
+            .count() %
         1000;
-    return formatIso8601WithOffset(toUtcTime(ShiftedEpoch),
-                                     static_cast<int>(Millis),
-                                     offsetMinutes);
+    return formatIso8601WithOffset(
+        toUtcTime(ShiftedEpoch), static_cast<int>(Millis), offsetMinutes);
 }
 
 int localUtcOffsetMinutes()

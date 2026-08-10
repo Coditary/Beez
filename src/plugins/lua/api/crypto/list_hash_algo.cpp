@@ -12,7 +12,9 @@ namespace beez::plugin::lua
 void bindListHashAlgo(sol::table& cryptoTable, const std::shared_ptr<sol::state>& luaState)
 {
     cryptoTable["list_hash_algo"] = [luaState]() -> sol::table
-    { return crypto_detail::algorithmsToTable(luaState, crypto_detail::supportedHashAlgorithms()); };
+    {
+        return crypto_detail::algorithmsToTable(luaState, crypto_detail::supportedHashAlgorithms());
+    };
 }
 
 }  // namespace beez::plugin::lua

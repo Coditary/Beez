@@ -10,8 +10,7 @@ namespace beez::plugin::lua
 
 void bindCpuCores(sol::table& sysTable)
 {
-    sysTable["cpu_cores"] = []() -> int
-    { return static_cast<int>(sys_detail::cpuCoreCount()); };
+    sysTable["cpu_cores"] = []() -> int { return static_cast<int>(sys_detail::cpuCoreCount()); };
 }
 
 }  // namespace beez::plugin::lua

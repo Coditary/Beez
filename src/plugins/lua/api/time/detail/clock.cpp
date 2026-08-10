@@ -29,7 +29,8 @@ namespace
 {
     const auto TimeT = std::chrono::system_clock::to_time_t(timePoint);
     const auto Millis =
-        std::chrono::duration_cast<std::chrono::milliseconds>(timePoint.time_since_epoch()).count() %
+        std::chrono::duration_cast<std::chrono::milliseconds>(timePoint.time_since_epoch())
+            .count() %
         1000;
 
     std::tm utcTime {};

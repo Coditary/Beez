@@ -36,10 +36,9 @@ namespace
 
 [[nodiscard]] std::string escapeCsvField(const std::string& field)
 {
-    const bool NeedsQuotes = field.find(',') != std::string::npos ||
-                             field.find('"') != std::string::npos ||
-                             field.find('\n') != std::string::npos ||
-                             field.find('\r') != std::string::npos;
+    const bool NeedsQuotes =
+        field.find(',') != std::string::npos || field.find('"') != std::string::npos ||
+        field.find('\n') != std::string::npos || field.find('\r') != std::string::npos;
     if (!NeedsQuotes)
     {
         return field;

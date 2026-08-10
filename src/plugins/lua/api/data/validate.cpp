@@ -13,8 +13,8 @@ namespace beez::plugin::lua
 
 void bindValidate(sol::table& dataTable, const std::shared_ptr<sol::state>& luaState)
 {
-    dataTable["validate"] =
-        [luaState](const sol::table& data, const sol::object& schemaOrString) -> bool
+    dataTable["validate"] = [luaState](const sol::table& data,
+                                       const sol::object& schemaOrString) -> bool
     {
         const data_detail::YyjsonMutDocPtr DataDocument =
             data_detail::luaToYyjsonDocument(sol::make_object(*luaState, data));
@@ -30,13 +30,13 @@ void bindValidate(sol::table& dataTable, const std::shared_ptr<sol::state>& luaS
         {
             const data_detail::YyjsonMutDocPtr SchemaMutable =
                 data_detail::luaToYyjsonDocument(sol::make_object(*luaState, schemaOrString));
-            const std::string SchemaJson = data_detail::yyjsonDocumentToString(*SchemaMutable, false);
+            const std::string SchemaJson =
+                data_detail::yyjsonDocumentToString(*SchemaMutable, false);
             SchemaDocument = data_detail::parseYyjsonDocument(SchemaJson);
         }
         else
         {
-            throw std::runtime_error(
-                "beez.data.validate: schema must be a JSON string or table");
+            throw std::runtime_error("beez.data.validate: schema must be a JSON string or table");
         }
 
         std::string error;

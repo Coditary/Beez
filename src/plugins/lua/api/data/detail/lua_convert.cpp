@@ -63,13 +63,14 @@ namespace
         }
 
         yyjson_mut_val* map = yyjson_mut_obj(document);
-        Table.for_each([&document, &map](const sol::object& key, const sol::object& value)
-                       {
-                           const std::string Key = key.as<std::string>();
-                           yyjson_mut_obj_add(map,
-                                              yyjson_mut_strncpy(document, Key.c_str(), Key.size()),
-                                              luaObjectToYyjson(document, value));
-                       });
+        Table.for_each(
+            [&document, &map](const sol::object& key, const sol::object& value)
+            {
+                const std::string Key = key.as<std::string>();
+                yyjson_mut_obj_add(map,
+                                   yyjson_mut_strncpy(document, Key.c_str(), Key.size()),
+                                   luaObjectToYyjson(document, value));
+            });
         return map;
     }
 
@@ -229,20 +230,21 @@ bool isLuaArray(const sol::table& table)
     }
 
     bool onlySequential = true;
-    table.for_each([&onlySequential, &table](const sol::object& key, const sol::object& /*value*/)
-                    {
-                        if (!key.is<int>())
-                        {
-                            onlySequential = false;
-                            return;
-                        }
+    table.for_each(
+        [&onlySequential, &table](const sol::object& key, const sol::object& /*value*/)
+        {
+            if (!key.is<int>())
+            {
+                onlySequential = false;
+                return;
+            }
 
-                        const int Key = key.as<int>();
-                        if (Key < 1 || static_cast<std::size_t>(Key) > table.size())
-                        {
-                            onlySequential = false;
-                        }
-                    });
+            const int Key = key.as<int>();
+            if (Key < 1 || static_cast<std::size_t>(Key) > table.size())
+            {
+                onlySequential = false;
+            }
+        });
     return onlySequential;
 }
 
@@ -285,8 +287,7 @@ std::string yyjsonDocumentToString(const yyjson_mut_doc& document, const bool pr
 
 YyjsonDocPtr parseYyjsonDocument(const std::string& content)
 {
-    yyjson_doc* document =
-        yyjson_read(content.data(), content.size(), YYJSON_READ_NOFLAG);
+    yyjson_doc* document = yyjson_read(content.data(), content.size(), YYJSON_READ_NOFLAG);
     if (document == nullptr)
     {
         throw std::runtime_error("beez.data: failed to parse JSON");

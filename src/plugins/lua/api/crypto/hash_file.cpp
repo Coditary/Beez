@@ -11,8 +11,8 @@ namespace beez::plugin::lua
 
 void bindHashFile(sol::table& cryptoTable, const core::Context& context)
 {
-    cryptoTable["hash_file"] =
-        [&context](const std::string& path, sol::optional<std::string> algorithm) -> std::string
+    cryptoTable["hash_file"] = [&context](const std::string& path,
+                                          sol::optional<std::string> algorithm) -> std::string
     {
         return crypto_detail::hashFile(api_detail::resolvePath(context.projectRoot(), path),
                                        algorithm.value_or("sha256"));

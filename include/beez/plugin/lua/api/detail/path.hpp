@@ -8,7 +8,7 @@ namespace beez::plugin::lua::api_detail
 {
 
 [[nodiscard]] inline std::filesystem::path resolvePath(const std::filesystem::path& projectRoot,
-                                                     const std::string& userPath)
+                                                       const std::string& userPath)
 {
     const std::filesystem::path UserPath(userPath);
     if (UserPath.is_absolute())

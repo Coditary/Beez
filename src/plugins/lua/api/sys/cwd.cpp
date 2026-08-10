@@ -10,8 +10,7 @@ namespace beez::plugin::lua
 
 void bindCwd(sol::table& sysTable)
 {
-    sysTable["cwd"] = []() -> std::string
-    { return std::filesystem::current_path().string(); };
+    sysTable["cwd"] = []() -> std::string { return std::filesystem::current_path().string(); };
 }
 
 }  // namespace beez::plugin::lua

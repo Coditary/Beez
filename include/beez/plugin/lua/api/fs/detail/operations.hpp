@@ -9,7 +9,7 @@ namespace beez::plugin::lua::fs_detail
 {
 
 [[nodiscard]] std::filesystem::path resolvedPath(const core::Context& context,
-                                               const std::string& userPath);
+                                                 const std::string& userPath);
 
 void copyPath(const core::Context& context,
               const std::string& sourcePath,

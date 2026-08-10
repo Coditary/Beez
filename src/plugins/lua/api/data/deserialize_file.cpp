@@ -15,8 +15,8 @@ void bindDeserializeFile(sol::table& dataTable,
                          const std::shared_ptr<sol::state>& luaState,
                          const core::Context& context)
 {
-    dataTable["deserialize_file"] =
-        [luaState, &context](const std::string& path, const sol::object& options) -> sol::table
+    dataTable["deserialize_file"] = [luaState, &context](const std::string& path,
+                                                         const sol::object& options) -> sol::table
     {
         const std::filesystem::path Resolved = fs_detail::resolvedPath(context, path);
         const data_detail::DataFormat Format = data_detail::resolveFormat(Resolved, options);

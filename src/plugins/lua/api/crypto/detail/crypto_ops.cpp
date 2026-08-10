@@ -86,10 +86,10 @@ struct Md5Context
     std::uint8_t buffer[64] {};
 };
 
-constexpr std::uint32_t Md5Shift[] = {
-    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5,  9,  14, 19, 5,  9,
-    14, 19, 5,  9,  14, 19, 5,  9,  14, 19, 4,  11, 16, 23, 4,  11, 16, 23, 4,  11, 16,
-    23, 4,  11, 16, 23, 6,  10, 15, 21, 6,  10, 15, 21, 6,  10, 15, 21, 6,  10, 15, 21};
+constexpr std::uint32_t Md5Shift[] = {7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+                                      5, 9,  14, 19, 5, 9,  14, 19, 5, 9,  14, 19, 5, 9,  14, 19,
+                                      4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+                                      6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21};
 
 constexpr std::uint32_t Md5Table[] = {
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
@@ -205,8 +205,8 @@ void md5Final(Md5Context& context, std::uint8_t digest[16])
     std::uint8_t bits[8];
     for (int index = 0; index < 8; ++index)
     {
-        bits[index] = static_cast<std::uint8_t>((context.count[index >> 2] >> ((index % 4) * 8U)) &
-                                              0xFFU);
+        bits[index] =
+            static_cast<std::uint8_t>((context.count[index >> 2] >> ((index % 4) * 8U)) & 0xFFU);
     }
 
     const std::size_t Index = (context.count[0] >> 3U) & 0x3FU;
@@ -227,9 +227,7 @@ void md5Final(Md5Context& context, std::uint8_t digest[16])
 {
     Md5Context context;
     md5Init(context);
-    md5Update(context,
-              reinterpret_cast<const std::uint8_t*>(data.data()),
-              data.size());
+    md5Update(context, reinterpret_cast<const std::uint8_t*>(data.data()), data.size());
     std::array<std::uint8_t, 16> digest {};
     md5Final(context, digest.data());
     return digest;
@@ -257,9 +255,8 @@ void sha1Transform(std::uint32_t state[5], const std::uint8_t block[64])
 
     for (int index = 16; index < 80; ++index)
     {
-        words[index] = leftRotate(words[index - 3] ^ words[index - 8] ^ words[index - 14] ^
-                                      words[index - 16],
-                                  1U);
+        words[index] = leftRotate(
+            words[index - 3] ^ words[index - 8] ^ words[index - 14] ^ words[index - 16], 1U);
     }
 
     std::uint32_t a = state[0];
@@ -355,8 +352,8 @@ void sha1Final(Sha1Context& context, std::uint8_t digest[20])
     std::uint8_t bits[8];
     for (int index = 0; index < 8; ++index)
     {
-        bits[index] = static_cast<std::uint8_t>((context.count[index >> 2] >> ((index % 4) * 8U)) &
-                                              0xFFU);
+        bits[index] =
+            static_cast<std::uint8_t>((context.count[index >> 2] >> ((index % 4) * 8U)) & 0xFFU);
     }
 
     const std::size_t Index = (context.count[0] >> 3U) & 0x3FU;
@@ -377,9 +374,7 @@ void sha1Final(Sha1Context& context, std::uint8_t digest[20])
 {
     Sha1Context context;
     sha1Init(context);
-    sha1Update(context,
-               reinterpret_cast<const std::uint8_t*>(data.data()),
-               data.size());
+    sha1Update(context, reinterpret_cast<const std::uint8_t*>(data.data()), data.size());
     std::array<std::uint8_t, 20> digest {};
     sha1Final(context, digest.data());
     return digest;
@@ -423,12 +418,11 @@ void sha256Transform(Sha256Context& context, const std::uint8_t block[64])
 
     for (int index = 16; index < 64; ++index)
     {
-        const std::uint32_t Sigma0 =
-            rightRotate(words[index - 15], 7U) ^ rightRotate(words[index - 15], 18U) ^
-            (words[index - 15] >> 3U);
-        const std::uint32_t Sigma1 =
-            rightRotate(words[index - 2], 17U) ^ rightRotate(words[index - 2], 19U) ^
-            (words[index - 2] >> 10U);
+        const std::uint32_t Sigma0 = rightRotate(words[index - 15], 7U) ^
+                                     rightRotate(words[index - 15], 18U) ^
+                                     (words[index - 15] >> 3U);
+        const std::uint32_t Sigma1 = rightRotate(words[index - 2], 17U) ^
+                                     rightRotate(words[index - 2], 19U) ^ (words[index - 2] >> 10U);
         words[index] = words[index - 16] + Sigma0 + words[index - 7] + Sigma1;
     }
 
@@ -549,9 +543,7 @@ void sha256Final(Sha256Context& context, std::uint8_t digest[32])
 {
     Sha256Context context;
     sha256Init(context);
-    sha256Update(context,
-                 reinterpret_cast<const std::uint8_t*>(data.data()),
-                 data.size());
+    sha256Update(context, reinterpret_cast<const std::uint8_t*>(data.data()), data.size());
     std::array<std::uint8_t, 32> digest {};
     sha256Final(context, digest.data());
     return digest;
@@ -611,12 +603,12 @@ void sha512Transform(Sha512Context& context, const std::uint8_t block[128])
 
     for (int index = 16; index < 80; ++index)
     {
-        const std::uint64_t Sigma0 =
-            rightRotate64(words[index - 15], 1U) ^ rightRotate64(words[index - 15], 8U) ^
-            (words[index - 15] >> 7U);
-        const std::uint64_t Sigma1 =
-            rightRotate64(words[index - 2], 19U) ^ rightRotate64(words[index - 2], 61U) ^
-            (words[index - 2] >> 6U);
+        const std::uint64_t Sigma0 = rightRotate64(words[index - 15], 1U) ^
+                                     rightRotate64(words[index - 15], 8U) ^
+                                     (words[index - 15] >> 7U);
+        const std::uint64_t Sigma1 = rightRotate64(words[index - 2], 19U) ^
+                                     rightRotate64(words[index - 2], 61U) ^
+                                     (words[index - 2] >> 6U);
         words[index] = words[index - 16] + Sigma0 + words[index - 7] + Sigma1;
     }
 
@@ -756,9 +748,7 @@ void sha512Final(Sha512Context& context, std::uint8_t digest[64])
 {
     Sha512Context context;
     sha512Init(context);
-    sha512Update(context,
-                 reinterpret_cast<const std::uint8_t*>(data.data()),
-                 data.size());
+    sha512Update(context, reinterpret_cast<const std::uint8_t*>(data.data()), data.size());
     std::array<std::uint8_t, 64> digest {};
     sha512Final(context, digest.data());
     return digest;
@@ -772,7 +762,8 @@ enum class CryptoDigestAlgorithm
     Md5,
 };
 
-[[nodiscard]] bool parseCryptoDigestAlgorithm(std::string_view algorithm, CryptoDigestAlgorithm& out)
+[[nodiscard]] bool parseCryptoDigestAlgorithm(std::string_view algorithm,
+                                              CryptoDigestAlgorithm& out)
 {
     const std::string Normalized = toLower(std::string(algorithm));
     if (Normalized == "sha256")
@@ -858,9 +849,8 @@ enum class CryptoDigestAlgorithm
     return {};
 }
 
-[[nodiscard]] std::vector<std::uint8_t> hmacDigestBytes(CryptoDigestAlgorithm algorithm,
-                                                        std::string_view key,
-                                                        std::string_view data)
+[[nodiscard]] std::vector<std::uint8_t>
+hmacDigestBytes(CryptoDigestAlgorithm algorithm, std::string_view key, std::string_view data)
 {
     constexpr std::size_t Sha256BlockSize = 64;
     constexpr std::size_t Sha512BlockSize = 128;
@@ -1025,8 +1015,9 @@ std::string encodeWithKey(const std::string_view data,
 {
     if (isFingerprintHash(hashAlgorithm))
     {
-        throw std::runtime_error("beez.crypto.encode: HMAC is not supported for fingerprint hash '" +
-                                 std::string(hashAlgorithm) + "'");
+        throw std::runtime_error(
+            "beez.crypto.encode: HMAC is not supported for fingerprint hash '" +
+            std::string(hashAlgorithm) + "'");
     }
 
     CryptoDigestAlgorithm digestAlgorithm {};

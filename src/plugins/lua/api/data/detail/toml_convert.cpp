@@ -131,55 +131,56 @@ namespace
 [[nodiscard]] toml::table luaTableToTomlTable(const sol::table& table)
 {
     toml::table result;
-    table.for_each([&result](const sol::object& key, const sol::object& value)
-                   {
-                       if (!value.valid() || value.is<sol::lua_nil_t>())
-                       {
-                           return;
-                       }
+    table.for_each(
+        [&result](const sol::object& key, const sol::object& value)
+        {
+            if (!value.valid() || value.is<sol::lua_nil_t>())
+            {
+                return;
+            }
 
-                       const std::string Key = key.as<std::string>();
-                       if (value.is<bool>())
-                       {
-                           result.insert(Key, value.as<bool>());
-                           return;
-                       }
+            const std::string Key = key.as<std::string>();
+            if (value.is<bool>())
+            {
+                result.insert(Key, value.as<bool>());
+                return;
+            }
 
-                       if (value.is<std::string>())
-                       {
-                           result.insert(Key, value.as<std::string>());
-                           return;
-                       }
+            if (value.is<std::string>())
+            {
+                result.insert(Key, value.as<std::string>());
+                return;
+            }
 
-                       if (value.is<int>())
-                       {
-                           result.insert(Key, value.as<int>());
-                           return;
-                       }
+            if (value.is<int>())
+            {
+                result.insert(Key, value.as<int>());
+                return;
+            }
 
-                       if (value.is<double>())
-                       {
-                           result.insert(Key, value.as<double>());
-                           return;
-                       }
+            if (value.is<double>())
+            {
+                result.insert(Key, value.as<double>());
+                return;
+            }
 
-                       if (value.is<sol::table>())
-                       {
-                           const sol::table Nested = value.as<sol::table>();
-                           if (isLuaArray(Nested))
-                           {
-                               result.insert(Key, luaTableToTomlArray(Nested));
-                           }
-                           else
-                           {
-                               result.insert(Key, luaTableToTomlTable(Nested));
-                           }
-                           return;
-                       }
+            if (value.is<sol::table>())
+            {
+                const sol::table Nested = value.as<sol::table>();
+                if (isLuaArray(Nested))
+                {
+                    result.insert(Key, luaTableToTomlArray(Nested));
+                }
+                else
+                {
+                    result.insert(Key, luaTableToTomlTable(Nested));
+                }
+                return;
+            }
 
-                       throw std::runtime_error(
-                           "beez.data: unsupported Lua value type for TOML serialization");
-                   });
+            throw std::runtime_error(
+                "beez.data: unsupported Lua value type for TOML serialization");
+        });
     return result;
 }
 

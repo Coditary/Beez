@@ -34,7 +34,8 @@ namespace
     return false;
 }
 
-[[nodiscard]] bool parseNumber(const ryml::csubstr value, sol::state_view luaState, sol::object& output)
+[[nodiscard]] bool
+parseNumber(const ryml::csubstr value, sol::state_view luaState, sol::object& output)
 {
     const std::string Text = csubstrToString(value);
     if (Text.find('.') != std::string::npos || Text.find('e') != std::string::npos ||
@@ -100,12 +101,13 @@ void luaTableToRyml(ryml::NodeRef node, const sol::table& table)
     }
 
     node |= ryml::MAP;
-    table.for_each([&node](const sol::object& key, const sol::object& childValue)
-                   {
-                       ryml::NodeRef child = node.append_child();
-                       child.set_key_serialized(key.as<std::string>());
-                       appendLuaValue(child, childValue);
-                   });
+    table.for_each(
+        [&node](const sol::object& key, const sol::object& childValue)
+        {
+            ryml::NodeRef child = node.append_child();
+            child.set_key_serialized(key.as<std::string>());
+            appendLuaValue(child, childValue);
+        });
 }
 
 void appendLuaValue(ryml::NodeRef node, const sol::object& value)

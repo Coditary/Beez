@@ -10,7 +10,8 @@ namespace beez::plugin::lua
 
 void bindSerializeString(sol::table& dataTable)
 {
-    dataTable["serialize_string"] = [](const sol::table& table, const sol::object& options) -> std::string
+    dataTable["serialize_string"] = [](const sol::table& table,
+                                       const sol::object& options) -> std::string
     {
         const data_detail::DataFormat Format = data_detail::resolveFormat(options);
         return data_detail::serializeString(table, Format);

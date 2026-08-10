@@ -1,10 +1,10 @@
 #include "beez/plugin/lua/api/data/detail/codec.hpp"
 
-#include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
-#include "beez/plugin/lua/api/data/detail/yaml_convert.hpp"
-#include "beez/plugin/lua/api/data/detail/xml_convert.hpp"
 #include "beez/plugin/lua/api/data/detail/csv_convert.hpp"
+#include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 #include "beez/plugin/lua/api/data/detail/toml_convert.hpp"
+#include "beez/plugin/lua/api/data/detail/xml_convert.hpp"
+#include "beez/plugin/lua/api/data/detail/yaml_convert.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -107,9 +107,8 @@ DataFormat resolveFormat(const sol::object& options)
     throw std::runtime_error("beez.data: format type is required for string operations");
 }
 
-sol::table deserializeString(sol::state& luaState,
-                             const std::string& content,
-                             const DataFormat format)
+sol::table
+deserializeString(sol::state& luaState, const std::string& content, const DataFormat format)
 {
     switch (format)
     {
@@ -166,9 +165,8 @@ void serializeFile(const std::filesystem::path& path,
     writeFile(path, serializeString(table, format));
 }
 
-sol::table deserializeFile(sol::state& luaState,
-                           const std::filesystem::path& path,
-                           const DataFormat format)
+sol::table
+deserializeFile(sol::state& luaState, const std::filesystem::path& path, const DataFormat format)
 {
     return deserializeString(luaState, readFile(path), format);
 }

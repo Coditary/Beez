@@ -13,9 +13,7 @@ void bindGlob(sol::table& fsTable,
               const core::Context& context)
 {
     fsTable["glob"] = [luaState, &context](const std::string& pattern) -> sol::table
-    {
-        return fs_detail::globPatternsToTable(luaState, {pattern}, context.projectRoot());
-    };
+    { return fs_detail::globPatternsToTable(luaState, {pattern}, context.projectRoot()); };
 }
 
 }  // namespace beez::plugin::lua

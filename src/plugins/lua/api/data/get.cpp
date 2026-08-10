@@ -10,8 +10,9 @@ namespace beez::plugin::lua
 
 void bindGet(sol::table& dataTable)
 {
-    dataTable["get"] =
-        [](const sol::table& table, const std::string& path, const sol::object& defaultValue) -> sol::object
+    dataTable["get"] = [](const sol::table& table,
+                          const std::string& path,
+                          const sol::object& defaultValue) -> sol::object
     { return data_detail::getPath(table, path, defaultValue); };
 }
 

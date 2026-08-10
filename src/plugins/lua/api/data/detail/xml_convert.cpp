@@ -94,10 +94,8 @@ void buildXmlNode(rapidxml::xml_document<>& document,
     }
 
     const std::string Tag = TagValue.as<std::string>();
-    rapidxml::xml_node<>* node =
-        document.allocate_node(rapidxml::node_element,
-                               document.allocate_string(Tag.c_str()),
-                               nullptr);
+    rapidxml::xml_node<>* node = document.allocate_node(
+        rapidxml::node_element, document.allocate_string(Tag.c_str()), nullptr);
     parent->append_node(node);
 
     const sol::object Attributes = table["attrs"];
@@ -113,9 +111,9 @@ void buildXmlNode(rapidxml::xml_document<>& document,
 
                 const std::string Key = key.as<std::string>();
                 const std::string Value = value.as<std::string>();
-                node->append_attribute(document.allocate_attribute(
-                    document.allocate_string(Key.c_str()),
-                    document.allocate_string(Value.c_str())));
+                node->append_attribute(
+                    document.allocate_attribute(document.allocate_string(Key.c_str()),
+                                                document.allocate_string(Value.c_str())));
             });
     }
 
@@ -123,9 +121,8 @@ void buildXmlNode(rapidxml::xml_document<>& document,
     if (TextValue.valid() && TextValue.is<std::string>())
     {
         const std::string Text = TextValue.as<std::string>();
-        node->append_node(document.allocate_node(rapidxml::node_data,
-                                                 nullptr,
-                                                 document.allocate_string(Text.c_str())));
+        node->append_node(document.allocate_node(
+            rapidxml::node_data, nullptr, document.allocate_string(Text.c_str())));
     }
 
     const sol::object Children = table["children"];

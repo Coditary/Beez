@@ -62,19 +62,20 @@ namespace
         }
 
         bool equal = true;
-        LeftTable.for_each([&](const sol::object& key, const sol::object& value)
-                           {
-                               if (!equal)
-                               {
-                                   return;
-                               }
+        LeftTable.for_each(
+            [&](const sol::object& key, const sol::object& value)
+            {
+                if (!equal)
+                {
+                    return;
+                }
 
-                               const sol::object Other = RightTable[key];
-                               if (!objectsEqual(value, Other))
-                               {
-                                   equal = false;
-                               }
-                           });
+                const sol::object Other = RightTable[key];
+                if (!objectsEqual(value, Other))
+                {
+                    equal = false;
+                }
+            });
         return equal;
     }
 
@@ -97,29 +98,27 @@ void collectDiff(sol::state_view luaState,
         const sol::table LeftTable = left.as<sol::table>();
         const sol::table RightTable = right.as<sol::table>();
 
-        LeftTable.for_each([&](const sol::object& key, const sol::object& value)
-                           {
-                               const std::string KeyString = key.as<std::string>();
-                               const std::string ChildPrefix =
-                                   prefix.empty() ? KeyString : prefix + '.' + KeyString;
-                               collectDiff(luaState,
-                                           diff,
-                                           ChildPrefix,
-                                           value,
-                                           RightTable[key]);
-                           });
+        LeftTable.for_each(
+            [&](const sol::object& key, const sol::object& value)
+            {
+                const std::string KeyString = key.as<std::string>();
+                const std::string ChildPrefix =
+                    prefix.empty() ? KeyString : prefix + '.' + KeyString;
+                collectDiff(luaState, diff, ChildPrefix, value, RightTable[key]);
+            });
 
-        RightTable.for_each([&](const sol::object& key, const sol::object& value)
-                            {
-                                const sol::object Existing = LeftTable[key];
-                                if (!Existing.valid())
-                                {
-                                    const std::string KeyString = key.as<std::string>();
-                                    const std::string ChildPrefix =
-                                        prefix.empty() ? KeyString : prefix + '.' + KeyString;
-                                    collectDiff(luaState, diff, ChildPrefix, sol::lua_nil, value);
-                                }
-                            });
+        RightTable.for_each(
+            [&](const sol::object& key, const sol::object& value)
+            {
+                const sol::object Existing = LeftTable[key];
+                if (!Existing.valid())
+                {
+                    const std::string KeyString = key.as<std::string>();
+                    const std::string ChildPrefix =
+                        prefix.empty() ? KeyString : prefix + '.' + KeyString;
+                    collectDiff(luaState, diff, ChildPrefix, sol::lua_nil, value);
+                }
+            });
         return;
     }
 
@@ -156,45 +155,46 @@ std::vector<std::string> splitPath(const std::string& path)
 void deepMerge(sol::table& target, const sol::table& source)
 {
     sol::state_view luaState(target.lua_state());
-    source.for_each([&target, &luaState](const sol::object& key, const sol::object& value)
-                    {
-                        const sol::object Existing = target[key];
-                        if (Existing.valid() && Existing.is<sol::table>() && value.is<sol::table>())
-                        {
-                            sol::table nestedTarget = Existing.as<sol::table>();
-                            deepMerge(nestedTarget, value.as<sol::table>());
-                            return;
-                        }
+    source.for_each(
+        [&target, &luaState](const sol::object& key, const sol::object& value)
+        {
+            const sol::object Existing = target[key];
+            if (Existing.valid() && Existing.is<sol::table>() && value.is<sol::table>())
+            {
+                sol::table nestedTarget = Existing.as<sol::table>();
+                deepMerge(nestedTarget, value.as<sol::table>());
+                return;
+            }
 
-                        if (value.is<sol::table>())
-                        {
-                            target[key] = cloneTable(luaState, value.as<sol::table>());
-                            return;
-                        }
+            if (value.is<sol::table>())
+            {
+                target[key] = cloneTable(luaState, value.as<sol::table>());
+                return;
+            }
 
-                        target[key] = value;
-                    });
+            target[key] = value;
+        });
 }
 
 sol::table cloneTable(sol::state_view luaState, const sol::table& table)
 {
     sol::table copy = luaState.create_table();
-    table.for_each([&copy, &luaState](const sol::object& key, const sol::object& value)
-                   {
-                       if (value.is<sol::table>())
-                       {
-                           copy[key] = cloneTable(luaState, value.as<sol::table>());
-                           return;
-                       }
+    table.for_each(
+        [&copy, &luaState](const sol::object& key, const sol::object& value)
+        {
+            if (value.is<sol::table>())
+            {
+                copy[key] = cloneTable(luaState, value.as<sol::table>());
+                return;
+            }
 
-                       copy[key] = value;
-                   });
+            copy[key] = value;
+        });
     return copy;
 }
 
-sol::object getPath(const sol::table& table,
-                    const std::string& path,
-                    const sol::object& defaultValue)
+sol::object
+getPath(const sol::table& table, const std::string& path, const sol::object& defaultValue)
 {
     const std::vector<std::string> Segments = splitPath(path);
     sol::object current = sol::make_object(table.lua_state(), table);

@@ -12,8 +12,7 @@ namespace beez::plugin::lua
 
 void bindFormat(sol::table& dateTable)
 {
-    dateTable["format"] =
-        [](const std::string& pattern, sol::optional<double> epoch) -> std::string
+    dateTable["format"] = [](const std::string& pattern, sol::optional<double> epoch) -> std::string
     {
         std::optional<double> epochValue;
         if (epoch.has_value())
@@ -21,8 +20,7 @@ void bindFormat(sol::table& dateTable)
             epochValue = epoch.value();
         }
 
-        return date_detail::formatLocal(pattern,
-                                        date_detail::resolveEpochSeconds(epochValue));
+        return date_detail::formatLocal(pattern, date_detail::resolveEpochSeconds(epochValue));
     };
 }
 

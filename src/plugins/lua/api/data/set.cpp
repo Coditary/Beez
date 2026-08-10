@@ -10,7 +10,8 @@ namespace beez::plugin::lua
 
 void bindSet(sol::table& dataTable)
 {
-    dataTable["set"] = [](sol::table table, const std::string& path, const sol::object& value) -> sol::table
+    dataTable["set"] =
+        [](sol::table table, const std::string& path, const sol::object& value) -> sol::table
     {
         data_detail::setPath(table, path, value);
         return table;

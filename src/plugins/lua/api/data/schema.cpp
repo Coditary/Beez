@@ -9,10 +9,8 @@ namespace beez::plugin::lua::data_detail
 namespace
 {
 
-[[nodiscard]] bool validateAt(yyjson_val* data,
-                              yyjson_val* schema,
-                              const std::string& path,
-                              std::string& error);
+[[nodiscard]] bool
+validateAt(yyjson_val* data, yyjson_val* schema, const std::string& path, std::string& error);
 
 [[nodiscard]] bool typeMatches(yyjson_val* data, const std::string& type)
 {
@@ -54,10 +52,8 @@ namespace
     return false;
 }
 
-[[nodiscard]] bool validateAt(yyjson_val* data,
-                              yyjson_val* schema,
-                              const std::string& path,
-                              std::string& error)
+[[nodiscard]] bool
+validateAt(yyjson_val* data, yyjson_val* schema, const std::string& path, std::string& error)
 {
     yyjson_val* typeValue = yyjson_obj_get(schema, "type");
     if (typeValue != nullptr && yyjson_is_str(typeValue))
@@ -113,8 +109,8 @@ namespace
                 if (yyjson_obj_get(data, Field.c_str()) == nullptr)
                 {
                     const std::string FieldPath = path.empty() ? Field : path + '.' + Field;
-                    error = std::format("beez.data.validate: missing required field '{}'",
-                                        FieldPath);
+                    error =
+                        std::format("beez.data.validate: missing required field '{}'", FieldPath);
                     return false;
                 }
             }

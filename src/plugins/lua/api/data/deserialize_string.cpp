@@ -10,8 +10,8 @@ namespace beez::plugin::lua
 
 void bindDeserializeString(sol::table& dataTable, const std::shared_ptr<sol::state>& luaState)
 {
-    dataTable["deserialize_string"] =
-        [luaState](const std::string& content, const sol::object& options) -> sol::table
+    dataTable["deserialize_string"] = [luaState](const std::string& content,
+                                                 const sol::object& options) -> sol::table
     {
         const data_detail::DataFormat Format = data_detail::resolveFormat(options);
         return data_detail::deserializeString(*luaState, content, Format);

@@ -10,8 +10,8 @@ namespace beez::plugin::lua
 
 void bindHashString(sol::table& cryptoTable)
 {
-    cryptoTable["hash_string"] =
-        [](const std::string& text, sol::optional<std::string> algorithm) -> std::string
+    cryptoTable["hash_string"] = [](const std::string& text,
+                                    sol::optional<std::string> algorithm) -> std::string
     { return crypto_detail::hashString(text, algorithm.value_or("sha256")); };
 }
 

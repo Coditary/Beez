@@ -216,10 +216,8 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                 }
             });
 
-        return fs_detail::globPatternsToTable(luaState,
-                                               patterns,
-                                               context.projectRoot(),
-                                               context.globMetadataCache());
+        return fs_detail::globPatternsToTable(
+            luaState, patterns, context.projectRoot(), context.globMetadataCache());
     };
 
     stepContext.set_function(
