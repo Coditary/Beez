@@ -53,7 +53,7 @@ TEST(RegistryTest, RegisterAndFindOrphanTask)
     }
     EXPECT_EQ(Found->name, "clean");
     ASSERT_EQ(Found->actions.size(), 1U);
-    beez::test::expectShellCommand(*Found, 0, "rm -fr app.o");
+    beez::test::expectShellCommand(Found, 0, "rm -fr app.o");
 }
 
 TEST(RegistryTest, RegisterAndFindStep)
@@ -100,7 +100,7 @@ TEST(RegistryTest, RegisterTaskRejectsDuplicate)
         return;
     }
     ASSERT_EQ(Found->actions.size(), 1U);
-    beez::test::expectShellCommand(*Found, 0, "rm -fr app.o");
+    beez::test::expectShellCommand(Found, 0, "rm -fr app.o");
 }
 
 TEST(RegistryTest, RegisterStepRejectsDuplicate)

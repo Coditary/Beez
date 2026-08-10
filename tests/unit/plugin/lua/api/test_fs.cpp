@@ -42,7 +42,7 @@ task("join", "echo " .. beez.fs.join("my", "path", "to", "file.txt"))
 
     const auto Found = beez::test::requireTask(registry, "join");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo my/path/to/file.txt");
+    beez::test::expectShellCommand(Found, 0, "echo my/path/to/file.txt");
 }
 
 TEST(LuaFsApiTest, ExistsReturnsTrueForExistingFile)
@@ -59,7 +59,7 @@ task("check", "echo " .. tostring(beez.fs.exists("present.txt")))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaFsApiTest, ExistsReturnsFalseForMissingFile)
@@ -74,7 +74,7 @@ task("check", "echo " .. tostring(beez.fs.exists("missing.txt")))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo false");
+    beez::test::expectShellCommand(Found, 0, "echo false");
 }
 
 TEST(LuaFsApiTest, GlobFindsMatchingFiles)
@@ -94,7 +94,7 @@ task("glob", "echo " .. files[1] .. "," .. files[2])
 
     const auto Found = beez::test::requireTask(registry, "glob");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo src/alpha.cpp,src/beta.cpp");
+    beez::test::expectShellCommand(Found, 0, "echo src/alpha.cpp,src/beta.cpp");
 }
 
 TEST(LuaFsApiTest, CopyCreatesDestinationFile)
@@ -114,7 +114,7 @@ task("check", "echo " .. tostring(beez.fs.exists("copied.txt")))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaFsApiTest, CopyWithoutOverwriteFailsToLoadWhenDestinationExists)
@@ -149,7 +149,7 @@ task("check", "echo " .. tostring(beez.fs.exists("delete-me.txt")))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo false");
+    beez::test::expectShellCommand(Found, 0, "echo false");
 }
 
 TEST(LuaFsApiTest, FsApiWorksInsideStepCallback)

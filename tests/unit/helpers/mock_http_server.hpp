@@ -1,18 +1,20 @@
 #pragma once
 
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <thread>
-#include <vector>
+#include <utility>
 
 namespace beez::test
 {
@@ -103,6 +105,8 @@ class MockHttpServer
     }
 
   private:
+    static constexpr std::size_t ReadBufferSize = 4096U;
+
     void serveLoop()
     {
         while (!stop_.load())
@@ -125,15 +129,15 @@ class MockHttpServer
     void handleClient(int clientFd)
     {
         std::string request;
-        char buffer[4096];
+        std::array<char, ReadBufferSize> buffer {};
         while (request.find("\r\n\r\n") == std::string::npos)
         {
-            const ssize_t Read = ::recv(clientFd, buffer, sizeof(buffer), 0);
+            const ssize_t Read = ::recv(clientFd, buffer.data(), buffer.size(), 0);
             if (Read <= 0)
             {
                 return;
             }
-            request.append(buffer, static_cast<std::size_t>(Read));
+            request.append(buffer.data(), static_cast<std::size_t>(Read));
         }
 
         const std::size_t LineEnd = request.find("\r\n");
@@ -161,7 +165,7 @@ class MockHttpServer
                 break;
             }
             constexpr std::string_view Prefix = "Content-Length:";
-            if (HeaderLine.rfind(Prefix.data(), 0) == 0)
+            if (HeaderLine.starts_with(Prefix))
             {
                 contentLength =
                     static_cast<std::size_t>(std::stoul(HeaderLine.substr(Prefix.size())));
@@ -174,12 +178,12 @@ class MockHttpServer
             lastBody_ = request.substr(BodyStart + 4);
             while (lastBody_.size() < contentLength)
             {
-                const ssize_t Read = ::recv(clientFd, buffer, sizeof(buffer), 0);
+                const ssize_t Read = ::recv(clientFd, buffer.data(), buffer.size(), 0);
                 if (Read <= 0)
                 {
                     break;
                 }
-                lastBody_.append(buffer, static_cast<std::size_t>(Read));
+                lastBody_.append(buffer.data(), static_cast<std::size_t>(Read));
             }
             if (lastBody_.size() > contentLength)
             {

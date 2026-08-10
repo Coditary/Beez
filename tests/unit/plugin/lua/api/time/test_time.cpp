@@ -34,7 +34,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaTimeApiTest, IsoReturnsUtcTimestamp)
@@ -49,7 +49,7 @@ task("check", "echo " .. beez.time.iso())
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    const auto* shell = beez::test::shellActionAt(*Found, 0);
+    const auto* shell = beez::test::shellActionAt(Found, 0);
     ASSERT_NE(shell, nullptr);
     EXPECT_GE(shell->command.size(), 6U);
     EXPECT_EQ(shell->command.back(), 'Z');

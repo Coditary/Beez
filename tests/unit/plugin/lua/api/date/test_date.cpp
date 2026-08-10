@@ -34,7 +34,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDateApiTest, InfoReturnsExpectedFields)
@@ -51,7 +51,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDateApiTest, UtcReturnsZuluSuffix)
@@ -66,7 +66,7 @@ task("check", "echo " .. beez.date.utc(0))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    const auto* shell = beez::test::shellActionAt(*Found, 0);
+    const auto* shell = beez::test::shellActionAt(Found, 0);
     ASSERT_NE(shell, nullptr);
     EXPECT_EQ(shell->command.back(), 'Z');
     EXPECT_NE(shell->command.find("1970"), std::string::npos);
@@ -84,5 +84,5 @@ task("check", "echo " .. tostring(beez.date.epoch() > 0))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }

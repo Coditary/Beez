@@ -8,6 +8,9 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <string>
+
 namespace
 {
 
@@ -41,7 +44,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, FileRoundTripUsesExtension)
@@ -61,7 +64,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, MergeCloneGetSetAndDiff)
@@ -94,7 +97,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, ValidateSchema)
@@ -118,7 +121,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, YamlRoundTrip)
@@ -137,7 +140,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, XmlRoundTrip)
@@ -160,7 +163,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, CsvRoundTrip)
@@ -182,7 +185,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaDataApiTest, TomlRoundTrip)
@@ -201,5 +204,5 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }

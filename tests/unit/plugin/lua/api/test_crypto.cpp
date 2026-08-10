@@ -43,7 +43,7 @@ task("check", "echo " .. algos[1] .. "," .. algos[#algos])
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo sha256,sdbm");
+    beez::test::expectShellCommand(Found, 0, "echo sha256,sdbm");
 }
 
 TEST(LuaCryptoApiTest, ListEncodeAlgoReturnsSupportedAlgorithms)
@@ -59,7 +59,7 @@ task("check", "echo " .. algos[1] .. "," .. algos[2])
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo hex,base64");
+    beez::test::expectShellCommand(Found, 0, "echo hex,base64");
 }
 
 TEST(LuaCryptoApiTest, IsHashRecognizesSupportedAlgorithms)
@@ -81,7 +81,7 @@ task("check", "echo " .. tostring(checks[1] and checks[2] and checks[3] and chec
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaCryptoApiTest, IsEncodingAlgoRecognizesSupportedAlgorithms)
@@ -99,7 +99,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaCryptoApiTest, HashStringSha256ProducesKnownDigest)
@@ -115,7 +115,7 @@ task("hash", "echo " .. beez.crypto.hash_string("hello", "sha256"))
     const auto Found = beez::test::requireTask(registry, "hash");
     ASSERT_TRUE(Found.has_value());
     beez::test::expectShellCommand(
-        *Found, 0, "echo 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+        Found, 0, "echo 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
 }
 
 TEST(LuaCryptoApiTest, HashFileDefaultsToSha256)
@@ -133,7 +133,7 @@ task("hash", "echo " .. beez.crypto.hash_file("payload.txt"))
     const auto Found = beez::test::requireTask(registry, "hash");
     ASSERT_TRUE(Found.has_value());
     beez::test::expectShellCommand(
-        *Found, 0, "echo 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+        Found, 0, "echo 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
 }
 
 TEST(LuaCryptoApiTest, EncodeDefaultsToHex)
@@ -148,7 +148,7 @@ task("encode", "echo " .. beez.crypto.encode("ab"))
 
     const auto Found = beez::test::requireTask(registry, "encode");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo 6162");
+    beez::test::expectShellCommand(Found, 0, "echo 6162");
 }
 
 TEST(LuaCryptoApiTest, EncodeSupportsBase64)
@@ -163,7 +163,7 @@ task("encode", "echo " .. beez.crypto.encode("hello", "base64"))
 
     const auto Found = beez::test::requireTask(registry, "encode");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo aGVsbG8=");
+    beez::test::expectShellCommand(Found, 0, "echo aGVsbG8=");
 }
 
 TEST(LuaCryptoApiTest, EncodeWithKeyProducesHmacSha256)
@@ -179,7 +179,7 @@ task("encode", "echo " .. beez.crypto.encode("hello", "secret", "sha256"))
     const auto Found = beez::test::requireTask(registry, "encode");
     ASSERT_TRUE(Found.has_value());
     beez::test::expectShellCommand(
-        *Found, 0, "echo 88aab3ede8d3adf94d26ab90d3bafd4a2083070c3bcce9c014ee04a443847c0b");
+        Found, 0, "echo 88aab3ede8d3adf94d26ab90d3bafd4a2083070c3bcce9c014ee04a443847c0b");
 }
 
 TEST(LuaCryptoApiTest, UnknownHashAlgorithmFailsToLoad)

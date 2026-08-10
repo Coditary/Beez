@@ -266,7 +266,7 @@ int WorkerPool::executeWorker(std::size_t workerId)
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming)
-double WorkerPool::workerDuration(const std::size_t workerId) const
+double WorkerPool::workerDuration(std::size_t workerId) const
 {
     if (workerId >= workers_.size())
     {
@@ -276,7 +276,7 @@ double WorkerPool::workerDuration(const std::size_t workerId) const
     return workers_.at(workerId).lastDurationSeconds;
 }
 
-WorkerSnapshot WorkerPool::workerSnapshot(const std::size_t workerId) const
+WorkerSnapshot WorkerPool::workerSnapshot(std::size_t workerId) const
 {
     if (workerId >= workers_.size())
     {

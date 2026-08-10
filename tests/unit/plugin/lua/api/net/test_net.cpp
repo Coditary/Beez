@@ -50,7 +50,7 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaNetApiTest, DownloadCopiesLocalFile)
@@ -70,18 +70,18 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaNetApiTest, RestMethodsUseHeaderTable)
 {
-    beez::test::MockHttpServer Server;
-    Server.setFixedResponse(200, "posted");
+    beez::test::MockHttpServer server;
+    server.setFixedResponse(200, "posted");
 
     const beez::test::TempProject Project;
     writeFile(Project.path() / "upload.txt", "upload-body");
     const std::string Script = R"(
-local base = ")" + Server.baseUrl() +
+local base = ")" + server.baseUrl() +
                                R"("
 local headers = {
     ["X-Test"] = "beez",
@@ -108,8 +108,8 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
-    EXPECT_EQ(Server.lastMethod(), "POST");
+    beez::test::expectShellCommand(Found, 0, "echo true");
+    EXPECT_EQ(server.lastMethod(), "POST");
 }
 
 TEST(LuaNetApiTest, DownloadAndVerifyChecksHash)
@@ -132,18 +132,18 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(LuaNetApiTest, PingLocalServer)
 {
-    beez::test::MockHttpServer Server;
-    Server.setFixedResponse(204, "");
+    beez::test::MockHttpServer server;
+    server.setFixedResponse(204, "");
 
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
 local result = beez.net.ping(")" +
-                          Server.baseUrl() + R"(")
+                          server.baseUrl() + R"(")
 local ok = result.ok and result.status == 204
 task("check", "echo " .. tostring(ok))
 )");
@@ -153,16 +153,16 @@ task("check", "echo " .. tostring(ok))
 
     const auto Found = beez::test::requireTask(registry, "check");
     ASSERT_TRUE(Found.has_value());
-    beez::test::expectShellCommand(*Found, 0, "echo true");
+    beez::test::expectShellCommand(Found, 0, "echo true");
 }
 
 TEST(NetHttpClientTest, PingMeasuresLocalServer)
 {
-    beez::test::MockHttpServer Server;
-    Server.setFixedResponse(200, "pong");
+    beez::test::MockHttpServer server;
+    server.setFixedResponse(200, "pong");
 
     const auto Result =
-        beez::plugin::lua::net_detail::HttpClient::instance().ping(Server.baseUrl(), 5);
+        beez::plugin::lua::net_detail::HttpClient::instance().ping(server.baseUrl(), 5);
     EXPECT_TRUE(Result.reachable);
     EXPECT_EQ(Result.statusCode, 200);
     EXPECT_GE(Result.milliseconds, 0.0);

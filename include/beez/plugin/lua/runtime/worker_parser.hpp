@@ -5,9 +5,8 @@
 #include <memory>
 #include <vector>
 
-// NOLINTBEGIN(misc-include-cleaner)
+// NOLINTBEGIN(misc-include-cleaner,misc-non-private-member-variables-in-classes)
 #include <sol/forward.hpp>
-// NOLINTEND(misc-include-cleaner)
 
 namespace beez::plugin::lua
 {
@@ -41,3 +40,4 @@ struct WorkerWaitOptions
                                                 const WorkerWaitOptions& options);
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,misc-non-private-member-variables-in-classes)

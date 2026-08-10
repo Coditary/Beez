@@ -39,7 +39,7 @@ task("clean", "rm -fr app.o")
         return;
     }
     ASSERT_EQ(Found->actions.size(), 1U);
-    beez::test::expectShellCommand(*Found, 0, "rm -fr app.o");
+    beez::test::expectShellCommand(Found, 0, "rm -fr app.o");
 }
 
 TEST(LuaDslTest, LoadsTaskWithMultipleCommands)
@@ -62,8 +62,8 @@ task("hello", {
         return;
     }
     ASSERT_EQ(Found->actions.size(), 2U);
-    beez::test::expectShellCommand(*Found, 0, "echo Hello World");
-    beez::test::expectShellCommand(*Found, 1, "echo Goodbye World");
+    beez::test::expectShellCommand(Found, 0, "echo Hello World");
+    beez::test::expectShellCommand(Found, 1, "echo Goodbye World");
 }
 
 TEST(LuaDslTest, LoadsStepFromTableForm)
@@ -253,7 +253,7 @@ task("full_build", {
     {
         return;
     }
-    beez::test::expectMixedTaskWithStepInvocation(*Found);
+    beez::test::expectMixedTaskWithStepInvocation(Found);
 }
 
 TEST(LuaDslTest, LoadsTaskWithStepInvocationInlineConfig)
@@ -281,7 +281,7 @@ task("full_build", {
         return;
     }
     ASSERT_EQ(Found->actions.size(), 1U);
-    beez::test::expectStepInvocation(*Found, 0, "cpp:compile", true);
+    beez::test::expectStepInvocation(Found, 0, "cpp:compile", true);
 }
 
 TEST(LuaDslTest, ReturnsFalseWhenTaskStepInvocationMissingName)
@@ -522,7 +522,7 @@ task("show-env", "echo " .. beez.env("MY_ENV"))
     const auto Found = beez::test::requireTask(registry, "show-env");
     ASSERT_TRUE(Found.has_value());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
-    beez::test::expectShellCommand(*Found, 0, "echo secret-value");
+    beez::test::expectShellCommand(Found, 0, "echo secret-value");
 }
 
 TEST(LuaDslTest, BeezEnvReturnsNilWhenVariableIsMissing)
