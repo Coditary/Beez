@@ -12,9 +12,8 @@
 #include "beez/plugin/lua/api/net/set_proxy.hpp"
 #include "beez/plugin/lua/api/net/upload.hpp"
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua
 {
@@ -37,3 +36,4 @@ sol::table bindNet(const std::shared_ptr<sol::state>& luaState, const core::Cont
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)

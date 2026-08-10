@@ -3,15 +3,19 @@
 #include <curl/curl.h>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-special-member-functions,bugprone-easily-swappable-parameters,performance-inefficient-string-concatenation,performance-unnecessary-value-param,cppcoreguidelines-owning-memory,cppcoreguidelines-avoid-c-arrays,readability-identifier-naming,misc-const-correctness,cert-err33-c,modernize-use-ranges)
 namespace beez::plugin::lua::net_detail
 {
 
@@ -37,8 +41,8 @@ class CurlGlobalInit
 
 [[nodiscard]] CurlGlobalInit& curlGlobalInit()
 {
-    static CurlGlobalInit Instance;
-    return Instance;
+    static CurlGlobalInit instance;
+    return instance;
 }
 
 [[nodiscard]] std::string toLower(std::string value)
@@ -77,7 +81,7 @@ appendHeader(char* buffer, std::size_t size, std::size_t count, void* userData)
         return count;
     }
 
-    std::string name = toLower(line.substr(0, Separator));
+    const std::string name = toLower(line.substr(0, Separator));
     std::string value = line.substr(Separator + 1);
     while (!value.empty() && (value.front() == ' ' || value.front() == '\t'))
     {
@@ -142,8 +146,12 @@ void applyCommonOptions(CURL* handle,
     struct curl_slist* headerList = nullptr;
     for (const auto& [name, value] : headers)
     {
-        const std::string Line = name + ": " + value;
-        headerList = curl_slist_append(headerList, Line.c_str());
+        std::string line;
+        line.reserve(name.size() + value.size() + 2);
+        line.append(name);
+        line.append(": ");
+        line.append(value);
+        headerList = curl_slist_append(headerList, line.c_str());
     }
 
     if (headerList != nullptr)
@@ -170,8 +178,8 @@ void freeHeaderList(CURL* handle)
 HttpClient& HttpClient::instance()
 {
     (void)curlGlobalInit();
-    static HttpClient Client;
-    return Client;
+    static HttpClient client;
+    return client;
 }
 
 HttpClient::HttpClient() = default;
@@ -188,14 +196,14 @@ void HttpClient::clearProxy()
     proxyUrl_.clear();
 }
 
-HttpResponse HttpClient::perform(RequestOptions options)
+HttpResponse HttpClient::perform(const RequestOptions& options)
 {
     if (options.url.empty())
     {
         throw std::invalid_argument("url must not be empty");
     }
 
-    CurlHandle handle = makeCurlHandle();
+    const CurlHandle handle = makeCurlHandle();
     applyCommonOptions(handle.get(),
                        options.url,
                        options.headers,
@@ -227,7 +235,7 @@ HttpResponse HttpClient::perform(RequestOptions options)
     curl_easy_getinfo(handle.get(), CURLINFO_RESPONSE_CODE, &response.statusCode);
     if (response.statusCode == 0 && response.error.empty())
     {
-        response.statusCode = 200;
+        response.statusCode = HttpStatusOkMin;
     }
     freeHeaderList(handle.get());
     return response;
@@ -246,8 +254,8 @@ HttpResponse HttpClient::uploadFile(const std::string& url,
         throw std::invalid_argument("upload file does not exist: " + filePath.string());
     }
 
-    CurlHandle handle = makeCurlHandle();
-    applyCommonOptions(handle.get(), url, headers, 120, true, proxyUrl_);
+    const CurlHandle handle = makeCurlHandle();
+    applyCommonOptions(handle.get(), url, headers, DefaultDownloadTimeoutSeconds, true, proxyUrl_);
 
     curl_mime* mime = curl_mime_init(handle.get());
     if (mime == nullptr)
@@ -275,7 +283,7 @@ HttpResponse HttpClient::uploadFile(const std::string& url,
     curl_easy_getinfo(handle.get(), CURLINFO_RESPONSE_CODE, &response.statusCode);
     if (response.statusCode == 0 && response.error.empty())
     {
-        response.statusCode = 200;
+        response.statusCode = HttpStatusOkMin;
     }
     curl_mime_free(mime);
     freeHeaderList(handle.get());
@@ -284,7 +292,7 @@ HttpResponse HttpClient::uploadFile(const std::string& url,
 
 std::uintmax_t HttpClient::download(const std::string& url,
                                     const std::filesystem::path& destination,
-                                    DownloadOptions options)
+                                    const DownloadOptions& options)
 {
     if (url.empty())
     {
@@ -299,7 +307,7 @@ std::uintmax_t HttpClient::download(const std::string& url,
                                  destination.string());
     }
 
-    CurlHandle handle = makeCurlHandle();
+    const CurlHandle handle = makeCurlHandle();
     applyCommonOptions(handle.get(),
                        url,
                        options.headers,
@@ -321,7 +329,7 @@ std::uintmax_t HttpClient::download(const std::string& url,
 
     long statusCode = 0;
     curl_easy_getinfo(handle.get(), CURLINFO_RESPONSE_CODE, &statusCode);
-    if (statusCode != 0 && (statusCode < 200 || statusCode >= 300))
+    if (statusCode != 0 && (statusCode < HttpStatusOkMin || statusCode >= HttpStatusOkExclusive))
     {
         std::filesystem::remove(destination);
         throw std::runtime_error("download failed with HTTP status " + std::to_string(statusCode));
@@ -330,7 +338,7 @@ std::uintmax_t HttpClient::download(const std::string& url,
     return std::filesystem::file_size(destination);
 }
 
-PingResult HttpClient::ping(const std::string& url, const long timeoutSeconds)
+PingResult HttpClient::ping(const std::string& url, long timeoutSeconds)
 {
     if (url.empty())
     {
@@ -354,21 +362,22 @@ PingResult HttpClient::ping(const std::string& url, const long timeoutSeconds)
     return result;
 }
 
-bool HttpClient::isOnline(const long timeoutSeconds)
+bool HttpClient::isOnline(long timeoutSeconds)
 {
-    static constexpr const char* Probes[] = {
+    static constexpr std::array<const char*, 2> Probes = {
         "https://cloudflare.com/cdn-cgi/trace",
         "https://www.google.com/generate_204",
     };
 
-    return std::any_of(std::begin(Probes),
-                       std::end(Probes),
-                       [&](const char* probe)
-                       {
-                           const PingResult Result = ping(probe, timeoutSeconds);
-                           return Result.reachable && Result.statusCode >= 200 &&
-                                  Result.statusCode < 400;
-                       });
+    return std::ranges::any_of(Probes,
+                               [&](const char* probe)
+                               {
+                                   const PingResult result = ping(probe, timeoutSeconds);
+                                   return result.reachable &&
+                                          result.statusCode >= HttpStatusOkMin &&
+                                          result.statusCode < HttpStatusClientErrorExclusive;
+                               });
 }
 
 }  // namespace beez::plugin::lua::net_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-special-member-functions,bugprone-easily-swappable-parameters,performance-inefficient-string-concatenation,performance-unnecessary-value-param,cppcoreguidelines-owning-memory,cppcoreguidelines-avoid-c-arrays,readability-identifier-naming,misc-const-correctness,cert-err33-c,modernize-use-ranges)

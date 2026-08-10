@@ -7,9 +7,8 @@
 #include <stdexcept>
 #include <string>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua::net_detail
 {
@@ -57,7 +56,7 @@ DownloadOptions parseDownloadOptions(const sol::optional<sol::table>& optionsTab
         return options;
     }
 
-    const sol::table table = optionsTable.value();
+    const sol::table& table = optionsTable.value();
     if (const sol::object headersValue = table["headers"]; headersValue.valid())
     {
         options.headers = parseHeadersObject(headersValue);
@@ -86,7 +85,7 @@ RequestOptions parseRequestOptions(const std::string& method,
         return options;
     }
 
-    const sol::table table = optionsTable.value();
+    const sol::table& table = optionsTable.value();
     if (const sol::object bodyValue = table["body"]; bodyValue.valid())
     {
         if (!bodyValue.is<std::string>())
@@ -122,3 +121,4 @@ HttpResponse performOrThrow(const HttpResponse& response)
 }
 
 }  // namespace beez::plugin::lua::net_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)

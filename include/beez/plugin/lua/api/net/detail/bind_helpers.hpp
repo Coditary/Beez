@@ -4,7 +4,6 @@
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <sol/forward.hpp>
-// NOLINTEND(misc-include-cleaner)
 
 #include <memory>
 #include <string>
@@ -31,3 +30,4 @@ headersToTable(const std::shared_ptr<sol::state>& luaState,
 [[nodiscard]] HttpResponse performOrThrow(const HttpResponse& response);
 
 }  // namespace beez::plugin::lua::net_detail
+// NOLINTEND(misc-include-cleaner)

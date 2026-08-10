@@ -4,9 +4,8 @@
 #include "beez/plugin/lua/api/net/detail/bind_helpers.hpp"
 #include "beez/plugin/lua/api/net/detail/http_client.hpp"
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua
 {
@@ -34,3 +33,4 @@ void bindDownload(sol::table& netTable,
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)

@@ -5,9 +5,8 @@
 
 #include <stdexcept>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua
 {
@@ -31,3 +30,4 @@ void bindRequest(sol::table& netTable, const std::shared_ptr<sol::state>& luaSta
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)

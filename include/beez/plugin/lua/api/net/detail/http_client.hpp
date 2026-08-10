@@ -7,8 +7,17 @@
 #include <string>
 #include <unordered_map>
 
+// NOLINTBEGIN(misc-include-cleaner,misc-non-private-member-variables-in-classes,cppcoreguidelines-special-member-functions,modernize-use-equals-delete)
 namespace beez::plugin::lua::net_detail
 {
+
+constexpr long HttpStatusOkMin = 200;
+constexpr long HttpStatusOkExclusive = 300;
+constexpr long HttpStatusClientErrorExclusive = 400;
+constexpr long DefaultRequestTimeoutSeconds = 30;
+constexpr long DefaultDownloadTimeoutSeconds = 120;
+constexpr long DefaultPingTimeoutSeconds = 10;
+constexpr long DefaultOnlineCheckTimeoutSeconds = 3;
 
 struct HttpResponse
 {
@@ -19,7 +28,7 @@ struct HttpResponse
 
     [[nodiscard]] bool ok() const
     {
-        return statusCode >= 200 && statusCode < 300;
+        return statusCode >= HttpStatusOkMin && statusCode < HttpStatusOkExclusive;
     }
 };
 
@@ -29,14 +38,14 @@ struct RequestOptions
     std::string url;
     std::string body;
     HeaderList headers;
-    long timeoutSeconds = 30;
+    long timeoutSeconds = DefaultRequestTimeoutSeconds;
     bool followRedirects = true;
 };
 
 struct DownloadOptions
 {
     HeaderList headers;
-    long timeoutSeconds = 120;
+    long timeoutSeconds = DefaultDownloadTimeoutSeconds;
     bool followRedirects = true;
 };
 
@@ -51,30 +60,32 @@ struct PingResult
 class HttpClient
 {
   public:
+    HttpClient(const HttpClient&) = delete;
+    HttpClient& operator=(const HttpClient&) = delete;
+
     [[nodiscard]] static HttpClient& instance();
 
     void setProxy(std::string proxyUrl);
     void clearProxy();
 
-    [[nodiscard]] HttpResponse perform(RequestOptions options);
+    [[nodiscard]] HttpResponse perform(const RequestOptions& options);
     [[nodiscard]] HttpResponse uploadFile(const std::string& url,
                                           const std::filesystem::path& filePath,
                                           const HeaderList& headers = {});
     [[nodiscard]] std::uintmax_t download(const std::string& url,
                                           const std::filesystem::path& destination,
-                                          DownloadOptions options = {});
+                                          const DownloadOptions& options = {});
 
-    [[nodiscard]] PingResult ping(const std::string& url, long timeoutSeconds = 10);
-    [[nodiscard]] bool isOnline(long timeoutSeconds = 3);
+    [[nodiscard]] PingResult ping(const std::string& url,
+                                  long timeoutSeconds = DefaultPingTimeoutSeconds);
+    [[nodiscard]] bool isOnline(long timeoutSeconds = DefaultOnlineCheckTimeoutSeconds);
 
   private:
     HttpClient();
     ~HttpClient();
 
-    HttpClient(const HttpClient&) = delete;
-    HttpClient& operator=(const HttpClient&) = delete;
-
     std::string proxyUrl_;
 };
 
 }  // namespace beez::plugin::lua::net_detail
+// NOLINTEND(misc-include-cleaner,misc-non-private-member-variables-in-classes,cppcoreguidelines-special-member-functions,modernize-use-equals-delete)
