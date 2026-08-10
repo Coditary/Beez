@@ -41,13 +41,16 @@ add_library(
     registry/registry.cpp
     registry/step_order.cpp
     orchestrator/orchestrator.cpp
-    orchestrator/orchestrator_detail.cpp
-    orchestrator/run_stats.cpp
-    orchestrator/shell_runner.cpp
-    orchestrator/task_runner.cpp
-    orchestrator/step_runner.cpp
-    orchestrator/phase_runner.cpp
-    orchestrator/workflow_runner.cpp
+    orchestrator/errors.cpp
+    orchestrator/run/stats.cpp
+    orchestrator/run/lifecycle.cpp
+    orchestrator/run/cache_skip.cpp
+    orchestrator/runners/shell.cpp
+    orchestrator/runners/task.cpp
+    orchestrator/runners/step.cpp
+    orchestrator/runners/step_callback.cpp
+    orchestrator/runners/phase.cpp
+    orchestrator/runners/workflow.cpp
     execution/concurrency/thread_pool.cpp
     execution/concurrency/worker_pool.cpp
     execution/process/stream_capture.cpp

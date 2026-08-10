@@ -1,4 +1,6 @@
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/orchestrator/types.hpp"
 
 #include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/model/step.hpp"

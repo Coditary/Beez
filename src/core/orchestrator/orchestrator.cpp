@@ -1,5 +1,7 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "orchestrator_detail.hpp"
+#include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/types.hpp"
 
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/success/success_cache.hpp"
@@ -10,39 +12,16 @@
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/task.hpp"
 #include "beez/core/util/expected.hpp"
-#include "beez/logging/contract/logger.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 
-#include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <string>
 
 namespace beez::core
 {
-
-const char* toString(OrchestratorError error)
-{
-    switch (error)
-    {
-    case OrchestratorError::NotFound:
-        return "name not found in registry";
-    case OrchestratorError::ExecutionFailed:
-        return "task execution failed";
-    case OrchestratorError::BuildScriptNotFound:
-        return "build.lua not found";
-    case OrchestratorError::BuildScriptLoadFailed:
-        return "failed to load build.lua";
-    case OrchestratorError::ExecutorNotAvailable:
-        return "no shell executor plugin available";
-    case OrchestratorError::InvalidPhaseRequest:
-        return "invalid phase request";
-    case OrchestratorError::StepOrderingFailed:
-        return "step ordering failed";
-    }
-    return "unknown orchestrator error";
-}
 
 Orchestrator::Orchestrator(Registry& registry,
                            Context& context,
@@ -126,10 +105,23 @@ void Orchestrator::flushBufferedCacheWritesForPhase()
     }
 }
 
+void Orchestrator::recordCacheUnit(bool hit, double savedSeconds)
+{
+    stats_.recordCacheUnit(hit, savedSeconds);
+}
+
+void Orchestrator::recordCacheBulk(std::size_t totalUnits, std::size_t hits, double savedSeconds)
+{
+    stats_.recordCacheBulk(totalUnits, hits, savedSeconds);
+}
+
+void Orchestrator::recordPeakWorkers(std::size_t workerCount)
+{
+    stats_.recordPeakWorkers(workerCount);
+}
+
 Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 {
-    const orchestrator_detail::ThroughputRunScope ThroughputScope(
-        pluginHost_, runOptions_.performance.optimizeGcForThroughput);
     const auto FlushAtRunEnd = [this](const auto& result)
     {
         if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
@@ -138,48 +130,33 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
         }
         return result;
     };
+
     if (const auto FoundTask = registry_.findTask(name))
     {
-        resetRunStats();
-        beginRunSegment(name);
-        if (runOptions_.logger != nullptr)
-        {
-            runOptions_.logger->beginRun("Task", name);
-        }
-
-        const auto Start = std::chrono::steady_clock::now();
+        LoggedRunScope runScope(pluginHost_,
+                                runOptions_.performance.optimizeGcForThroughput,
+                                stats_,
+                                runOptions_.logger,
+                                "Task",
+                                name);
+        runScope.beginSegment(name);
         ProgressState progress {.total = FoundTask->actions.size()};
         const auto Result = runTask(*FoundTask, progress);
-        endRunSegment(static_cast<bool>(Result));
-
-        if (runOptions_.logger != nullptr)
-        {
-            runOptions_.logger->endRun(static_cast<bool>(Result),
-                                       orchestrator_detail::elapsedSeconds(Start),
-                                       buildRunSummary(orchestrator_detail::elapsedSeconds(Start)));
-        }
-
+        runScope.endSegment(static_cast<bool>(Result));
+        runScope.finish(static_cast<bool>(Result), workerThreads());
         return FlushAtRunEnd(Result);
     }
 
     if (const auto FoundWorkflow = registry_.findWorkflow(name))
     {
-        resetRunStats();
-        if (runOptions_.logger != nullptr)
-        {
-            runOptions_.logger->beginRun("Workflow", name);
-        }
-
-        const auto Start = std::chrono::steady_clock::now();
+        LoggedRunScope runScope(pluginHost_,
+                                runOptions_.performance.optimizeGcForThroughput,
+                                stats_,
+                                runOptions_.logger,
+                                "Workflow",
+                                name);
         const auto Result = runWorkflow(*FoundWorkflow);
-        const auto Duration = orchestrator_detail::elapsedSeconds(Start);
-
-        if (runOptions_.logger != nullptr)
-        {
-            runOptions_.logger->endRun(
-                static_cast<bool>(Result), Duration, buildRunSummary(Duration));
-        }
-
+        runScope.finish(static_cast<bool>(Result), workerThreads());
         return FlushAtRunEnd(Result);
     }
 

@@ -62,7 +62,7 @@ Modules are **flat** under `src/` (no per-module CMake targets). Within `src/cor
 | `env/` | env_file | `env/` | `env/` |
 | `runtime/` | context | `runtime/` | `runtime/` |
 | `execution/` | `concurrency/` (thread_pool, worker_pool), `process/` (stream_capture) | `execution/` | `execution/{concurrency,process}/` |
-| `orchestrator/` | orchestrator, run_stats | `orchestrator/` | `orchestrator/` |
+| `orchestrator/` | `orchestrator`, `errors`, `types`, `run/` (`stats`, `lifecycle`), `runners/` | `orchestrator/` | `orchestrator/` |
 
 Plugin host lives under `include/beez/plugin/` / `src/plugins/` (not in `core/`).
 
@@ -162,7 +162,7 @@ Only write production code to make failing tests pass (Green phase).
 
 #### 4c. Orchestrator
 
-- Extend execution logic in `src/core/orchestrator/` when the feature affects runtime behavior (e.g. `step_runner.cpp`, `phase_runner.cpp`)
+- Extend execution logic in `src/core/orchestrator/runners/` when the feature affects runtime behavior (e.g. `step.cpp`, `phase.cpp`)
 
 #### 4d. CLI
 

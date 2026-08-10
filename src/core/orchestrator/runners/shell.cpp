@@ -1,4 +1,6 @@
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/orchestrator/types.hpp"
 
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"

@@ -1,5 +1,7 @@
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "orchestrator_detail.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/types.hpp"
 
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
@@ -29,7 +31,7 @@ void Orchestrator::runWorkflowStep(const WorkflowStep& step,
                                    ProgressState& progress,
                                    WorkflowExecutionState& executionState)
 {
-    beginRunSegment(orchestrator_detail::workflowSegmentLabel(step));
+    stats_.beginSegment(workflowSegmentLabel(step));
 
     logging::LogChannelId channel {};
     if (runOptions_.logger != nullptr)
@@ -47,11 +49,11 @@ void Orchestrator::runWorkflowStep(const WorkflowStep& step,
     if (!Result)
     {
         recordWorkflowFailure(executionState, Result.error());
-        endRunSegment(false);
+        stats_.endSegment(false);
         return;
     }
 
-    endRunSegment(true);
+    stats_.endSegment(true);
 }
 
 Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workflow)

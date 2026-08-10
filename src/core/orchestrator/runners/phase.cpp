@@ -1,5 +1,7 @@
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "orchestrator_detail.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/types.hpp"
 
 #include "beez/core/config/performance/performance_options.hpp"
 #include "beez/core/model/phase_invocation.hpp"
@@ -11,7 +13,6 @@
 #include "beez/logging/console/output_mode.hpp"
 
 #include <atomic>
-#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <mutex>
@@ -131,21 +132,17 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
 
 Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& request)
 {
-    const orchestrator_detail::ThroughputRunScope ThroughputScope(
-        pluginHost_, runOptions_.performance.optimizeGcForThroughput);
-
     if (request.phase.empty())
     {
         return OrchestratorError::InvalidPhaseRequest;
     }
 
-    resetRunStats();
-    if (runOptions_.logger != nullptr)
-    {
-        runOptions_.logger->beginRun("Phase", request.phase);
-    }
-
-    const auto Start = std::chrono::steady_clock::now();
+    LoggedRunScope runScope(pluginHost_,
+                            runOptions_.performance.optimizeGcForThroughput,
+                            stats_,
+                            runOptions_.logger,
+                            "Phase",
+                            request.phase);
 
     std::vector<std::string> scopes = request.scopes;
     if (scopes.empty())
@@ -155,12 +152,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     if (scopes.empty())
     {
-        if (runOptions_.logger != nullptr)
-        {
-            runOptions_.logger->endRun(true,
-                                       orchestrator_detail::elapsedSeconds(Start),
-                                       buildRunSummary(orchestrator_detail::elapsedSeconds(Start)));
-        }
+        runScope.finish(true, workerThreads());
         return 0;
     }
 
@@ -168,29 +160,18 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     for (const auto& scope : scopes)
     {
-        beginRunSegment(request.phase + ":" + scope);
+        runScope.beginSegment(request.phase + ":" + scope);
         const PhaseInvocation Invocation {.phase = request.phase, .scope = scope};
         const auto Result = runPhaseInvocation(Invocation, progress);
-        endRunSegment(static_cast<bool>(Result));
+        runScope.endSegment(static_cast<bool>(Result));
         if (!Result)
         {
-            if (runOptions_.logger != nullptr)
-            {
-                runOptions_.logger->endRun(
-                    false,
-                    orchestrator_detail::elapsedSeconds(Start),
-                    buildRunSummary(orchestrator_detail::elapsedSeconds(Start)));
-            }
+            runScope.finish(false, workerThreads());
             return Result.error();
         }
     }
 
-    if (runOptions_.logger != nullptr)
-    {
-        runOptions_.logger->endRun(true,
-                                   orchestrator_detail::elapsedSeconds(Start),
-                                   buildRunSummary(orchestrator_detail::elapsedSeconds(Start)));
-    }
+    runScope.finish(true, workerThreads());
 
     if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
     {

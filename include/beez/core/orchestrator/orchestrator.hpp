@@ -12,21 +12,17 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
-#include "beez/core/orchestrator/run_stats.hpp"
+#include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/stats.hpp"
+#include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/contract/logger.hpp"
-#include "beez/logging/contract/run_types.hpp"
 
-#include <atomic>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
-#include <mutex>
-#include <optional>
 #include <string>
-#include <vector>
 
 namespace beez::plugin
 {
@@ -38,19 +34,19 @@ namespace beez::core
 
 class StepCache;
 class SuccessCache;
+class Orchestrator;
 
-enum class OrchestratorError : std::uint8_t
+void recordStepCacheSkip(Orchestrator& orchestrator,
+                         const Step& step,
+                         const CacheLookupResult& lookup,
+                         ProgressState& progress,
+                         const std::string& category,
+                         const std::string& detail);
+
+namespace step_callback_detail
 {
-    NotFound,
-    ExecutionFailed,
-    BuildScriptNotFound,
-    BuildScriptLoadFailed,
-    ExecutorNotAvailable,
-    InvalidPhaseRequest,
-    StepOrderingFailed,
-};
-
-[[nodiscard]] const char* toString(OrchestratorError error);
+Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& step);
+}  // namespace step_callback_detail
 
 class Orchestrator
 {
@@ -71,19 +67,53 @@ class Orchestrator
     [[nodiscard]] Expected<int, OrchestratorError> runPhase(const PhaseRequest& request);
     [[nodiscard]] Expected<int, OrchestratorError> runStep(const std::string& name);
 
-  private:
-    struct ProgressState
+    [[nodiscard]] const RunOptions& runOptions() const
     {
-        std::atomic<std::size_t> index {0};
-        std::size_t total = 0;
-    };
+        return runOptions_;
+    }
+    [[nodiscard]] Context& context()
+    {
+        return context_;
+    }
+    [[nodiscard]] plugin::PluginHost& pluginHost()
+    {
+        return pluginHost_;
+    }
+    [[nodiscard]] ThreadPool& threadPool()
+    {
+        return threadPool_;
+    }
+    [[nodiscard]] RunStatsTracker& stats()
+    {
+        return stats_;
+    }
+    [[nodiscard]] std::size_t workerThreads() const
+    {
+        return threadPool_.maxConcurrency();
+    }
 
-    struct WorkflowExecutionState
-    {
-        std::atomic<bool> failed {false};
-        OrchestratorError error = OrchestratorError::ExecutionFailed;
-        std::mutex errorMutex;
-    };
+    void recordCacheUnit(bool hit, double savedSeconds = 0.0);
+    void recordCacheBulk(std::size_t totalUnits, std::size_t hits, double savedSeconds = 0.0);
+    void recordPeakWorkers(std::size_t workerCount);
+    void logProgress(ProgressState& progress,
+                     const std::string& category,
+                     const std::string& detail,
+                     bool isCached = false,
+                     double savedSeconds = 0.0,
+                     bool updateCacheStats = true);
+
+    void flushBufferedCacheWrites();
+    void flushBufferedCacheWritesForPhase();
+
+  private:
+    friend void recordStepCacheSkip(Orchestrator& orchestrator,
+                                    const Step& step,
+                                    const CacheLookupResult& lookup,
+                                    ProgressState& progress,
+                                    const std::string& category,
+                                    const std::string& detail);
+    friend Expected<int, OrchestratorError> step_callback_detail::run(Orchestrator& orchestrator,
+                                                                      const Step& step);
 
     [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task,
                                                            ProgressState& progress);
@@ -97,50 +127,14 @@ class Orchestrator
                                                                    ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError>
     runPhaseInvocation(const PhaseInvocation& invocation, ProgressState& progress);
-    struct ProgressLabel
-    {
-        std::string category;
-        std::string detail;
-    };
-
     [[nodiscard]] Expected<int, OrchestratorError> runShellCommand(const std::string& command,
                                                                    const ProgressLabel& label,
                                                                    ProgressState& progress,
                                                                    logging::LogChannelId channel);
 
-    void logProgress(ProgressState& progress,
-                     const std::string& category,
-                     const std::string& detail,
-                     bool isCached = false,
-                     double savedSeconds = 0.0,
-                     bool updateCacheStats = true);
     [[nodiscard]] std::size_t countWorkflowSteps(const Workflow& workflow) const;
     [[nodiscard]] std::size_t countPhaseInvocationSteps(const PhaseInvocation& invocation) const;
     [[nodiscard]] std::size_t countPhaseRequestSteps(const PhaseRequest& request) const;
-
-    void flushBufferedCacheWrites();
-    void flushBufferedCacheWritesForPhase();
-
-    void resetRunStats();
-    void beginRunSegment(std::string label);
-    void endRunSegment(bool success);
-    void recordRunStep(bool cached);
-    void recordCacheUnit(bool hit, double savedSeconds = 0.0);
-    void recordCacheBulk(std::size_t totalUnits, std::size_t hits, double savedSeconds = 0.0);
-    void recordStepCacheSkip(const Step& step,
-                             const CacheLookupResult& lookup,
-                             ProgressState& progress,
-                             const std::string& category,
-                             const std::string& detail);
-    void recordPeakWorkers(std::size_t workerCount);
-    [[nodiscard]] logging::RunSummary buildRunSummary(double durationSeconds) const;
-
-    std::size_t cacheHitsSkipped_ = 0;
-    std::size_t runTotalSteps_ = 0;
-    std::size_t peakWorkers_ = 0;
-    double cachedTimeSavedSeconds_ = 0.0;
-    std::vector<logging::SegmentSummary> runSegments_;
-    std::optional<ActiveRunSegment> activeRunSegment_;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel
     // dependencies
@@ -148,6 +142,7 @@ class Orchestrator
     Context& context_;
     plugin::PluginHost& pluginHost_;
     RunOptions runOptions_;
+    RunStatsTracker stats_;
     CacheWriteCoordinator cacheWriteCoordinator_;
     GlobMetadataCache globMetadataCache_;
     ThreadPool threadPool_;
