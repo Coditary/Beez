@@ -8,12 +8,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "Engine.h"
-#include "support/Diagnostic.h"
-
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,performance-enum-size,readability-identifier-naming,bugprone-easily-swappable-parameters,misc-no-recursion,modernize-return-braced-init-list,misc-const-correctness)
+#include <Engine.h>
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+#include <support/Diagnostic.h>
 
 namespace beez::plugin::lua::text_detail
 {
@@ -120,3 +118,4 @@ std::string renderTemplateString(const std::string& templateString, const sol::t
 }
 
 }  // namespace beez::plugin::lua::text_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,performance-enum-size,readability-identifier-naming,bugprone-easily-swappable-parameters,misc-no-recursion,modernize-return-braced-init-list,misc-const-correctness)

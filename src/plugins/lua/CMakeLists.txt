@@ -133,3 +133,8 @@ target_link_libraries(
            LibArchive::LibArchive
            prebyte_core
 )
+
+get_target_property(BEEZ_PREBYTE_INCLUDE_DIRS prebyte_core INTERFACE_INCLUDE_DIRECTORIES)
+if (BEEZ_PREBYTE_INCLUDE_DIRS)
+    target_include_directories(beez_plugin_lua SYSTEM PRIVATE ${BEEZ_PREBYTE_INCLUDE_DIRS})
+endif ()

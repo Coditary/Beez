@@ -3,9 +3,8 @@
 #include <string>
 #include <string_view>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming,modernize-use-starts-ends-with,modernize-use-auto,performance-unnecessary-value-param,readability-qualified-auto,readability-identifier-length)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua
 {
@@ -13,12 +12,8 @@ namespace beez::plugin::lua
 void bindEndsWith(sol::table& textTable)
 {
     textTable["ends_with"] = [](const std::string& text, const std::string& suffix) -> bool
-    {
-        const std::string_view TextView = text;
-        const std::string_view SuffixView = suffix;
-        return TextView.size() >= SuffixView.size() &&
-               TextView.substr(TextView.size() - SuffixView.size()) == SuffixView;
-    };
+    { return std::string_view(text).ends_with(suffix); };
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming,modernize-use-starts-ends-with,modernize-use-auto,performance-unnecessary-value-param,readability-qualified-auto,readability-identifier-length)
