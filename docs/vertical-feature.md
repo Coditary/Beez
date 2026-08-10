@@ -62,7 +62,7 @@ Modules are **flat** under `src/` (no per-module CMake targets). Within `src/cor
 | `env/` | env_file | `env/` | `env/` |
 | `runtime/` | context | `runtime/` | `runtime/` |
 | `execution/` | `concurrency/` (thread_pool, worker_pool), `process/` (stream_capture) | `execution/` | `execution/{concurrency,process}/` |
-| `orchestrator/` | `orchestrator`, `errors`, `types`, `run/` (`stats`, `lifecycle`), `runners/` | `orchestrator/` | `orchestrator/` |
+| `orchestrator/` | `orchestrator`, `orchestrator_access`, `orchestrator_internal` (umbrella), `errors`, `types`, `run/` (`stats`, `lifecycle`, `entry`, `cache_flush`, `cache_skip`, `shell_execution`, `step_execution`, `step_count`, `progress`, `time`), `runners/` (`task`, `step`, `phase`, `workflow`, `shell`, `step_callback`) | `orchestrator/` | `orchestrator/` |
 
 Plugin host lives under `include/beez/plugin/` / `src/plugins/` (not in `core/`).
 
@@ -162,7 +162,21 @@ Only write production code to make failing tests pass (Green phase).
 
 #### 4c. Orchestrator
 
-- Extend execution logic in `src/core/orchestrator/runners/` when the feature affects runtime behavior (e.g. `step.cpp`, `phase.cpp`)
+Orchestrator code is split into a thin public API and internal modules:
+
+| Area | Path | Purpose |
+|------|------|---------|
+| Public API | `orchestrator.hpp` | `run`, `runStep`, `runPhase`, stats, progress |
+| Internal access | `orchestrator_access.hpp` | `orchestrator_detail::Access` for private members |
+| Internal umbrella | `orchestrator_internal.hpp` | Includes all internal `run/` and `runners/` headers |
+| Infrastructure | `run/` | Lifecycle, entry scope, cache flush, step execution pipeline, progress logging, step counting |
+| Execution paths | `runners/` | Task, step, phase, workflow, shell, step callback |
+
+When extending:
+
+- **Runtime behavior** (new step types, phase logic, workflow changes) → `src/core/orchestrator/runners/`
+- **Cross-cutting concerns** (cache flush, logging, run scope) → `src/core/orchestrator/run/`
+- Internal modules use `orchestrator_detail::Access::` for private member access; public `Orchestrator` methods only in `orchestrator.cpp` entry points
 
 #### 4d. CLI
 
