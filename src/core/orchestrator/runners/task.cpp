@@ -8,6 +8,7 @@
 #include "beez/core/model/task_action.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/types.hpp"
+#include "beez/core/registry/registry.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <variant>

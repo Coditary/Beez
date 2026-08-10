@@ -44,10 +44,13 @@ add_library(
     orchestrator/errors.cpp
     orchestrator/run/stats.cpp
     orchestrator/run/lifecycle.cpp
+    orchestrator/run/entry.cpp
+    orchestrator/run/cache_flush.cpp
     orchestrator/run/time.cpp
     orchestrator/run/cache_skip.cpp
     orchestrator/run/shell_execution.cpp
     orchestrator/run/step_execution.cpp
+    orchestrator/run/step_count.cpp
     orchestrator/run/progress.cpp
     orchestrator/runners/shell.cpp
     orchestrator/runners/task.cpp
@@ -67,7 +70,6 @@ target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/report)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/step)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/storage)
-target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator)
 
 target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB)
 

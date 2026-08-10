@@ -1,61 +1,45 @@
+#include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/orchestrator_access.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
-#include "beez/core/model/phase_invocation.hpp"
-#include "beez/core/model/phase_request.hpp"
-#include "beez/core/model/workflow.hpp"
-#include "beez/core/model/workflow_step.hpp"
+#include "beez/core/orchestrator/types.hpp"
+#include "beez/logging/contract/logger.hpp"
 
 #include <cstddef>
-#include <numeric>
 #include <string>
-#include <vector>
 
-namespace beez::core::orchestrator_detail
+namespace beez::core
 {
 
-std::size_t countPhaseInvocationSteps(const Orchestrator& orchestrator,
-                                      const PhaseInvocation& invocation)
+// NOLINTNEXTLINE(readability-identifier-naming)
+void Orchestrator::logProgress(ProgressState& progress,
+                               const std::string& category,
+                               const std::string& detail,
+                               const bool IsCached,
+                               // NOLINTNEXTLINE(readability-identifier-naming)
+                               const double savedSeconds,
+                               // NOLINTNEXTLINE(readability-identifier-naming)
+                               const bool updateCacheStats)
 {
-    const auto MatchedSteps = Access::registry(orchestrator).stepsForPhase(
-        invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
-    if (!MatchedSteps.hasValue())
+    if (updateCacheStats)
     {
-        return 0;
+        recordCacheUnit(IsCached, IsCached ? savedSeconds : 0.0);
     }
-    return MatchedSteps.value().size();
-}
+    (void)progress.index.fetch_add(1);
 
-std::size_t countPhaseRequestSteps(const Orchestrator& orchestrator, const PhaseRequest& request)
-{
-    std::vector<std::string> scopes = request.scopes;
-    if (scopes.empty())
+    const auto& runOptions = orchestrator_detail::Access::runOptions(*this);
+    if (runOptions.logger == nullptr)
     {
-        scopes = Access::registry(orchestrator).scopesForPhase(request.phase);
+        return;
     }
 
-    return std::accumulate(scopes.begin(),
-                           scopes.end(),
-                           std::size_t {0},
-                           [&orchestrator, &request](std::size_t total, const std::string& scope)
-                           {
-                               return total + countPhaseInvocationSteps(
-                                                  orchestrator,
-                                                  PhaseInvocation {
-                                                      .phase = request.phase, .scope = scope});
-                           });
+    const std::size_t CurrentIndex = progress.index.load();
+    runOptions.logger->logProgress(logging::ExecutionProgress {
+        .index = CurrentIndex,
+        .total = progress.total,
+        .category = category,
+        .detail = detail,
+        .cached = IsCached,
+    });
 }
 
-std::size_t countWorkflowSteps(const Orchestrator& orchestrator, const Workflow& workflow)
-{
-    return std::accumulate(workflow.steps.begin(),
-                           workflow.steps.end(),
-                           std::size_t {0},
-                           [&orchestrator](std::size_t total, const WorkflowStep& step)
-                           {
-                               return total +
-                                      countPhaseInvocationSteps(orchestrator, step.invocation);
-                           });
-}
-
-}  // namespace beez::core::orchestrator_detail
+}  // namespace beez::core

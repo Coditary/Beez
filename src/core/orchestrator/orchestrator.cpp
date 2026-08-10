@@ -12,8 +12,8 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/orchestrator/errors.hpp"
-#include "beez/core/orchestrator/run/lifecycle.hpp"
 #include "beez/core/orchestrator/types.hpp"
+#include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
@@ -135,70 +135,24 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 {
     if (const auto FoundTask = orchestrator_detail::Access::registry(*this).findTask(name))
     {
-        auto runScope = orchestrator_detail::beginLoggedRun(*this, "Task", name);
-        runScope.beginSegment(name);
-        ProgressState progress {.total = FoundTask->actions.size()};
-        const auto Result = orchestrator_detail::runTask(*this, *FoundTask, progress);
-        runScope.endSegment(static_cast<bool>(Result));
-        runScope.finish(static_cast<bool>(Result), workerThreads());
-        orchestrator_detail::flushBufferedCacheWritesIfEndStrategy(*this);
-        return Result;
+        return orchestrator_detail::ScopedLoggedRun(
+                   *this, "Task", name, orchestrator_detail::RunCacheFlushPolicy::IfEndStrategy)
+            .withSegment(name,
+                         [&]
+                         {
+                             ProgressState progress {.total = FoundTask->actions.size()};
+                             return orchestrator_detail::runTask(*this, *FoundTask, progress);
+                         });
     }
 
     if (const auto FoundWorkflow = orchestrator_detail::Access::registry(*this).findWorkflow(name))
     {
-        auto runScope = orchestrator_detail::beginLoggedRun(*this, "Workflow", name);
-        const auto Result = orchestrator_detail::runWorkflow(*this, *FoundWorkflow);
-        runScope.finish(static_cast<bool>(Result), workerThreads());
-        orchestrator_detail::flushBufferedCacheWritesIfEndStrategy(*this);
-        return Result;
+        return orchestrator_detail::ScopedLoggedRun(
+                   *this, "Workflow", name, orchestrator_detail::RunCacheFlushPolicy::IfEndStrategy)
+            .withoutSegment([&] { return orchestrator_detail::runWorkflow(*this, *FoundWorkflow); });
     }
 
     return OrchestratorError::NotFound;
 }
 
-namespace orchestrator_detail
-{
-
-void flushBufferedCacheWrites(Orchestrator& orchestrator)
-{
-    Access::cacheWriteCoordinator(orchestrator).flush(Access::runOptions(orchestrator).cache);
-}
-
-void flushBufferedCacheWritesForPhase(Orchestrator& orchestrator)
-{
-    if (Access::runOptions(orchestrator).performance.cacheWriteStrategy == CacheWriteStrategy::Phase)
-    {
-        flushBufferedCacheWrites(orchestrator);
-    }
-}
-
-void flushBufferedCacheWritesIfEndStrategy(Orchestrator& orchestrator)
-{
-    if (Access::runOptions(orchestrator).performance.cacheWriteStrategy == CacheWriteStrategy::End)
-    {
-        flushBufferedCacheWrites(orchestrator);
-    }
-}
-
-void flushBufferedCacheWritesAtRunEnd(Orchestrator& orchestrator)
-{
-    flushBufferedCacheWritesForPhase(orchestrator);
-    flushBufferedCacheWritesIfEndStrategy(orchestrator);
-}
-
-LoggedRunScope beginLoggedRun(Orchestrator& orchestrator,
-                            const std::string& runType,
-                            const std::string& name)
-{
-    const auto& runOptions = Access::runOptions(orchestrator);
-    return LoggedRunScope(Access::pluginHost(orchestrator),
-                          runOptions.performance.optimizeGcForThroughput,
-                          Access::stats(orchestrator),
-                          runOptions.logger,
-                          runType,
-                          name);
-}
-
-}  // namespace orchestrator_detail
 }  // namespace beez::core

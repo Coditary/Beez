@@ -6,6 +6,7 @@
 #include "beez/core/model/phase_request.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/types.hpp"
+#include "beez/core/registry/registry.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
 
@@ -105,7 +106,8 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         return OrchestratorError::InvalidPhaseRequest;
     }
 
-    auto runScope = orchestrator_detail::beginLoggedRun(*this, "Phase", request.phase);
+    orchestrator_detail::ScopedLoggedRun loggedRun(
+        *this, "Phase", request.phase, orchestrator_detail::RunCacheFlushPolicy::Never);
 
     std::vector<std::string> scopes = request.scopes;
     if (scopes.empty())
@@ -115,7 +117,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     if (scopes.empty())
     {
-        runScope.finish(true, workerThreads());
+        loggedRun.finish(true);
         return 0;
     }
 
@@ -123,19 +125,18 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     for (const auto& scope : scopes)
     {
-        runScope.beginSegment(request.phase + ":" + scope);
+        loggedRun.scope().beginSegment(request.phase + ":" + scope);
         const PhaseInvocation Invocation {.phase = request.phase, .scope = scope};
         const auto Result = orchestrator_detail::runPhaseInvocation(*this, Invocation, progress);
-        runScope.endSegment(static_cast<bool>(Result));
+        loggedRun.scope().endSegment(static_cast<bool>(Result));
         if (!Result)
         {
-            runScope.finish(false, workerThreads());
+            loggedRun.finish(false);
             return Result.error();
         }
     }
 
-    runScope.finish(true, workerThreads());
-
+    loggedRun.finish(true);
     orchestrator_detail::flushBufferedCacheWritesIfEndStrategy(*this);
 
     return 0;

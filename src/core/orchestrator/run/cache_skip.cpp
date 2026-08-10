@@ -5,7 +5,9 @@
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
+#include "beez/core/orchestrator/run/cache_skip.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/runtime/context.hpp"
 
@@ -83,15 +85,16 @@ void recordStepCacheSkip(Orchestrator& orchestrator,
     std::size_t hits = 1;
     double savedSeconds = lookup.savedDurationSeconds;
 
-    const auto& runOptions = orchestrator.runOptions();
+    const auto& runOptions = orchestrator_detail::Access::runOptions(orchestrator);
     if (step.hasCallback() && runOptions.successCache != nullptr)
     {
+        const auto& context = orchestrator_detail::Access::context(orchestrator);
         const CallbackFileCacheStats FileStats =
             estimateCallbackFileCacheStats(step,
                                            runOptions.successCache,
-                                           orchestrator.context().projectRoot(),
+                                           context.projectRoot(),
                                            runOptions.stepCache,
-                                           orchestrator.context().globMetadataCache());
+                                           context.globMetadataCache());
         totalUnits = FileStats.units + 1U;
         hits = FileStats.hits + 1U;
         if (savedSeconds <= 0.0 && FileStats.savedSeconds > 0.0)

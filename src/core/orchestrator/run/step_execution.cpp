@@ -70,7 +70,7 @@ Expected<int, OrchestratorError> executeStepBody(Orchestrator& orchestrator,
 }
 
 void finalizeStepCache(Orchestrator& orchestrator,
-                       const step_execution_detail::StepCacheSession& session,
+                       step_execution_detail::StepCacheSession& session,
                        const Step& step,
                        const double durationSeconds)
 {

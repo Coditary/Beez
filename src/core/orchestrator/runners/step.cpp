@@ -7,6 +7,7 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/time.hpp"
 #include "beez/core/orchestrator/types.hpp"
+#include "beez/core/registry/registry.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <chrono>
@@ -22,7 +23,7 @@ Expected<int, OrchestratorError> runStepInstance(Orchestrator& orchestrator,
     const std::string Detail = stepProgressDetail(step);
     const std::string Category = step.phase.empty() ? "step" : step.phase;
 
-    const auto Prepare = prepareStepCache(orchestrator, step, progress, Category, Detail);
+    auto Prepare = prepareStepCache(orchestrator, step, progress, Category, Detail);
     if (Prepare.skipped)
     {
         return 0;
@@ -53,16 +54,14 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
         return OrchestratorError::NotFound;
     }
 
-    auto runScope = orchestrator_detail::beginLoggedRun(*this, "Step", name);
-    runScope.beginSegment(name);
-    ProgressState progress {.total = 1};
-    const auto Result = orchestrator_detail::runStepInstance(*this, *FoundStep, progress);
-    runScope.endSegment(static_cast<bool>(Result));
-    runScope.finish(static_cast<bool>(Result), workerThreads());
-
-    orchestrator_detail::flushBufferedCacheWritesAtRunEnd(*this);
-
-    return Result;
+    return orchestrator_detail::ScopedLoggedRun(
+               *this, "Step", name, orchestrator_detail::RunCacheFlushPolicy::AtRunEnd)
+        .withSegment(name,
+                     [&]
+                     {
+                         ProgressState progress {.total = 1};
+                         return orchestrator_detail::runStepInstance(*this, *FoundStep, progress);
+                     });
 }
 
 }  // namespace beez::core

@@ -1,5 +1,6 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/orchestrator_internal.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/runners/step_callback.hpp"
 #include "beez/core/orchestrator/run/shell_execution.hpp"
 
 #include "beez/core/cache/step/step_cache.hpp"
@@ -27,8 +28,8 @@ namespace beez::core::step_callback_detail
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& step)
 {
-    auto& context = orchestrator.context();
-    const auto& runOptions = orchestrator.runOptions();
+    auto& context = orchestrator_detail::Access::context(orchestrator);
+    const auto& runOptions = orchestrator_detail::Access::runOptions(orchestrator);
 
     context.setStepConfigAccessor([config = step.config]() -> StepConfigPtr { return config; });
     const StepIdentity Identity {.name = step.name, .phase = step.phase, .scope = step.scope};
@@ -57,16 +58,17 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
         [&orchestrator, step, &workerFailureOutputs, &workerFailureOutputMutex](
             const std::string& command, const WorkerSpec& worker) -> int
     {
-        auto* executor = orchestrator.pluginHost().executor();
+        auto* executor = orchestrator_detail::Access::pluginHost(orchestrator).executor();
         if (executor == nullptr)
         {
             return -1;
         }
 
-        const auto& options = orchestrator.runOptions();
+        const auto& options = orchestrator_detail::Access::runOptions(orchestrator);
         const auto Result = shell_execution_detail::run(*executor,
                                                         command,
-                                                        orchestrator.context(),
+                                                        orchestrator_detail::Access::context(
+                                                            orchestrator),
                                                         options.outputMode,
                                                         shell_execution_detail::CapturePolicy::
                                                             UnlessVerbose);
@@ -92,7 +94,7 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
                           step.name,
                           step.config,
                           runOptions.dryRun,
-                          &orchestrator.threadPool(),
+                          &orchestrator_detail::Access::threadPool(orchestrator),
                           // NOLINTNEXTLINE(readability-identifier-naming)
                           [&orchestrator](const bool hit, const double savedSeconds)
                           { orchestrator.recordCacheUnit(hit, savedSeconds); });
