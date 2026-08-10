@@ -44,6 +44,7 @@ add_library(
     orchestrator/errors.cpp
     orchestrator/run/stats.cpp
     orchestrator/run/lifecycle.cpp
+    orchestrator/run/time.cpp
     orchestrator/run/cache_skip.cpp
     orchestrator/run/shell_execution.cpp
     orchestrator/run/step_execution.cpp

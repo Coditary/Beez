@@ -1,4 +1,5 @@
 #include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/run/time.hpp"
 
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/run/stats.hpp"
@@ -14,12 +15,6 @@
 
 namespace beez::core
 {
-
-double elapsedSeconds(const std::chrono::steady_clock::time_point& start)
-{
-    const auto End = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(End - start).count();
-}
 
 ThroughputRunScope::ThroughputRunScope(plugin::PluginHost& pluginHost, bool optimizeGc)
     : pluginHost_(pluginHost), active_(optimizeGc)

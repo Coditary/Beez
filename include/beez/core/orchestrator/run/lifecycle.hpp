@@ -18,8 +18,6 @@ namespace beez::core
 
 struct WorkflowStep;
 
-[[nodiscard]] double elapsedSeconds(const std::chrono::steady_clock::time_point& start);
-
 class ThroughputRunScope
 {
   public:
