@@ -10,7 +10,7 @@ namespace beez::plugin::lua
 
 void bindSleepS(sol::table& timeTable)
 {
-    timeTable["sleep_s"] = [](const double seconds) -> void { time_detail::sleepSeconds(seconds); };
+    timeTable["sleep_s"] = [](double seconds) -> void { time_detail::sleepSeconds(seconds); };
 }
 
 }  // namespace beez::plugin::lua

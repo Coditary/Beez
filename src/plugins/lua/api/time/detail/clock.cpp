@@ -19,6 +19,9 @@ namespace beez::plugin::lua::time_detail
 namespace
 {
 
+constexpr std::int64_t MillisPerSecond = 1000;
+constexpr double MillisPerSecondDouble = 1000.0;
+
 [[nodiscard]] std::int64_t currentEpochMillis()
 {
     const auto Now = std::chrono::system_clock::now();
@@ -31,10 +34,10 @@ namespace
     const auto Millis =
         std::chrono::duration_cast<std::chrono::milliseconds>(timePoint.time_since_epoch())
             .count() %
-        1000;
+        MillisPerSecond;
 
     std::tm utcTime {};
-#if defined(_WIN32)
+#ifdef _WIN32
     gmtime_s(&utcTime, &TimeT);
 #else
     gmtime_r(&TimeT, &utcTime);
@@ -56,10 +59,11 @@ std::string nowMillisString()
 std::string uptimeMillisString()
 {
 #ifdef __linux__
-    struct sysinfo Info {};
-    if (sysinfo(&Info) == 0)
+    // NOLINTBEGIN(misc-include-cleaner)
+    struct sysinfo info {};
+    if (sysinfo(&info) == 0)
     {
-        return std::to_string(static_cast<std::int64_t>(Info.uptime) * 1000);
+        return std::to_string(static_cast<std::int64_t>(info.uptime) * MillisPerSecond);
     }
 
     std::ifstream stream("/proc/uptime");
@@ -69,9 +73,10 @@ std::string uptimeMillisString()
         stream >> uptimeSeconds;
         if (uptimeSeconds > 0.0)
         {
-            return std::to_string(static_cast<std::int64_t>(uptimeSeconds * 1000.0));
+            return std::to_string(static_cast<std::int64_t>(uptimeSeconds * MillisPerSecondDouble));
         }
     }
+// NOLINTEND(misc-include-cleaner)
 #endif
 
     return "0";
@@ -82,7 +87,7 @@ std::string iso8601UtcNow()
     return formatIso8601Utc(std::chrono::system_clock::now());
 }
 
-void sleepMillis(const std::int64_t milliseconds)
+void sleepMillis(std::int64_t milliseconds)
 {
     if (milliseconds <= 0)
     {
@@ -92,7 +97,7 @@ void sleepMillis(const std::int64_t milliseconds)
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-void sleepSeconds(const double seconds)
+void sleepSeconds(double seconds)
 {
     if (seconds <= 0.0)
     {
