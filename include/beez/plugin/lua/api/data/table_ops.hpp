@@ -2,7 +2,6 @@
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 #include <string>
 #include <vector>
@@ -21,3 +20,4 @@ diffTables(sol::state_view luaState, const sol::table& left, const sol::table& r
 [[nodiscard]] std::vector<std::string> splitPath(const std::string& path);
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

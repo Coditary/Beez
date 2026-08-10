@@ -4,11 +4,27 @@
 #include <stdexcept>
 #include <string>
 
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-inefficient-string-concatenation,bugprone-easily-swappable-parameters,misc-const-correctness)
+#include <sol/sol.hpp>
+
 namespace beez::plugin::lua::data_detail
 {
 
 namespace
 {
+
+[[nodiscard]] std::string joinPath(const std::string& prefix, const std::string& key)
+{
+    if (prefix.empty())
+    {
+        return key;
+    }
+
+    std::string result = prefix;
+    result.push_back('.');
+    result.append(key);
+    return result;
+}
 
 [[nodiscard]] bool objectsEqual(const sol::object& left, const sol::object& right)
 {
@@ -102,9 +118,7 @@ void collectDiff(sol::state_view luaState,
             [&](const sol::object& key, const sol::object& value)
             {
                 const std::string KeyString = key.as<std::string>();
-                const std::string ChildPrefix =
-                    prefix.empty() ? KeyString : prefix + '.' + KeyString;
-                collectDiff(luaState, diff, ChildPrefix, value, RightTable[key]);
+                collectDiff(luaState, diff, joinPath(prefix, KeyString), value, RightTable[key]);
             });
 
         RightTable.for_each(
@@ -114,9 +128,7 @@ void collectDiff(sol::state_view luaState,
                 if (!Existing.valid())
                 {
                     const std::string KeyString = key.as<std::string>();
-                    const std::string ChildPrefix =
-                        prefix.empty() ? KeyString : prefix + '.' + KeyString;
-                    collectDiff(luaState, diff, ChildPrefix, sol::lua_nil, value);
+                    collectDiff(luaState, diff, joinPath(prefix, KeyString), sol::lua_nil, value);
                 }
             });
         return;
@@ -260,3 +272,4 @@ sol::table diffTables(sol::state_view luaState, const sol::table& left, const so
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-inefficient-string-concatenation,bugprone-easily-swappable-parameters,misc-const-correctness)

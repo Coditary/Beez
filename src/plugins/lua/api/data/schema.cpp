@@ -3,6 +3,9 @@
 #include <format>
 #include <string>
 
+// NOLINTBEGIN(misc-include-cleaner,performance-inefficient-string-concatenation,bugprone-easily-swappable-parameters,readability-function-cognitive-complexity,misc-no-recursion)
+#include <yyjson.h>
+
 namespace beez::plugin::lua::data_detail
 {
 
@@ -11,6 +14,19 @@ namespace
 
 [[nodiscard]] bool
 validateAt(yyjson_val* data, yyjson_val* schema, const std::string& path, std::string& error);
+
+[[nodiscard]] std::string joinPath(const std::string& path, const std::string& field)
+{
+    if (path.empty())
+    {
+        return field;
+    }
+
+    std::string result = path;
+    result.push_back('.');
+    result.append(field);
+    return result;
+}
 
 [[nodiscard]] bool typeMatches(yyjson_val* data, const std::string& type)
 {
@@ -108,9 +124,8 @@ validateAt(yyjson_val* data, yyjson_val* schema, const std::string& path, std::s
                                         yyjson_get_len(requiredField));
                 if (yyjson_obj_get(data, Field.c_str()) == nullptr)
                 {
-                    const std::string FieldPath = path.empty() ? Field : path + '.' + Field;
-                    error =
-                        std::format("beez.data.validate: missing required field '{}'", FieldPath);
+                    error = std::format("beez.data.validate: missing required field '{}'",
+                                        joinPath(path, Field));
                     return false;
                 }
             }
@@ -133,8 +148,7 @@ validateAt(yyjson_val* data, yyjson_val* schema, const std::string& path, std::s
                     continue;
                 }
 
-                const std::string FieldPath = path.empty() ? Field : path + '.' + Field;
-                if (!validateAt(fieldData, fieldSchema, FieldPath, error))
+                if (!validateAt(fieldData, fieldSchema, joinPath(path, Field), error))
                 {
                     return false;
                 }
@@ -154,9 +168,8 @@ validateAt(yyjson_val* data, yyjson_val* schema, const std::string& path, std::s
                 const std::string Field(yyjson_get_str(fieldKey), yyjson_get_len(fieldKey));
                 if (yyjson_obj_get(propertiesValue, Field.c_str()) == nullptr)
                 {
-                    const std::string FieldPath = path.empty() ? Field : path + '.' + Field;
                     error = std::format("beez.data.validate: additional property '{}' not allowed",
-                                        FieldPath);
+                                        joinPath(path, Field));
                     return false;
                 }
             }
@@ -195,3 +208,4 @@ bool validateJson(yyjson_val* data, yyjson_val* schema, std::string& error)
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,performance-inefficient-string-concatenation,bugprone-easily-swappable-parameters,readability-function-cognitive-complexity,misc-no-recursion)

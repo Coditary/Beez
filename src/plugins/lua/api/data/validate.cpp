@@ -21,10 +21,10 @@ void bindValidate(sol::table& dataTable, const std::shared_ptr<sol::state>& luaS
         const std::string DataJson = data_detail::yyjsonDocumentToString(*DataDocument, false);
         const data_detail::YyjsonDocPtr ImmutableData = data_detail::parseYyjsonDocument(DataJson);
 
-        data_detail::YyjsonDocPtr SchemaDocument;
+        data_detail::YyjsonDocPtr schemaDocument;
         if (schemaOrString.is<std::string>())
         {
-            SchemaDocument = data_detail::parseYyjsonDocument(schemaOrString.as<std::string>());
+            schemaDocument = data_detail::parseYyjsonDocument(schemaOrString.as<std::string>());
         }
         else if (schemaOrString.is<sol::table>())
         {
@@ -32,7 +32,7 @@ void bindValidate(sol::table& dataTable, const std::shared_ptr<sol::state>& luaS
                 data_detail::luaToYyjsonDocument(sol::make_object(*luaState, schemaOrString));
             const std::string SchemaJson =
                 data_detail::yyjsonDocumentToString(*SchemaMutable, false);
-            SchemaDocument = data_detail::parseYyjsonDocument(SchemaJson);
+            schemaDocument = data_detail::parseYyjsonDocument(SchemaJson);
         }
         else
         {
@@ -41,7 +41,7 @@ void bindValidate(sol::table& dataTable, const std::shared_ptr<sol::state>& luaS
 
         std::string error;
         if (!data_detail::validateJson(yyjson_doc_get_root(ImmutableData.get()),
-                                       yyjson_doc_get_root(SchemaDocument.get()),
+                                       yyjson_doc_get_root(schemaDocument.get()),
                                        error))
         {
             throw std::runtime_error(error);
