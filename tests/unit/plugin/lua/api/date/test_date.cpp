@@ -86,3 +86,20 @@ task("check", "echo " .. tostring(beez.date.epoch() > 0))
     ASSERT_TRUE(Found.has_value());
     beez::test::expectShellCommand(Found, 0, "echo true");
 }
+
+TEST(LuaDateApiTest, UtcOffsetIsReasonable)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local offset = beez.date.utc_offset()
+local ok = offset >= -12 * 60 and offset <= 14 * 60
+task("check", "echo " .. tostring(ok))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}

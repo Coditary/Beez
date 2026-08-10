@@ -52,6 +52,7 @@ add_executable(
     plugin/lua/test_lua_settings.cpp
     plugin/lua/api/test_fs.cpp
     plugin/lua/api/test_crypto.cpp
+    plugin/lua/api/crypto/test_crypto_ops.cpp
     plugin/lua/api/sys/test_sys.cpp
     plugin/lua/api/time/test_time.cpp
     plugin/lua/api/date/test_date.cpp

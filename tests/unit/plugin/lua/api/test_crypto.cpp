@@ -214,3 +214,76 @@ step({
     ASSERT_TRUE(loadScript(Project, registry));
     EXPECT_TRUE(registry.findStep("crypto-step").has_value());
 }
+
+TEST(LuaCryptoApiTest, AdditionalDigestAlgorithmsProduceExpectedLengths)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local sha512 = beez.crypto.hash_string("hello", "sha512")
+local sha1 = beez.crypto.hash_string("hello", "sha1")
+local md5 = beez.crypto.hash_string("hello", "md5")
+local ok = #sha512 == 128 and #sha1 == 40 and #md5 == 32
+task("check", "echo " .. tostring(ok))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}
+
+TEST(LuaCryptoApiTest, FingerprintHashesAreDeterministic)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local first = beez.crypto.hash_string("beez", "fnv1a64")
+local second = beez.crypto.hash_string("beez", "fnv1a64")
+local crc = beez.crypto.hash_string("beez", "crc32")
+local ok = first == second and first ~= crc
+task("check", "echo " .. tostring(ok))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}
+
+TEST(LuaCryptoApiTest, HashFileWithSha512MatchesStringHash)
+{
+    const beez::test::TempProject Project;
+    writeFile(Project.path() / "payload.txt", "hello");
+
+    Project.writeBuildLua(R"(
+local from_file = beez.crypto.hash_file("payload.txt", "sha512")
+local from_string = beez.crypto.hash_string("hello", "sha512")
+task("check", "echo " .. tostring(from_file == from_string))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}
+
+TEST(LuaCryptoApiTest, EncodeHmacSha512ProducesHexDigest)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local digest = beez.crypto.encode("hello", "secret", "sha512")
+task("check", "echo " .. tostring(#digest == 128))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}

@@ -206,3 +206,141 @@ task("check", "echo " .. tostring(ok))
     ASSERT_TRUE(Found.has_value());
     beez::test::expectShellCommand(Found, 0, "echo true");
 }
+
+TEST(LuaDataApiTest, ValidateRejectsMissingRequiredField)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "validate-step",
+    phase = "test",
+    scope = "code",
+    run = function()
+        local ok, err = pcall(function()
+            beez.data.validate({}, { type = "object", required = { "name" } })
+        end)
+        if ok then
+            error("expected validation failure")
+        end
+        if err:find("missing required field", 1, true) == nil then
+            error("unexpected error: " .. tostring(err))
+        end
+        return 0
+    end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+    EXPECT_TRUE(registry.findStep("validate-step").has_value());
+}
+
+TEST(LuaDataApiTest, ValidateRejectsWrongTypeAndEnum)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "validate-step",
+    phase = "test",
+    scope = "code",
+    run = function()
+        local type_ok = pcall(function()
+            beez.data.validate({ value = 1 }, {
+                type = "object",
+                properties = { value = { type = "string" } },
+            })
+        end)
+        local enum_ok = pcall(function()
+            beez.data.validate({ mode = "beta" }, {
+                type = "object",
+                properties = { mode = { type = "string", enum = { "alpha" } } },
+            })
+        end)
+        if type_ok or enum_ok then
+            error("expected validation failures")
+        end
+        return 0
+    end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+    EXPECT_TRUE(registry.findStep("validate-step").has_value());
+}
+
+TEST(LuaDataApiTest, TomlNestedTablesRoundTrip)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local toml = [=[
+title = "demo"
+
+[owner]
+name = "Ada"
+
+[[items]]
+name = "first"
+
+[[items]]
+name = "second"
+]=]
+local data = beez.data.deserialize_string(toml, { type = "toml" })
+local back = beez.data.serialize_string(data, { type = "toml" })
+local ok = data.title == "demo"
+  and data.owner.name == "Ada"
+  and data.items[1].name == "first"
+  and data.items[2].name == "second"
+  and back ~= ""
+task("check", "echo " .. tostring(ok))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}
+
+TEST(LuaDataApiTest, ValidateArrayItemsAndAdditionalProperties)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "validate-step",
+    phase = "test",
+    scope = "code",
+    run = function()
+        beez.data.validate({ tags = { "a", "b" } }, {
+            type = "object",
+            properties = {
+                tags = {
+                    type = "array",
+                    items = { type = "string" },
+                },
+            },
+            additionalProperties = false,
+        })
+
+        local extra_ok = pcall(function()
+            beez.data.validate({ tags = { "a" }, extra = true }, {
+                type = "object",
+                properties = {
+                    tags = { type = "array", items = { type = "string" } },
+                },
+                additionalProperties = false,
+            })
+        end)
+        if extra_ok then
+            error("expected additionalProperties failure")
+        end
+        return 0
+    end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+    EXPECT_TRUE(registry.findStep("validate-step").has_value());
+}

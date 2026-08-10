@@ -167,3 +167,41 @@ TEST(NetHttpClientTest, PingMeasuresLocalServer)
     EXPECT_EQ(Result.statusCode, 200);
     EXPECT_GE(Result.milliseconds, 0.0);
 }
+
+TEST(LuaNetApiTest, SetProxyAndClear)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "proxy-step",
+    phase = "test",
+    scope = "code",
+    run = function()
+        beez.net.set_proxy("http://127.0.0.1:8080")
+        beez.net.set_proxy(nil)
+        return 0
+    end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+    EXPECT_TRUE(registry.findStep("proxy-step").has_value());
+}
+
+TEST(LuaNetApiTest, IsOnlineReturnsBoolean)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+local value = beez.net.is_online(1)
+local ok = value == true or value == false
+task("check", "echo " .. tostring(ok))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}

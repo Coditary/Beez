@@ -55,3 +55,20 @@ task("check", "echo " .. beez.time.iso())
     EXPECT_EQ(shell->command.back(), 'Z');
     EXPECT_NE(shell->command.find('T'), std::string::npos);
 }
+
+TEST(LuaTimeApiTest, SleepFunctionsAcceptZero)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+beez.time.sleep(0)
+beez.time.sleep_s(0)
+task("check", "echo true")
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "check");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo true");
+}
