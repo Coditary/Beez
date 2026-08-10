@@ -46,6 +46,17 @@ add_library(
     api/date/utc.cpp
     api/date/utc_offset.cpp
     api/date/detail/time_point.cpp
+    api/data/data_table.cpp
+    api/data/deserialize_file.cpp
+    api/data/detail/format.cpp
+    api/data/detail/lua_convert.cpp
+    api/data/detail/yaml_convert.cpp
+    api/data/detail/xml_convert.cpp
+    api/data/detail/csv_convert.cpp
+    api/data/detail/toml_convert.cpp
+    api/data/detail/codec.cpp
+    api/data/detail/table_ops.cpp
+    api/data/detail/schema.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
@@ -59,4 +70,4 @@ add_library(
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-target_link_libraries(beez_plugin_lua PUBLIC beez_core beez_plugin_host sol2::sol2 lua::lua)
+target_link_libraries(beez_plugin_lua PUBLIC beez_core beez_plugin_host sol2::sol2 lua::lua yyjson::yyjson ryml::ryml rapidxml::rapidxml fast-cpp-csv-parser::fast-cpp-csv-parser tomlplusplus::tomlplusplus)

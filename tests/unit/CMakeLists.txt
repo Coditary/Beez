@@ -55,6 +55,7 @@ add_executable(
     plugin/lua/api/sys/test_sys.cpp
     plugin/lua/api/time/test_time.cpp
     plugin/lua/api/date/test_date.cpp
+    plugin/lua/api/data/test_data.cpp
     plugin/shell/test_shell_executor.cpp
 )
 

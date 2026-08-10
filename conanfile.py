@@ -27,6 +27,11 @@ class BeezConan(ConanFile):
         self.requires("spdlog/1.15.3")
         self.requires("onetbb/2022.0.0")
         self.requires("zlib/1.3.1")
+        self.requires("yyjson/0.12.0")
+        self.requires("rapidyaml/0.15.2")
+        self.requires("rapidxml/1.13")
+        self.requires("fast-cpp-csv-parser/cci.20240102")
+        self.requires("tomlplusplus/3.4.0")
 
     def layout(self):
         cmake_layout(self)
