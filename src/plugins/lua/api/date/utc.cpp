@@ -4,7 +4,7 @@
 
 #include <ctime>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)
 #include <sol/sol.hpp>
 
 namespace beez::plugin::lua
@@ -24,4 +24,4 @@ void bindUtc(sol::table& dateTable)
 }
 
 }  // namespace beez::plugin::lua
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters,readability-identifier-naming)
