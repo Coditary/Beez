@@ -66,6 +66,9 @@ add_library(
     api/data/detail/csv_convert.cpp
     api/data/detail/toml_convert.cpp
     api/data/detail/codec.cpp
+    api/net/net_table.cpp
+    api/net/detail/http_client.cpp
+    api/net/detail/headers.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
@@ -90,4 +93,5 @@ target_link_libraries(
            rapidxml::rapidxml
            fast-cpp-csv-parser::fast-cpp-csv-parser
            tomlplusplus::tomlplusplus
+           CURL::libcurl
 )

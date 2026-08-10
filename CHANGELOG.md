@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Network API (`beez.net`)
+
+- `beez.net.get/post/put/delete/request` — REST with shared header table shape
+- `beez.net.upload` — multipart file upload
+- `beez.net.download` / `download_and_verify` — file download (+ optional hash check via `beez.crypto`)
+- `beez.net.ping` / `is_online` — connectivity helpers
+- `beez.net.set_proxy` — process-wide proxy URL
+- [`docs/net-api.md`](docs/net-api.md)
+
 #### Worker API (Lua step context)
 
 - `ctx:wait(handle, options)` — optional second argument requests fields to return (`exitCode`, `output`, `duration`, `cached`, `name`, `id`, `dryRun`); omit options to wait without a return value

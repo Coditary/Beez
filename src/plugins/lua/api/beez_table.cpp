@@ -2,6 +2,7 @@
 
 #include "beez/plugin/lua/api/crypto/crypto_table.hpp"
 #include "beez/plugin/lua/api/data/data_table.hpp"
+#include "beez/plugin/lua/api/net/net_table.hpp"
 #include "beez/plugin/lua/api/date/date_table.hpp"
 #include "beez/plugin/lua/api/env/env.hpp"
 #include "beez/plugin/lua/api/fs/fs_table.hpp"
@@ -39,6 +40,7 @@ void registerBeezApi(const std::shared_ptr<sol::state>& luaState,
     beezTable["time"] = bindTime(luaState);
     beezTable["date"] = bindDate(luaState);
     beezTable["data"] = bindData(luaState, context);
+    beezTable["net"] = bindNet(luaState, context);
     (*luaState)["beez"] = beezTable;
 }
 

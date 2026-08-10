@@ -4,6 +4,7 @@ find_package(ryml REQUIRED)
 find_package(rapidxml REQUIRED)
 find_package(fast-cpp-csv-parser REQUIRED)
 find_package(tomlplusplus REQUIRED)
+find_package(CURL REQUIRED)
 
 include(FetchContent)
 
