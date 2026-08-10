@@ -13,11 +13,6 @@
 #include <memory>
 #include <string>
 
-namespace beez::logging
-{
-struct LogChannelId;
-}
-
 namespace beez::plugin
 {
 class PluginHost;
@@ -28,21 +23,13 @@ namespace beez::core
 
 class Context;
 class Registry;
-class Step;
 class StepCache;
 class SuccessCache;
-class Task;
-class Workflow;
-class WorkflowStep;
-struct PhaseInvocation;
 struct PhaseRequest;
 
-class LoggedRunScope;
-
-namespace step_execution_detail
+namespace orchestrator_detail
 {
-struct StepCacheSession;
-struct StepCachePrepareResult;
+struct Access;
 }
 
 class Orchestrator
@@ -92,45 +79,7 @@ class Orchestrator
                      bool updateCacheStats = true);
 
   private:
-    void flushBufferedCacheWrites();
-    void flushBufferedCacheWritesForPhase();
-    void flushBufferedCacheWritesIfEndStrategy();
-    void flushBufferedCacheWritesAtRunEnd();
-
-    [[nodiscard]] LoggedRunScope beginLoggedRun(const std::string& runType, const std::string& name);
-
-    [[nodiscard]] Expected<int, OrchestratorError> runTask(const Task& task,
-                                                           ProgressState& progress);
-    [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(const Workflow& workflow);
-    void runWorkflowStep(const WorkflowStep& step,
-                         ProgressState& progress,
-                         WorkflowExecutionState& executionState);
-    static void recordWorkflowFailure(WorkflowExecutionState& executionState,
-                                      OrchestratorError error);
-    [[nodiscard]] Expected<int, OrchestratorError> runStepInstance(const Step& step,
-                                                                   ProgressState& progress);
-    [[nodiscard]] step_execution_detail::StepCachePrepareResult
-    prepareStepCache(const Step& step,
-                     ProgressState& progress,
-                     const std::string& category,
-                     const std::string& detail);
-    [[nodiscard]] Expected<int, OrchestratorError> executeStepBody(const Step& step,
-                                                                   ProgressState& progress,
-                                                                   const std::string& category,
-                                                                   const std::string& detail);
-    void finalizeStepCache(const step_execution_detail::StepCacheSession& session,
-                           const Step& step,
-                           double durationSeconds);
-    [[nodiscard]] Expected<int, OrchestratorError>
-    runPhaseInvocation(const PhaseInvocation& invocation, ProgressState& progress);
-    [[nodiscard]] Expected<int, OrchestratorError> runShellCommand(const std::string& command,
-                                                                   const ProgressLabel& label,
-                                                                   ProgressState& progress,
-                                                                   logging::LogChannelId channel);
-
-    [[nodiscard]] std::size_t countWorkflowSteps(const Workflow& workflow) const;
-    [[nodiscard]] std::size_t countPhaseInvocationSteps(const PhaseInvocation& invocation) const;
-    [[nodiscard]] std::size_t countPhaseRequestSteps(const PhaseRequest& request) const;
+    friend struct orchestrator_detail::Access;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members) -- borrowed kernel
     // dependencies

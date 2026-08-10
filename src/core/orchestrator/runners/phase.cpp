@@ -1,9 +1,11 @@
-#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/types.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
+#include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/types.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
 
@@ -14,22 +16,23 @@
 #include <string>
 #include <vector>
 
-namespace beez::core
+namespace beez::core::orchestrator_detail
 {
 
-Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInvocation& invocation,
-                                                                  ProgressState& progress)
+Expected<int, OrchestratorError> runPhaseInvocation(Orchestrator& orchestrator,
+                                                    const PhaseInvocation& invocation,
+                                                    ProgressState& progress)
 {
-    const auto StepLevels = registry_.stepLevelsForPhase(
+    const auto StepLevels = Access::registry(orchestrator).stepLevelsForPhase(
         invocation.phase, invocation.scope.empty() ? "*" : invocation.scope);
 
     if (!StepLevels.hasValue())
     {
-        if (logging::writesCliErrorsToConsole(runOptions_.outputMode))
+        if (logging::writesCliErrorsToConsole(Access::runOptions(orchestrator).outputMode))
         {
             std::cerr << "Step ordering error: " << StepLevels.error().message << '\n';
         }
-        flushBufferedCacheWritesForPhase();
+        flushBufferedCacheWritesForPhase(orchestrator);
         return OrchestratorError::StepOrderingFailed;
     }
 
@@ -40,14 +43,14 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
             continue;
         }
 
-        if (level.size() == 1 || threadPool_.isSequential())
+        if (level.size() == 1 || Access::threadPool(orchestrator).isSequential())
         {
             for (const auto& step : level)
             {
-                const auto Result = runStepInstance(step, progress);
+                const auto Result = runStepInstance(orchestrator, step, progress);
                 if (!Result)
                 {
-                    flushBufferedCacheWritesForPhase();
+                    flushBufferedCacheWritesForPhase(orchestrator);
                     return Result.error();
                 }
             }
@@ -58,33 +61,42 @@ Expected<int, OrchestratorError> Orchestrator::runPhaseInvocation(const PhaseInv
         OrchestratorError levelError = OrchestratorError::ExecutionFailed;
         std::mutex levelErrorMutex;
 
-        threadPool_.parallelFor(level.size(),
-                                [&](std::size_t index)
-                                {
-                                    if (levelFailed.load())
-                                    {
-                                        return;
-                                    }
+        Access::threadPool(orchestrator).parallelFor(level.size(),
+                                                     [&](std::size_t index)
+                                                     {
+                                                         if (levelFailed.load())
+                                                         {
+                                                             return;
+                                                         }
 
-                                    const auto Result = runStepInstance(level.at(index), progress);
-                                    if (!Result)
-                                    {
-                                        levelFailed.store(true);
-                                        const std::scoped_lock Lock(levelErrorMutex);
-                                        levelError = Result.error();
-                                    }
-                                });
+                                                         const auto Result =
+                                                             runStepInstance(orchestrator,
+                                                                             level.at(index),
+                                                                             progress);
+                                                         if (!Result)
+                                                         {
+                                                             levelFailed.store(true);
+                                                             const std::scoped_lock Lock(
+                                                                 levelErrorMutex);
+                                                             levelError = Result.error();
+                                                         }
+                                                     });
 
         if (levelFailed.load())
         {
-            flushBufferedCacheWritesForPhase();
+            flushBufferedCacheWritesForPhase(orchestrator);
             return levelError;
         }
     }
 
-    flushBufferedCacheWritesForPhase();
+    flushBufferedCacheWritesForPhase(orchestrator);
     return 0;
 }
+
+}  // namespace beez::core::orchestrator_detail
+
+namespace beez::core
+{
 
 Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& request)
 {
@@ -93,7 +105,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         return OrchestratorError::InvalidPhaseRequest;
     }
 
-    auto runScope = beginLoggedRun("Phase", request.phase);
+    auto runScope = orchestrator_detail::beginLoggedRun(*this, "Phase", request.phase);
 
     std::vector<std::string> scopes = request.scopes;
     if (scopes.empty())
@@ -107,13 +119,13 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
         return 0;
     }
 
-    ProgressState progress {.total = countPhaseRequestSteps(request)};
+    ProgressState progress {.total = orchestrator_detail::countPhaseRequestSteps(*this, request)};
 
     for (const auto& scope : scopes)
     {
         runScope.beginSegment(request.phase + ":" + scope);
         const PhaseInvocation Invocation {.phase = request.phase, .scope = scope};
-        const auto Result = runPhaseInvocation(Invocation, progress);
+        const auto Result = orchestrator_detail::runPhaseInvocation(*this, Invocation, progress);
         runScope.endSegment(static_cast<bool>(Result));
         if (!Result)
         {
@@ -124,7 +136,7 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
 
     runScope.finish(true, workerThreads());
 
-    flushBufferedCacheWritesIfEndStrategy();
+    orchestrator_detail::flushBufferedCacheWritesIfEndStrategy(*this);
 
     return 0;
 }

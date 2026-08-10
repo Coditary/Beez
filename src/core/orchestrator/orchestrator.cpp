@@ -1,7 +1,6 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/errors.hpp"
-#include "beez/core/orchestrator/run/lifecycle.hpp"
-#include "beez/core/orchestrator/types.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/success/success_cache.hpp"
@@ -12,6 +11,9 @@
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/workflow.hpp"
+#include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/types.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
@@ -73,7 +75,7 @@ Orchestrator::Orchestrator(Registry& registry,
 
 Orchestrator::~Orchestrator()
 {
-    flushBufferedCacheWrites();
+    orchestrator_detail::flushBufferedCacheWrites(*this);
     context_.clearGlobMetadataCache();
 }
 
@@ -114,33 +116,6 @@ Expected<void, OrchestratorError> Orchestrator::loadBuildScript()
     return {};
 }
 
-void Orchestrator::flushBufferedCacheWrites()
-{
-    cacheWriteCoordinator_.flush(runOptions_.cache);
-}
-
-void Orchestrator::flushBufferedCacheWritesForPhase()
-{
-    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::Phase)
-    {
-        flushBufferedCacheWrites();
-    }
-}
-
-void Orchestrator::flushBufferedCacheWritesIfEndStrategy()
-{
-    if (runOptions_.performance.cacheWriteStrategy == CacheWriteStrategy::End)
-    {
-        flushBufferedCacheWrites();
-    }
-}
-
-void Orchestrator::flushBufferedCacheWritesAtRunEnd()
-{
-    flushBufferedCacheWritesForPhase();
-    flushBufferedCacheWritesIfEndStrategy();
-}
-
 void Orchestrator::recordCacheUnit(bool hit, double savedSeconds)
 {
     stats_.recordCacheUnit(hit, savedSeconds);
@@ -156,40 +131,74 @@ void Orchestrator::recordPeakWorkers(std::size_t workerCount)
     stats_.recordPeakWorkers(workerCount);
 }
 
-LoggedRunScope Orchestrator::beginLoggedRun(const std::string& runType, const std::string& name)
-{
-    return LoggedRunScope(pluginHost_,
-                          runOptions_.performance.optimizeGcForThroughput,
-                          stats_,
-                          runOptions_.logger,
-                          runType,
-                          name);
-}
-
 Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
 {
-    if (const auto FoundTask = registry_.findTask(name))
+    if (const auto FoundTask = orchestrator_detail::Access::registry(*this).findTask(name))
     {
-        auto runScope = beginLoggedRun("Task", name);
+        auto runScope = orchestrator_detail::beginLoggedRun(*this, "Task", name);
         runScope.beginSegment(name);
         ProgressState progress {.total = FoundTask->actions.size()};
-        const auto Result = runTask(*FoundTask, progress);
+        const auto Result = orchestrator_detail::runTask(*this, *FoundTask, progress);
         runScope.endSegment(static_cast<bool>(Result));
         runScope.finish(static_cast<bool>(Result), workerThreads());
-        flushBufferedCacheWritesIfEndStrategy();
+        orchestrator_detail::flushBufferedCacheWritesIfEndStrategy(*this);
         return Result;
     }
 
-    if (const auto FoundWorkflow = registry_.findWorkflow(name))
+    if (const auto FoundWorkflow = orchestrator_detail::Access::registry(*this).findWorkflow(name))
     {
-        auto runScope = beginLoggedRun("Workflow", name);
-        const auto Result = runWorkflow(*FoundWorkflow);
+        auto runScope = orchestrator_detail::beginLoggedRun(*this, "Workflow", name);
+        const auto Result = orchestrator_detail::runWorkflow(*this, *FoundWorkflow);
         runScope.finish(static_cast<bool>(Result), workerThreads());
-        flushBufferedCacheWritesIfEndStrategy();
+        orchestrator_detail::flushBufferedCacheWritesIfEndStrategy(*this);
         return Result;
     }
 
     return OrchestratorError::NotFound;
 }
 
+namespace orchestrator_detail
+{
+
+void flushBufferedCacheWrites(Orchestrator& orchestrator)
+{
+    Access::cacheWriteCoordinator(orchestrator).flush(Access::runOptions(orchestrator).cache);
+}
+
+void flushBufferedCacheWritesForPhase(Orchestrator& orchestrator)
+{
+    if (Access::runOptions(orchestrator).performance.cacheWriteStrategy == CacheWriteStrategy::Phase)
+    {
+        flushBufferedCacheWrites(orchestrator);
+    }
+}
+
+void flushBufferedCacheWritesIfEndStrategy(Orchestrator& orchestrator)
+{
+    if (Access::runOptions(orchestrator).performance.cacheWriteStrategy == CacheWriteStrategy::End)
+    {
+        flushBufferedCacheWrites(orchestrator);
+    }
+}
+
+void flushBufferedCacheWritesAtRunEnd(Orchestrator& orchestrator)
+{
+    flushBufferedCacheWritesForPhase(orchestrator);
+    flushBufferedCacheWritesIfEndStrategy(orchestrator);
+}
+
+LoggedRunScope beginLoggedRun(Orchestrator& orchestrator,
+                            const std::string& runType,
+                            const std::string& name)
+{
+    const auto& runOptions = Access::runOptions(orchestrator);
+    return LoggedRunScope(Access::pluginHost(orchestrator),
+                          runOptions.performance.optimizeGcForThroughput,
+                          Access::stats(orchestrator),
+                          runOptions.logger,
+                          runType,
+                          name);
+}
+
+}  // namespace orchestrator_detail
 }  // namespace beez::core

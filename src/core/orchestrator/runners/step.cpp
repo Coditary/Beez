@@ -1,4 +1,6 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/model/step.hpp"
@@ -10,32 +12,38 @@
 #include <chrono>
 #include <string>
 
-namespace beez::core
+namespace beez::core::orchestrator_detail
 {
 
-Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
-                                                               ProgressState& progress)
+Expected<int, OrchestratorError> runStepInstance(Orchestrator& orchestrator,
+                                                 const Step& step,
+                                                 ProgressState& progress)
 {
     const std::string Detail = stepProgressDetail(step);
     const std::string Category = step.phase.empty() ? "step" : step.phase;
 
-    const auto Prepare = prepareStepCache(step, progress, Category, Detail);
+    const auto Prepare = prepareStepCache(orchestrator, step, progress, Category, Detail);
     if (Prepare.skipped)
     {
         return 0;
     }
 
     const auto StepStart = std::chrono::steady_clock::now();
-    const auto Result = executeStepBody(step, progress, Category, Detail);
+    const auto Result = executeStepBody(orchestrator, step, progress, Category, Detail);
     if (!Result)
     {
         return Result.error();
     }
 
-    finalizeStepCache(Prepare.session, step, elapsedSeconds(StepStart));
+    finalizeStepCache(orchestrator, Prepare.session, step, elapsedSeconds(StepStart));
 
     return Result.value();
 }
+
+}  // namespace beez::core::orchestrator_detail
+
+namespace beez::core
+{
 
 Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
 {
@@ -45,14 +53,14 @@ Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
         return OrchestratorError::NotFound;
     }
 
-    auto runScope = beginLoggedRun("Step", name);
+    auto runScope = orchestrator_detail::beginLoggedRun(*this, "Step", name);
     runScope.beginSegment(name);
     ProgressState progress {.total = 1};
-    const auto Result = runStepInstance(*FoundStep, progress);
+    const auto Result = orchestrator_detail::runStepInstance(*this, *FoundStep, progress);
     runScope.endSegment(static_cast<bool>(Result));
     runScope.finish(static_cast<bool>(Result), workerThreads());
 
-    flushBufferedCacheWritesAtRunEnd();
+    orchestrator_detail::flushBufferedCacheWritesAtRunEnd(*this);
 
     return Result;
 }

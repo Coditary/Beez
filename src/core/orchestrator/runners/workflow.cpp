@@ -1,10 +1,11 @@
-#include "beez/core/orchestrator/errors.hpp"
-#include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/run/lifecycle.hpp"
-#include "beez/core/orchestrator/types.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/model/workflow_step.hpp"
+#include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/types.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/contract/logger.hpp"
 
@@ -16,54 +17,55 @@
 
 #include <oneapi/tbb/flow_graph.h>
 
-namespace beez::core
+namespace beez::core::orchestrator_detail
 {
 
-void Orchestrator::recordWorkflowFailure(WorkflowExecutionState& executionState,
-                                         OrchestratorError error)
+void recordWorkflowFailure(WorkflowExecutionState& executionState, OrchestratorError error)
 {
     executionState.failed.store(true);
     const std::scoped_lock Lock(executionState.errorMutex);
     executionState.error = error;
 }
 
-void Orchestrator::runWorkflowStep(const WorkflowStep& step,
-                                   ProgressState& progress,
-                                   WorkflowExecutionState& executionState)
+void runWorkflowStep(Orchestrator& orchestrator,
+                     const WorkflowStep& step,
+                     ProgressState& progress,
+                     WorkflowExecutionState& executionState)
 {
-    stats_.beginSegment(workflowSegmentLabel(step));
+    Access::stats(orchestrator).beginSegment(workflowSegmentLabel(step));
 
     logging::LogChannelId channel {};
-    if (runOptions_.logger != nullptr)
+    const auto& runOptions = Access::runOptions(orchestrator);
+    if (runOptions.logger != nullptr)
     {
         channel =
-            runOptions_.logger->openChannel(step.invocation.phase + ":" + step.invocation.scope);
+            runOptions.logger->openChannel(step.invocation.phase + ":" + step.invocation.scope);
     }
 
-    const auto Result = runPhaseInvocation(step.invocation, progress);
-    if (runOptions_.logger != nullptr)
+    const auto Result = runPhaseInvocation(orchestrator, step.invocation, progress);
+    if (runOptions.logger != nullptr)
     {
-        runOptions_.logger->closeChannel(channel);
+        runOptions.logger->closeChannel(channel);
     }
 
     if (!Result)
     {
         recordWorkflowFailure(executionState, Result.error());
-        stats_.endSegment(false);
+        Access::stats(orchestrator).endSegment(false);
         return;
     }
 
-    stats_.endSegment(true);
+    Access::stats(orchestrator).endSegment(true);
 }
 
-Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workflow)
+Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator, const Workflow& workflow)
 {
     if (workflow.steps.empty())
     {
         return 0;
     }
 
-    ProgressState progress {.total = countWorkflowSteps(workflow)};
+    ProgressState progress {.total = countWorkflowSteps(orchestrator, workflow)};
     WorkflowExecutionState executionState;
 
     tbb::flow::graph graph;
@@ -76,7 +78,7 @@ Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workf
     {
         auto node = std::make_unique<WorkflowNode>(
             graph,
-            [this, step = workflowStep, &progress, &executionState](
+            [&orchestrator, step = workflowStep, &progress, &executionState](
                 const tbb::flow::continue_msg&) -> tbb::flow::continue_msg
             {
                 if (executionState.failed.load())
@@ -84,7 +86,7 @@ Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workf
                     return {};
                 }
 
-                runWorkflowStep(step, progress, executionState);
+                runWorkflowStep(orchestrator, step, progress, executionState);
 
                 return {};
             });
@@ -98,7 +100,7 @@ Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workf
         nodes.push_back(std::move(node));
     }
 
-    threadPool_.execute(
+    Access::threadPool(orchestrator).execute(
         [&]
         {
             nodes.front()->try_put(tbb::flow::continue_msg {});
@@ -113,4 +115,4 @@ Expected<int, OrchestratorError> Orchestrator::runWorkflow(const Workflow& workf
     return 0;
 }
 
-}  // namespace beez::core
+}  // namespace beez::core::orchestrator_detail

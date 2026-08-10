@@ -1,31 +1,35 @@
-#include "beez/core/orchestrator/errors.hpp"
-#include "beez/core/orchestrator/orchestrator.hpp"
-#include "beez/core/orchestrator/types.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/orchestrator_internal.hpp"
 
 #include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/task_action.hpp"
+#include "beez/core/orchestrator/errors.hpp"
+#include "beez/core/orchestrator/types.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <variant>
 
-namespace beez::core
+namespace beez::core::orchestrator_detail
 {
 
-Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, ProgressState& progress)
+Expected<int, OrchestratorError> runTask(Orchestrator& orchestrator,
+                                           const Task& task,
+                                           ProgressState& progress)
 {
     int lastExitCode = 0;
     for (const auto& action : task.actions)
     {
         if (const auto* shellAction = std::get_if<TaskShellAction>(&action))
         {
-            const auto Result = runShellCommand(
-                shellAction->command,
-                {.category = "task", .detail = truncateForDisplay(shellAction->command)},
-                progress,
-                {});
+            const auto Result = runShellCommand(orchestrator,
+                                                shellAction->command,
+                                                {.category = "task",
+                                                 .detail = truncateForDisplay(shellAction->command)},
+                                                progress,
+                                                {});
             if (!Result)
             {
                 return Result.error();
@@ -40,7 +44,7 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, Progres
             return OrchestratorError::ExecutionFailed;
         }
 
-        const auto FoundStep = registry_.findStep(stepAction->stepName);
+        const auto FoundStep = Access::registry(orchestrator).findStep(stepAction->stepName);
         if (!FoundStep)
         {
             return OrchestratorError::NotFound;
@@ -49,7 +53,7 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, Progres
         Step step = *FoundStep;
         step.config = mergeStepConfigs(step.config, stepAction->config);
 
-        const auto Result = runStepInstance(step, progress);
+        const auto Result = runStepInstance(orchestrator, step, progress);
         if (!Result)
         {
             return Result.error();
@@ -60,4 +64,4 @@ Expected<int, OrchestratorError> Orchestrator::runTask(const Task& task, Progres
     return lastExitCode;
 }
 
-}  // namespace beez::core
+}  // namespace beez::core::orchestrator_detail

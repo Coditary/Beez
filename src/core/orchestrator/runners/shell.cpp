@@ -1,5 +1,8 @@
-#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/orchestrator/orchestrator_access.hpp"
+#include "beez/core/orchestrator/orchestrator_internal.hpp"
+
+#include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/shell_execution.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/runtime/context.hpp"
@@ -44,19 +47,26 @@ void Orchestrator::logProgress(ProgressState& progress,
     });
 }
 
-Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string& command,
-                                                               const ProgressLabel& label,
-                                                               ProgressState& progress,
-                                                               logging::LogChannelId channel)
-{
-    logProgress(progress, label.category, label.detail);
+}  // namespace beez::core
 
-    if (runOptions_.dryRun)
+namespace beez::core::orchestrator_detail
+{
+
+Expected<int, OrchestratorError> runShellCommand(Orchestrator& orchestrator,
+                                                 const std::string& command,
+                                                 const ProgressLabel& label,
+                                                 ProgressState& progress,
+                                                 logging::LogChannelId channel)
+{
+    orchestrator.logProgress(progress, label.category, label.detail);
+
+    const auto& runOptions = Access::runOptions(orchestrator);
+    if (runOptions.dryRun)
     {
         return 0;
     }
 
-    auto* executor = pluginHost_.executor();
+    auto* executor = Access::pluginHost(orchestrator).executor();
     if (executor == nullptr)
     {
         return OrchestratorError::ExecutorNotAvailable;
@@ -64,13 +74,13 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
 
     const auto Result = shell_execution_detail::run(*executor,
                                                     command,
-                                                    context_,
-                                                    runOptions_.outputMode,
+                                                    Access::context(orchestrator),
+                                                    runOptions.outputMode,
                                                     shell_execution_detail::CapturePolicy::Always);
     shell_execution_detail::persistOutput(
-        runOptions_, label.detail, "shell", Result.capturedOutput, Result.exitCode);
+        runOptions, label.detail, "shell", Result.capturedOutput, Result.exitCode);
     shell_execution_detail::logOutput(
-        runOptions_, Result.capturedOutput, Result.exitCode, channel);
+        runOptions, Result.capturedOutput, Result.exitCode, channel);
 
     if (Result.exitCode != 0)
     {
@@ -80,4 +90,4 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
     return Result.exitCode;
 }
 
-}  // namespace beez::core
+}  // namespace beez::core::orchestrator_detail
