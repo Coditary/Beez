@@ -1,8 +1,8 @@
 # Text API (`beez.text.*`)
 
-String helpers for `build.lua`: search, transform, split/join, regex, and line diff.
+String helpers for `build.lua`: search, transform, split/join, regex, templating, and line diff.
 
-No extra dependencies — implemented with the C++ standard library.
+Most helpers use the C++ standard library. `beez.text.template` uses [Prebyte](https://github.com/Coditary/Prebyte), loaded on first use.
 
 ---
 
@@ -55,7 +55,24 @@ Uses ECMAScript syntax (`std::regex`). Invalid patterns throw.
 
 ## `beez.text.template(template_string, variables_table)`
 
-**Walking skeleton** — returns `template_string` unchanged for now. A real template engine will be wired in later (e.g. for `--init` scaffolding).
+Renders a Prebyte template string with variables from a Lua table.
+
+```lua
+beez.text.template("Hello {{ name }}", { name = "Beez" })  -- "Hello Beez"
+
+beez.text.template("{{ if ready }}yes{{ else }}no{{ endif }}", { ready = true })  -- "yes"
+
+beez.text.template("{{ items[1] }}-{{ user.name }}", {
+    items = { "a", "b" },
+    user = { name = "Ada" },
+})  -- "a-Ada"
+```
+
+Uses Prebyte `{{ ... }}` syntax: interpolation, conditionals, loops, filters, includes, and more. See the [Prebyte README](https://github.com/Coditary/Prebyte) for full template syntax.
+
+The Prebyte engine is initialized lazily on the first `template()` call.
+
+Invalid templates throw with a `beez.text.template:` prefix.
 
 ---
 

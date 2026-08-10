@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <ranges>
 #include <string>
 #include <string_view>
 
@@ -21,7 +22,7 @@ void bindTrim(sol::table& textTable)
         { return std::isspace(character) == 0; };
 
         const auto begin = std::ranges::find_if(TextView, isNotSpace);
-        const auto end = std::ranges::find_if(std::ranges::reverse_view(TextView), isNotSpace).base();
+        const auto end = std::ranges::find_if(std::views::reverse(TextView), isNotSpace).base();
         if (begin >= end)
         {
             return {};

@@ -56,7 +56,9 @@ local parts = beez.text.split("a,b,c", ",")
 local split_ok = #parts == 3 and parts[1] == "a" and parts[3] == "c"
 local regex_ok = beez.text.regex_match("abc123", "^abc%d+$")
     and beez.text.regex_replace("foo bar foo", "foo", "baz") == "baz bar baz"
-local template_ok = beez.text.template("Hello {{name}}", { name = "Beez" }) == "Hello {{name}}"
+local template_ok = beez.text.template("Hello {{name}}", { name = "Beez" }) == "Hello Beez"
+    and beez.text.template("{{ if ready }}yes{{ else }}no{{ endif }}", { ready = true }) == "yes"
+    and beez.text.template("{{ items[1] }}-{{ user.name }}", { items = { "a", "b" }, user = { name = "Ada" } }) == "a-Ada"
 task("check", "echo " .. tostring(split_ok and regex_ok and template_ok))
 )");
 

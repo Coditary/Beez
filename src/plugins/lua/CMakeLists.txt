@@ -103,6 +103,7 @@ add_library(
     api/text/regex_match.cpp
     api/text/regex_replace.cpp
     api/text/template_string.cpp
+    api/text/detail/prebyte_backend.cpp
     api/text/diff.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
@@ -130,4 +131,5 @@ target_link_libraries(
            tomlplusplus::tomlplusplus
            CURL::libcurl
            LibArchive::LibArchive
+           prebyte_core
 )

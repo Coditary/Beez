@@ -7,6 +7,8 @@ find_package(tomlplusplus REQUIRED)
 find_package(CURL REQUIRED)
 find_package(LibArchive REQUIRED CONFIG)
 
+include(Prebyte)
+
 include(FetchContent)
 
 FetchContent_Declare(
