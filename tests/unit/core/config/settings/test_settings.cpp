@@ -1,7 +1,7 @@
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/config/cache_options.hpp"
-#include "beez/core/config/env_settings.hpp"
-#include "beez/core/config/settings.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
+#include "beez/core/config/env/env_settings.hpp"
+#include "beez/core/config/settings/settings.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/logging/console/output_mode.hpp"
 

@@ -1,4 +1,8 @@
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/ui/progress_format.hpp"
+#include "beez/core/config/ui/resolve.hpp"
+#include "beez/core/config/ui/run_summary.hpp"
+#include "beez/core/config/ui/theme.hpp"
+#include "beez/core/config/ui/types.hpp"
 
 #include "beez/logging/contract/run_types.hpp"
 

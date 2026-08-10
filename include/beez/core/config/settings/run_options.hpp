@@ -1,8 +1,8 @@
 #pragma once
 
-#include "beez/core/config/cache_options.hpp"
-#include "beez/core/config/performance_options.hpp"
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
+#include "beez/core/config/performance/performance_options.hpp"
+#include "beez/core/config/ui/types.hpp"
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/persistence/run_log_writer.hpp"
 #include "beez/logging/settings/logging_settings.hpp"

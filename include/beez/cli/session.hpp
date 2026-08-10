@@ -1,7 +1,7 @@
 #pragma once
 
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/config/settings.hpp"
+#include "beez/core/config/settings/settings.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/plugin/host/plugin_host.hpp"

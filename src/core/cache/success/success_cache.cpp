@@ -3,7 +3,7 @@
 #include "beez/core/cache/fingerprint/content_hash.hpp"
 #include "beez/core/cache/fingerprint/include_fingerprint.hpp"
 #include "beez/core/cache/storage/envelope.hpp"
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/version.hpp"

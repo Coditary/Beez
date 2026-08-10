@@ -17,11 +17,11 @@ add_executable(
     cli/presentation/test_name_suggestion.cpp
     cli/commands/test_run.cpp
     core/registry/test_registry.cpp
-    core/test_cache_options.cpp
+    core/config/cache/test_cache_options.cpp
     core/cache/fingerprint/test_content_hash.cpp
     core/cache/fingerprint/test_include_fingerprint.cpp
     core/cache/storage/test_cache_write_coordinator.cpp
-    core/config/test_config_paths.cpp
+    core/config/paths/test_config_paths.cpp
     core/test_temp_directory.cpp
     core/test_text_table.cpp
     core/cache/storage/test_cache_compress.cpp
@@ -37,15 +37,15 @@ add_executable(
     core/registry/test_step_order.cpp
     core/test_workflow.cpp
     core/runtime/test_context.cpp
-    core/config/test_settings.cpp
-    core/config/test_settings_report.cpp
+    core/config/settings/test_settings.cpp
+    core/config/report/test_settings_report.cpp
     core/orchestrator/test_orchestrator.cpp
     core/execution/test_stream_capture.cpp
     core/execution/test_progress_detail.cpp
     core/execution/test_phase_argument_parser.cpp
-    core/config/test_performance_options.cpp
-    core/config/test_ui_options.cpp
-    core/config/test_config_schema.cpp
+    core/config/performance/test_performance_options.cpp
+    core/config/ui/test_ui_options.cpp
+    core/config/schema/test_config_schema.cpp
     plugin/host/test_plugin_host.cpp
     plugin/lua/test_lua_dsl.cpp
     plugin/lua/test_lua_dsl_fields.cpp

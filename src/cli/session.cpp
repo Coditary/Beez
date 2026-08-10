@@ -2,8 +2,8 @@
 
 #include "beez/cli/commands/run.hpp"
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/config/config_paths.hpp"
-#include "beez/core/config/run_options.hpp"
+#include "beez/core/config/paths/config_paths.hpp"
+#include "beez/core/config/settings/run_options.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/logging/backends/spdlog_logger.hpp"
 #include "beez/logging/console/output_mode.hpp"

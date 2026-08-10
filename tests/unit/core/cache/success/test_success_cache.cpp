@@ -1,5 +1,5 @@
 #include "beez/core/cache/success/success_cache.hpp"
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step_config.hpp"
 

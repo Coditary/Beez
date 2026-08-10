@@ -3,7 +3,7 @@
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/step/types.hpp"
 #include "beez/core/cache/storage/write_coordinator.hpp"
-#include "beez/core/config/run_options.hpp"
+#include "beez/core/config/settings/run_options.hpp"
 #include "beez/core/execution/thread_pool.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
 #include "beez/core/model/phase_invocation.hpp"

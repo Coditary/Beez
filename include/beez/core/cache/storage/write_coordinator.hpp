@@ -1,7 +1,7 @@
 #pragma once
 
-#include "beez/core/config/cache_options.hpp"
-#include "beez/core/config/performance_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
+#include "beez/core/config/performance/performance_options.hpp"
 
 #include <filesystem>
 #include <mutex>

@@ -1,4 +1,4 @@
-#include "beez/core/config/performance_options.hpp"
+#include "beez/core/config/performance/performance_options.hpp"
 
 #include <algorithm>
 #include <cctype>

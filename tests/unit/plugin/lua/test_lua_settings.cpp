@@ -1,9 +1,10 @@
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/ui/progress_format.hpp"
+#include "beez/core/config/ui/types.hpp"
 #include "beez/logging/contract/run_types.hpp"
 #include "beez/plugin/lua/settings/lua_settings.hpp"
 
-#include "beez/core/config/cache_options.hpp"
-#include "beez/core/config/settings.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
+#include "beez/core/config/settings/settings.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/logging/console/output_mode.hpp"

@@ -1,5 +1,7 @@
 // NOLINTBEGIN(misc-include-cleaner,readability-identifier-naming,readability-math-missing-parentheses,performance-no-automatic-move,modernize-return-braced-init-list,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-avoid-magic-numbers,bugprone-easily-swappable-parameters,readability-avoid-nested-conditional-operator)
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/ui/run_summary.hpp"
+
+#include "beez/core/config/ui/theme.hpp"
 
 #include "beez/logging/contract/run_types.hpp"
 

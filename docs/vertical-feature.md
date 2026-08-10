@@ -56,7 +56,7 @@ Modules are **flat** under `src/` (no per-module CMake targets). Within `src/cor
 | `model/` | task, step, workflow, step_config, … | `model/` | `test_workflow.cpp` |
 | `util/` | expected, text_table, temp_directory | `util/` | `test_text_table.cpp`, `test_temp_directory.cpp` |
 | `registry/` | registry, step_order | `registry/` | `registry/` |
-| `config/` | settings, cache_options, ui_options, … | `config/` (+ `report/`, `ui/`) | `config/` |
+| `config/` | `settings/`, `cache/`, `performance/`, `env/`, `ui/`, `schema/`, `paths/`, `report/` | `config/` | `config/{settings,cache,performance,env,ui,schema,paths,report}/` |
 | `cache/` | `storage/`, `fingerprint/`, `step/`, `success/` | `cache/` | `cache/{storage,fingerprint,step,success}/` |
 | `glob/` | pattern, expand, metadata_cache | `glob/` | `glob/` |
 | `env/` | env_file | `env/` | `env/` |

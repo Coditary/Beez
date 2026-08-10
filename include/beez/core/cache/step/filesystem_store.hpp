@@ -1,7 +1,7 @@
 #pragma once
 
 #include "beez/core/cache/step/types.hpp"
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 
 #include <memory>
 #include <optional>

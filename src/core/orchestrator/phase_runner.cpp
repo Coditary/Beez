@@ -1,7 +1,7 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "orchestrator_detail.hpp"
 
-#include "beez/core/config/performance_options.hpp"
+#include "beez/core/config/performance/performance_options.hpp"
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
 #include "beez/core/model/workflow.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "beez/cli/parsing/parsed_options.hpp"
-#include "beez/core/config/settings_report.hpp"
+#include "beez/core/config/report/settings_report.hpp"
 
 #include <optional>
 

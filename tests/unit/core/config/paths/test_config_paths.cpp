@@ -1,4 +1,4 @@
-#include "beez/core/config/config_paths.hpp"
+#include "beez/core/config/paths/config_paths.hpp"
 #include "beez/core/util/temp_directory.hpp"
 
 #include <gtest/gtest.h>

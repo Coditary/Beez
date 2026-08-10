@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/config/settings.hpp"
+#include "beez/core/config/settings/settings.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
 #include "beez/plugin/contract/plugin.hpp"
 

@@ -13,7 +13,7 @@
 #include "beez/plugin/contract/executor.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 
-#include "beez/core/config/run_options.hpp"
+#include "beez/core/config/settings/run_options.hpp"
 #include "beez/logging/backends/recording_logger.hpp"
 #include "beez/logging/console/output_mode.hpp"
 

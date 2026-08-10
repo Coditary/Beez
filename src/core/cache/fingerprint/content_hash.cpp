@@ -1,6 +1,6 @@
 #include "beez/core/cache/fingerprint/content_hash.hpp"
 
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 
 #include <cstddef>
 #include <cstdint>

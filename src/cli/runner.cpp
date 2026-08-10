@@ -8,7 +8,7 @@
 #include "beez/cli/parsing/help_text.hpp"
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/cli/session.hpp"
-#include "beez/core/config/settings_report.hpp"
+#include "beez/core/config/report/settings_report.hpp"
 
 #include <exception>
 #include <functional>

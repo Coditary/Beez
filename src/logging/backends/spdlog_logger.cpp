@@ -2,7 +2,10 @@
 #include "beez/logging/backends/spdlog_logger.hpp"
 #include "beez/logging/backends/spdlog_setup.hpp"
 
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/ui/progress_format.hpp"
+#include "beez/core/config/ui/resolve.hpp"
+#include "beez/core/config/ui/run_summary.hpp"
+#include "beez/core/config/ui/types.hpp"
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/console/progress_spinner.hpp"
 #include "beez/logging/console/worker_output_format.hpp"

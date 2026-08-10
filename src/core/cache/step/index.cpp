@@ -2,7 +2,7 @@
 #include "step_fingerprint.hpp"
 
 #include "beez/core/cache/storage/envelope.hpp"
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 #include "beez/core/glob/expand.hpp"
 #include "beez/core/glob/metadata_cache.hpp"
 #include "beez/core/glob/pattern.hpp"

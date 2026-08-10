@@ -1,5 +1,5 @@
 #include "beez/core/cache/storage/compress.hpp"
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 
 #include <gtest/gtest.h>
 

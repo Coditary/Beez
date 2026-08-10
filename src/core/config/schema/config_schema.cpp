@@ -1,8 +1,8 @@
-#include "beez/core/config/config_schema.hpp"
+#include "beez/core/config/schema/config_schema.hpp"
 
-#include "beez/core/config/cache_options.hpp"
-#include "beez/core/config/performance_options.hpp"
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
+#include "beez/core/config/performance/performance_options.hpp"
+#include "beez/core/config/ui/resolve.hpp"
 #include "beez/core/util/text_table.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
 

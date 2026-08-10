@@ -16,20 +16,22 @@ add_library(
     cache/step/step_cache.cpp
     cache/step/step_fingerprint.cpp
     cache/success/success_cache.cpp
-    config/cache_options.cpp
-    config/config_paths.cpp
-    config/config_schema.cpp
-    config/env_settings.cpp
-    config/performance_options.cpp
+    config/cache/cache_options.cpp
+    config/env/env_settings.cpp
+    config/paths/config_paths.cpp
+    config/performance/performance_options.cpp
     config/report/cache_rows.cpp
+    config/report/detail/report_helpers.cpp
     config/report/env_rows.cpp
     config/report/performance_rows.cpp
-    config/report/report_helpers.cpp
+    config/report/settings_report.cpp
     config/report/ui_rows.cpp
-    config/settings.cpp
-    config/settings_report.cpp
+    config/schema/config_schema.cpp
+    config/settings/settings.cpp
+    config/ui/progress_format.cpp
+    config/ui/resolve.cpp
     config/ui/run_summary.cpp
-    config/ui_options.cpp
+    config/ui/theme.cpp
     runtime/context.cpp
     env/env_file.cpp
     glob/expand.cpp

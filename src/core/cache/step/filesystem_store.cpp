@@ -2,7 +2,7 @@
 
 #include "beez/core/cache/step/types.hpp"
 #include "beez/core/cache/storage/envelope.hpp"
-#include "beez/core/config/cache_options.hpp"
+#include "beez/core/config/cache/cache_options.hpp"
 
 #include <filesystem>
 #include <memory>

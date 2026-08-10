@@ -1,4 +1,4 @@
-#include "beez/core/config/config_schema.hpp"
+#include "beez/core/config/schema/config_schema.hpp"
 
 #include <gtest/gtest.h>
 

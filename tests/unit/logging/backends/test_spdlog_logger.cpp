@@ -1,4 +1,4 @@
-#include "beez/core/config/ui_options.hpp"
+#include "beez/core/config/ui/types.hpp"
 #include "beez/logging/backends/spdlog_logger.hpp"
 #include "beez/logging/console/output_mode.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
@@ -9,7 +9,7 @@
 TEST(SpdlogLoggerTest, CreatesLoggerForSilentMode)
 {
     const beez::core::UiSettings UiSettings;
-    const beez::logging::LoggingSettings LoggingSettings;
+    const beez::logging::LoggingSettings LoggingSettings {.runLog = false};
 
     const auto Logger = beez::logging::createSpdlogLogger(
         beez::logging::OutputMode::Silent, UiSettings, LoggingSettings);

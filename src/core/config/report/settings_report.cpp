@@ -1,6 +1,6 @@
-#include "beez/core/config/settings_report.hpp"
+#include "beez/core/config/report/settings_report.hpp"
 
-#include "report/report_helpers.hpp"
+#include "detail/report_helpers.hpp"
 
 #include <sstream>
 #include <string>
