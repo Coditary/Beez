@@ -1,12 +1,9 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/orchestrator/types.hpp"
+#include "beez/core/orchestrator/run/shell_execution.hpp"
 
 #include "beez/core/util/expected.hpp"
-#include "beez/logging/console/output_mode.hpp"
-#include "beez/logging/contract/logger.hpp"
-#include "beez/logging/contract/run_types.hpp"
-#include "beez/plugin/host/plugin_host.hpp"
 
 #include <cstddef>
 #include <string>
@@ -63,32 +60,22 @@ Expected<int, OrchestratorError> Orchestrator::runShellCommand(const std::string
         return OrchestratorError::ExecutorNotAvailable;
     }
 
-    std::string capturedOutput;
-    const int ExitCode = executor->execute(command, context_, &capturedOutput);
-    if (runOptions_.runLogWriter != nullptr &&
-        runOptions_.runLogWriter->shouldPersistWorkerOutput(ExitCode) && !capturedOutput.empty())
-    {
-        runOptions_.runLogWriter->writeWorkerOutput(
-            label.detail, "shell", capturedOutput, ExitCode);
-    }
-    if (runOptions_.logger != nullptr && !capturedOutput.empty())
-    {
-        if (runOptions_.outputMode == logging::OutputMode::Verbose)
-        {
-            runOptions_.logger->logCommandOutput(channel, capturedOutput);
-        }
-        else if (ExitCode != 0)
-        {
-            runOptions_.logger->logFailureOutput(capturedOutput);
-        }
-    }
+    const auto Result = shell_execution_detail::run(*executor,
+                                                    command,
+                                                    context_,
+                                                    runOptions_.outputMode,
+                                                    shell_execution_detail::CapturePolicy::Always);
+    shell_execution_detail::persistOutput(
+        runOptions_, label.detail, "shell", Result.capturedOutput, Result.exitCode);
+    shell_execution_detail::logOutput(
+        runOptions_, Result.capturedOutput, Result.exitCode, channel);
 
-    if (ExitCode != 0)
+    if (Result.exitCode != 0)
     {
         return OrchestratorError::ExecutionFailed;
     }
 
-    return ExitCode;
+    return Result.exitCode;
 }
 
 }  // namespace beez::core

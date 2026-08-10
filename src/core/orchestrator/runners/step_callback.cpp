@@ -1,6 +1,7 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "orchestrator_internal.hpp"
+#include "beez/core/orchestrator/run/shell_execution.hpp"
 
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/success/success_cache.hpp"
@@ -64,27 +65,25 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
         }
 
         const auto& options = orchestrator.runOptions();
-        if (options.outputMode == logging::OutputMode::Verbose)
-        {
-            return executor->execute(command, orchestrator.context(), nullptr);
-        }
-
-        std::string capturedOutput;
-        const int ExitCode = executor->execute(command, orchestrator.context(), &capturedOutput);
-        if (options.runLogWriter != nullptr &&
-            options.runLogWriter->shouldPersistWorkerOutput(ExitCode) && !capturedOutput.empty())
-        {
-            options.runLogWriter->writeWorkerOutput(
-                step.name, worker.name, capturedOutput, ExitCode);
-        }
-        if (ExitCode != 0 && !capturedOutput.empty())
+        const auto Result = shell_execution_detail::run(*executor,
+                                                        command,
+                                                        orchestrator.context(),
+                                                        options.outputMode,
+                                                        shell_execution_detail::CapturePolicy::
+                                                            UnlessVerbose);
+        shell_execution_detail::persistOutput(options,
+                                              step.name,
+                                              worker.name,
+                                              Result.capturedOutput,
+                                              Result.exitCode);
+        if (Result.exitCode != 0 && !Result.capturedOutput.empty())
         {
             const std::scoped_lock Lock(workerFailureOutputMutex);
             workerFailureOutputs.push_back(WorkerFailureOutput {
-                .workerName = worker.name, .output = std::move(capturedOutput)});
+                .workerName = worker.name, .output = std::move(Result.capturedOutput)});
         }
 
-        return ExitCode;
+        return Result.exitCode;
     };
 
     WorkerPool workerPool(context.projectRoot(),
