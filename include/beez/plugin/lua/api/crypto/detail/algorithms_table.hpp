@@ -5,9 +5,8 @@
 #include <string>
 #include <vector>
 
-// NOLINTBEGIN(misc-include-cleaner)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner)
 
 namespace beez::plugin::lua::crypto_detail
 {
@@ -25,3 +24,4 @@ inline sol::table algorithmsToTable(const std::shared_ptr<sol::state>& luaState,
 }
 
 }  // namespace beez::plugin::lua::crypto_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

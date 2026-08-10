@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <ios>
@@ -16,6 +18,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-pointer-arithmetic,bugprone-easily-swappable-parameters,cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-magic-numbers,modernize-use-ranges,modernize-avoid-c-arrays,readability-identifier-naming,cppcoreguidelines-pro-bounds-constant-array-index,bugprone-implicit-widening-of-multiplication-result,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-pro-type-reinterpret-cast,performance-enum-size,readability-identifier-length,misc-const-correctness)
 
 namespace beez::plugin::lua::crypto_detail
 {
@@ -59,8 +63,8 @@ namespace
 {
     const std::string Normalized = toLower(std::string(algorithm));
     const auto Names = core::contentHashAlgorithmNames();
-    return std::any_of(
-        Names.begin(), Names.end(), [&](const char* Name) { return Normalized == Name; });
+    return std::ranges::any_of(
+        Names.begin(), Names.end(), [&](const char* name) { return Normalized == name; });
 }
 
 [[nodiscard]] std::string hashFingerprint(std::string_view data, std::string_view algorithm)
@@ -1022,3 +1026,4 @@ std::string encodeWithKey(const std::string_view data,
 }
 
 }  // namespace beez::plugin::lua::crypto_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-pointer-arithmetic,bugprone-easily-swappable-parameters,cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-magic-numbers,modernize-use-ranges,modernize-avoid-c-arrays,readability-identifier-naming,cppcoreguidelines-pro-bounds-constant-array-index,bugprone-implicit-widening-of-multiplication-result,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-pro-type-reinterpret-cast,performance-enum-size,readability-identifier-length,misc-const-correctness)

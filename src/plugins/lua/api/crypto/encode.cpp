@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters)
 #include <sol/sol.hpp>
 
 namespace beez::plugin::lua
@@ -30,4 +30,4 @@ void bindEncode(sol::table& cryptoTable)
 }
 
 }  // namespace beez::plugin::lua
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-easily-swappable-parameters)

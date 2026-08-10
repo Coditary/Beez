@@ -11,13 +11,13 @@ namespace beez::plugin::lua::api_detail
 [[nodiscard]] inline std::filesystem::path resolvePath(const std::filesystem::path& projectRoot,
                                                        const std::string& userPath)
 {
-    const std::filesystem::path UserPath(userPath);
-    if (UserPath.is_absolute())
+    std::filesystem::path resolved(userPath);
+    if (resolved.is_absolute())
     {
-        return UserPath;
+        return resolved;
     }
 
-    return projectRoot / UserPath;
+    return projectRoot / resolved;
 }
 
 [[nodiscard]] inline std::string joinPathSegments(const std::vector<std::string>& segments)
@@ -25,7 +25,7 @@ namespace beez::plugin::lua::api_detail
     return std::accumulate(segments.begin(),
                            segments.end(),
                            std::filesystem::path {},
-                           [](std::filesystem::path result, const std::string& segment)
+                           [](const std::filesystem::path& result, const std::string& segment)
                            { return result / segment; })
         .generic_string();
 }
