@@ -50,6 +50,7 @@ add_executable(
     plugin/lua/test_lua_dsl.cpp
     plugin/lua/test_lua_dsl_fields.cpp
     plugin/lua/test_lua_settings.cpp
+    plugin/lua/api/test_fs.cpp
     plugin/shell/test_shell_executor.cpp
 )
 

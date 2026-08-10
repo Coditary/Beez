@@ -1,6 +1,9 @@
 add_library(
     beez_plugin_lua STATIC
     lua_dsl.cpp
+    api/beez_table.cpp
+    api/env.cpp
+    api/fs.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
