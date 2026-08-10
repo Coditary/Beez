@@ -7,6 +7,6 @@
 namespace beez::plugin::lua
 {
 
-void bindJoin(sol::table& textTable);
+void bindTextJoin(sol::table& textTable);
 
 }  // namespace beez::plugin::lua

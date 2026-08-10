@@ -35,7 +35,7 @@ sol::table bindText(const std::shared_ptr<sol::state>& luaState)
     bindReplaceAll(textTable);
     bindSplit(textTable, luaState);
     bindTrim(textTable);
-    bindJoin(textTable);
+    bindTextJoin(textTable);
     bindRegexMatch(textTable);
     bindRegexReplace(textTable);
     bindTemplateString(textTable);

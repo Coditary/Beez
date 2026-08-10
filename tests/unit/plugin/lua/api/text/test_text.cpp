@@ -54,7 +54,7 @@ TEST(LuaTextApiTest, SplitRegexAndTemplateSkeleton)
     Project.writeBuildLua(R"(
 local parts = beez.text.split("a,b,c", ",")
 local split_ok = #parts == 3 and parts[1] == "a" and parts[3] == "c"
-local regex_ok = beez.text.regex_match("abc123", "^abc%d+$")
+local regex_ok = beez.text.regex_match("abc123", "^abc\\d+$")
     and beez.text.regex_replace("foo bar foo", "foo", "baz") == "baz bar baz"
 local template_ok = beez.text.template("Hello {{name}}", { name = "Beez" }) == "Hello Beez"
     and beez.text.template("{{ if ready }}yes{{ else }}no{{ endif }}", { ready = true }) == "yes"

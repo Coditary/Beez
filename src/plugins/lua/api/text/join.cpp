@@ -55,7 +55,7 @@ namespace
 
 }  // namespace
 
-void bindJoin(sol::table& textTable)
+void bindTextJoin(sol::table& textTable)
 {
     textTable["join"] = [](const sol::table& values, const std::string& delimiter) -> std::string
     { return joinStrings(readStringArray(values), delimiter); };

@@ -61,13 +61,14 @@ namespace
         const sol::table Table = object.as<sol::table>();
         if (data_detail::isLuaArray(Table))
         {
-            prebyte::Data::Array array;
-            array.reserve(Table.size());
+            // Prebyte list indexing is 0-based; Lua tables are 1-based. Store sequential
+            // Lua arrays as maps keyed by "1", "2", ... so {{ items[1] }} matches Lua.
+            prebyte::Data::Map map;
             for (std::size_t index = 1; index <= Table.size(); ++index)
             {
-                array.push_back(luaObjectToData(Table[index]));
+                map[std::to_string(index)] = luaObjectToData(Table[index]);
             }
-            return prebyte::Data(std::move(array));
+            return prebyte::Data(std::move(map));
         }
 
         prebyte::Data::Map map;
