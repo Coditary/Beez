@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 
+// NOLINTBEGIN(misc-include-cleaner,misc-non-private-member-variables-in-classes)
 namespace beez::plugin::lua::archive_detail
 {
 
@@ -43,3 +44,4 @@ void throwOnArchiveError(archive* handle, int result, const std::string& context
 [[nodiscard]] ArchiveEntryInfo entryInfo(archive_entry* entry);
 
 }  // namespace beez::plugin::lua::archive_detail
+// NOLINTEND(misc-include-cleaner,misc-non-private-member-variables-in-classes)

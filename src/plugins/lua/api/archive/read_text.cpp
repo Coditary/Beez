@@ -10,9 +10,8 @@
 #include <stdexcept>
 #include <string>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-implicit-widening-of-multiplication-result,misc-const-correctness,readability-identifier-naming)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua
 {
@@ -20,8 +19,8 @@ namespace beez::plugin::lua
 namespace
 {
 
-constexpr std::size_t ReadBufferSize = 64 * 1024;
-constexpr std::size_t MaxTextReadBytes = 16 * 1024 * 1024;
+constexpr std::size_t ReadBufferSize = 64U * 1024U;
+constexpr std::size_t MaxTextReadBytes = 16U * 1024U * 1024U;
 
 [[nodiscard]] std::string readText(const std::filesystem::path& archivePath,
                                    const std::string& entryPath)
@@ -93,3 +92,4 @@ void bindArchiveReadText(sol::table& archiveTable, const core::Context& context)
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-implicit-widening-of-multiplication-result,misc-const-correctness,readability-identifier-naming)

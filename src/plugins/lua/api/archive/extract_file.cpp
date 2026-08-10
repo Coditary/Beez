@@ -10,9 +10,8 @@
 #include <stdexcept>
 #include <string>
 
-// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-implicit-widening-of-multiplication-result,bugprone-easily-swappable-parameters,misc-const-correctness,readability-identifier-naming)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 namespace beez::plugin::lua
 {
@@ -20,7 +19,7 @@ namespace beez::plugin::lua
 namespace
 {
 
-constexpr std::size_t ReadBufferSize = 64 * 1024;
+constexpr std::size_t ReadBufferSize = 64U * 1024U;
 
 void extractFile(const std::filesystem::path& archivePath,
                  const std::string& entryPath,
@@ -113,3 +112,4 @@ void bindArchiveExtractFile(sol::table& archiveTable,
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,bugprone-implicit-widening-of-multiplication-result,bugprone-easily-swappable-parameters,misc-const-correctness,readability-identifier-naming)

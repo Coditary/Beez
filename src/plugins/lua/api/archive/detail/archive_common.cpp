@@ -5,12 +5,20 @@
 #include <stdexcept>
 #include <string>
 
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-prefer-member-initializer,cppcoreguidelines-avoid-magic-numbers,modernize-use-ranges,readability-identifier-naming)
+
 namespace beez::plugin::lua::archive_detail
 {
 
-ArchiveReadHandle::ArchiveReadHandle()
+namespace
 {
-    reader = archive_read_new();
+
+constexpr int ReadBlockSize = 10240;
+
+}  // namespace
+
+ArchiveReadHandle::ArchiveReadHandle() : reader(archive_read_new())
+{
     if (reader == nullptr)
     {
         throw std::runtime_error("failed to allocate archive reader");
@@ -91,7 +99,7 @@ ArchiveReadHandle openArchiveReader(const std::filesystem::path& archivePath)
     ArchiveReadHandle handle;
     throwOnArchiveError(
         handle.reader,
-        archive_read_open_filename(handle.reader, archivePath.string().c_str(), 10240),
+        archive_read_open_filename(handle.reader, archivePath.string().c_str(), ReadBlockSize),
         "failed to open archive");
     return handle;
 }
@@ -109,3 +117,4 @@ ArchiveEntryInfo entryInfo(archive_entry* entry)
 }
 
 }  // namespace beez::plugin::lua::archive_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-prefer-member-initializer,cppcoreguidelines-avoid-magic-numbers,modernize-use-ranges,readability-identifier-naming)
