@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/api/fs/detail/operations.hpp"
 
+#include "beez/core/runtime/context.hpp"
 #include "beez/plugin/lua/api/detail/path.hpp"
 
 #include <filesystem>
@@ -17,7 +18,7 @@ std::filesystem::path resolvedPath(const core::Context& context, const std::stri
 void copyPath(const core::Context& context,
               const std::string& sourcePath,
               const std::string& destinationPath,
-              const bool overwrite)
+              bool overwrite)
 {
     const auto Source = resolvedPath(context, sourcePath);
     const auto Destination = resolvedPath(context, destinationPath);

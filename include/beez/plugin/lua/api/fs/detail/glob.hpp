@@ -11,7 +11,6 @@
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner)
 
 namespace beez::plugin::lua::fs_detail
 {
@@ -34,3 +33,4 @@ inline sol::table globPatternsToTable(const std::shared_ptr<sol::state>& luaStat
 }
 
 }  // namespace beez::plugin::lua::fs_detail
+// NOLINTEND(misc-include-cleaner)
