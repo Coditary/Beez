@@ -6,6 +6,19 @@ add_library(
     api/fs.cpp
     api/crypto.cpp
     api/detail/crypto_ops.cpp
+    api/sys/sys_table.cpp
+    api/sys/cpu_cores.cpp
+    api/sys/cpu_threads.cpp
+    api/sys/ram_total.cpp
+    api/sys/ram_free.cpp
+    api/sys/is_tty.cpp
+    api/sys/cwd.cpp
+    api/sys/tmp_dir.cpp
+    api/sys/path_separator.cpp
+    api/sys/pid.cpp
+    api/sys/user.cpp
+    api/sys/detail/cpu.cpp
+    api/sys/detail/ram.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp

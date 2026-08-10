@@ -3,6 +3,7 @@
 #include "beez/plugin/lua/api/crypto.hpp"
 #include "beez/plugin/lua/api/env.hpp"
 #include "beez/plugin/lua/api/fs.hpp"
+#include "beez/plugin/lua/api/sys/sys_table.hpp"
 #include "beez/plugin/lua/settings/settings_overlay.hpp"
 
 #include <stdexcept>
@@ -31,6 +32,7 @@ void registerBeezApi(const std::shared_ptr<sol::state>& luaState,
     };
     beezTable["fs"] = bindFs(luaState, context);
     beezTable["crypto"] = bindCrypto(luaState, context);
+    beezTable["sys"] = bindSys(luaState, context);
     (*luaState)["beez"] = beezTable;
 }
 
