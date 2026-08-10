@@ -1,11 +1,12 @@
-#include "beez/core/glob_pattern.hpp"
-#include "beez/core/orchestrator.h"
-#include "beez/core/registry.h"
-#include "beez/core/run_options.hpp"
-#include "beez/core/step.hpp"
-#include "beez/core/step_order.hpp"
-#include "beez/plugin/executor.hpp"
-#include "beez/plugin/plugin_host.h"
+#include "beez/core/config/settings/run_options.hpp"
+#include "beez/core/glob/pattern.hpp"
+#include "beez/core/model/phase_request.hpp"
+#include "beez/core/model/step.hpp"
+#include "beez/core/orchestrator/orchestrator.hpp"
+#include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_order.hpp"
+#include "beez/plugin/contract/executor.hpp"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include "helpers/artifact_vault.hpp"
 #include "helpers/performance_workspace.hpp"
@@ -157,7 +158,11 @@ void runThroughputScenario(const beez::perf::PipelineScenario& scenario)
     beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
 
     const auto OrchestratorStart = std::chrono::steady_clock::now();
-    const auto PhaseResult = orchestrator.runPhase({.phase = "stress", .scopes = {"vault"}});
+    const beez::core::PhaseRequest PhaseRequestArg {
+        .phase = "stress",
+        .scopes = {"vault"},
+    };
+    const auto PhaseResult = orchestrator.runPhase(PhaseRequestArg);
     const auto OrchestratorEnd = std::chrono::steady_clock::now();
 
     ASSERT_TRUE(PhaseResult.hasValue());

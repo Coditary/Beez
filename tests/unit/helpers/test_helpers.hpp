@@ -1,10 +1,10 @@
 #pragma once
 
-#include "beez/core/registry.h"
-#include "beez/core/task.hpp"
-#include "beez/core/task_action.hpp"
-#include "beez/core/workflow.hpp"
-#include "beez/core/workflow_step.hpp"
+#include "beez/core/model/task.hpp"
+#include "beez/core/model/task_action.hpp"
+#include "beez/core/model/workflow.hpp"
+#include "beez/core/model/workflow_step.hpp"
+#include "beez/core/registry/registry.hpp"
 
 #include "test_step_config.hpp"
 
@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <optional>
 #include <string>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -93,26 +92,12 @@ inline std::optional<core::Workflow> requireWorkflow(const core::Registry& regis
     return Found;
 }
 
-inline void expectSequentialStep(const core::WorkflowStep& step,
-                                 const std::string& phase,
-                                 const std::string& scope)
+inline void expectWorkflowStep(const core::WorkflowStep& step,
+                               const std::string& phase,
+                               const std::string& scope)
 {
-    ASSERT_FALSE(step.isParallel());
-    ASSERT_EQ(step.invocations.size(), 1U);
-    EXPECT_EQ(step.invocations[0].phase, phase);
-    EXPECT_EQ(step.invocations[0].scope, scope);
-}
-
-inline void expectParallelStep(const core::WorkflowStep& step,
-                               const std::vector<std::pair<std::string, std::string>>& phases)
-{
-    ASSERT_TRUE(step.isParallel());
-    ASSERT_EQ(step.invocations.size(), phases.size());
-    for (std::size_t index = 0; index < phases.size(); ++index)
-    {
-        EXPECT_EQ(step.invocations[index].phase, phases[index].first);
-        EXPECT_EQ(step.invocations[index].scope, phases[index].second);
-    }
+    EXPECT_EQ(step.invocation.phase, phase);
+    EXPECT_EQ(step.invocation.scope, scope);
 }
 
 inline void expectStepConfigTag(const core::Registry& registry,

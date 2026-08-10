@@ -37,7 +37,7 @@ Refactor + quality assurance (make all, coverage ≥ 85%)
 | Area | Path | Purpose |
 |------|------|---------|
 | Headers | `include/beez/` | Public API for all modules |
-| Core | `src/core/` | Models, registry, orchestrator, plugin host |
+| Core | `src/core/` | Domain modules (model, registry, config, cache, …) — single `beez_core` library |
 | Lua plugin | `src/plugins/lua/` | DSL parsing (`build.lua`) |
 | Shell plugin | `src/plugins/shell/` | Command execution |
 | App | `src/app/` | CLI entry point |
@@ -47,7 +47,24 @@ Refactor + quality assurance (make all, coverage ≥ 85%)
 | Fuzzer | `tests/fuzz/` | Parser robustness (Lua DSL) |
 | QA reports | `report/` | Generated output from `make test`, `lint`, `analyze`, etc. |
 
-Modules are **flat** under `src/`, no nested `src/` or `include/` per module.
+Modules are **flat** under `src/` (no per-module CMake targets). Within `src/core/`, code is grouped by domain folder; `include/beez/core/` mirrors the same layout. Public headers use `.hpp`.
+
+### Core layout (`include/beez/core/` ↔ `src/core/`)
+
+| Domain | Headers | Sources | Tests (`tests/unit/core/`) |
+|--------|---------|---------|----------------------------|
+| `model/` | task, step, workflow, step_config, … | `model/` | `test_workflow.cpp` |
+| `util/` | expected, text_table, temp_directory | `util/` | `test_text_table.cpp`, `test_temp_directory.cpp` |
+| `registry/` | registry, step_order | `registry/` | `registry/` |
+| `config/` | `settings/`, `cache/`, `performance/`, `env/`, `ui/`, `schema/`, `paths/`, `report/` | `config/` | `config/{settings,cache,performance,env,ui,schema,paths,report}/` |
+| `cache/` | `storage/`, `fingerprint/`, `step/`, `success/` | `cache/` | `cache/{storage,fingerprint,step,success}/` |
+| `glob/` | pattern, expand, metadata_cache | `glob/` | `glob/` |
+| `env/` | env_file | `env/` | `env/` |
+| `runtime/` | context | `runtime/` | `runtime/` |
+| `execution/` | `concurrency/` (thread_pool, worker_pool), `process/` (stream_capture) | `execution/` | `execution/{concurrency,process}/` |
+| `orchestrator/` | `orchestrator`, `orchestrator_access`, `orchestrator_internal` (umbrella), `errors`, `types`, `run/` (`stats`, `lifecycle`, `entry`, `cache_flush`, `cache_skip`, `shell_execution`, `step_execution`, `step_count`, `progress`, `time`), `runners/` (`task`, `step`, `phase`, `workflow`, `shell`, `step_callback`) | `orchestrator/` | `orchestrator/` |
+
+Plugin host lives under `include/beez/plugin/` / `src/plugins/` (not in `core/`).
 
 ---
 
@@ -143,9 +160,23 @@ Only write production code to make failing tests pass (Green phase).
 - **Lua DSL** (`src/plugins/lua/lua_dsl.cpp`): Parse new DSL syntax and map to core models
 - **Shell executor** (`src/plugins/shell/`): Only when command execution changes
 
-#### 4c. Orchestrator / plugin host
+#### 4c. Orchestrator
 
-- Extend execution logic in `src/core/orchestrator.cpp` when the feature affects runtime behavior
+Orchestrator code is split into a thin public API and internal modules:
+
+| Area | Path | Purpose |
+|------|------|---------|
+| Public API | `orchestrator.hpp` | `run`, `runStep`, `runPhase`, stats, progress |
+| Internal access | `orchestrator_access.hpp` | `orchestrator_detail::Access` for private members |
+| Internal umbrella | `orchestrator_internal.hpp` | Includes all internal `run/` and `runners/` headers |
+| Infrastructure | `run/` | Lifecycle, entry scope, cache flush, step execution pipeline, progress logging, step counting |
+| Execution paths | `runners/` | Task, step, phase, workflow, shell, step callback |
+
+When extending:
+
+- **Runtime behavior** (new step types, phase logic, workflow changes) → `src/core/orchestrator/runners/`
+- **Cross-cutting concerns** (cache flush, logging, run scope) → `src/core/orchestrator/run/`
+- Internal modules use `orchestrator_detail::Access::` for private member access; public `Orchestrator` methods only in `orchestrator.cpp` entry points
 
 #### 4d. CLI
 
@@ -268,7 +299,7 @@ Copy this checklist into the feature description or PR:
 | TDD step | File | Change |
 |----------|------|--------|
 | Red | `tests/unit/plugins/lua/test_lua_dsl.cpp` | Test parsing with/without `phase` → fails |
-| Green | `include/beez/core/task.hpp` | Add `std::optional<std::string> phase` |
+| Green | `include/beez/core/model/task.hpp` | Add `std::optional<std::string> phase` |
 | Green | `src/plugins/lua/lua_dsl.cpp` | Parse `phase` field from Lua table → unit test passes |
 | Red | `tests/integration/plugins/test_lua_shell_pipeline.cpp` | Test phase task registration → fails |
 | Green | (same DSL changes) | Integration test passes |

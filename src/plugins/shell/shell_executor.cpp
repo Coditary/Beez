@@ -1,7 +1,7 @@
-#include "beez/plugin/shell/shell_executor.h"
+#include "beez/plugin/shell/shell_executor.hpp"
 
-#include "beez/core/context.h"
-#include "beez/plugin/plugin_host.h"
+#include "beez/core/runtime/context.hpp"
+#include "beez/plugin/host/plugin_host.hpp"
 
 #include <array>
 #include <cstddef>

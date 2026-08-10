@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/core/text_table.hpp"
+#include "beez/core/util/text_table.hpp"
 
 #include <chrono>
 #include <cstddef>

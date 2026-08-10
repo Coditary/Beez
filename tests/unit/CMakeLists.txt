@@ -5,49 +5,52 @@ find_package(TBB REQUIRED)
 add_executable(
     beez_tests
     version/test_version.cpp
-    logging/test_logger.cpp
-    logging/test_output_mode.cpp
-    logging/test_logging_settings.cpp
-    logging/test_progress_spinner.cpp
-    logging/test_worker_output_format.cpp
-    cli/test_cli_app.cpp
-    cli/test_list_formatter.cpp
-    cli/test_name_suggestion.cpp
-    cli/test_run_target.cpp
-    core/test_registry.cpp
-    core/test_content_hash.cpp
-    core/test_include_fingerprint.cpp
-    core/test_cache_options.cpp
-    core/test_cache_write_coordinator.cpp
-    core/test_config_schema.cpp
-    core/test_config_paths.cpp
+    logging/backends/test_recording_logger.cpp
+    logging/backends/test_spdlog_logger.cpp
+    logging/console/test_output_mode.cpp
+    logging/settings/test_logging_settings.cpp
+    logging/console/test_progress_spinner.cpp
+    logging/console/test_worker_output_format.cpp
+    logging/persistence/test_run_log_writer.cpp
+    cli/parsing/test_cli_parser.cpp
+    cli/parsing/test_phase_argument.cpp
+    cli/presentation/test_entity_table.cpp
+    cli/presentation/test_name_suggestion.cpp
+    cli/commands/test_run.cpp
+    core/registry/test_registry.cpp
+    core/config/cache/test_cache_options.cpp
+    core/cache/fingerprint/test_content_hash.cpp
+    core/cache/fingerprint/test_include_fingerprint.cpp
+    core/cache/storage/test_cache_write_coordinator.cpp
+    core/config/paths/test_config_paths.cpp
+    core/test_temp_directory.cpp
     core/test_text_table.cpp
-    core/test_cache_compress.cpp
-    core/test_cache_storage.cpp
-    core/test_glob_expand.cpp
-    core/test_glob_metadata_cache.cpp
-    core/test_step_cache.cpp
-    core/test_success_cache.cpp
-    core/test_thread_pool.cpp
-    core/test_worker_pool.cpp
-    core/test_env_file.cpp
-    core/test_glob_pattern.cpp
-    core/test_step_order.cpp
+    core/cache/storage/test_cache_compress.cpp
+    core/cache/storage/test_cache_storage.cpp
+    core/glob/test_expand.cpp
+    core/glob/test_metadata_cache.cpp
+    core/cache/step/test_step_cache.cpp
+    core/cache/success/test_success_cache.cpp
+    core/execution/concurrency/test_thread_pool.cpp
+    core/execution/concurrency/test_worker_pool.cpp
+    core/env/test_env_file.cpp
+    core/glob/test_pattern.cpp
+    core/registry/test_step_order.cpp
     core/test_workflow.cpp
-    core/test_context.cpp
-    core/test_settings.cpp
-    core/test_settings_report.cpp
-    core/test_orchestrator.cpp
-    core/test_stream_capture.cpp
-    core/test_progress_detail.cpp
-    core/test_phase_argument_parser.cpp
-    core/test_performance_options.cpp
-    core/test_ui_options.cpp
-    core/test_plugin_host.cpp
-    plugins/lua/test_lua_dsl.cpp
-    plugins/lua/test_lua_dsl_fields.cpp
-    plugins/lua/test_lua_settings.cpp
-    plugins/shell/test_shell_executor.cpp
+    core/runtime/test_context.cpp
+    core/config/settings/test_settings.cpp
+    core/config/report/test_settings_report.cpp
+    core/orchestrator/test_orchestrator.cpp
+    core/execution/process/test_stream_capture.cpp
+    core/config/ui/test_progress_detail.cpp
+    core/config/ui/test_ui_options.cpp
+    core/config/performance/test_performance_options.cpp
+    core/config/schema/test_config_schema.cpp
+    plugin/host/test_plugin_host.cpp
+    plugin/lua/test_lua_dsl.cpp
+    plugin/lua/test_lua_dsl_fields.cpp
+    plugin/lua/test_lua_settings.cpp
+    plugin/shell/test_shell_executor.cpp
 )
 
 target_link_libraries(

@@ -26,8 +26,8 @@ task("run", { { name = "s", config = { flag = true } } })'
 
 write_seed "workflow_valid_phase_scope" 'step({ name = "s", phase = "p", scope = "sc", run = "true" })
 workflow("run", { { phase = "p", scope = "sc" } })'
-write_seed "workflow_empty_parallel" 'workflow("run", { { parallel = {} } })'
-write_seed "workflow_parallel_missing_scope" 'workflow("run", { { parallel = { { phase = "p" } } } })'
+write_seed "workflow_parallel_rejected" 'workflow("run", { { parallel = { { phase = "p", scope = "sc" } } } })'
+write_seed "workflow_empty_parallel_rejected" 'workflow("run", { { parallel = {} } })'
 write_seed "workflow_rejects_numeric" 'workflow("run", { 42 })'
 
 write_seed "config_empty_table" 'beez.config({})

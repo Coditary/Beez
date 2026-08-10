@@ -131,7 +131,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `mutate` | ✓ | — | — | — | ~ | Unit only |
 | `order` declaration | ✓ | — | — | — | ~ | Unit only |
 | `workflow(name, sequential)` | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| `workflow(name, {parallel})` | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| `workflow(name, {parallel})` | ✗ | ✗ | ✗ | ✗ | ✗ | **Entfernt** |
 | `beez.config({...})` | ✓ | ~ | ✗ | ~ | ~ | Unit + 1 Integration case |
 | `beez.env(name)` | ✓ | ✗ | ✗ | ✓ | ~ | Unit + fuzz seed |
 | Phase-task shorthand `{phase, scope, run}` | ~ | ✗ | ✗ | ✓ | ~ | Negative in unit; fuzz seed only |
@@ -153,7 +153,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | Step-by-name (`-s`) | ✓ | ✓ | ✓ | ✓ |
 | Phase-Ausführung (`-p`) | ✓ | ✓ | ✓ | ✓ |
 | Workflow-Ausführung | ✓ | ✓ | ✓ | ✓ |
-| Parallel phases in workflow | ✓ | ✓ | ✓ | ✓ |
+| Parallel phases in workflow | ✗ | ✗ | ✗ | **Entfernt** |
 | Worker spawn/wait | ✓ | ✓ | — | ~ |
 | Step-Cache Hit/Miss | ✓ | ✓ | ✗ | ~ |
 | Success-Cache Hit/Miss | ✓ | ✓ | ✗ | ~ |
@@ -172,20 +172,20 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 
 | `src/` Modul | Unit-Test-Datei | Status |
 |--------------|-----------------|--------|
-| `core/registry.cpp` | `test_registry.cpp` | ✓ |
-| `core/orchestrator.cpp` | `test_orchestrator.cpp` | ✓ |
-| `core/settings.cpp` | `test_settings.cpp` | ✓ |
-| `core/config_schema.cpp` | `test_config_schema.cpp` | ✓ |
-| `core/cache_*.cpp` | mehrere `test_cache_*` | ✓ |
-| `core/ui_options.cpp` | `test_ui_options.cpp` | ✓ |
-| `core/performance_options.cpp` | `test_performance_options.cpp` | ~ |
-| `core/env_file.cpp` | `test_env_file.cpp` | ✓ |
-| `core/env_settings.cpp` | `test_env_settings` (in settings) | ~ |
-| `core/config_paths.cpp` | — | ✗ |
-| `core/step_config.cpp` | indirekt via DSL/cache | ~ |
-| `core/plugin_host.cpp` | `test_plugin_host.cpp` | ✓ |
-| `core/worker_pool.cpp` | `test_worker_pool.cpp` | ✓ |
-| `core/thread_pool.cpp` | `test_thread_pool.cpp` | ✓ |
+| `core/registry/` | `core/registry/test_registry.cpp` | ✓ |
+| `core/orchestrator/` | `core/orchestrator/test_orchestrator.cpp` | ✓ |
+| `core/config/settings.cpp` | `core/config/test_settings.cpp` | ✓ |
+| `core/config/config_schema.cpp` | `core/config/test_config_schema.cpp` | ✓ |
+| `core/cache/` | `core/cache/test_cache_*` | ✓ |
+| `core/config/ui_options.cpp` | `core/config/test_ui_options.cpp` | ✓ |
+| `core/config/performance_options.cpp` | `core/config/test_performance_options.cpp` | ~ |
+| `core/env/env_file.cpp` | `core/env/test_env_file.cpp` | ✓ |
+| `core/config/env_settings.cpp` | `test_env_settings` (in settings) | ~ |
+| `core/config/config_paths.cpp` | `core/config/test_config_paths.cpp` | ✓ |
+| `core/model/step_config.cpp` | indirekt via DSL/cache | ~ |
+| `plugins/host/plugin_host.cpp` | `plugin/host/test_plugin_host.cpp` | ✓ |
+| `core/execution/concurrency/worker_pool.cpp` | `core/execution/concurrency/test_worker_pool.cpp` | ✓ |
+| `core/execution/concurrency/thread_pool.cpp` | `core/execution/concurrency/test_thread_pool.cpp` | ✓ |
 | `plugins/lua/lua_dsl.cpp` | `test_lua_dsl.cpp` | ✓ |
 | `plugins/lua/lua_settings.cpp` | `test_lua_settings.cpp` | ✓ |
 | `plugins/lua/lua_step_config.cpp` | indirekt | ~ |
@@ -227,7 +227,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | Bereich | Corpus-Seeds | Dictionary | Status |
 |---------|--------------|------------|--------|
 | `task()` forms | `step.lua`, `task_with_step.lua`, `orphan_task.lua` | ✓ | ✓ |
-| `workflow()` forms | `workflow_sequential.lua`, `workflow_parallel.lua` | ✓ | ✓ |
+| `workflow()` forms | `workflow_sequential.lua` | ✓ | ✓ |
 | `step()` forms | `step.lua`, `step_config.lua`, `step_artifact_fields.lua` | ✓ | ✓ |
 | `beez.env()` | `beez_env.lua` | — | ~ |
 | `beez.config()` | — | — | ✗ |
@@ -294,7 +294,7 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `tests/system/scenarios/test_config_build_lua.cpp` | System | P1 |
 | `tests/system/scenarios/test_cache_usecases.cpp` | System | P1 |
 | `tests/system/scenarios/test_list_entities.cpp` | System | P0 |
-| `tests/unit/core/test_config_paths.cpp` | Unit | P3 |
+| `tests/unit/core/config/test_config_paths.cpp` | Unit | P3 |
 | `tests/unit/logging/test_recording_logger.cpp` | Unit | P3 |
 | `tests/system/fixtures/config-cache/` | Fixture | P1 |
 | `tests/system/fixtures/config-ui/` | Fixture | P1 |

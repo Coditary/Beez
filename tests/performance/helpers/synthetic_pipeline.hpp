@@ -2,7 +2,7 @@
 
 #include "artifact_vault.hpp"
 
-#include "beez/core/step.hpp"
+#include "beez/core/model/step.hpp"
 
 #include <algorithm>
 #include <cstddef>

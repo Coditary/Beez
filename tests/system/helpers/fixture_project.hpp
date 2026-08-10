@@ -1,5 +1,7 @@
 #pragma once
 
+#include "temp_directory.hpp"
+
 #include <atomic>
 #include <filesystem>
 #include <fstream>
@@ -27,7 +29,7 @@ class FixtureProject
         }
 
         const auto Counter = idCounter.fetch_add(1);
-        path_ = std::filesystem::temp_directory_path() /
+        path_ = beez::test::testTempDirectory() /
                 ("beez_system_" + fixtureName + "_" + std::to_string(Counter));
         std::filesystem::create_directories(path_);
         std::filesystem::copy(Source,

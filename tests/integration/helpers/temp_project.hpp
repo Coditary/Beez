@@ -1,5 +1,7 @@
 #pragma once
 
+#include "beez/core/util/temp_directory.hpp"
+
 #include <atomic>
 #include <filesystem>
 #include <fstream>
@@ -14,8 +16,7 @@ class TempProject
     TempProject()
     {
         const auto Counter = idCounter.fetch_add(1);
-        path_ = std::filesystem::temp_directory_path() /
-                ("beez_integration_" + std::to_string(Counter));
+        path_ = beez::core::systemTempDirectory() / ("beez_integration_" + std::to_string(Counter));
         std::filesystem::create_directories(path_);
     }
 

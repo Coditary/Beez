@@ -147,7 +147,7 @@ workflow("run", {})
         {"nested empty tables", R"(
 workflow("run", {
     {},
-    { parallel = {} },
+    { phase = "p", scope = "sc" },
 })
 )"},
         {"invalid task action type", R"(

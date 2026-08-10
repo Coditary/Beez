@@ -13,7 +13,7 @@ TEST(SystemWorkflowTest, BuildWorkflowRunsPhaseStepsInOrder)
     EXPECT_TRUE(Project.hasFile("compile.out"));
 }
 
-TEST(SystemWorkflowTest, CiWorkflowRunsParallelAndSequentialPhases)
+TEST(SystemWorkflowTest, CiWorkflowRunsSequentialPhases)
 {
     const beez::test::FixtureProject Project("workflows");
 

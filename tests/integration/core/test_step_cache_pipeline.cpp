@@ -1,5 +1,5 @@
-#include "beez/core/orchestrator.h"
-#include "beez/core/phase_request.hpp"
+#include "beez/core/model/phase_request.hpp"
+#include "beez/core/orchestrator/orchestrator.hpp"
 
 #include "helpers/beez_runtime.hpp"
 #include "helpers/temp_project.hpp"

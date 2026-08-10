@@ -10,7 +10,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 ## Features
 
 - **Lua DSL** (`build.lua`): steps, tasks, workflows, `order()`, per-step config
-- **Parallel execution** with worker threads (`-j`) and parallel workflow groups
+- **Parallel execution** with worker threads (`-j`) for independent steps within a phase+scope
 - **Caching**: step cache, success cache (Lua callbacks), configurable hash and compression
 - **Phases and scopes** for filtering and organizing work (`beez -p compile:code`)
 - **CLI**: list entities, dry-run, shell completion (bash/zsh)
@@ -116,7 +116,7 @@ make sanitize      # ASan + UBSan debug build + tests
 
 | Path | Purpose |
 |------|---------|
-| `src/core/` | Registry, orchestrator, cache, settings |
+| `src/core/` | Core domains: `model/`, `registry/`, `config/`, `cache/`, `glob/`, `env/`, `runtime/`, `execution/`, `orchestrator/` |
 | `src/plugins/lua/` | Lua DSL loader |
 | `src/plugins/shell/` | Shell command execution |
 | `src/cli/` | CLI parsing and completion |

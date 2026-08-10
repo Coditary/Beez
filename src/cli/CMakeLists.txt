@@ -21,8 +21,20 @@ add_custom_command(
 )
 
 add_library(
-    beez_cli STATIC cli_app.cpp install_completion.cpp list_formatter.cpp name_suggestion.cpp run_target.cpp
-                    "${COMPLETION_EMBEDDED_CPP}"
+    beez_cli STATIC
+    parsing/cli_parser.cpp
+    parsing/help_text.cpp
+    parsing/phase_argument.cpp
+    commands/run.cpp
+    commands/list.cpp
+    commands/config.cpp
+    commands/cache.cpp
+    presentation/entity_table.cpp
+    presentation/name_suggestion.cpp
+    completion/install_completion.cpp
+    session.cpp
+    runner.cpp
+    "${COMPLETION_EMBEDDED_CPP}"
 )
 
 target_include_directories(beez_cli PUBLIC ${CMAKE_SOURCE_DIR}/include)
