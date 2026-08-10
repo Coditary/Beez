@@ -4,6 +4,8 @@ add_library(
     api/beez_table.cpp
     api/env.cpp
     api/fs.cpp
+    api/crypto.cpp
+    api/detail/crypto_ops.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp

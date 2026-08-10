@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/api/beez_table.hpp"
 
+#include "beez/plugin/lua/api/crypto.hpp"
 #include "beez/plugin/lua/api/env.hpp"
 #include "beez/plugin/lua/api/fs.hpp"
 #include "beez/plugin/lua/settings/settings_overlay.hpp"
@@ -29,6 +30,7 @@ void registerBeezApi(const std::shared_ptr<sol::state>& luaState,
         buildSettings.applyEnvironment(context);
     };
     beezTable["fs"] = bindFs(luaState, context);
+    beezTable["crypto"] = bindCrypto(luaState, context);
     (*luaState)["beez"] = beezTable;
 }
 
