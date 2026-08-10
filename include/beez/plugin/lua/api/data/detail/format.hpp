@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -8,7 +9,7 @@
 namespace beez::plugin::lua::data_detail
 {
 
-enum class DataFormat
+enum class DataFormat : std::uint8_t
 {
     Json,
     Yaml,

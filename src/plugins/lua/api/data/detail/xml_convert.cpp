@@ -1,7 +1,6 @@
 #include "beez/plugin/lua/api/data/detail/xml_convert.hpp"
 
-#include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
-
+#include <cstddef>
 #include <iterator>
 #include <stdexcept>
 #include <string>
@@ -9,6 +8,9 @@
 
 #include <rapidxml/rapidxml.hpp>
 #include <rapidxml/rapidxml_print.hpp>
+
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-unnecessary-value-param,misc-const-correctness)
+#include <sol/sol.hpp>
 
 namespace beez::plugin::lua::data_detail
 {
@@ -37,7 +39,7 @@ namespace
 
     sol::table attributes = luaState.create_table();
     bool hasAttributes = false;
-    for (rapidxml::xml_attribute<>* attribute = node->first_attribute(); attribute != nullptr;
+    for (const rapidxml::xml_attribute<>* attribute = node->first_attribute(); attribute != nullptr;
          attribute = attribute->next_attribute())
     {
         attributes[attribute->name()] = attribute->value();
@@ -151,7 +153,7 @@ sol::table xmlStringToLua(sol::state_view luaState, const std::string& content)
     rapidxml::xml_document<> document;
     try
     {
-        document.parse<rapidxml::parse_default>(&buffer[0]);
+        document.parse<rapidxml::parse_default>(buffer.data());
     }
     catch (const rapidxml::parse_error& error)
     {
@@ -188,3 +190,4 @@ std::string luaTableToXmlString(const sol::table& table)
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-unnecessary-value-param,misc-const-correctness)

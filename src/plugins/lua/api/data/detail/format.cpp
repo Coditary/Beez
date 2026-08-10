@@ -2,8 +2,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace beez::plugin::lua::data_detail
 {
@@ -22,9 +25,9 @@ namespace
 
 }  // namespace
 
-DataFormat parseFormat(const std::string_view type)
+DataFormat parseFormat(const std::string_view Type)
 {
-    const std::string Normalized = toLower(std::string(type));
+    const std::string Normalized = toLower(std::string(Type));
     if (Normalized == "json")
     {
         return DataFormat::Json;
@@ -50,7 +53,7 @@ DataFormat parseFormat(const std::string_view type)
         return DataFormat::Toml;
     }
 
-    throw std::runtime_error("beez.data: unsupported format '" + std::string(type) +
+    throw std::runtime_error("beez.data: unsupported format '" + std::string(Type) +
                              "' (supported: json, yaml, xml, csv, toml)");
 }
 
@@ -85,9 +88,9 @@ std::optional<DataFormat> formatFromPath(const std::filesystem::path& path)
     return std::nullopt;
 }
 
-std::string formatToExtension(const DataFormat format)
+std::string formatToExtension(const DataFormat Format)
 {
-    switch (format)
+    switch (Format)
     {
     case DataFormat::Json:
         return ".json";

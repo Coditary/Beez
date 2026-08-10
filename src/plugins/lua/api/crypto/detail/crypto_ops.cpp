@@ -59,7 +59,8 @@ namespace
 {
     const std::string Normalized = toLower(std::string(algorithm));
     const auto Names = core::contentHashAlgorithmNames();
-    return std::any_of(Names.begin(), Names.end(), [&](const char* Name) { return Normalized == Name; });
+    return std::any_of(
+        Names.begin(), Names.end(), [&](const char* Name) { return Normalized == Name; });
 }
 
 [[nodiscard]] std::string hashFingerprint(std::string_view data, std::string_view algorithm)

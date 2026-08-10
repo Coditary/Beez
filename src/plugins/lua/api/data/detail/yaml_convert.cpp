@@ -3,8 +3,15 @@
 #include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 
 #include <charconv>
+#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <system_error>
+
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-unnecessary-value-param,cppcoreguidelines-pro-bounds-pointer-arithmetic,readability-identifier-naming,modernize-return-braced-init-list,misc-const-correctness)
+#include <ryml_std.hpp>
+#include <sol/sol.hpp>
 
 namespace beez::plugin::lua::data_detail
 {
@@ -12,20 +19,20 @@ namespace beez::plugin::lua::data_detail
 namespace
 {
 
-[[nodiscard]] std::string csubstrToString(const ryml::csubstr value)
+[[nodiscard]] std::string csubstrToString(const ryml::csubstr Value)
 {
-    return std::string(value.str, value.len);
+    return {Value.str, Value.len};
 }
 
-[[nodiscard]] bool parseBool(const ryml::csubstr value, bool& output)
+[[nodiscard]] bool parseBool(const ryml::csubstr Value, bool& output)
 {
-    if (value == "true")
+    if (Value == "true")
     {
         output = true;
         return true;
     }
 
-    if (value == "false")
+    if (Value == "false")
     {
         output = false;
         return true;
@@ -35,9 +42,9 @@ namespace
 }
 
 [[nodiscard]] bool
-parseNumber(const ryml::csubstr value, sol::state_view luaState, sol::object& output)
+parseNumber(const ryml::csubstr Value, sol::state_view luaState, sol::object& output)
 {
-    const std::string Text = csubstrToString(value);
+    const std::string Text = csubstrToString(Value);
     if (Text.find('.') != std::string::npos || Text.find('e') != std::string::npos ||
         Text.find('E') != std::string::npos)
     {
@@ -94,7 +101,7 @@ void luaTableToRyml(ryml::NodeRef node, const sol::table& table)
         node |= ryml::SEQ;
         for (std::size_t index = 1; index <= table.size(); ++index)
         {
-            ryml::NodeRef child = node.append_child();
+            const ryml::NodeRef child = node.append_child();
             appendLuaValue(child, table[index]);
         }
         return;
@@ -158,7 +165,7 @@ sol::object rymlNodeToLua(sol::state_view luaState, ryml::ConstNodeRef node)
     if (node.is_map())
     {
         sol::table objectTable = luaState.create_table();
-        for (ryml::ConstNodeRef child : node.children())
+        for (const ryml::ConstNodeRef child : node.children())
         {
             objectTable[csubstrToString(child.key())] = rymlNodeToLua(luaState, child);
         }
@@ -169,7 +176,7 @@ sol::object rymlNodeToLua(sol::state_view luaState, ryml::ConstNodeRef node)
     {
         sol::table arrayTable = luaState.create_table();
         std::size_t index = 1;
-        for (ryml::ConstNodeRef child : node.children())
+        for (const ryml::ConstNodeRef child : node.children())
         {
             arrayTable[index] = rymlNodeToLua(luaState, child);
             ++index;
@@ -183,7 +190,7 @@ sol::object rymlNodeToLua(sol::state_view luaState, ryml::ConstNodeRef node)
 std::string luaTableToYamlString(const sol::table& table)
 {
     ryml::Tree tree;
-    ryml::NodeRef root = tree.rootref();
+    const ryml::NodeRef root = tree.rootref();
     luaTableToRyml(root, table);
 
     std::string output;
@@ -192,3 +199,4 @@ std::string luaTableToYamlString(const sol::table& table)
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-unnecessary-value-param,cppcoreguidelines-pro-bounds-pointer-arithmetic,readability-identifier-naming,modernize-return-braced-init-list,misc-const-correctness)

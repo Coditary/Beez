@@ -6,14 +6,20 @@
 #include "beez/plugin/lua/api/data/detail/xml_convert.hpp"
 #include "beez/plugin/lua/api/data/detail/yaml_convert.hpp"
 
+#include <filesystem>
 #include <fstream>
+#include <ios>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <ryml.hpp>
 #include <ryml_std.hpp>
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,performance-unnecessary-value-param,readability-identifier-naming)
 namespace beez::plugin::lua::data_detail
 {
 
@@ -22,14 +28,14 @@ namespace
 
 [[nodiscard]] std::string readFile(const std::filesystem::path& path)
 {
-    std::ifstream stream(path, std::ios::binary);
-    if (!stream)
+    const std::ifstream Stream(path, std::ios::binary);
+    if (!Stream)
     {
         throw std::runtime_error("beez.data: failed to read file '" + path.string() + "'");
     }
 
     std::ostringstream buffer;
-    buffer << stream.rdbuf();
+    buffer << Stream.rdbuf();
     return buffer.str();
 }
 
@@ -108,9 +114,9 @@ DataFormat resolveFormat(const sol::object& options)
 }
 
 sol::table
-deserializeString(const sol::state& luaState, const std::string& content, const DataFormat format)
+deserializeString(sol::state_view luaState, const std::string& content, const DataFormat Format)
 {
-    switch (format)
+    switch (Format)
     {
     case DataFormat::Json:
     {
@@ -135,9 +141,9 @@ deserializeString(const sol::state& luaState, const std::string& content, const 
     throw std::runtime_error("beez.data: unsupported format");
 }
 
-std::string serializeString(const sol::table& table, const DataFormat format)
+std::string serializeString(const sol::table& table, const DataFormat Format)
 {
-    switch (format)
+    switch (Format)
     {
     case DataFormat::Json:
     {
@@ -160,15 +166,17 @@ std::string serializeString(const sol::table& table, const DataFormat format)
 
 void serializeFile(const std::filesystem::path& path,
                    const sol::table& table,
-                   const DataFormat format)
+                   const DataFormat Format)
 {
-    writeFile(path, serializeString(table, format));
+    writeFile(path, serializeString(table, Format));
 }
 
-sol::table
-deserializeFile(const sol::state& luaState, const std::filesystem::path& path, const DataFormat format)
+sol::table deserializeFile(sol::state_view luaState,
+                           const std::filesystem::path& path,
+                           const DataFormat Format)
 {
-    return deserializeString(luaState, readFile(path), format);
+    return deserializeString(luaState, readFile(path), Format);
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,performance-unnecessary-value-param,readability-identifier-naming)

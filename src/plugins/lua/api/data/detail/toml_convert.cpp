@@ -2,10 +2,14 @@
 
 #include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 
+#include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-unnecessary-value-param)
+#include <sol/sol.hpp>
 #include <toml++/toml.hpp>
 
 namespace beez::plugin::lua::data_detail
@@ -44,8 +48,13 @@ namespace
 
     if (node.is_string())
     {
-        const std::string_view Value = *node.value<std::string_view>();
-        return sol::make_object(luaState, std::string(Value));
+        const std::optional<std::string_view> Value = node.value<std::string_view>();
+        if (!Value.has_value())
+        {
+            return sol::lua_nil;
+        }
+
+        return sol::make_object(luaState, std::string(*Value));
     }
 
     if (node.is_integer())
@@ -201,3 +210,4 @@ std::string luaTableToTomlString(const sol::table& table)
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,performance-unnecessary-value-param)

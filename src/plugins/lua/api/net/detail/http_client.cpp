@@ -361,7 +361,9 @@ bool HttpClient::isOnline(const long timeoutSeconds)
         "https://www.google.com/generate_204",
     };
 
-    return std::any_of(std::begin(Probes), std::end(Probes), [&](const char* probe)
+    return std::any_of(std::begin(Probes),
+                       std::end(Probes),
+                       [&](const char* probe)
                        {
                            const PingResult Result = ping(probe, timeoutSeconds);
                            return Result.reachable && Result.statusCode >= 200 &&

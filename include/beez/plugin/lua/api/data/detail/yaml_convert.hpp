@@ -2,10 +2,8 @@
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 #include <ryml.hpp>
-#include <ryml_std.hpp>
 
 #include <string>
 
@@ -16,3 +14,4 @@ namespace beez::plugin::lua::data_detail
 [[nodiscard]] std::string luaTableToYamlString(const sol::table& table);
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

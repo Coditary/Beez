@@ -1,9 +1,14 @@
 #include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
+#include <memory>
 #include <stdexcept>
 #include <string>
+
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc,performance-unnecessary-value-param,readability-container-size-empty,readability-identifier-naming,modernize-return-braced-init-list)
+#include <sol/sol.hpp>
 
 namespace beez::plugin::lua::data_detail
 {
@@ -11,9 +16,9 @@ namespace beez::plugin::lua::data_detail
 namespace
 {
 
-[[nodiscard]] bool isWholeNumber(const double value)
+[[nodiscard]] bool isWholeNumber(const double Value)
 {
-    return std::floor(value) == value;
+    return std::floor(Value) == Value;
 }
 
 [[nodiscard]] yyjson_mut_val* luaObjectToYyjson(yyjson_mut_doc* document, const sol::object& object)
@@ -209,11 +214,21 @@ namespace
     throw std::runtime_error("beez.data: unsupported JSON value type for deserialization");
 }
 
+struct YyjsonStringDeleter
+{
+    void operator()(char* json) const
+    {
+        std::free(json);
+    }
+};
+
+using YyjsonStringPtr = std::unique_ptr<char, YyjsonStringDeleter>;
+
 }  // namespace
 
 bool isLuaArray(const sol::table& table)
 {
-    if (table.size() == 0)
+    if (table.empty())
     {
         return false;
     }
@@ -268,19 +283,17 @@ YyjsonMutDocPtr luaToYyjsonDocument(const sol::object& object)
     return document;
 }
 
-std::string yyjsonDocumentToString(const yyjson_mut_doc& document, const bool pretty)
+std::string yyjsonDocumentToString(const yyjson_mut_doc& document, const bool Pretty)
 {
     const yyjson_write_flag Flags =
-        pretty ? YYJSON_WRITE_PRETTY : static_cast<yyjson_write_flag>(0);
-    char* json = yyjson_mut_write(&document, Flags, nullptr);
+        Pretty ? YYJSON_WRITE_PRETTY : static_cast<yyjson_write_flag>(0);
+    const YyjsonStringPtr json(yyjson_mut_write(&document, Flags, nullptr));
     if (json == nullptr)
     {
         throw std::runtime_error("beez.data: failed to serialize JSON");
     }
 
-    const std::string Result(json);
-    std::free(json);
-    return Result;
+    return {json.get()};
 }
 
 YyjsonDocPtr parseYyjsonDocument(const std::string& content)
@@ -295,3 +308,4 @@ YyjsonDocPtr parseYyjsonDocument(const std::string& content)
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,misc-no-recursion,cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc,performance-unnecessary-value-param,readability-container-size-empty,readability-identifier-naming,modernize-return-braced-init-list)

@@ -2,12 +2,17 @@
 
 #include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 
+#include <cstddef>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <fast-cpp-csv-parser/csv.h>
+
+// NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-pro-bounds-pointer-arithmetic,readability-container-size-empty)
+#include <sol/sol.hpp>
 
 namespace beez::plugin::lua::data_detail
 {
@@ -63,7 +68,7 @@ namespace
 
 [[nodiscard]] bool isRowTable(const sol::table& table)
 {
-    if (table.size() == 0)
+    if (table.empty())
     {
         return false;
     }
@@ -92,7 +97,8 @@ sol::table csvStringToLua(sol::state_view luaState, const std::string& content)
 
     while (char* line = reader.next_line())
     {
-        if (line[0] == '\0' || line[0] == '#')
+        const std::string_view LineView(line);
+        if (LineView.empty() || LineView.front() == '#')
         {
             continue;
         }
@@ -155,3 +161,4 @@ std::string luaTableToCsvString(const sol::table& table)
 }
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,cppcoreguidelines-pro-bounds-pointer-arithmetic,readability-container-size-empty)

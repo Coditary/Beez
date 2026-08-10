@@ -4,10 +4,8 @@
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
-// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
 #include <filesystem>
-#include <memory>
 #include <optional>
 #include <string>
 
@@ -20,11 +18,12 @@ namespace beez::plugin::lua::data_detail
 [[nodiscard]] DataFormat resolveFormat(const sol::object& options);
 
 [[nodiscard]] sol::table
-deserializeString(const sol::state& luaState, const std::string& content, DataFormat format);
+deserializeString(sol::state_view luaState, const std::string& content, DataFormat format);
 [[nodiscard]] std::string serializeString(const sol::table& table, DataFormat format);
 
 void serializeFile(const std::filesystem::path& path, const sol::table& table, DataFormat format);
 [[nodiscard]] sol::table
-deserializeFile(const sol::state& luaState, const std::filesystem::path& path, DataFormat format);
+deserializeFile(sol::state_view luaState, const std::filesystem::path& path, DataFormat format);
 
 }  // namespace beez::plugin::lua::data_detail
+// NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
