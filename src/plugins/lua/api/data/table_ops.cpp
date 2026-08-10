@@ -1,4 +1,4 @@
-#include "beez/plugin/lua/api/data/detail/table_ops.hpp"
+#include "beez/plugin/lua/api/data/table_ops.hpp"
 
 #include <sstream>
 #include <stdexcept>

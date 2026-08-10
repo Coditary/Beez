@@ -1,4 +1,4 @@
-#include "beez/plugin/lua/api/data/detail/schema.hpp"
+#include "beez/plugin/lua/api/data/schema.hpp"
 
 #include <format>
 #include <string>

@@ -1,4 +1,4 @@
-#include "beez/plugin/lua/api/data/deserialize_file.hpp"
+#include "beez/plugin/lua/api/data/serialize_file.hpp"
 
 #include "beez/plugin/lua/api/data/detail/codec.hpp"
 #include "beez/plugin/lua/api/fs/detail/operations.hpp"
@@ -11,16 +11,14 @@
 namespace beez::plugin::lua
 {
 
-void bindDeserializeFile(sol::table& dataTable,
-                         const std::shared_ptr<sol::state>& luaState,
-                         const core::Context& context)
+void bindSerializeFile(sol::table& dataTable, const core::Context& context)
 {
-    dataTable["deserialize_file"] =
-        [luaState, &context](const std::string& path, const sol::object& options) -> sol::table
+    dataTable["serialize_file"] =
+        [&context](const std::string& path, const sol::table& table, const sol::object& options)
     {
         const std::filesystem::path Resolved = fs_detail::resolvedPath(context, path);
         const data_detail::DataFormat Format = data_detail::resolveFormat(Resolved, options);
-        return data_detail::deserializeFile(*luaState, Resolved, Format);
+        data_detail::serializeFile(Resolved, table, Format);
     };
 }
 

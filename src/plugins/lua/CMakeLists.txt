@@ -48,6 +48,17 @@ add_library(
     api/date/detail/time_point.cpp
     api/data/data_table.cpp
     api/data/deserialize_file.cpp
+    api/data/serialize_file.cpp
+    api/data/deserialize_string.cpp
+    api/data/serialize_string.cpp
+    api/data/merge.cpp
+    api/data/clone.cpp
+    api/data/get.cpp
+    api/data/set.cpp
+    api/data/diff.cpp
+    api/data/validate.cpp
+    api/data/table_ops.cpp
+    api/data/schema.cpp
     api/data/detail/format.cpp
     api/data/detail/lua_convert.cpp
     api/data/detail/yaml_convert.cpp
@@ -55,8 +66,6 @@ add_library(
     api/data/detail/csv_convert.cpp
     api/data/detail/toml_convert.cpp
     api/data/detail/codec.cpp
-    api/data/detail/table_ops.cpp
-    api/data/detail/schema.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp

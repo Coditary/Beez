@@ -6,13 +6,9 @@
 #include <sol/sol.hpp>
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
-#include <memory>
-
 namespace beez::plugin::lua
 {
 
-void bindDeserializeFile(sol::table& dataTable,
-                         const std::shared_ptr<sol::state>& luaState,
-                         const core::Context& context);
+void bindSerializeFile(sol::table& dataTable, const core::Context& context);
 
 }  // namespace beez::plugin::lua

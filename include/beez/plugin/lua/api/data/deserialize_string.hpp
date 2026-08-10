@@ -1,7 +1,5 @@
 #pragma once
 
-#include "beez/core/runtime/context.hpp"
-
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
@@ -11,8 +9,6 @@
 namespace beez::plugin::lua
 {
 
-void bindDeserializeFile(sol::table& dataTable,
-                         const std::shared_ptr<sol::state>& luaState,
-                         const core::Context& context);
+void bindDeserializeString(sol::table& dataTable, const std::shared_ptr<sol::state>& luaState);
 
 }  // namespace beez::plugin::lua
