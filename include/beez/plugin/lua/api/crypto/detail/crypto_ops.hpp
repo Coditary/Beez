@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-namespace beez::plugin::lua::api_detail
+namespace beez::plugin::lua::crypto_detail
 {
 
 [[nodiscard]] std::vector<std::string> supportedHashAlgorithms();
@@ -21,4 +21,4 @@ namespace beez::plugin::lua::api_detail
 [[nodiscard]] std::string
 encodeWithKey(std::string_view data, std::string_view key, std::string_view hashAlgorithm);
 
-}  // namespace beez::plugin::lua::api_detail
+}  // namespace beez::plugin::lua::crypto_detail

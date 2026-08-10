@@ -1,4 +1,4 @@
-#include "beez/plugin/lua/api/detail/crypto_ops.hpp"
+#include "beez/plugin/lua/api/crypto/detail/crypto_ops.hpp"
 
 #include "beez/core/cache/fingerprint/content_hash.hpp"
 #include "beez/core/config/cache/cache_options.hpp"
@@ -17,7 +17,7 @@
 #include <string_view>
 #include <vector>
 
-namespace beez::plugin::lua::api_detail
+namespace beez::plugin::lua::crypto_detail
 {
 
 namespace
@@ -1040,4 +1040,4 @@ std::string encodeWithKey(const std::string_view data,
     return bytesToHex(Digest.data(), Digest.size());
 }
 
-}  // namespace beez::plugin::lua::api_detail
+}  // namespace beez::plugin::lua::crypto_detail

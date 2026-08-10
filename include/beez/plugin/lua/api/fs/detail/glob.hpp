@@ -13,7 +13,7 @@
 #include <sol/sol.hpp>
 // NOLINTEND(misc-include-cleaner)
 
-namespace beez::plugin::lua::api_detail
+namespace beez::plugin::lua::fs_detail
 {
 
 inline sol::table globPatternsToTable(const std::shared_ptr<sol::state>& luaState,
@@ -33,4 +33,4 @@ inline sol::table globPatternsToTable(const std::shared_ptr<sol::state>& luaStat
     return files;
 }
 
-}  // namespace beez::plugin::lua::api_detail
+}  // namespace beez::plugin::lua::fs_detail

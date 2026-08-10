@@ -1,8 +1,8 @@
 #include "beez/plugin/lua/api/beez_table.hpp"
 
-#include "beez/plugin/lua/api/crypto.hpp"
-#include "beez/plugin/lua/api/env.hpp"
-#include "beez/plugin/lua/api/fs.hpp"
+#include "beez/plugin/lua/api/crypto/crypto_table.hpp"
+#include "beez/plugin/lua/api/env/env.hpp"
+#include "beez/plugin/lua/api/fs/fs_table.hpp"
 #include "beez/plugin/lua/api/sys/sys_table.hpp"
 #include "beez/plugin/lua/settings/settings_overlay.hpp"
 

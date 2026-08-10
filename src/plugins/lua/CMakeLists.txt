@@ -2,10 +2,23 @@ add_library(
     beez_plugin_lua STATIC
     lua_dsl.cpp
     api/beez_table.cpp
-    api/env.cpp
-    api/fs.cpp
-    api/crypto.cpp
-    api/detail/crypto_ops.cpp
+    api/env/env.cpp
+    api/fs/fs_table.cpp
+    api/fs/glob.cpp
+    api/fs/exists.cpp
+    api/fs/copy.cpp
+    api/fs/remove.cpp
+    api/fs/join.cpp
+    api/fs/detail/operations.cpp
+    api/crypto/crypto_table.cpp
+    api/crypto/is_hash.cpp
+    api/crypto/is_encoding_algo.cpp
+    api/crypto/list_hash_algo.cpp
+    api/crypto/list_encode_algo.cpp
+    api/crypto/hash_string.cpp
+    api/crypto/hash_file.cpp
+    api/crypto/encode.cpp
+    api/crypto/detail/crypto_ops.cpp
     api/sys/sys_table.cpp
     api/sys/cpu_cores.cpp
     api/sys/cpu_threads.cpp

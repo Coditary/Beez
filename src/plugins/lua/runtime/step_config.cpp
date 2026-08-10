@@ -2,7 +2,7 @@
 
 #include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/execution/concurrency/worker_pool.hpp"
-#include "beez/plugin/lua/api/detail/glob.hpp"
+#include "beez/plugin/lua/api/fs/detail/glob.hpp"
 #include "beez/plugin/lua/runtime/worker_parser.hpp"
 
 #include <algorithm>
@@ -216,7 +216,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                 }
             });
 
-        return api_detail::globPatternsToTable(luaState,
+        return fs_detail::globPatternsToTable(luaState,
                                                patterns,
                                                context.projectRoot(),
                                                context.globMetadataCache());
