@@ -58,6 +58,7 @@ add_executable(
     plugin/lua/api/data/test_data.cpp
     plugin/lua/api/net/test_net.cpp
     plugin/lua/api/archive/test_archive.cpp
+    plugin/lua/api/text/test_text.cpp
     plugin/shell/test_shell_executor.cpp
 )
 

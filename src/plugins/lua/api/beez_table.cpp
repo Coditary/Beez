@@ -8,6 +8,7 @@
 #include "beez/plugin/lua/api/env/env.hpp"
 #include "beez/plugin/lua/api/fs/fs_table.hpp"
 #include "beez/plugin/lua/api/sys/sys_table.hpp"
+#include "beez/plugin/lua/api/text/text_table.hpp"
 #include "beez/plugin/lua/api/time/time_table.hpp"
 #include "beez/plugin/lua/settings/settings_overlay.hpp"
 
@@ -43,6 +44,7 @@ void registerBeezApi(const std::shared_ptr<sol::state>& luaState,
     beezTable["data"] = bindData(luaState, context);
     beezTable["net"] = bindNet(luaState, context);
     beezTable["archive"] = bindArchive(luaState, context);
+    beezTable["text"] = bindText(luaState);
     (*luaState)["beez"] = beezTable;
 }
 

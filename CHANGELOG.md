@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Text API (`beez.text`)
+
+- `contains` / `starts_with` / `ends_with` — string predicates
+- `to_lowercase` / `to_uppercase` / `to_case` — case transforms (title case for `to_case`)
+- `replace` / `replace_all` — substring replacement
+- `split` / `join` / `trim` — split/join and whitespace trim
+- `regex_match` / `regex_replace` — ECMAScript regex helpers
+- `template` — placeholder wrapper (returns template unchanged until engine is integrated)
+- `diff` — line-based text diff (`equal` / `insert` / `delete` chunks)
+- [`docs/text-api.md`](docs/text-api.md)
+
 #### Archive API (`beez.archive`)
 
 - `compress` / `extract` — create and unpack zip/tar/tar.gz/tar.bz2/tar.xz archives (libarchive)

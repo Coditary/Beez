@@ -71,6 +71,22 @@ add_library(
     api/net/detail/headers.cpp
     api/archive/archive_table.cpp
     api/archive/detail/archive_ops.cpp
+    api/text/text_table.cpp
+    api/text/contains.cpp
+    api/text/starts_with.cpp
+    api/text/ends_with.cpp
+    api/text/to_lowercase.cpp
+    api/text/to_uppercase.cpp
+    api/text/to_case.cpp
+    api/text/replace.cpp
+    api/text/replace_all.cpp
+    api/text/split.cpp
+    api/text/trim.cpp
+    api/text/join.cpp
+    api/text/regex_match.cpp
+    api/text/regex_replace.cpp
+    api/text/template_string.cpp
+    api/text/diff.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
