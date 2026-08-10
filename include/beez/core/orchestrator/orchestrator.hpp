@@ -12,6 +12,7 @@
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/lifecycle.hpp"
+#include "beez/core/orchestrator/run/step_execution.hpp"
 #include "beez/core/orchestrator/run/stats.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
@@ -106,6 +107,18 @@ class Orchestrator
                                       OrchestratorError error);
     [[nodiscard]] Expected<int, OrchestratorError> runStepInstance(const Step& step,
                                                                    ProgressState& progress);
+    [[nodiscard]] step_execution_detail::StepCachePrepareResult
+    prepareStepCache(const Step& step,
+                     ProgressState& progress,
+                     const std::string& category,
+                     const std::string& detail);
+    [[nodiscard]] Expected<int, OrchestratorError> executeStepBody(const Step& step,
+                                                                   ProgressState& progress,
+                                                                   const std::string& category,
+                                                                   const std::string& detail);
+    void finalizeStepCache(const step_execution_detail::StepCacheSession& session,
+                           const Step& step,
+                           double durationSeconds);
     [[nodiscard]] Expected<int, OrchestratorError>
     runPhaseInvocation(const PhaseInvocation& invocation, ProgressState& progress);
     [[nodiscard]] Expected<int, OrchestratorError> runShellCommand(const std::string& command,

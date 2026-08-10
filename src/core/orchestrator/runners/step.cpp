@@ -1,9 +1,5 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
-#include "orchestrator_internal.hpp"
 
-#include "beez/core/cache/step/output_tracker.hpp"
-#include "beez/core/cache/step/step_cache.hpp"
-#include "beez/core/config/performance/performance_options.hpp"
 #include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
@@ -12,83 +8,33 @@
 #include "beez/core/util/expected.hpp"
 
 #include <chrono>
-#include <optional>
 #include <string>
 
 namespace beez::core
 {
 
-// NOLINTNEXTLINE(readability-function-cognitive-complexity) -- step cache + callback branches
 Expected<int, OrchestratorError> Orchestrator::runStepInstance(const Step& step,
                                                                ProgressState& progress)
 {
     const std::string Detail = stepProgressDetail(step);
     const std::string Category = step.phase.empty() ? "step" : step.phase;
 
-    const StepCache* stepCache = runOptions_.stepCache;
-    std::optional<OutputTracker> outputTracker;
-    if (stepCache != nullptr && isStepCacheable(step) && !runOptions_.dryRun)
-    {
-        const auto Lookup = stepCache->lookup(step, context_.projectRoot(), step.config);
-        if (Lookup.skip)
-        {
-            recordStepCacheSkip(*this, step, Lookup, progress, Category, Detail);
-            return 0;
-        }
-
-        outputTracker.emplace(
-            context_.projectRoot(), stepCache->matcher(), context_.globMetadataCache());
-        outputTracker->begin(step);
-    }
-
-    const auto StepStart = std::chrono::steady_clock::now();
-    const auto StoreCachedOutputs = [&](const double DurationSeconds)
-    {
-        if (outputTracker.has_value() && stepCache != nullptr)
-        {
-            stepCache->store(step,
-                             context_.projectRoot(),
-                             step.config,
-                             outputTracker->end(step),
-                             DurationSeconds);
-        }
-    };
-
-    if (const auto& command = step.shellRun)
-    {
-        const auto Result =
-            runShellCommand(*command, {.category = Category, .detail = Detail}, progress, {});
-        if (!Result)
-        {
-            return Result.error();
-        }
-
-        StoreCachedOutputs(elapsedSeconds(StepStart));
-
-        return Result.value();
-    }
-
-    logProgress(progress, Category, Detail, false, 0.0, false);
-
-    if (runOptions_.dryRun)
+    const auto Prepare = prepareStepCache(step, progress, Category, Detail);
+    if (Prepare.skipped)
     {
         return 0;
     }
 
-    if (step.hasCallback())
+    const auto StepStart = std::chrono::steady_clock::now();
+    const auto Result = executeStepBody(step, progress, Category, Detail);
+    if (!Result)
     {
-        const auto Result = step_callback_detail::run(*this, step);
-        if (!Result)
-        {
-            return Result.error();
-        }
-
-        StoreCachedOutputs(elapsedSeconds(StepStart));
-
-        return Result.value();
+        return Result.error();
     }
 
-    return OrchestratorError::ExecutionFailed;
+    finalizeStepCache(Prepare.session, step, elapsedSeconds(StepStart));
+
+    return Result.value();
 }
 
 Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
