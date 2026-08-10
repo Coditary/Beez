@@ -1,7 +1,7 @@
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/config/cache/cache_options.hpp"
-#include "beez/core/execution/thread_pool.hpp"
-#include "beez/core/execution/worker_pool.hpp"
+#include "beez/core/execution/concurrency/thread_pool.hpp"
+#include "beez/core/execution/concurrency/worker_pool.hpp"
 #include "beez/core/glob/pattern.hpp"
 
 #include "helpers/temp_project.hpp"

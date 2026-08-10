@@ -1,6 +1,6 @@
 #include "beez/core/orchestrator/orchestrator.hpp"
 
-#include "beez/core/execution/progress_detail.hpp"
+#include "beez/core/config/ui/progress_detail.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
 #include "beez/core/model/task.hpp"

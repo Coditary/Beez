@@ -184,8 +184,8 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `core/config/config_paths.cpp` | `core/config/test_config_paths.cpp` | ✓ |
 | `core/model/step_config.cpp` | indirekt via DSL/cache | ~ |
 | `plugins/host/plugin_host.cpp` | `plugin/host/test_plugin_host.cpp` | ✓ |
-| `core/execution/worker_pool.cpp` | `core/execution/test_worker_pool.cpp` | ✓ |
-| `core/execution/thread_pool.cpp` | `core/execution/test_thread_pool.cpp` | ✓ |
+| `core/execution/concurrency/worker_pool.cpp` | `core/execution/concurrency/test_worker_pool.cpp` | ✓ |
+| `core/execution/concurrency/thread_pool.cpp` | `core/execution/concurrency/test_thread_pool.cpp` | ✓ |
 | `plugins/lua/lua_dsl.cpp` | `test_lua_dsl.cpp` | ✓ |
 | `plugins/lua/lua_settings.cpp` | `test_lua_settings.cpp` | ✓ |
 | `plugins/lua/lua_step_config.cpp` | indirekt | ~ |

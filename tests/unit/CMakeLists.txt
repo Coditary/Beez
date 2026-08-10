@@ -13,6 +13,7 @@ add_executable(
     logging/console/test_worker_output_format.cpp
     logging/persistence/test_run_log_writer.cpp
     cli/parsing/test_cli_parser.cpp
+    cli/parsing/test_phase_argument.cpp
     cli/presentation/test_entity_table.cpp
     cli/presentation/test_name_suggestion.cpp
     cli/commands/test_run.cpp
@@ -30,8 +31,8 @@ add_executable(
     core/glob/test_metadata_cache.cpp
     core/cache/step/test_step_cache.cpp
     core/cache/success/test_success_cache.cpp
-    core/execution/test_thread_pool.cpp
-    core/execution/test_worker_pool.cpp
+    core/execution/concurrency/test_thread_pool.cpp
+    core/execution/concurrency/test_worker_pool.cpp
     core/env/test_env_file.cpp
     core/glob/test_pattern.cpp
     core/registry/test_step_order.cpp
@@ -40,11 +41,10 @@ add_executable(
     core/config/settings/test_settings.cpp
     core/config/report/test_settings_report.cpp
     core/orchestrator/test_orchestrator.cpp
-    core/execution/test_stream_capture.cpp
-    core/execution/test_progress_detail.cpp
-    core/execution/test_phase_argument_parser.cpp
-    core/config/performance/test_performance_options.cpp
+    core/execution/process/test_stream_capture.cpp
+    core/config/ui/test_progress_detail.cpp
     core/config/ui/test_ui_options.cpp
+    core/config/performance/test_performance_options.cpp
     core/config/schema/test_config_schema.cpp
     plugin/host/test_plugin_host.cpp
     plugin/lua/test_lua_dsl.cpp

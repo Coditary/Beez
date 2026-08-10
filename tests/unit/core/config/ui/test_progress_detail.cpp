@@ -1,4 +1,4 @@
-#include "beez/core/execution/progress_detail.hpp"
+#include "beez/core/config/ui/progress_detail.hpp"
 
 #include "beez/core/model/step.hpp"
 

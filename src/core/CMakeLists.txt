@@ -28,6 +28,7 @@ add_library(
     config/report/ui_rows.cpp
     config/schema/config_schema.cpp
     config/settings/settings.cpp
+    config/ui/progress_detail.cpp
     config/ui/progress_format.cpp
     config/ui/resolve.cpp
     config/ui/run_summary.cpp
@@ -47,11 +48,9 @@ add_library(
     orchestrator/step_runner.cpp
     orchestrator/phase_runner.cpp
     orchestrator/workflow_runner.cpp
-    execution/phase_argument_parser.cpp
-    execution/progress_detail.cpp
-    execution/stream_capture.cpp
-    execution/thread_pool.cpp
-    execution/worker_pool.cpp
+    execution/concurrency/thread_pool.cpp
+    execution/concurrency/worker_pool.cpp
+    execution/process/stream_capture.cpp
     model/step_config.cpp
     util/text_table.cpp
     util/temp_directory.cpp

@@ -61,7 +61,7 @@ Modules are **flat** under `src/` (no per-module CMake targets). Within `src/cor
 | `glob/` | pattern, expand, metadata_cache | `glob/` | `glob/` |
 | `env/` | env_file | `env/` | `env/` |
 | `runtime/` | context | `runtime/` | `runtime/` |
-| `execution/` | worker_pool, thread_pool, stream_capture, … | `execution/` | `execution/` |
+| `execution/` | `concurrency/` (thread_pool, worker_pool), `process/` (stream_capture) | `execution/` | `execution/{concurrency,process}/` |
 | `orchestrator/` | orchestrator, run_stats | `orchestrator/` | `orchestrator/` |
 
 Plugin host lives under `include/beez/plugin/` / `src/plugins/` (not in `core/`).

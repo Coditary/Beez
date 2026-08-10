@@ -24,6 +24,7 @@ add_library(
     beez_cli STATIC
     parsing/cli_parser.cpp
     parsing/help_text.cpp
+    parsing/phase_argument.cpp
     commands/run.cpp
     commands/list.cpp
     commands/config.cpp
