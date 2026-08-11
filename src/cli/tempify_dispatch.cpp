@@ -6,9 +6,11 @@
 
 #include <support/Diagnostic.h>
 
+#include <algorithm>
+#include <cstddef>
 #include <exception>
 #include <iostream>
-#include <sstream>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -26,31 +28,25 @@ bool wantsJsonErrors(const std::vector<std::string>& args)
         return false;
     }
 
-    if (args[0] == "list" || args[0] == "info" || args[0] == "doctor" || args[0] == "validate" ||
-        args[0] == "inspect" || args[0] == "lint" || args[0] == "refresh" || args[0] == "reapply" ||
-        args[0] == "test")
+    const std::string& command = args.front();
+
+    if (command == "list" || command == "info" || command == "doctor" || command == "validate" ||
+        command == "inspect" || command == "lint" || command == "refresh" || command == "reapply" ||
+        command == "test")
     {
-        for (std::size_t index = 1; index < args.size(); ++index)
-        {
-            if (args[index] == "--json")
-            {
-                return true;
-            }
-        }
+        return std::ranges::any_of(std::next(args.begin()),
+                                   args.end(),
+                                   [](const std::string& arg) { return arg == "--json"; });
     }
 
-    if (args[0] != "list" && args[0] != "info" && args[0] != "doctor" && args[0] != "validate" &&
-        args[0] != "inspect" && args[0] != "lint" && args[0] != "refresh" && args[0] != "test" &&
-        args[0] != "completion" && args[0] != "process" && args[0] != "reapply" && args[0] != "-p" &&
-        args[0] != "--prebyte" && args[0] != "help")
+    if (command != "list" && command != "info" && command != "doctor" && command != "validate" &&
+        command != "inspect" && command != "lint" && command != "refresh" && command != "test" &&
+        command != "completion" && command != "process" && command != "reapply" &&
+        command != "-p" && command != "--prebyte" && command != "help")
     {
-        for (std::size_t index = 1; index < args.size(); ++index)
-        {
-            if (args[index] == "--json")
-            {
-                return true;
-            }
-        }
+        return std::ranges::any_of(std::next(args.begin()),
+                                   args.end(),
+                                   [](const std::string& arg) { return arg == "--json"; });
     }
 
     return false;
@@ -60,9 +56,9 @@ std::string jsonEscape(const std::string& value)
 {
     std::string escaped;
     escaped.reserve(value.size());
-    for (const char character : value)
+    for (const char Character : value)
     {
-        switch (character)
+        switch (Character)
         {
         case '\\':
             escaped += "\\\\";
@@ -80,7 +76,7 @@ std::string jsonEscape(const std::string& value)
             escaped += "\\t";
             break;
         default:
-            escaped.push_back(character);
+            escaped.push_back(Character);
             break;
         }
     }
@@ -91,8 +87,8 @@ void writeJsonError(const std::string& code, const std::string& message)
 {
     std::cerr << "{\n"
               << "  \"status\": \"error\",\n"
-              << "  \"code\": \"" << code << "\",\n"
-              << "  \"message\": \"" << jsonEscape(message) << "\"\n"
+              << R"(  "code": ")" << code << R"(",)" << '\n'
+              << R"(  "message": ")" << jsonEscape(message) << R"(")" << '\n'
               << "}\n";
 }
 
@@ -105,6 +101,7 @@ bool isInitMode(int argc, const char* const* argv)
         return false;
     }
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     return std::string_view(argv[1]) == "--init";
 }
 
@@ -129,8 +126,8 @@ int runTempifyInitMode(const std::vector<std::string>& args)
 {
     try
     {
-        const tempify::TempifyApp app;
-        return app.run(args);
+        const tempify::TempifyApp App;
+        return App.run(args);
     }
     catch (const tempify::ReapplyBlockedError& error)
     {

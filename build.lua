@@ -379,7 +379,7 @@ step({
 configure_step("qa:lint", {
     compdb = BUILD_TREE,
     header_filter = "(src|include|tests)/.*",
-    lint_rev = "2",
+    lint_rev = "3",
     patterns = CXX_SOURCE_PATTERNS,
     cmake_patterns = CMAKE_FILE_PATTERNS,
 })
@@ -434,7 +434,7 @@ step({
 configure_step("qa:analyze-tidy", {
     compdb = BUILD_TREE,
     header_filter = "(src|include|tests)/.*",
-    analyze_rev = "1",
+    analyze_rev = "2",
     patterns = SRC_CPP_PATTERNS,
 })
 
@@ -493,7 +493,7 @@ step({
 configure_step("qa:security-tidy", {
     compdb = BUILD_TREE,
     header_filter = "(src|include|tests)/.*",
-    security_rev = "1",
+    security_rev = "2",
     patterns = SECURITY_SOURCE_PATTERNS,
 })
 

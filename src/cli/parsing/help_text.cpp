@@ -28,7 +28,8 @@ std::string helpText()
     stream << "Beez - Build Everything Easy (" << version::VersionString << ")\n\n";
     stream << "Usage: beez [target] [core-options] [-- user-options]\n\n";
     stream << "Options:\n";
-    stream << "      --init         Run Tempify template scaffolding (beez --init <tempify-args>)\n";
+    stream
+        << "      --init         Run Tempify template scaffolding (beez --init <tempify-args>)\n";
     stream << "  -h, --help       Display this help and exit\n";
     stream << "  -v, --version    Display the installed Beez and Lua version\n";
     stream << "      --verbose    Enable verbose logging (Ninja-style)\n";

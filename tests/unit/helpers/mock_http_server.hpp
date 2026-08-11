@@ -130,7 +130,7 @@ class MockHttpServer
     {
         std::string request;
         std::array<char, ReadBufferSize> buffer {};
-        while (request.find("\r\n\r\n") == std::string::npos)
+        while (!request.contains("\r\n\r\n"))
         {
             const ssize_t Read = ::recv(clientFd, buffer.data(), buffer.size(), 0);
             if (Read <= 0)

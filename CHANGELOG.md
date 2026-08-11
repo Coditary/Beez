@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`beez --init`** — embeds [Tempify](https://github.com/Coditary/Tempify) for project scaffolding; all arguments after `--init` are passed to Tempify unchanged (`beez --init list`, `beez --init basic_cpp my-app`, …). Beez flags such as `-p` / `--list` apply only when `--init` is not the first argument.
+- **`beez --init`** — embeds [Tempify](https://github.com/Coditary/Tempify) (fetched at configure time, pinned tag `v0.1.2`) for project scaffolding; all arguments after `--init` are passed to Tempify unchanged (`beez --init list`, `beez --init basic_cpp my-app`, …). Beez flags such as `-p` / `--list` apply only when `--init` is not the first argument. Override with `-DTEMPIFY_SOURCE_DIR=` for a local Tempify tree.
 
 #### Lua API overview
 

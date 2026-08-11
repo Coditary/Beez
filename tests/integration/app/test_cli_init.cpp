@@ -8,7 +8,8 @@
 TEST(CliInitTest, InitHelpShowsTempifyBanner)
 {
     const beez::test::TempProject Project;
-    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"--init", "--help"});
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--init", "--help"});
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("Tempify - Local Template Generator"), std::string::npos);
     EXPECT_NE(Result.output.find("tempify <command> [args...] [options]"), std::string::npos);
@@ -25,7 +26,8 @@ TEST(CliInitTest, InitWithoutArgsShowsTempifyHelp)
 TEST(CliInitTest, InitVersionShowsTempifyVersion)
 {
     const beez::test::TempProject Project;
-    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"--init", "--version"});
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--init", "--version"});
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("0.1.2"), std::string::npos);
 }
@@ -33,7 +35,8 @@ TEST(CliInitTest, InitVersionShowsTempifyVersion)
 TEST(CliInitTest, InitPrebyteFlagDoesNotTriggerBeezPhaseParsing)
 {
     const beez::test::TempProject Project;
-    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"--init", "-p", "--help"});
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--init", "-p", "--help"});
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("Embedded Prebyte Passthrough"), std::string::npos);
 }
