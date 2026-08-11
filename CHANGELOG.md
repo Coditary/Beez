@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`beez --init`** — embeds [Tempify](https://github.com/Coditary/Tempify) for project scaffolding; all arguments after `--init` are passed to Tempify unchanged (`beez --init list`, `beez --init basic_cpp my-app`, …). Beez flags such as `-p` / `--list` apply only when `--init` is not the first argument.
+
 #### Lua API overview
 
 - Global `beez` table in `build.lua` and Lua step callbacks, with modular namespaces documented in [`docs/lua-api-overview.md`](docs/lua-api-overview.md)
