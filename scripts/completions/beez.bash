@@ -60,7 +60,7 @@ _beez_targets() {
 _beez_core_flags() {
     printf '%s\n' \
         --help --version --verbose --dry-run --no-cache --show-config --config-options \
-        --clean-cache --update --threads --list --phase --step --install-completion \
+        --clean-cache --update --install --threads --list --phase --step --install-completion \
         -h -v -j -p -s
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "beez/core/config/settings/settings.hpp"
+#include "beez/core/reqpack/types.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
 #include "beez/plugin/contract/plugin.hpp"
 
@@ -26,6 +27,8 @@ class LuaDslLoader : public IDslLoader
     void releaseState();
 
     [[nodiscard]] const core::BeezSettings& buildSettings() const;
+
+    [[nodiscard]] const core::ReqPackManifest& reqpackManifest() const;
 
   private:
     struct Impl;

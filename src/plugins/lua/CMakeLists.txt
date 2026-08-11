@@ -110,6 +110,7 @@ add_library(
     dsl/workflow_parser.cpp
     dsl/registry_validation.cpp
     dsl/dsl_binder.cpp
+    dsl/reqpack_parser.cpp
     settings/lua_settings.cpp
     settings/settings_overlay.cpp
     runtime/step_config.cpp

@@ -43,6 +43,7 @@ std::string helpText()
     stream << "      --config-options [PATH]  List config keys or allowed values for PATH\n";
     stream << "      --clean-cache Remove .cache/ before running\n";
     stream << "      --update      Apply cache storage updates for the active configuration\n";
+    stream << "      --install     Install reqpack dependencies declared in build.lua\n";
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
     stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";

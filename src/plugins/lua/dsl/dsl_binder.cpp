@@ -3,6 +3,7 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
+#include "beez/plugin/lua/dsl/reqpack_parser.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
@@ -100,7 +101,8 @@ class DslBinder
 void registerDsl(const std::shared_ptr<sol::state>& luaState,
                  core::Registry& registry,
                  const core::Context& context,
-                 core::BeezSettings& buildSettings)
+                 core::BeezSettings& buildSettings,
+                 core::ReqPackManifest& reqpackManifest)
 {
     const std::weak_ptr<sol::state> WeakState = luaState;
     auto binder = std::make_shared<DslBinder>(&registry, WeakState);
@@ -120,6 +122,9 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["order"] = [binder](const std::string& before, const std::string& after)
     { binder->order(before, after); };
+
+    (*luaState)["reqpack"] = [&reqpackManifest](const sol::table& table)
+    { reqpackManifest = parseReqPackTable(table); };
 
     registerBeezApi(luaState, context, buildSettings);
 }

@@ -81,7 +81,7 @@ _beez_first_argument() {
 
     flags=(
         --help --version --verbose --dry-run --no-cache --show-config --config-options
-        --clean-cache --update --threads --list --phase --step --install-completion
+        --clean-cache --update --install --threads --list --phase --step --install-completion
         -h -v -j -p -s
     )
     _describe -t flags 'beez options' flags
@@ -109,6 +109,7 @@ _beez() {
         '--config-options[List config keys or allowed values]:config path:->config_options' \
         '--clean-cache[Remove .cache/ before running]' \
         '--update[Apply cache storage updates for the active configuration]' \
+        '--install[Install reqpack dependencies from build.lua]' \
         '--install-completion[Register shell tab completion]' \
         '(-j --threads)-j[Maximum worker threads]' \
         '(-j --threads)--threads[Maximum worker threads]:threads:' \

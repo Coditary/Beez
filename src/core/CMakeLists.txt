@@ -1,5 +1,6 @@
 find_package(TBB REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(yyjson REQUIRED)
 
 add_library(
     beez_core STATIC
@@ -52,6 +53,10 @@ add_library(
     orchestrator/run/step_execution.cpp
     orchestrator/run/step_count.cpp
     orchestrator/run/progress.cpp
+    reqpack/format.cpp
+    reqpack/cache.cpp
+    reqpack/types.cpp
+    reqpack/installer.cpp
     orchestrator/runners/shell.cpp
     orchestrator/runners/task.cpp
     orchestrator/runners/step.cpp
@@ -71,6 +76,6 @@ target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/step)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/storage)
 
-target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB)
+target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB yyjson::yyjson)
 
 target_compile_features(beez_core PUBLIC cxx_std_20)

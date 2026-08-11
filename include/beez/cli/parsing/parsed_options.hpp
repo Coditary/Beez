@@ -31,6 +31,7 @@ struct ParsedOptions
     bool cleanCache = false;
     bool updateCache = false;
     bool installCompletion = false;
+    bool installDependencies = false;
     bool showConfig = false;
     bool configOptions = false;
     bool completeConfigOptions = false;

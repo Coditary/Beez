@@ -3,6 +3,7 @@
 #include "beez/cli/commands/cache.hpp"
 #include "beez/cli/commands/config.hpp"
 #include "beez/cli/commands/list.hpp"
+#include "beez/cli/commands/reqpack.hpp"
 #include "beez/cli/completion/install_completion.hpp"
 #include "beez/cli/parsing/cli_parser.hpp"
 #include "beez/cli/parsing/help_text.hpp"
@@ -57,7 +58,8 @@ void writeErrorUnlessSilent(bool silentRun, const std::function<void()>& writeEr
 {
     return options.target.has_value() || options.phaseRequest.has_value() ||
            options.stepName.has_value() || options.listKind.has_value() || options.cleanCache ||
-           options.updateCache || options.showConfig || options.configOptions;
+           options.updateCache || options.showConfig || options.configOptions ||
+           options.installDependencies;
 }
 
 [[nodiscard]] bool shouldExecuteTarget(const ParsedOptions& options)
@@ -119,6 +121,16 @@ int run(int argc, const char* argv[])
         }
 
         mergeProjectSettings(project, Parsed.options);
+
+        if (Parsed.options.installDependencies)
+        {
+            return runReqPackInstallCommand(project, Parsed.options).value_or(0);
+        }
+
+        if (const auto ReqPackError = ensureReqPackDependencies(project, Parsed.options))
+        {
+            return *ReqPackError;
+        }
 
         const core::SettingsReportInput ReportInput {
             .globalSettings = project.globalSettings,

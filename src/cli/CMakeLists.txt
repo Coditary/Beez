@@ -29,6 +29,7 @@ add_library(
     commands/list.cpp
     commands/config.cpp
     commands/cache.cpp
+    commands/reqpack.cpp
     presentation/entity_table.cpp
     presentation/name_suggestion.cpp
     completion/install_completion.cpp

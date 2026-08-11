@@ -39,6 +39,9 @@ add_executable(
     core/test_workflow.cpp
     core/runtime/test_context.cpp
     core/config/settings/test_settings.cpp
+    core/reqpack/test_reqpack_format.cpp
+    core/reqpack/test_reqpack_cache.cpp
+    core/reqpack/test_reqpack_installer.cpp
     core/config/report/test_settings_report.cpp
     core/orchestrator/test_orchestrator.cpp
     core/execution/process/test_stream_capture.cpp
@@ -49,6 +52,7 @@ add_executable(
     plugin/host/test_plugin_host.cpp
     plugin/lua/test_lua_dsl.cpp
     plugin/lua/test_lua_dsl_fields.cpp
+    plugin/lua/test_reqpack_dsl.cpp
     plugin/lua/test_lua_settings.cpp
     plugin/lua/api/test_fs.cpp
     plugin/lua/api/test_crypto.cpp

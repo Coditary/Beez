@@ -285,6 +285,15 @@ TEST(CliParserTest, ParsesInstallCompletionFlag)
     EXPECT_TRUE(Result.options.installCompletion);
 }
 
+TEST(CliParserTest, ParsesInstallFlag)
+{
+    const std::vector<std::string> Args = {"beez", "--install"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.installDependencies);
+}
+
 TEST(CliParserTest, ParsesLogFileFlag)
 {
     const std::vector<std::string> Args = {"beez", "build", "--log-file", "/tmp/beez-run.log"};

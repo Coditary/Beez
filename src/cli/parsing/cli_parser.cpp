@@ -41,6 +41,7 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     bool cleanCache = false;
     bool updateCache = false;
     bool installCompletion = false;
+    bool installDependencies = false;
     bool showConfig = false;
     bool noLogFile = false;
     std::string logFile;
@@ -82,6 +83,7 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     app.add_flag("--install-completion",
                  installCompletion,
                  "Register shell tab completion in ~/.zshrc / ~/.bashrc");
+    app.add_flag("--install", installDependencies, "Install reqpack dependencies from build.lua");
     std::size_t threadCount = 0;
     app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
         ->check(CLI::Range(1, MaxThreadCount));
@@ -141,11 +143,12 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
         options.userOptions.assign(Separator + 1, remaining.end());
     }
 
-    const bool HasRunTarget =
-        options.target.has_value() || options.phaseRequest.has_value() ||
-        options.stepName.has_value() || options.listKind.has_value() || cleanCache || updateCache ||
-        installCompletion || showConfig || app.count("--config-options") > 0 ||
-        app.count("--complete-config-options") > 0 || app.count("--dump-completion") > 0;
+    const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
+                              options.stepName.has_value() || options.listKind.has_value() ||
+                              cleanCache || updateCache || installCompletion || showConfig ||
+                              app.count("--config-options") > 0 ||
+                              app.count("--complete-config-options") > 0 ||
+                              app.count("--dump-completion") > 0 || installDependencies;
 
     if (!HasRunTarget)
     {
@@ -155,6 +158,7 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     options.cleanCache = cleanCache;
     options.updateCache = updateCache;
     options.installCompletion = installCompletion;
+    options.installDependencies = installDependencies;
     options.showConfig = showConfig;
     options.configOptions = app.count("--config-options") > 0;
     options.configOptionsPath = configOptionsPath;
