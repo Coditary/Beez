@@ -52,12 +52,11 @@ step({
         end
 
         local job = ctx:spawn({
-            name = "mark_run",
             cmd = "echo run >> lint_runs.txt",
         })
-        local code = ctx:wait(job)
-        if code ~= 0 then
-            return code
+        local result = ctx:wait(job, { exitCode = true })
+        if result.exitCode ~= 0 then
+            return result.exitCode
         end
 
         ctx.cache_file_success(file)
@@ -92,22 +91,20 @@ step({
     run = function(ctx)
         local misses = ctx.get_cache_misses()
         local job = ctx:spawn({
-            name = "write_misses",
             cmd = "printf '%s\n' '" .. tostring(#misses) .. "' > miss_count.txt",
         })
-        local code = ctx:wait(job)
-        if code ~= 0 then
-            return code
+        local result = ctx:wait(job, { exitCode = true })
+        if result.exitCode ~= 0 then
+            return result.exitCode
         end
 
         for _, entry in ipairs(misses) do
             local append = ctx:spawn({
-                name = "append_miss",
                 cmd = "echo " .. entry .. " >> miss_count.txt",
             })
-            code = ctx:wait(append)
-            if code ~= 0 then
-                return code
+            result = ctx:wait(append, { exitCode = true })
+            if result.exitCode ~= 0 then
+                return result.exitCode
             end
         end
 

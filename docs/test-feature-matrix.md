@@ -1,63 +1,63 @@
-# Test Feature Matrix (Phase 1 Inventar)
+# Test Feature Matrix (Phase 1 Inventory)
 
-Stand: 2026-08-09. Basis für die umfängliche Test-Suite (Phasen 2–7).
-Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = Unit / Integration / System / Fuzz
+As of 2026-08-09. Basis for the comprehensive test suite (phases 2–7).
+Legend: **✓** covered · **~** partial · **✗** missing · **U/I/S/F** = Unit / Integration / System / Fuzz
 
 ---
 
-## 1. CLI-Flags
+## 1. CLI flags
 
-| Flag | Unit | Integration | System | Fuzz | Status | Bestehende Tests / Lücke |
-|------|------|-------------|--------|------|--------|--------------------------|
+| Flag | Unit | Integration | System | Fuzz | Status | Existing tests / gap |
+|------|------|-------------|--------|------|--------|----------------------|
 | `-h, --help` | ✓ | ✓ | ✓ | — | ✓ | `test_cli_app`, `test_cli`, `test_errors` |
-| `-v, --version` | ✓ | ✓ | — | — | ~ | Parse + subprocess; kein System-Szenario |
-| `--verbose` | ✓ | ✓ | — | — | ~ | `test_cli` VerboseMode; kein System |
-| `--silent` | ✓ | ✗ | ✗ | — | ~ | Parse + `test_settings` CliOverrides; **kein Runtime-Subprocess** |
-| `--error` | ✓ | ✗ | ✗ | — | ~ | Parse + `test_settings`; **kein Runtime-Subprocess** |
-| `--dry-run` | ✓ | ✓ | — | — | ~ | `test_cli` DryRun; Orchestrator unit; kein System |
-| `--no-cache` | ✓ | ~ | ✗ | — | ~ | Parse + Orchestrator in-code (`enableCache=false`); **kein CLI `--no-cache` subprocess** |
-| `--show-config` | ✓ | ✗ | ✗ | — | ~ | Nur Parse in `test_cli_app`; **kein Output-Test** |
-| `--config-options` | ✓ | ~ | — | — | ~ | Parse + `test_config_schema` + bash-completion script; **kein CLI-Output-Test** |
+| `-v, --version` | ✓ | ✓ | — | — | ~ | Parse + subprocess; no system scenario |
+| `--verbose` | ✓ | ✓ | — | — | ~ | `test_cli` VerboseMode; no system |
+| `--silent` | ✓ | ✗ | ✗ | — | ~ | Parse + `test_settings` CliOverrides; **no runtime subprocess** |
+| `--error` | ✓ | ✗ | ✗ | — | ~ | Parse + `test_settings`; **no runtime subprocess** |
+| `--dry-run` | ✓ | ✓ | — | — | ~ | `test_cli` DryRun; orchestrator unit; no system |
+| `--no-cache` | ✓ | ~ | ✗ | — | ~ | Parse + orchestrator in-code (`enableCache=false`); **no CLI `--no-cache` subprocess** |
+| `--show-config` | ✓ | ✗ | ✗ | — | ~ | Parse only in `test_cli_app`; **no output test** |
+| `--config-options` | ✓ | ~ | — | — | ~ | Parse + `test_config_schema` + bash-completion script; **no CLI output test** |
 | `--complete-config-options` | ✓ | ~ | — | — | ~ | Parse + bash-completion script |
-| `--dump-completion` | ✓ | ~ | — | — | ~ | Parse + Script-Content-Check; **kein Runtime-Dump-Test** |
-| `--clean-cache` | ✓ | ✓ | — | — | ~ | `test_cli` CleanCache; kein System |
-| `--update` | ✓ | ✗ | ✗ | — | ~ | Nur Parse; **kein Cache-Update-Runtime-Test** |
+| `--dump-completion` | ✓ | ~ | — | — | ~ | Parse + script content check; **no runtime dump test** |
+| `--clean-cache` | ✓ | ✓ | — | — | ~ | `test_cli` CleanCache; no system |
+| `--update` | ✓ | ✗ | ✗ | — | ~ | Parse only; **no cache-update runtime test** |
 | `--install-completion` | ✓ | ✓ | — | — | ~ | `test_install_completion`, standalone script |
-| `-j, --threads` | ✓ | ✗ | ✗ | — | ~ | Parse + Reject-Zero; **kein Effekt-Test** |
+| `-j, --threads` | ✓ | ✗ | ✗ | — | ~ | Parse + reject-zero; **no effect test** |
 | `--list tasks` | ✓ | ✓ | — | — | ~ | `test_cli` ListTasks |
-| `--list workflows` | ✗ | ✗ | ✗ | — | ✗ | **Fehlt komplett** |
-| `--list steps` | ✗ | ✗ | ✗ | — | ✗ | **Fehlt komplett** |
-| `--list phases` | ✓ | ✗ | ✗ | — | ~ | Nur Parse in `test_cli_app` |
-| `-p, --phase` | ✓ | ✓ | ✓ | — | ✓ | Colon + bracket syntax in Integration + System |
-| `-s, --step` | ~ | ✓ | ✓ | — | ✓ | Integration + System; kein dedizierter Unit-Parse-Test |
-| `--log-file` | ✗ | ✗ | ✗ | — | ✗ | **Fehlt komplett** (Parse + Runtime) |
-| `--no-log-file` | ✗ | ✗ | ✗ | — | ✗ | **Fehlt komplett** |
+| `--list workflows` | ✗ | ✗ | ✗ | — | ✗ | **Missing entirely** |
+| `--list steps` | ✗ | ✗ | ✗ | — | ✗ | **Missing entirely** |
+| `--list phases` | ✓ | ✗ | ✗ | — | ~ | Parse only in `test_cli_app` |
+| `-p, --phase` | ✓ | ✓ | ✓ | — | ✓ | Colon + bracket syntax in integration + system |
+| `-s, --step` | ~ | ✓ | ✓ | — | ✓ | Integration + system; no dedicated unit parse test |
+| `--log-file` | ✗ | ✗ | ✗ | — | ✗ | **Missing entirely** (parse + runtime) |
+| `--no-log-file` | ✗ | ✗ | ✗ | — | ✗ | **Missing entirely** |
 | `--` user options | ✓ | ✗ | ✗ | — | ~ | Parse only in `test_cli_app` |
-| Flag-Konflikte (`--silent --verbose`) | ✓ | ✗ | — | — | ~ | Unit RejectsConflictingOutputFlags |
+| Flag conflicts (`--silent --verbose`) | ✓ | ✗ | — | — | ~ | Unit RejectsConflictingOutputFlags |
 
-**CLI-Zusammenfassung:** 8 Flags ohne Runtime-Integration-Test · 3 Flags komplett fehlend (`--log-file`, `--no-log-file`, `--list workflows/steps`)
+**CLI summary:** 8 flags without runtime integration test · 3 flags missing entirely (`--log-file`, `--no-log-file`, `--list workflows/steps`)
 
 ---
 
-## 2. `beez.config()` / Config-Schema
+## 2. `beez.config()` / config schema
 
 ### 2.1 `performance`
 
 | Key | Unit | Integration | System | Status | Notes |
 |-----|------|-------------|--------|--------|-------|
-| `max_threads` | ✓ | ✗ | ✗ | ~ | `test_lua_settings`, `test_settings`; kein Runtime |
+| `max_threads` | ✓ | ✗ | ✗ | ~ | `test_lua_settings`, `test_settings`; no runtime |
 | `cache_write_strategy` | ✓ | ✗ | ✗ | ~ | `test_performance_options`, schema completions |
 | `cache_fs_metadata` | ~ | ✗ | ✗ | ~ | Schema completions only |
-| `use_mmap_for_hashing` | ✗ | ✗ | ✗ | ✗ | Schema definiert, **kein Test** |
+| `use_mmap_for_hashing` | ✗ | ✗ | ✗ | ✗ | Defined in schema, **no test** |
 | `mmap_hashing_min_bytes` | ✓ | ✗ | ✗ | ~ | `test_performance_options` NormalizesMmapThreshold |
-| `optimize_gc_for_throughput` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `pin_threads_to_cores` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
+| `optimize_gc_for_throughput` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `pin_threads_to_cores` | ✗ | ✗ | ✗ | ✗ | **Missing** |
 
 ### 2.2 `cache`
 
 | Key | Unit | Integration | System | Status | Notes |
 |-----|------|-------------|--------|--------|-------|
-| `path` | ✓ | ~ | ✗ | ~ | `test_settings`, `test_lua_settings`; kein System-Fixture |
+| `path` | ✓ | ~ | ✗ | ~ | `test_settings`, `test_lua_settings`; no system fixture |
 | `enabled` | ✓ | ~ | ✗ | ~ | Unit + pipeline in-code disable |
 | `protect` | ✓ | ✗ | ✗ | ~ | `test_lua_settings` |
 | `hash.algorithm` | ✓ | ~ | ✗ | ~ | `test_cache_options`, pipeline |
@@ -74,48 +74,48 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `colors` | ✓ | ✗ | ✗ | ~ | `test_ui_options` |
 | `truecolor` | ✓ | ✗ | ✗ | ~ | `test_ui_options` |
 | `theme` / `themes` | ✓ | ✗ | ✗ | ~ | `test_ui_options` (+ RejectsUnknownTheme) |
-| `icons` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
+| `icons` | ✗ | ✗ | ✗ | ✗ | **Missing** |
 | `animation.progress` | ✓ | ✗ | ✗ | ~ | `test_ui_options`, `test_lua_settings` |
 | `animation.indicator` | ✓ | ✗ | ✗ | ~ | `test_ui_options` |
-| `animation.indicator_spin_interval` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `log_level` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `hide_cache_hits` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `prefix` / `prefix_format` | ✓ | ~ | ✗ | ~ | `test_ui_options` + Integration clean-mode worker test |
+| `animation.indicator_spin_interval` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `log_level` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `hide_cache_hits` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `prefix` / `prefix_format` | ✓ | ~ | ✗ | ~ | `test_ui_options` + integration clean-mode worker test |
 | `show_time_saved` | ✓ | ✗ | ✗ | ~ | `test_ui_options` FormatsFullyCachedRunEnd |
 | `summary` | ✓ | ✗ | ✗ | ~ | `test_ui_options` |
 | `logging.run_log` | ~ | ✗ | ✗ | ~ | `test_logging_settings` (run_log_writer) |
-| `logging.run_log_file` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `logging.log_steps` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `logging.workers` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `logging.workers_dir` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
+| `logging.run_log_file` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `logging.log_steps` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `logging.workers` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `logging.workers_dir` | ✗ | ✗ | ✗ | ✗ | **Missing** |
 
 ### 2.4 `env`
 
 | Key | Unit | Integration | System | Status | Notes |
 |-----|------|-------------|--------|--------|-------|
-| `load_dotenv` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `dotenv_overrides_system` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `files` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
+| `load_dotenv` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `dotenv_overrides_system` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `files` | ✗ | ✗ | ✗ | ✗ | **Missing** |
 | `vars` | ✓ | ✗ | ✗ | ~ | `test_lua_settings`, `test_settings` ApplyEnvironment |
 | `hash_vars` | ~ | ✗ | ✗ | ~ | `test_env_settings` ResolveUsesDefaultsForHashLists |
-| `ignore_vars_for_hashing` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
-| `mask_secrets` | ✗ | ✗ | ✗ | ✗ | **Fehlt** |
+| `ignore_vars_for_hashing` | ✗ | ✗ | ✗ | ✗ | **Missing** |
+| `mask_secrets` | ✗ | ✗ | ✗ | ✗ | **Missing** |
 
-### 2.5 Config-Merge & CLI-Override
+### 2.5 Config merge and CLI override
 
-| Szenario | Unit | Integration | System | Status |
+| Scenario | Unit | Integration | System | Status |
 |----------|------|-------------|--------|--------|
-| Global → Project (`beez.config`) merge | ✓ | ✗ | ✗ | ~ |
-| CLI überschreibt Project (`--no-cache`, `--verbose`) | ✓ | ✗ | ✗ | ~ |
-| `--show-config` zeigt merged Config | ✗ | ✗ | ✗ | ✗ |
-| `build.lua` Config wirkt auf Cache-Pfad | ✓ | ~ | ✗ | ~ |
-| `build.lua` Config wirkt auf UI-Output | ✗ | ~ | ✗ | ~ |
+| Global → project (`beez.config`) merge | ✓ | ✗ | ✗ | ~ |
+| CLI overrides project (`--no-cache`, `--verbose`) | ✓ | ✗ | ✗ | ~ |
+| `--show-config` shows merged config | ✗ | ✗ | ✗ | ✗ |
+| `build.lua` config affects cache path | ✓ | ~ | ✗ | ~ |
+| `build.lua` config affects UI output | ✗ | ~ | ✗ | ~ |
 
-**Config-Zusammenfassung:** ~25 Keys ohne direkten Test · kein System-Fixture für Config-heavy Projects
+**Config summary:** ~25 keys without a direct test · no system fixture for config-heavy projects
 
 ---
 
-## 3. DSL-Elemente (`build.lua`)
+## 3. DSL elements (`build.lua`)
 
 | Element | Unit | Integration | System | Fuzz | Status | Notes |
 |---------|------|-------------|--------|------|--------|-------|
@@ -124,41 +124,42 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `task(name, {step refs})` | ✓ | ✓ | ✓ | — | ✓ | |
 | `step({name, phase, scope, run})` | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | `step({description})` | ✓ | ✓ | — | — | ~ | |
-| `step({run = function})` | ✓ | ✓ | — | — | ~ | spawn/wait in Integration |
+| `step({run = function})` | ✓ | ✓ | — | — | ~ | spawn/wait; see [`worker-api.md`](worker-api.md) |
 | `configure_step` before/after registration | ✓ | ✓ | — | — | ✓ | |
 | Step inline config | ✓ | ✓ | — | — | ✓ | |
 | `artifacts` / `inputs` / `outputs` | ✓ | ✓ | — | ✓ | ✓ | Cache pipelines |
 | `mutate` | ✓ | — | — | — | ~ | Unit only |
 | `order` declaration | ✓ | — | — | — | ~ | Unit only |
 | `workflow(name, sequential)` | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| `workflow(name, {parallel})` | ✗ | ✗ | ✗ | ✗ | ✗ | **Entfernt** |
-| `beez.config({...})` | ✓ | ~ | ✗ | ~ | ~ | Unit + 1 Integration case |
+| `workflow(name, {parallel})` | ✗ | ✗ | ✗ | ✗ | ✗ | **Removed** |
+| `beez.config({...})` | ✓ | ~ | ✗ | ~ | ~ | Unit + 1 integration case |
 | `beez.env(name)` | ✓ | ✗ | ✗ | ✓ | ~ | Unit + fuzz seed |
 | Phase-task shorthand `{phase, scope, run}` | ~ | ✗ | ✗ | ✓ | ~ | Negative in unit; fuzz seed only |
-| `depends_on` (Task) | ✗ | ✗ | ✗ | — | ✗ | **Nicht implementiert** (docs example) |
-| Duplikat-Name (task/step) | ✗ | ✗ | ✗ | — | ✗ | **Fehlt** |
-| Leere Task-Tabelle | ✗ | ✗ | ✗ | — | ✗ | **Fehlt** |
-| Step ohne `name`/`phase`/`run` | ~ | ✗ | ✗ | — | ~ | Teilweise negative (missing run) |
-| Ungültiger `run`-Typ | ✗ | ✗ | ✗ | — | ✗ | **Fehlt** |
-| Syntax-Fehler | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| Orphan task (kein Workflow) | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| `depends_on` (task) | ✗ | ✗ | ✗ | — | ✗ | **Not implemented** (docs example) |
+| Duplicate name (task/step) | ✗ | ✗ | ✗ | — | ✗ | **Missing** |
+| Empty task table | ✗ | ✗ | ✗ | — | ✗ | **Missing** |
+| Step without `name`/`phase`/`run` | ~ | ✗ | ✗ | — | ~ | Partial negative (missing run) |
+| Invalid `run` type | ✗ | ✗ | ✗ | — | ✗ | **Missing** |
+| Syntax error | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Orphan task (no workflow) | ✓ | ✓ | ✓ | ✓ | ✓ | |
 
 ---
 
-## 4. Runtime / Orchestrierung
+## 4. Runtime / orchestration
 
-| Verhalten | Unit | Integration | System | Status |
-|-----------|------|-------------|--------|--------|
-| Task-Ausführung (Shell) | ✓ | ✓ | ✓ | ✓ |
+| Behavior | Unit | Integration | System | Status |
+|----------|------|-------------|--------|--------|
+| Task execution (shell) | ✓ | ✓ | ✓ | ✓ |
 | Step-by-name (`-s`) | ✓ | ✓ | ✓ | ✓ |
-| Phase-Ausführung (`-p`) | ✓ | ✓ | ✓ | ✓ |
-| Workflow-Ausführung | ✓ | ✓ | ✓ | ✓ |
-| Parallel phases in workflow | ✗ | ✗ | ✗ | **Entfernt** |
-| Worker spawn/wait | ✓ | ✓ | — | ~ |
-| Step-Cache Hit/Miss | ✓ | ✓ | ✗ | ~ |
-| Success-Cache Hit/Miss | ✓ | ✓ | ✗ | ~ |
-| Cache disabled → kein Skip | ✓ | ✓ | ✗ | ~ |
-| Dry-run skip execution | ✓ | ✓ | — | ~ |
+| Phase execution (`-p`) | ✓ | ✓ | ✓ | ✓ |
+| Workflow execution | ✓ | ✓ | ✓ | ✓ |
+| Parallel phases in workflow | ✗ | ✗ | ✗ | **Removed** |
+| Worker spawn/wait | ✓ | ✓ | — | ✓ ([`worker-api.md`](worker-api.md)) |
+| `ctx:wait` / `ctx:wait_all` result tables | ✓ | ✓ | — | ✓ |
+| Step cache hit/miss | ✓ | ✓ | ✗ | ~ |
+| Success cache hit/miss | ✓ | ✓ | ✗ | ~ |
+| Cache disabled → no skip | ✓ | ✓ | ✗ | ~ |
+| Dry-run skips execution | ✓ | ✓ | — | ~ |
 | Artifact dependency ordering | ✓ | — | — | ~ |
 | Parallel independent steps | ✓ | — | — | ~ |
 | Unknown name → error + DidYouMean | ✓ | ✓ | ✓ | ✓ |
@@ -168,10 +169,10 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 
 ---
 
-## 5. Source-Module vs. Unit-Tests
+## 5. Source modules vs. unit tests
 
-| `src/` Modul | Unit-Test-Datei | Status |
-|--------------|-----------------|--------|
+| `src/` module | Unit test file | Status |
+|---------------|----------------|--------|
 | `core/registry/` | `core/registry/test_registry.cpp` | ✓ |
 | `core/orchestrator/` | `core/orchestrator/test_orchestrator.cpp` | ✓ |
 | `core/config/settings.cpp` | `core/config/test_settings.cpp` | ✓ |
@@ -182,50 +183,50 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | `core/env/env_file.cpp` | `core/env/test_env_file.cpp` | ✓ |
 | `core/config/env_settings.cpp` | `test_env_settings` (in settings) | ~ |
 | `core/config/config_paths.cpp` | `core/config/test_config_paths.cpp` | ✓ |
-| `core/model/step_config.cpp` | indirekt via DSL/cache | ~ |
+| `core/model/step_config.cpp` | indirect via DSL/cache | ~ |
 | `plugins/host/plugin_host.cpp` | `plugin/host/test_plugin_host.cpp` | ✓ |
 | `core/execution/concurrency/worker_pool.cpp` | `core/execution/concurrency/test_worker_pool.cpp` | ✓ |
 | `core/execution/concurrency/thread_pool.cpp` | `core/execution/concurrency/test_thread_pool.cpp` | ✓ |
 | `plugins/lua/lua_dsl.cpp` | `test_lua_dsl.cpp` | ✓ |
 | `plugins/lua/lua_settings.cpp` | `test_lua_settings.cpp` | ✓ |
-| `plugins/lua/lua_step_config.cpp` | indirekt | ~ |
+| `plugins/lua/lua_step_config.cpp` | indirect | ~ |
 | `plugins/shell/shell_executor.cpp` | `test_shell_executor.cpp` | ✓ |
 | `cli/cli_app.cpp` | `test_cli_app.cpp` | ✓ |
 | `cli/run_target.cpp` | `test_run_target.cpp` | ~ |
-| `cli/install_completion.cpp` | Integration only | ~ |
+| `cli/install_completion.cpp` | integration only | ~ |
 | `cli/list_formatter.cpp` | `test_list_formatter.cpp` | ✓ |
 | `cli/name_suggestion.cpp` | `test_name_suggestion.cpp` | ✓ |
 | `logging/run_log_writer.cpp` | `test_logging_settings.cpp` | ~ |
 | `logging/recording_logger.cpp` | — | ✗ |
-| `logging/progress_spinner.cpp` | indirekt ui_options | ~ |
-| `logging/spdlog_backend.cpp` | indirekt logger | ~ |
+| `logging/progress_spinner.cpp` | indirect via ui_options | ~ |
+| `logging/spdlog_backend.cpp` | indirect via logger | ~ |
 | `logging/output_mode.cpp` | `test_output_mode.cpp` | ✓ |
 | `logging/worker_output_format.cpp` | `test_worker_output_format.cpp` | ✓ |
-| `app/main.cpp` | via Integration CLI | ~ |
+| `app/main.cpp` | via integration CLI | ~ |
 
 ---
 
-## 6. System-Fixtures
+## 6. System fixtures
 
-| Fixture | Pfad | Abgedeckte Szenarien | Status |
-|---------|------|----------------------|--------|
+| Fixture | Path | Covered scenarios | Status |
+|---------|------|-------------------|--------|
 | `minimal` | `fixtures/minimal/` | hello/fail/clean tasks | ✓ |
 | `workflows` | `fixtures/workflows/` | build/ci workflow, phases, steps | ✓ |
 | `phase-tasks` | `fixtures/phase-tasks/` | Phase/step invocation | ✓ |
 | `invalid-syntax` | `fixtures/invalid-syntax/` | Parse error | ✓ |
 | `empty` | `fixtures/empty/` | Missing build.lua | ✓ |
-| `config-cache` | — | Custom cache path/algo | ✗ geplant |
-| `config-ui` | — | UI output_mode/theme | ✗ geplant |
-| `config-env` | — | env.vars in steps | ✗ geplant |
-| `cache-behavior` | — | Hit/miss/re-run | ✗ geplant |
-| `flag-matrix` | — | CLI flag combinations | ✗ geplant |
+| `config-cache` | — | Custom cache path/algo | ✗ planned |
+| `config-ui` | — | UI output_mode/theme | ✗ planned |
+| `config-env` | — | env.vars in steps | ✗ planned |
+| `cache-behavior` | — | Hit/miss/re-run | ✗ planned |
+| `flag-matrix` | — | CLI flag combinations | ✗ planned |
 
 ---
 
 ## 7. Fuzzer
 
-| Bereich | Corpus-Seeds | Dictionary | Status |
-|---------|--------------|------------|--------|
+| Area | Corpus seeds | Dictionary | Status |
+|------|--------------|------------|--------|
 | `task()` forms | `step.lua`, `task_with_step.lua`, `orphan_task.lua` | ✓ | ✓ |
 | `workflow()` forms | `workflow_sequential.lua` | ✓ | ✓ |
 | `step()` forms | `step.lua`, `step_config.lua`, `step_artifact_fields.lua` | ✓ | ✓ |
@@ -234,59 +235,59 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 | Invalid / mixed | `invalid_syntax.lua`, `mixed.lua` | — | ~ |
 | Phase-task shorthand | `phase_task.lua` | — | ~ |
 | Worker spawn | `worker_spawn.lua` | — | ~ |
-| Nested config tables | — | — | ✗ geplant |
-| Invalid config types | — | — | ✗ geplant |
-| Missing required fields | — | — | ✗ geplant |
-| Large/stress tables | — | — | ✗ geplant |
-| Dictionary keywords | 12 Einträge | klein | ~ |
+| Nested config tables | — | — | ✗ planned |
+| Invalid config types | — | — | ✗ planned |
+| Missing required fields | — | — | ✗ planned |
+| Large/stress tables | — | — | ✗ planned |
+| Dictionary keywords | 12 entries | small | ~ |
 
-**Fuzz-Zusammenfassung:** 12 Seeds · kein Config-Fuzzing · Dictionary unvollständig
+**Fuzz summary:** 12 seeds · no config fuzzing · dictionary incomplete
 
 ---
 
-## 8. Priorisierte Lücken (Input für Phasen 2–5)
+## 8. Prioritized gaps (input for phases 2–5)
 
-### P0 — Runtime-Flags ohne Integration-Test
+### P0 — Runtime flags without integration test
 
-1. `--silent`, `--error` (Output-Verhalten)
-2. `--show-config` (merged Config Output)
-3. `--no-cache` via CLI subprocess (nicht nur in-code)
-4. `--update` (Cache storage update)
+1. `--silent`, `--error` (output behavior)
+2. `--show-config` (merged config output)
+3. `--no-cache` via CLI subprocess (not only in-code)
+4. `--update` (cache storage update)
 5. `--log-file`, `--no-log-file`
 6. `--list workflows`, `--list steps`
-7. `-j/--threads` (Effekt)
+7. `-j/--threads` (effect)
 
-### P1 — Config aus `build.lua` ohne System-Test
+### P1 — Config from `build.lua` without system test
 
-1. Custom `cache.path` → Dateien landen dort
-2. `ui.output_mode` → Output-Format
-3. `env.vars` → Step sieht Variable
-4. CLI-Override vs. Project-Config
+1. Custom `cache.path` → files land there
+2. `ui.output_mode` → output format
+3. `env.vars` → step sees variable
+4. CLI override vs. project config
 
-### P2 — DSL Negative / Edge Cases
+### P2 — DSL negative / edge cases
 
-1. Duplikat-Namen
-2. Ungültige Typen in Config/Step
-3. Leere Tabellen
-4. `depends_on` (wenn implementiert: Red-Test zuerst)
+1. Duplicate names
+2. Invalid types in config/step
+3. Empty tables
+4. `depends_on` (when implemented: red test first)
 
-### P3 — Ungetestete Module
+### P3 — Untested modules
 
 1. `config_paths.cpp`
 2. `recording_logger.cpp`
-3. Erweiterte `lua_step_config` Tests
+3. Extended `lua_step_config` tests
 
 ### P4 — Fuzzer
 
-1. ≥10 neue Corpus-Seeds (Config, invalid, stress)
-2. Dictionary erweitern (config keys, DSL keywords)
+1. ≥10 new corpus seeds (config, invalid, stress)
+2. Expand dictionary (config keys, DSL keywords)
 
 ---
 
-## 9. Test-Dateien-Plan (neu)
+## 9. Planned test files (new)
 
-| Datei | Ebene | Priorität |
-|-------|-------|-----------|
+| File | Level | Priority |
+|------|-------|----------|
 | `tests/integration/app/test_cli_flags.cpp` | Integration | P0 |
 | `tests/integration/app/test_config_runtime.cpp` | Integration | P1 |
 | `tests/integration/core/test_cache_flag_pipeline.cpp` | Integration | P0 |
@@ -305,22 +306,22 @@ Legende: **✓** abgedeckt · **~** teilweise · **✗** fehlt · **U/I/S/F** = 
 
 ---
 
-## 10. Metriken (Baseline)
+## 10. Metrics (baseline)
 
-| Metrik | Wert |
-|--------|------|
-| Unit-Test-Dateien | 41 |
-| Integration-Test-Dateien | 8 (+ 3 shell scripts) |
-| System-Szenario-Dateien | 4 |
-| System-Fixtures | 5 |
-| Fuzz-Corpus-Seeds | 12 |
-| CLI-Flags gesamt | 22 |
-| CLI-Flags mit Runtime-Integration-Test | ~10 |
-| Config-Schema-Keys (geschätzt) | ~45 |
-| Config-Keys mit Unit-Test | ~20 |
-| DSL-Elemente | 18 |
-| `src/` Module ohne direkten Unit-Test | 4 (`config_paths`, `recording_logger`, `progress_spinner`, `spdlog_backend`) |
+| Metric | Value |
+|--------|-------|
+| Unit test files | 41 |
+| Integration test files | 8 (+ 3 shell scripts) |
+| System scenario files | 4 |
+| System fixtures | 5 |
+| Fuzz corpus seeds | 12 |
+| CLI flags total | 22 |
+| CLI flags with runtime integration test | ~10 |
+| Config schema keys (estimated) | ~45 |
+| Config keys with unit test | ~20 |
+| DSL elements | 18 |
+| `src/` modules without a direct unit test | 4 (`config_paths`, `recording_logger`, `progress_spinner`, `spdlog_backend`) |
 
 ---
 
-*Aktualisieren nach jeder Test-Phase. Siehe auch [`vertical-feature.md`](vertical-feature.md) und [`../Beez.wiki/Testing.md`](https://github.com/Coditary/Beez/wiki/Testing).*
+*Update after each test phase. See also [`vertical-feature.md`](vertical-feature.md) and the [Beez wiki Testing page](https://github.com/Coditary/Beez/wiki/Testing).*

@@ -72,7 +72,8 @@ WorkerHandle WorkerPool::spawn(WorkerSpec spec)
 {
     if (spec.name.empty())
     {
-        throw std::invalid_argument("worker name must not be empty");
+        const std::string Prefix = parentStepName_.empty() ? "worker" : parentStepName_;
+        spec.name = Prefix + "-" + std::to_string(++workerNameCounter_);
     }
     if (spec.commands.empty())
     {
@@ -164,7 +165,7 @@ int WorkerPool::drainAll()
 Step WorkerPool::workerAsStep(const WorkerSpec& spec) const
 {
     Step step;
-    step.name = spec.name;
+    step.name = parentStepName_.empty() ? spec.name : parentStepName_;
     step.phase = "__worker__";
     step.scope = parentStepName_;
     step.input = spec.inputs;
@@ -214,6 +215,7 @@ int WorkerPool::executeWorker(std::size_t workerId)
 
             ++cacheHitCount_;
 
+            entry.cacheHit = true;
             entry.done = true;
             entry.exitCode = 0;
             return 0;
@@ -227,7 +229,9 @@ int WorkerPool::executeWorker(std::size_t workerId)
     int exitCode = 0;
     for (const auto& command : entry.spec.commands)
     {
-        exitCode = execute_(command, entry.spec);
+        const WorkerCommandResult Result = execute_(command, entry.spec);
+        exitCode = Result.exitCode;
+        entry.capturedOutput += Result.output;
         if (exitCode != 0)
         {
             break;
@@ -262,7 +266,7 @@ int WorkerPool::executeWorker(std::size_t workerId)
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming)
-double WorkerPool::workerDuration(const std::size_t workerId) const
+double WorkerPool::workerDuration(std::size_t workerId) const
 {
     if (workerId >= workers_.size())
     {
@@ -270,6 +274,23 @@ double WorkerPool::workerDuration(const std::size_t workerId) const
     }
 
     return workers_.at(workerId).lastDurationSeconds;
+}
+
+WorkerSnapshot WorkerPool::workerSnapshot(std::size_t workerId) const
+{
+    if (workerId >= workers_.size())
+    {
+        throw std::out_of_range("invalid worker handle");
+    }
+
+    const WorkerEntry& entry = workers_.at(workerId);
+    return WorkerSnapshot {.exitCode = entry.exitCode,
+                           .durationSeconds = entry.lastDurationSeconds,
+                           .output = entry.capturedOutput,
+                           .cached = entry.cacheHit,
+                           .name = entry.spec.name,
+                           .id = workerId,
+                           .dryRun = dryRun_};
 }
 
 double WorkerPool::totalWorkerExecutionSeconds() const

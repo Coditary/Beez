@@ -1,4 +1,13 @@
 find_package(lua REQUIRED)
+find_package(yyjson REQUIRED)
+find_package(ryml REQUIRED)
+find_package(rapidxml REQUIRED)
+find_package(fast-cpp-csv-parser REQUIRED)
+find_package(tomlplusplus REQUIRED)
+find_package(CURL REQUIRED)
+find_package(LibArchive REQUIRED CONFIG)
+
+include(Prebyte)
 
 include(FetchContent)
 

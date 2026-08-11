@@ -115,9 +115,17 @@ EOF
 }
 EOF
 
+    cat >"${reports}/conan.lock" <<'EOF'
+{
+  "version": "0.5",
+  "requires": ["testpkg/1.0.0"]
+}
+EOF
+
     local output
     output="$(env HOME="${home}" PATH="${fake_bin}:/usr/bin:/bin" \
         DEPENDENCY_AUDIT_SBOM="${sbom_dir}/cyclonedx.json" \
+        DEPENDENCY_AUDIT_LOCKFILE="${reports}/conan.lock" \
         bash "${ROOT_DIR}/scripts/dependency-audit.sh" build "${reports}" 2>&1)"
     if [[ "${output}" == *"PATH HIJACK"* ]]; then
         echo "dependency-audit used PATH scanner instead of pinned ~/.local/bin install" >&2
@@ -129,9 +137,10 @@ EOF
     fi
 }
 
-test_dependency_audit_malformed_sbom_fails() {
+test_dependency_audit_malformed_lockfile_fails() {
     local home="${TMP_DIR}/home-malformed"
     local reports="${TMP_DIR}/report-malformed"
+    local lockfile="${reports}/conan.lock"
     local sbom="${reports}/sbom/cyclonedx.json"
     mkdir -p "${home}/.local/bin" "$(dirname "${sbom}")"
 
@@ -141,14 +150,16 @@ if [[ "$1" == "--version" ]]; then
     echo "fake osv-scanner version: 0.0.0"
     exit 0
 fi
-echo "not valid sbom"
+echo "not valid lockfile"
 exit 128
 EOF
     chmod +x "${home}/.local/bin/osv-scanner"
-    echo 'not json' >"${sbom}"
+    echo 'not json' >"${lockfile}"
+    echo '{"bomFormat":"CycloneDX","specVersion":"1.4","components":[]}' >"${sbom}"
 
     assert_exit 128 env HOME="${home}" PATH="/usr/bin:/bin" \
         DEPENDENCY_AUDIT_SBOM="${sbom}" \
+        DEPENDENCY_AUDIT_LOCKFILE="${lockfile}" \
         bash "${ROOT_DIR}/scripts/dependency-audit.sh" build "${reports}"
 }
 
@@ -178,7 +189,7 @@ test_ci_install_rejects_invalid_version
 test_ci_install_cppcheck_rejects_invalid_version
 test_dependency_audit_missing_scanner
 test_dependency_audit_prefers_pinned_scanner_over_path_hijack
-test_dependency_audit_malformed_sbom_fails
+test_dependency_audit_malformed_lockfile_fails
 test_dependency_audit_missing_sbom_override
 test_security_script_requires_compile_commands
 

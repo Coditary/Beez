@@ -50,6 +50,16 @@ add_executable(
     plugin/lua/test_lua_dsl.cpp
     plugin/lua/test_lua_dsl_fields.cpp
     plugin/lua/test_lua_settings.cpp
+    plugin/lua/api/test_fs.cpp
+    plugin/lua/api/test_crypto.cpp
+    plugin/lua/api/crypto/test_crypto_ops.cpp
+    plugin/lua/api/sys/test_sys.cpp
+    plugin/lua/api/time/test_time.cpp
+    plugin/lua/api/date/test_date.cpp
+    plugin/lua/api/data/test_data.cpp
+    plugin/lua/api/net/test_net.cpp
+    plugin/lua/api/archive/test_archive.cpp
+    plugin/lua/api/text/test_text.cpp
     plugin/shell/test_shell_executor.cpp
 )
 

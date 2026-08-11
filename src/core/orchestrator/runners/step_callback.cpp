@@ -57,12 +57,12 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
     const StepCache* stepCache = runOptions.stepCache;
     WorkerPool::ExecuteFn executeWorkerCommand =
         [&orchestrator, step, &workerFailureOutputs, &workerFailureOutputMutex](
-            const std::string& command, const WorkerSpec& worker) -> int
+            const std::string& command, const WorkerSpec& worker) -> WorkerCommandResult
     {
         auto* executor = orchestrator_detail::Access::pluginHost(orchestrator).executor();
         if (executor == nullptr)
         {
-            return -1;
+            return {.exitCode = -1};
         }
 
         const auto& options = orchestrator_detail::Access::runOptions(orchestrator);
@@ -71,17 +71,17 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
                                         command,
                                         orchestrator_detail::Access::context(orchestrator),
                                         options.outputMode,
-                                        shell_execution_detail::CapturePolicy::UnlessVerbose);
+                                        shell_execution_detail::CapturePolicy::Always);
         shell_execution_detail::persistOutput(
             options, step.name, worker.name, result.capturedOutput, result.exitCode);
         if (result.exitCode != 0 && !result.capturedOutput.empty())
         {
             const std::scoped_lock Lock(workerFailureOutputMutex);
-            workerFailureOutputs.push_back(WorkerFailureOutput {
-                .workerName = worker.name, .output = std::move(result.capturedOutput)});
+            workerFailureOutputs.push_back(
+                WorkerFailureOutput {.workerName = worker.name, .output = result.capturedOutput});
         }
 
-        return result.exitCode;
+        return {.exitCode = result.exitCode, .output = std::move(result.capturedOutput)};
     };
 
     WorkerPool workerPool(context.projectRoot(),

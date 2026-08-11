@@ -38,6 +38,17 @@ inline const core::TaskShellAction* shellActionAt(const core::Task& task, std::s
     return std::get_if<core::TaskShellAction>(task.actions.data() + index);
 }
 
+inline const core::TaskShellAction* shellActionAt(const std::optional<core::Task>& task,
+                                                  std::size_t index)
+{
+    if (!task.has_value())
+    {
+        ADD_FAILURE() << "task not found";
+        return nullptr;
+    }
+    return shellActionAt(*task, index);
+}
+
 inline const core::TaskStepAction* stepActionAt(const core::Task& task, std::size_t index)
 {
     if (index >= task.actions.size())
@@ -61,6 +72,18 @@ expectShellCommand(const core::Task& task, std::size_t index, const std::string&
     EXPECT_EQ(shell->command, expectedCommand);
 }
 
+inline void expectShellCommand(const std::optional<core::Task>& task,
+                               std::size_t index,
+                               const std::string& expectedCommand)
+{
+    ASSERT_TRUE(task.has_value());
+    if (!task.has_value())
+    {
+        return;
+    }
+    expectShellCommand(*task, index, expectedCommand);
+}
+
 inline void expectStepInvocation(const core::Task& task,
                                  std::size_t index,
                                  const std::string& expectedName,
@@ -76,12 +99,35 @@ inline void expectStepInvocation(const core::Task& task,
     EXPECT_EQ(step->config != nullptr, expectsConfig);
 }
 
+inline void expectStepInvocation(const std::optional<core::Task>& task,
+                                 std::size_t index,
+                                 const std::string& expectedName,
+                                 bool expectsConfig)
+{
+    ASSERT_TRUE(task.has_value());
+    if (!task.has_value())
+    {
+        return;
+    }
+    expectStepInvocation(*task, index, expectedName, expectsConfig);
+}
+
 inline void expectMixedTaskWithStepInvocation(const core::Task& task)
 {
     ASSERT_EQ(task.actions.size(), 3U);
     expectShellCommand(task, 0, "echo start");
     expectStepInvocation(task, 1, "cpp:compile", false);
     expectShellCommand(task, 2, "echo done");
+}
+
+inline void expectMixedTaskWithStepInvocation(const std::optional<core::Task>& task)
+{
+    ASSERT_TRUE(task.has_value());
+    if (!task.has_value())
+    {
+        return;
+    }
+    expectMixedTaskWithStepInvocation(*task);
 }
 
 inline std::optional<core::Workflow> requireWorkflow(const core::Registry& registry,

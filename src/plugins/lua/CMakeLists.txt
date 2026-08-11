@@ -1,6 +1,110 @@
 add_library(
     beez_plugin_lua STATIC
     lua_dsl.cpp
+    api/beez_table.cpp
+    api/env/env.cpp
+    api/fs/fs_table.cpp
+    api/fs/glob.cpp
+    api/fs/exists.cpp
+    api/fs/copy.cpp
+    api/fs/remove.cpp
+    api/fs/join.cpp
+    api/fs/detail/operations.cpp
+    api/crypto/crypto_table.cpp
+    api/crypto/is_hash.cpp
+    api/crypto/is_encoding_algo.cpp
+    api/crypto/list_hash_algo.cpp
+    api/crypto/list_encode_algo.cpp
+    api/crypto/hash_string.cpp
+    api/crypto/hash_file.cpp
+    api/crypto/encode.cpp
+    api/crypto/detail/crypto_ops.cpp
+    api/sys/sys_table.cpp
+    api/sys/cpu_cores.cpp
+    api/sys/cpu_threads.cpp
+    api/sys/ram_total.cpp
+    api/sys/ram_free.cpp
+    api/sys/is_tty.cpp
+    api/sys/cwd.cpp
+    api/sys/tmp_dir.cpp
+    api/sys/path_separator.cpp
+    api/sys/pid.cpp
+    api/sys/user.cpp
+    api/sys/detail/cpu.cpp
+    api/sys/detail/ram.cpp
+    api/time/time_table.cpp
+    api/time/now.cpp
+    api/time/uptime.cpp
+    api/time/iso.cpp
+    api/time/sleep.cpp
+    api/time/sleep_s.cpp
+    api/time/detail/clock.cpp
+    api/date/date_table.cpp
+    api/date/format.cpp
+    api/date/info.cpp
+    api/date/epoch.cpp
+    api/date/utc.cpp
+    api/date/utc_offset.cpp
+    api/date/detail/time_point.cpp
+    api/data/data_table.cpp
+    api/data/deserialize_file.cpp
+    api/data/serialize_file.cpp
+    api/data/deserialize_string.cpp
+    api/data/serialize_string.cpp
+    api/data/merge.cpp
+    api/data/clone.cpp
+    api/data/get.cpp
+    api/data/set.cpp
+    api/data/diff.cpp
+    api/data/validate.cpp
+    api/data/table_ops.cpp
+    api/data/schema.cpp
+    api/data/detail/format.cpp
+    api/data/detail/lua_convert.cpp
+    api/data/detail/yaml_convert.cpp
+    api/data/detail/xml_convert.cpp
+    api/data/detail/csv_convert.cpp
+    api/data/detail/toml_convert.cpp
+    api/data/detail/codec.cpp
+    api/net/net_table.cpp
+    api/net/get.cpp
+    api/net/post.cpp
+    api/net/put.cpp
+    api/net/delete.cpp
+    api/net/request.cpp
+    api/net/upload.cpp
+    api/net/download.cpp
+    api/net/download_and_verify.cpp
+    api/net/ping.cpp
+    api/net/is_online.cpp
+    api/net/set_proxy.cpp
+    api/net/detail/http_client.cpp
+    api/net/detail/headers.cpp
+    api/net/detail/bind_helpers.cpp
+    api/archive/archive_table.cpp
+    api/archive/extract.cpp
+    api/archive/compress.cpp
+    api/archive/list.cpp
+    api/archive/extract_file.cpp
+    api/archive/read_text.cpp
+    api/archive/detail/archive_common.cpp
+    api/text/text_table.cpp
+    api/text/contains.cpp
+    api/text/starts_with.cpp
+    api/text/ends_with.cpp
+    api/text/to_lowercase.cpp
+    api/text/to_uppercase.cpp
+    api/text/to_case.cpp
+    api/text/replace.cpp
+    api/text/replace_all.cpp
+    api/text/split.cpp
+    api/text/trim.cpp
+    api/text/join.cpp
+    api/text/regex_match.cpp
+    api/text/regex_replace.cpp
+    api/text/template_string.cpp
+    api/text/detail/prebyte_backend.cpp
+    api/text/diff.cpp
     dsl/task_parser.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
@@ -14,4 +118,23 @@ add_library(
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-target_link_libraries(beez_plugin_lua PUBLIC beez_core beez_plugin_host sol2::sol2 lua::lua)
+target_link_libraries(
+    beez_plugin_lua
+    PUBLIC beez_core
+           beez_plugin_host
+           sol2::sol2
+           lua::lua
+           yyjson::yyjson
+           ryml::ryml
+           rapidxml::rapidxml
+           fast-cpp-csv-parser::fast-cpp-csv-parser
+           tomlplusplus::tomlplusplus
+           CURL::libcurl
+           LibArchive::LibArchive
+           prebyte_core
+)
+
+get_target_property(BEEZ_PREBYTE_INCLUDE_DIRS prebyte_core INTERFACE_INCLUDE_DIRECTORIES)
+if (BEEZ_PREBYTE_INCLUDE_DIRS)
+    target_include_directories(beez_plugin_lua SYSTEM PRIVATE ${BEEZ_PREBYTE_INCLUDE_DIRS})
+endif ()

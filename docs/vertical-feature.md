@@ -196,7 +196,7 @@ The wiki is a separate git repository on GitHub. Update it when behavior visible
 |------|----------------|
 | CLI flags or commands | CLI Flag Reference, CLI Overview, Quick Reference |
 | Config keys / merge order | Config Reference, Configuration Overview |
-| DSL / `build.lua` | DSL Overview, Step/Task/Workflow declaration pages |
+| DSL / `build.lua` | DSL Overview, Step/Task/Workflow declaration pages, Workers (`ctx:spawn` / `wait`) — mirror [`docs/worker-api.md`](worker-api.md) |
 | Caching | Caching chapter, troubleshooting if behavior changed |
 | Terminal UI | UI and Output chapter (modes, themes, summaries, logs) |
 | Contributor workflow | Feature Development Workflow, Code Quality, Building and Setup |
@@ -208,6 +208,7 @@ Push wiki changes to the wiki repo so they are live before or right after the co
 | File | When to update |
 |------|----------------|
 | [`CHANGELOG.md`](CHANGELOG.md) | User-visible changes, fixes, breaking changes |
+| [`docs/worker-api.md`](worker-api.md) | Lua worker API (`spawn`, `wait`, `wait_all`) |
 | [`README.md`](README.md) | Install paths, quick start, high-level features |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | PR process, CI, quality targets |
 | [`docs/`](README.md) | Developer workflow, architecture notes |

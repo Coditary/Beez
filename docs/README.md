@@ -7,6 +7,10 @@ Developer-focused docs live here. User guides and reference material live in the
 | File | Purpose |
 |------|---------|
 | [`vertical-feature.md`](vertical-feature.md) | End-to-end feature workflow: TDD, QA, wiki updates, coverage target |
+| [`worker-api.md`](worker-api.md) | Lua step context: `ctx:spawn`, `ctx:wait`, `ctx:wait_all` |
+| [`net-api.md`](net-api.md) | HTTP/REST and downloads: `beez.net.*` |
+| [`archive-api.md`](archive-api.md) | Archives: `beez.archive.*` |
+| [`text-api.md`](text-api.md) | Strings: `beez.text.*` |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | How to contribute, PR expectations, CI |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Release notes |
 | [`../README.md`](../README.md) | Project overview and quick start |
@@ -21,7 +25,7 @@ Common pages to update:
 |-------------|------------|
 | CLI flags or behavior | [CLI Flag Reference](https://github.com/Coditary/Beez/wiki/CLI-Flag-Reference), [CLI Overview](https://github.com/Coditary/Beez/wiki/CLI-Overview) |
 | Config keys | [Config Reference](https://github.com/Coditary/Beez/wiki/Config-Reference), [Configuration Overview](https://github.com/Coditary/Beez/wiki/Configuration-Overview) |
-| DSL / `build.lua` | [DSL Overview](https://github.com/Coditary/Beez/wiki/DSL-Overview), related declaration pages |
+| DSL / `build.lua` | [DSL Overview](https://github.com/Coditary/Beez/wiki/DSL-Overview), related declaration pages, [`worker-api.md`](worker-api.md) for workers |
 | Caching | [Caching](https://github.com/Coditary/Beez/wiki/Caching) chapter |
 | Terminal UI | [UI and Output](https://github.com/Coditary/Beez/wiki/UI-and-Output) chapter |
 | Build / contributor setup | [Building and Setup](https://github.com/Coditary/Beez/wiki/Building-and-Setup), [Feature Development Workflow](https://github.com/Coditary/Beez/wiki/Feature-Development-Workflow) |

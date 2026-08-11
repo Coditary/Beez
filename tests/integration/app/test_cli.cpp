@@ -136,10 +136,9 @@ step({
         print("[status] skip (cached): noise-a")
         print("[status] skip (cached): noise-b")
         local job = ctx:spawn({
-            name = "bad",
             cmd = "echo worker-failure-output >&2; exit 1",
         })
-        return ctx:wait(job)
+        return ctx:wait(job, { exitCode = true }).exitCode
     end,
 })
 task("fail-worker", { { name = "qa-fail" } })
@@ -148,7 +147,7 @@ task("fail-worker", { { name = "qa-fail" } })
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"fail-worker"});
     EXPECT_NE(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("worker-failure-output"), std::string::npos);
-    EXPECT_NE(Result.output.find("Worker bad"), std::string::npos);
+    EXPECT_NE(Result.output.find("Worker qa-fail-1"), std::string::npos);
     EXPECT_EQ(Result.output.find("Worker 0"), std::string::npos);
     EXPECT_EQ(Result.output.find("noise-a"), std::string::npos);
     EXPECT_EQ(Result.output.find("noise-b"), std::string::npos);

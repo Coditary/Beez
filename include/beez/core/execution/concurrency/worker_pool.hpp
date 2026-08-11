@@ -26,6 +26,23 @@ struct WorkerSpec
     std::vector<std::string> outputs;
 };
 
+struct WorkerCommandResult
+{
+    int exitCode = 0;
+    std::string output;
+};
+
+struct WorkerSnapshot
+{
+    int exitCode = 0;
+    double durationSeconds = 0.0;
+    std::string output;
+    bool cached = false;
+    std::string name;
+    std::size_t id = 0;
+    bool dryRun = false;
+};
+
 // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
 struct WorkerHandle
 {
@@ -41,7 +58,8 @@ struct WorkerHandle
 class WorkerPool
 {
   public:
-    using ExecuteFn = std::function<int(const std::string& command, const WorkerSpec& worker)>;
+    using ExecuteFn =
+        std::function<WorkerCommandResult(const std::string& command, const WorkerSpec& worker)>;
 
     WorkerPool(std::filesystem::path projectRoot,
                ExecuteFn execute,
@@ -64,6 +82,7 @@ class WorkerPool
     }
 
     [[nodiscard]] double workerDuration(std::size_t workerId) const;
+    [[nodiscard]] WorkerSnapshot workerSnapshot(std::size_t workerId) const;
 
     [[nodiscard]] double totalWorkerExecutionSeconds() const;
     [[nodiscard]] double totalWorkerSavedSeconds() const;
@@ -77,6 +96,8 @@ class WorkerPool
         bool done = false;
         int exitCode = 0;
         double lastDurationSeconds = 0.0;
+        std::string capturedOutput;
+        bool cacheHit = false;
     };
 
     [[nodiscard]] int executeWorker(std::size_t workerId);
@@ -94,6 +115,7 @@ class WorkerPool
     const ThreadPool* threadPool_;
     CacheStatsRecorder statsRecorder_;
     std::vector<WorkerEntry> workers_;
+    std::size_t workerNameCounter_ = 0;
     mutable std::mutex timingMutex_;
     double totalWorkerExecutionSeconds_ = 0.0;
     double totalWorkerSavedSeconds_ = 0.0;

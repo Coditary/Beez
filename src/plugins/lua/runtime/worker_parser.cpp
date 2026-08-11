@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
@@ -53,23 +54,32 @@ namespace
     throw std::runtime_error("invalid worker handle");
 }
 
+[[nodiscard]] bool readWaitOptionFlag(const sol::table& options, const char* key)
+{
+    const sol::object Value = options[key];
+    return Value.valid() && Value.is<bool>() && Value.as<bool>();
+}
+
 }  // namespace
 
 core::WorkerSpec parseWorkerSpec(const sol::table& options)
 {
-    const sol::object NameValue = options["name"];
-    if (!NameValue.valid() || !NameValue.is<std::string>())
-    {
-        throw std::runtime_error("worker spawn requires string field 'name'");
-    }
-
     core::WorkerSpec spec;
-    spec.name = NameValue.as<std::string>();
+
+    const sol::object NameValue = options["name"];
+    if (NameValue.valid())
+    {
+        if (!NameValue.is<std::string>())
+        {
+            throw std::runtime_error("worker spawn field 'name' must be a string");
+        }
+        spec.name = NameValue.as<std::string>();
+    }
 
     const sol::object CommandValue = options["cmd"];
     if (!CommandValue.valid())
     {
-        throw std::runtime_error("worker '" + spec.name + "' is missing required field 'cmd'");
+        throw std::runtime_error("worker spawn is missing required field 'cmd'");
     }
 
     if (CommandValue.is<std::string>())
@@ -89,8 +99,7 @@ core::WorkerSpec parseWorkerSpec(const sol::table& options)
     }
     else
     {
-        throw std::runtime_error("worker '" + spec.name +
-                                 "' field 'cmd' must be a string or table");
+        throw std::runtime_error("worker spawn field 'cmd' must be a string or table");
     }
 
     const sol::object InputsValue = options["inputs"];
@@ -98,7 +107,7 @@ core::WorkerSpec parseWorkerSpec(const sol::table& options)
     {
         if (!InputsValue.is<sol::table>())
         {
-            throw std::runtime_error("worker '" + spec.name + "' field 'inputs' must be a table");
+            throw std::runtime_error("worker spawn field 'inputs' must be a table");
         }
         spec.inputs = parseStringArray(InputsValue.as<sol::table>());
     }
@@ -108,12 +117,48 @@ core::WorkerSpec parseWorkerSpec(const sol::table& options)
     {
         if (!OutputsValue.is<sol::table>())
         {
-            throw std::runtime_error("worker '" + spec.name + "' field 'outputs' must be a table");
+            throw std::runtime_error("worker spawn field 'outputs' must be a table");
         }
         spec.outputs = parseStringArray(OutputsValue.as<sol::table>());
     }
 
     return spec;
+}
+
+WorkerWaitOptions parseWorkerWaitOptions(const sol::table& options)
+{
+    static const std::unordered_set<std::string> AllowedKeys = {
+        "exitCode", "output", "duration", "cached", "name", "id", "dryRun"};
+
+    WorkerWaitOptions waitOptions;
+    options.for_each(
+        [&waitOptions](const sol::object& key, const sol::object& value)
+        {
+            if (!key.is<std::string>())
+            {
+                throw std::runtime_error("wait options must use string keys");
+            }
+
+            const std::string Key = key.as<std::string>();
+            if (!AllowedKeys.contains(Key))
+            {
+                throw std::runtime_error("unknown wait option '" + Key + "'");
+            }
+
+            if (!value.is<bool>())
+            {
+                throw std::runtime_error("wait option '" + Key + "' must be a boolean");
+            }
+        });
+
+    waitOptions.exitCode = readWaitOptionFlag(options, "exitCode");
+    waitOptions.output = readWaitOptionFlag(options, "output");
+    waitOptions.duration = readWaitOptionFlag(options, "duration");
+    waitOptions.cached = readWaitOptionFlag(options, "cached");
+    waitOptions.name = readWaitOptionFlag(options, "name");
+    waitOptions.id = readWaitOptionFlag(options, "id");
+    waitOptions.dryRun = readWaitOptionFlag(options, "dryRun");
+    return waitOptions;
 }
 
 core::WorkerHandle parseWorkerHandleFromObject(const sol::object& handleValue)
@@ -164,6 +209,48 @@ std::vector<core::WorkerHandle> parseWorkerHandleList(const sol::table& handlesT
     }
 
     return handles;
+}
+
+sol::object buildWorkerWaitResult(const std::shared_ptr<sol::state>& luaState,
+                                  const core::WorkerSnapshot& snapshot,
+                                  const WorkerWaitOptions& options)
+{
+    if (!options.wantsResult())
+    {
+        return sol::lua_nil;
+    }
+
+    sol::table result = luaState->create_table();
+    if (options.exitCode)
+    {
+        result["exitCode"] = snapshot.exitCode;
+    }
+    if (options.output)
+    {
+        result["output"] = snapshot.output;
+    }
+    if (options.duration)
+    {
+        result["duration"] = snapshot.durationSeconds;
+    }
+    if (options.cached)
+    {
+        result["cached"] = snapshot.cached;
+    }
+    if (options.name)
+    {
+        result["name"] = snapshot.name;
+    }
+    if (options.id)
+    {
+        result["id"] = static_cast<int>(snapshot.id);
+    }
+    if (options.dryRun)
+    {
+        result["dryRun"] = snapshot.dryRun;
+    }
+
+    return sol::make_object(*luaState, result);
 }
 
 }  // namespace beez::plugin::lua

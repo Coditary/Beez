@@ -1,18 +1,14 @@
 #include "beez/plugin/lua/dsl/dsl_binder.hpp"
 
-#include "beez/core/env/env_file.hpp"
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/task_action.hpp"
+#include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
-#include "beez/plugin/lua/settings/settings_overlay.hpp"
 
-#include <cstdlib>
-#include <filesystem>
 #include <memory>
-#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -25,38 +21,6 @@ namespace beez::plugin::lua
 
 namespace
 {
-
-class BeezDslEnv
-{
-  public:
-    explicit BeezDslEnv(const core::Context& context) : envFilePath_(context.envFilePath()) {}
-
-    sol::object env(sol::this_state lua, const std::string& key) const
-    {
-        // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c) -- process env lookup for build DSL
-        if (const char* processValue = std::getenv(key.c_str()))
-        {
-            return sol::make_object(lua, std::string(processValue));
-        }
-
-        if (!envFile_.has_value())
-        {
-            envFile_.emplace(envFilePath_);
-        }
-
-        const auto Value = envFile_->lookup(key);
-        if (!Value.has_value())
-        {
-            return sol::lua_nil;
-        }
-
-        return sol::make_object(lua, *Value);
-    }
-
-  private:
-    std::filesystem::path envFilePath_;
-    mutable std::optional<core::EnvFile> envFile_;
-};
 
 class DslBinder
 {
@@ -140,7 +104,6 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 {
     const std::weak_ptr<sol::state> WeakState = luaState;
     auto binder = std::make_shared<DslBinder>(&registry, WeakState);
-    auto beezApi = std::make_shared<BeezDslEnv>(context);
 
     (*luaState)["task"] = sol::overload(
         [binder](const std::string& name, const std::string& run) { binder->task(name, run); },
@@ -158,20 +121,7 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     (*luaState)["order"] = [binder](const std::string& before, const std::string& after)
     { binder->order(before, after); };
 
-    sol::table beezTable = luaState->create_table();
-    beezTable["env"] = [beezApi](sol::this_state lua, const std::string& key)
-    { return beezApi->env(lua, key); };
-    beezTable["config"] = [&buildSettings, &context](const sol::object& options)
-    {
-        if (!options.is<sol::table>())
-        {
-            throw std::runtime_error("beez.config argument must be a table");
-        }
-
-        mergeSettingsFromLuaTable(options.as<sol::table>(), buildSettings);
-        buildSettings.applyEnvironment(context);
-    };
-    (*luaState)["beez"] = beezTable;
+    registerBeezApi(luaState, context, buildSettings);
 }
 
 }  // namespace beez::plugin::lua
