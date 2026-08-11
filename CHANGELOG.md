@@ -9,7 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`beez --init`** — embeds [Tempify](https://github.com/Coditary/Tempify) (fetched at configure time, pinned tag `v0.1.2`) for project scaffolding; all arguments after `--init` are passed to Tempify unchanged (`beez --init list`, `beez --init basic_cpp my-app`, …). Beez flags such as `-p` / `--list` apply only when `--init` is not the first argument. Override with `-DTEMPIFY_SOURCE_DIR=` for a local Tempify tree.
+- **`beez --init`** (beta) — embeds [Tempify](https://github.com/Coditary/Tempify) for project scaffolding from templates. Tempify is fetched at CMake configure time (pinned tag `v0.1.2`; **git** required unless you use a local tree). All arguments after `--init` are passed to Tempify unchanged:
+
+  ```bash
+  beez --init list
+  beez --init info basic_cpp
+  beez --init basic_cpp my-app --set project_name="My App"
+  ```
+
+  Beez flags such as `-p` / `--list` apply only when `--init` is **not** the first argument. Use `beez --init -p …` for Tempify’s embedded Prebyte passthrough. Override the fetched dependency with `-DTEMPIFY_SOURCE_DIR=/abs/path/to/Tempify` when configuring Beez.
+
+  **Status:** integration smoke-tested in Beez (help, version, flag passthrough); template output is validated in [Tempify](https://github.com/Coditary/Tempify)'s own test suite, not yet end-to-end through `beez --init` in this repo. Wiki: [Project Scaffolding](https://github.com/Coditary/Beez/wiki/Project-Scaffolding).
 
 #### Lua API overview
 
@@ -97,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Tests and quality
 
+- Integration tests for `beez --init` CLI routing (`tests/integration/app/test_cli_init.cpp`): Tempify help/version banner, Prebyte flag passthrough, and regression checks that normal Beez commands still work without `--init`
 - Unit tests for all Lua API modules under `tests/unit/plugin/lua/api/`
 - Direct C++ tests for `crypto_ops` (`tests/unit/plugin/lua/api/crypto/test_crypto_ops.cpp`)
 - Line coverage on `src/` raised to **≥ 85%** (enforced by `beez all` / CI)
@@ -120,6 +131,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ODR collision: `beez.text.join` vs `beez.fs.join` — text join bound as `bindTextJoin`
 - Prebyte backend: Lua array indexing in templates (`items[1]` now resolves to the first Lua element)
 - QA pipeline: clang-tidy, clang-format, and analyzer warnings across `src/`, `include/`, and `tests/`
+- clang-tidy helper scripts: ignore warnings from Conan/FetchContent `_deps/` headers when matching project paths (fixes false positives for files that include Tempify/Prebyte)
+- `src/cli/tempify_dispatch.cpp`: cppcheck/clang-tidy clean (STL algorithms, bounds-safe access, naming)
 - Multithreading bug in worker pool (from earlier branch work)
 
 ---
