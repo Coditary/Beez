@@ -25,7 +25,7 @@ mapfile -t tidy_output < <(
 file_has_issue=0
 for line in "${tidy_output[@]}"; do
     echo "$line"
-    if [[ "$line" =~ /(src|include|tests)/.*(warning|error): ]]; then
+    if [[ "$line" =~ /(src|include|tests)/.*(warning|error): ]] && [[ ! "$line" =~ /_deps/ ]]; then
         file_has_issue=1
     fi
 done

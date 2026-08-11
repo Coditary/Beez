@@ -63,10 +63,16 @@ ProcessResult finalizeProcessStatus(const int WaitStatus, std::string output)
 }  // namespace
 
 ProcessResult runBeez(const std::filesystem::path& workingDir,
-                      const std::initializer_list<std::string>& args)
+                      const std::initializer_list<std::string>& args,
+                      const std::initializer_list<std::string>& envVars)
 {
-    std::string command =
-        "cd " + shellQuote(workingDir.string()) + " && " + shellQuote(BEEZ_EXECUTABLE);
+    std::string command;
+    for (const auto& envVar : envVars)
+    {
+        command += envVar;
+        command += ' ';
+    }
+    command += "cd " + shellQuote(workingDir.string()) + " && " + shellQuote(BEEZ_EXECUTABLE);
     for (const auto& argument : args)
     {
         command += ' ';

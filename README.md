@@ -14,6 +14,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 - **Caching**: step cache, success cache (Lua callbacks), configurable hash and compression
 - **Phases and scopes** for filtering and organizing work (`beez -p compile:code`)
 - **CLI**: list entities, dry-run, shell completion (bash/zsh)
+- **Project scaffolding (beta)**: `beez --init` runs embedded [Tempify](https://github.com/Coditary/Tempify) for template-based project generation
 - **Configuration**: global `~/.config/beez/config.lua`, project `beez.config()`, env/dotenv
 - **Terminal UI**: output modes (`clean`, `verbose`, `errors`, `silent`), themes, run summaries, log files
 
@@ -24,6 +25,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 | Wiki (main docs) | [github.com/Coditary/Beez/wiki](https://github.com/Coditary/Beez/wiki) |
 | Quick reference | [Wiki: Quick Reference](https://github.com/Coditary/Beez/wiki/Quick-Reference) |
 | CLI flags | [Wiki: CLI Flag Reference](https://github.com/Coditary/Beez/wiki/CLI-Flag-Reference) |
+| Project scaffolding (`beez --init`) | [Wiki: Project Scaffolding](https://github.com/Coditary/Beez/wiki/Project-Scaffolding) · [Tempify](https://github.com/Coditary/Tempify) |
 | Glossary | [Wiki: Glossary](https://github.com/Coditary/Beez/wiki/Glossary) |
 | Contributor guide | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | Lua API reference | [Wiki: Lua API Overview](https://github.com/Coditary/Beez/wiki/Lua-API-Overview) · [`docs/lua-api-overview.md`](docs/lua-api-overview.md) |
@@ -36,6 +38,7 @@ Build and task orchestrator for software projects. Pipelines are defined in a Lu
 - Clang >= 17 (CI uses LLVM 22)
 - Conan 2.x
 - Ninja
+- Git (to fetch Tempify at configure time unless `-DTEMPIFY_SOURCE_DIR=` points at a local tree)
 
 Optional: ccache or sccache, clang-format, clang-tidy, cmake-format, cppcheck (CI pins 2.21.1)
 
@@ -81,6 +84,26 @@ beez all         # run workflow "all"
 
 Copy [`scripts/config.lua.example`](scripts/config.lua.example) to `~/.config/beez/config.lua` for user defaults.
 
+### Project scaffolding (`beez --init`, beta)
+
+Beez can scaffold new projects from Tempify templates. Tempify is linked into the `beez` binary; configure fetches tag `v0.1.2` from GitHub (or use a local checkout via `-DTEMPIFY_SOURCE_DIR=`).
+
+```bash
+beez --init list                              # available templates
+beez --init info basic_cpp                    # template details
+beez --init basic_cpp ./my-app                # interactive render
+beez --init basic_cpp ./my-app \
+  --set project_name="My App" \
+  --set include_ci=false                      # non-interactive values
+```
+
+Notes:
+
+- Everything after `--init` is forwarded to Tempify as-is (`beez --init --help` shows Tempify’s help).
+- Beez flags (`-p`, `--list`, …) are **not** interpreted when `--init` is the first argument; use `beez --init -p …` for Tempify’s Prebyte passthrough.
+- **Beta:** CLI routing is covered by Beez integration tests; full template output is tested in the [Tempify](https://github.com/Coditary/Tempify) repository, not yet end-to-end via `beez --init` here.
+- Wiki: [Project Scaffolding](https://github.com/Coditary/Beez/wiki/Project-Scaffolding)
+
 ## Development
 
 ```bash
@@ -120,7 +143,7 @@ make sanitize      # ASan + UBSan debug build + tests
 | `src/core/` | Core domains: `model/`, `registry/`, `config/`, `cache/`, `glob/`, `env/`, `runtime/`, `execution/`, `orchestrator/` |
 | `src/plugins/lua/` | Lua DSL loader |
 | `src/plugins/shell/` | Shell command execution |
-| `src/cli/` | CLI parsing and completion |
+| `src/cli/` | CLI parsing, completion, Tempify dispatch (`--init`) |
 | `src/app/` | `main` entry point |
 | `tests/unit/` | Unit tests |
 | `tests/integration/` | Integration tests |

@@ -34,11 +34,12 @@ add_library(
     completion/install_completion.cpp
     session.cpp
     runner.cpp
+    tempify_dispatch.cpp
     "${COMPLETION_EMBEDDED_CPP}"
 )
 
 target_include_directories(beez_cli PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-target_link_libraries(beez_cli PUBLIC CLI11::CLI11 beez_core lua::lua)
+target_link_libraries(beez_cli PUBLIC CLI11::CLI11 beez_core lua::lua tempify_core)
 
 target_compile_features(beez_cli PUBLIC cxx_std_20)

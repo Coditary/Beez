@@ -8,6 +8,7 @@
 #include "beez/cli/parsing/help_text.hpp"
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/cli/session.hpp"
+#include "beez/cli/tempify_dispatch.hpp"
 #include "beez/core/config/report/settings_report.hpp"
 
 #include <exception>
@@ -70,6 +71,11 @@ void writeErrorUnlessSilent(bool silentRun, const std::function<void()>& writeEr
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) -- CLI entry point
 int run(int argc, const char* argv[])
 {
+    if (isInitMode(argc, argv))
+    {
+        return runTempifyInitMode(collectInitArgs(argc, argv));
+    }
+
     bool silentRun = false;
 
     try

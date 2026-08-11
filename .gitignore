@@ -54,3 +54,6 @@ oom-*
 tests/fuzz/corpus/**/*
 !tests/fuzz/corpus/**/
 !tests/fuzz/corpus/**/*.lua
+
+# Optional local Tempify clone for development (-DTEMPIFY_SOURCE_DIR=...)
+Tempify/

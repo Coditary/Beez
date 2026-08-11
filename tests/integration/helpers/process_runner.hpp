@@ -16,7 +16,8 @@ struct ProcessResult
 };
 
 [[nodiscard]] ProcessResult runBeez(const std::filesystem::path& workingDir,
-                                    const std::initializer_list<std::string>& args);
+                                    const std::initializer_list<std::string>& args,
+                                    const std::initializer_list<std::string>& envVars = {});
 
 [[nodiscard]] inline bool exitedNormally(const ProcessResult& result)
 {
