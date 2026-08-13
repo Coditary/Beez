@@ -101,7 +101,7 @@ std::vector<std::string> buildInstallArgs(const ReqPackManifest& manifest)
 std::string buildInstallCommand(const std::vector<std::string>& args, bool dryRun)
 {
     std::ostringstream stream;
-    stream << "rqp --json install";
+    stream << "rqp install";
     for (const auto& arg : args)
     {
         stream << ' ' << arg;
@@ -110,6 +110,7 @@ std::string buildInstallCommand(const std::vector<std::string>& args, bool dryRu
     {
         stream << " --dry-run";
     }
+    stream << " --json";
     return stream.str();
 }
 
