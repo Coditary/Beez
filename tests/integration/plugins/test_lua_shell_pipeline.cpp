@@ -112,7 +112,7 @@ TEST(LuaShellPipelineTest, TaskStepInvocationUsesConfigureStepOverStepDefault)
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
 task("full_build", {
-    { name = "compile:lua" },
+    { step = "compile:lua" },
 })
 configure_step("compile:lua", {
     output_dir = "build",
@@ -153,7 +153,7 @@ step({
 })
 task("full_build", {
     "touch .task-started",
-    { name = "cpp:compile" },
+    { step = "cpp:compile" },
     "touch .task-done",
 })
 )");

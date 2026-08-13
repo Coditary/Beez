@@ -123,12 +123,13 @@ void registerPluginSteps(const sol::table& stepsTable,
             StepTable["name"] = StepName;
         }
 
-        const std::optional<std::string> StepVersion =
-            pluginRef.fromInstalledCache ? pluginRef.version : std::nullopt;
+        const std::optional<std::string> StepVersion = pluginRef.version;
+        const bool AllowUnversionedAliases = !pluginRef.fromInstalledCache;
         registry.registerPluginStep(parseStepTable(StepTable, luaState),
                                     pluginRef.organization,
                                     pluginRef.name,
-                                    StepVersion);
+                                    StepVersion,
+                                    AllowUnversionedAliases);
     }
 }
 

@@ -434,6 +434,32 @@ TEST(RegistryTest, ResolvesVersionedPluginStepReference)
     const auto Qualified = registry.resolveStep("coditary/clang-build:compile@1.0.0");
     ASSERT_TRUE(Qualified.hasValue());
     EXPECT_EQ(Qualified.value().shellRun.value_or(""), "echo versioned");
+
+    const auto Unversioned = registry.resolveStep("clang-build:compile");
+    ASSERT_TRUE(Unversioned.hasValue());
+    EXPECT_EQ(Unversioned.value().shellRun.value_or(""), "echo versioned");
+}
+
+TEST(RegistryTest, InstalledPluginVersionKeepsVersionedAliasesOnly)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile:code";
+    compileStep.phase = "build";
+    compileStep.scope = "code";
+    compileStep.shellRun = "echo versioned";
+    registry.registerPluginStep(std::move(compileStep),
+                                "coditary",
+                                "clang-build",
+                                std::string {"1.0.0"},
+                                false);
+
+    const auto Versioned = registry.resolveStep("clang-build:compile@1.0.0");
+    ASSERT_TRUE(Versioned.hasValue());
+
+    const auto Unversioned = registry.resolveStep("clang-build:compile");
+    EXPECT_FALSE(Unversioned.hasValue());
 }
 
 TEST(RegistryTest, UniquePluginStepKeepsShortNameAlias)

@@ -580,3 +580,293 @@ reqpack {
     ASSERT_FALSE(Ambiguous.hasValue());
     EXPECT_EQ(Ambiguous.error().error, beez::core::StepResolutionError::Ambiguous);
 }
+
+TEST(LuaDslPluginTest, LoadsTaskWithPluginStepFieldForm)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        compile = {
+            phase = "compile",
+            scope = "code",
+            run = "echo compile",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    {
+        plugin = "coditary/demo",
+        step = "compile",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 1U);
+    beez::test::expectStepInvocation(Found, 0, "coditary/demo:compile", false);
+}
+
+TEST(LuaDslPluginTest, LoadsTaskWithPluginStepAndScopeFields)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        ["configure:debug"] = {
+            phase = "configure",
+            scope = "debug",
+            run = "echo configure",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    {
+        plugin = "coditary/demo",
+        step = "configure",
+        scope = "debug",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 1U);
+    beez::test::expectStepInvocation(Found, 0, "coditary/demo:configure:debug", false);
+}
+
+TEST(LuaDslPluginTest, LoadsTaskWithTaskInvocation)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("prepare", "echo prepare")
+task("build", {
+    { task = "prepare" },
+    "echo done",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 2U);
+    beez::test::expectTaskInvocation(Found, 0, "prepare");
+}
+
+TEST(LuaDslPluginTest, RejectsBarePluginStepNameInTask)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        compile = {
+            phase = "compile",
+            scope = "code",
+            run = "echo compile",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    { step = "compile" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsPluginStepNotDeclaredInReqpack)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        compile = {
+            phase = "compile",
+            scope = "code",
+            run = "echo demo",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    {
+        plugin = "coditary/other",
+        step = "compile",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsDeprecatedNameFieldInTaskAction)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "local-step",
+    phase = "build",
+    scope = "code",
+    run = "echo local",
+})
+task("build", {
+    { name = "local-step" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsVersionFieldInTaskAction)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        compile = {
+            phase = "compile",
+            scope = "code",
+            run = "echo compile",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    {
+        plugin = "coditary/demo",
+        step = "compile",
+        version = "1.0.0",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsDirectTaskCycle)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("loop", {
+    { task = "loop" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsIndirectTaskCycle)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("a", {
+    { task = "b" },
+})
+task("b", {
+    { task = "a" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsUndefinedTaskInvocation)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("build", {
+    { task = "missing" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}

@@ -24,7 +24,8 @@ class Registry
     void registerPluginStep(Step step,
                             const std::string& organization,
                             const std::string& plugin,
-                            const std::optional<std::string>& version = std::nullopt);
+                            const std::optional<std::string>& version = std::nullopt,
+                            bool allowUnversionedAliases = true);
     void configureStep(const std::string& name, const StepConfigPtr& config);
     void registerWorkflow(Workflow workflow);
     void registerStepOrder(const std::string& before, const std::string& after);
@@ -35,6 +36,8 @@ class Registry
     [[nodiscard]] std::optional<Task> findTask(const std::string& name) const;
     [[nodiscard]] std::optional<Step> findStep(const std::string& name) const;
     [[nodiscard]] Expected<Step, StepResolutionFailure> resolveStep(const std::string& reference) const;
+    [[nodiscard]] Expected<std::string, StepResolutionFailure>
+    resolveStepRegistrationId(const std::string& reference) const;
     [[nodiscard]] std::vector<std::string> stepInvocationNames() const;
     [[nodiscard]] bool hasPluginVersionLoaded(const std::string& organization,
                                               const std::string& plugin,

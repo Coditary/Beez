@@ -124,7 +124,8 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
                  core::Registry& registry,
                  const core::Context& context,
                  core::BeezSettings& buildSettings,
-                 core::ReqPackManifest& reqpackManifest)
+                 core::ReqPackManifest& reqpackManifest,
+                 ReqpackBeezPluginCatalog& reqpackBeezPlugins)
 {
     const std::weak_ptr<sol::state> WeakState = luaState;
     auto binder = std::make_shared<DslBinder>(&registry, WeakState);
@@ -144,12 +145,15 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["order"] = [binder](sol::variadic_args arguments) { binder->order(arguments); };
 
-    (*luaState)["reqpack"] = [&reqpackManifest, &registry, &context](const sol::table& table)
+    (*luaState)["reqpack"] = [&reqpackManifest, &reqpackBeezPlugins, &registry, &context](
+                                 const sol::table& table)
     {
         const sol::object BeezObject = table["beez"];
         if (BeezObject.valid() && BeezObject.is<sol::table>())
         {
-            loadBeezPlugins(parseBeezPluginTable(BeezObject.as<sol::table>()), registry, context);
+            const auto Plugins = parseBeezPluginTable(BeezObject.as<sol::table>());
+            reqpackBeezPlugins.set(Plugins);
+            loadBeezPlugins(Plugins, registry, context);
         }
 
         reqpackManifest = parseReqPackTable(table);

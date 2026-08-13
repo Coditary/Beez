@@ -89,11 +89,11 @@ const DslLoadCase TaskFieldCases[] = {
     {"task.phase_shorthand_table",
      R"(task("broken", { phase = "p", scope = "sc", run = "true" }))",
      false},
-    {"task.step_ref_missing_name", R"(task("broken", { { config = { x = 1 } } }))", false},
-    {"task.step_ref_unknown_step_loads", R"(task("run", { { name = "does-not-exist" } }))", false},
+    {"task.step_ref_missing_step", R"(task("broken", { { config = { x = 1 } } }))", false},
+    {"task.step_ref_unknown_step_loads", R"(task("run", { { step = "does-not-exist" } }))", false},
     {"task.step_ref_with_config",
      R"(step({ name = "s", phase = "p", scope = "sc", run = "true" })
-task("run", { { name = "s", config = { flag = true } } }))",
+task("run", { { step = "s", config = { flag = true } } }))",
      true},
 };
 
@@ -189,7 +189,7 @@ TEST(LuaDslFieldsTest, TaskStepReferenceToMissingStepFailsToLoad)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-task("run", { { name = "missing-step" } })
+task("run", { { step = "missing-step" } })
 )");
 
     beez::core::Registry registry;

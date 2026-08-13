@@ -15,6 +15,7 @@ enum class OrchestratorError : std::uint8_t
     ExecutorNotAvailable,
     InvalidPhaseRequest,
     StepOrderingFailed,
+    TaskCycle,
 };
 
 [[nodiscard]] const char* toString(OrchestratorError error);

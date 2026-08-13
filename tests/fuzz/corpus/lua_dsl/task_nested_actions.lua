@@ -12,8 +12,8 @@ step({
 })
 task("pipeline", {
     "echo start",
-    { name = "a", config = { flags = "-O2" } },
-    { parallel = { "echo p1", { name = "b" } } },
+    { step = "a", config = { flags = "-O2" } },
+    { parallel = { "echo p1", { step = "b" } } },
     { phase = "build", scope = "code", run = "echo inline" },
     "echo end",
 })

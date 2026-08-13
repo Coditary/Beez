@@ -14,14 +14,31 @@
 #include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/util/expected.hpp"
 
+#include <algorithm>
+#include <string>
+#include <unordered_set>
 #include <variant>
+#include <vector>
 
 namespace beez::core::orchestrator_detail
 {
 
-Expected<int, OrchestratorError>
-runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress)
+namespace
 {
+
+[[nodiscard]] Expected<int, OrchestratorError>
+runTaskImpl(Orchestrator& orchestrator,
+            const Task& task,
+            ProgressState& progress,
+            std::vector<std::string>& callStack)
+{
+    if (std::ranges::find(callStack, task.name) != callStack.end())
+    {
+        return OrchestratorError::TaskCycle;
+    }
+
+    callStack.push_back(task.name);
+
     int lastExitCode = 0;
     for (const auto& action : task.actions)
     {
@@ -35,6 +52,25 @@ runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress)
                 {});
             if (!Result)
             {
+                callStack.pop_back();
+                return Result.error();
+            }
+            lastExitCode = Result.value();
+            continue;
+        }
+
+        if (const auto* invocation = std::get_if<TaskInvocationAction>(&action))
+        {
+            const auto FoundTask = Access::registry(orchestrator).findTask(invocation->taskName);
+            if (!FoundTask.has_value())
+            {
+                callStack.pop_back();
+                return OrchestratorError::NotFound;
+            }
+
+            const auto Result = runTaskImpl(orchestrator, *FoundTask, progress, callStack);
+            if (!Result)
+            {
                 return Result.error();
             }
             lastExitCode = Result.value();
@@ -44,12 +80,14 @@ runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress)
         const auto* stepAction = std::get_if<TaskStepAction>(&action);
         if (stepAction == nullptr)
         {
+            callStack.pop_back();
             return OrchestratorError::ExecutionFailed;
         }
 
         const auto ResolvedStep = Access::registry(orchestrator).resolveStep(stepAction->stepName);
         if (!ResolvedStep.hasValue())
         {
+            callStack.pop_back();
             if (ResolvedStep.error().error == StepResolutionError::Ambiguous)
             {
                 return OrchestratorError::AmbiguousStep;
@@ -64,12 +102,23 @@ runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress)
         const auto Result = runStepInstance(orchestrator, step, progress);
         if (!Result)
         {
+            callStack.pop_back();
             return Result.error();
         }
         lastExitCode = Result.value();
     }
 
+    callStack.pop_back();
     return lastExitCode;
+}
+
+}  // namespace
+
+Expected<int, OrchestratorError>
+runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress)
+{
+    std::vector<std::string> callStack;
+    return runTaskImpl(orchestrator, task, progress, callStack);
 }
 
 }  // namespace beez::core::orchestrator_detail

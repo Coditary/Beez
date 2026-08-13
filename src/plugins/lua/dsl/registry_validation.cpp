@@ -3,6 +3,9 @@
 #include "beez/core/model/task_action.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_resolution.hpp"
+#include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
+#include "beez/plugin/lua/dsl/task_cycle_validation.hpp"
+#include "beez/plugin/lua/dsl/task_step_reference.hpp"
 
 #include <stdexcept>
 #include <variant>
@@ -10,7 +13,8 @@
 namespace beez::plugin::lua
 {
 
-void validateLoadedRegistry(core::Registry& registry)
+void validateLoadedRegistry(core::Registry& registry,
+                            const ReqpackBeezPluginCatalog& reqpackBeezPlugins)
 {
     for (const auto& [taskName, task] : registry.tasks())
     {
@@ -18,6 +22,9 @@ void validateLoadedRegistry(core::Registry& registry)
         {
             if (const auto* stepAction = std::get_if<core::TaskStepAction>(&action))
             {
+                validateTaskPluginStepReference(
+                    taskName, stepAction->stepName, registry, reqpackBeezPlugins);
+
                 const auto Resolved = registry.resolveStep(stepAction->stepName);
                 if (!Resolved.hasValue())
                 {
@@ -33,6 +40,8 @@ void validateLoadedRegistry(core::Registry& registry)
             }
         }
     }
+
+    validateTaskInvocations(registry);
 
     for (const auto& [workflowName, workflow] : registry.workflows())
     {

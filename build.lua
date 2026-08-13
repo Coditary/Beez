@@ -248,15 +248,15 @@ configure_clang_build("link:fuzzer", { link_rev = "1" })
 task("clean_cache", "rm -rf .cache")
 
 task("debug", {
-    { name = "configure:debug" },
-    { name = "compile:debug" },
-    { name = "link:debug" },
+    { plugin = "coditary/conan", step = "configure", scope = "debug" },
+    { plugin = "coditary/clang-build", step = "compile", scope = "debug" },
+    { plugin = "coditary/clang-build", step = "link", scope = "debug" },
 })
 
 task("fuzzer", {
-    { name = "configure:fuzzer" },
-    { name = "compile:fuzzer" },
-    { name = "link:fuzzer" },
+    { plugin = "coditary/conan", step = "configure", scope = "fuzzer" },
+    { plugin = "coditary/clang-build", step = "compile", scope = "fuzzer" },
+    { plugin = "coditary/clang-build", step = "link", scope = "fuzzer" },
 })
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)

@@ -9,7 +9,7 @@ end
 
 for i = 1, 16 do
     task("task-" .. i, {
-        { name = "step-" .. i },
+        { step = "step-" .. i },
         "echo task-" .. i,
     })
 end

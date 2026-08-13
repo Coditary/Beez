@@ -17,5 +17,5 @@ step({
     run = "mkdir -p build && echo object > build/main.o",
 })
 
-task("build", { { name = "compile" } })
+task("build", { { step = "compile" } })
 task("noop", "true")

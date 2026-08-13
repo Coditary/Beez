@@ -1,3 +1,3 @@
 task("run", {
-    { name = "compile-step" },
+    { step = "compile-step" },
 })

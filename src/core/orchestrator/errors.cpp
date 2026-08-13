@@ -23,6 +23,8 @@ const char* toString(OrchestratorError error)
         return "invalid phase request";
     case OrchestratorError::StepOrderingFailed:
         return "step ordering failed";
+    case OrchestratorError::TaskCycle:
+        return "task invocation cycle detected";
     }
     return "unknown orchestrator error";
 }

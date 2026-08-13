@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 
 #include "beez/core/model/task_action.hpp"
+#include "beez/plugin/lua/dsl/task_step_reference.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
 #include <memory>
@@ -14,6 +15,16 @@
 
 namespace beez::plugin::lua
 {
+
+namespace
+{
+
+[[nodiscard]] bool isPresent(const sol::object& value)
+{
+    return value.valid() && value.get_type() != sol::type::lua_nil;
+}
+
+}  // namespace
 
 std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
                                                const std::shared_ptr<sol::state>& luaState)
@@ -36,25 +47,48 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
             if (!value.is<sol::table>())
             {
                 throw std::runtime_error(
-                    "task action list entries must be strings or step invocation tables");
+                    "task action list entries must be strings or action tables");
             }
 
-            const sol::table StepTable = value.as<sol::table>();
-            const sol::object NameValue = StepTable["name"];
-            if (!NameValue.valid() || !NameValue.is<std::string>())
+            const sol::table ActionTable = value.as<sol::table>();
+            rejectDeprecatedTaskFields(ActionTable);
+
+            const sol::object TaskValue = ActionTable["task"];
+            const sol::object StepValue = ActionTable["step"];
+            const bool HasTask = isPresent(TaskValue);
+            const bool HasStep = isPresent(StepValue);
+
+            if (HasTask && HasStep)
             {
-                throw std::runtime_error("task step invocation is missing required field 'name'");
+                throw std::runtime_error("task action cannot set both 'task' and 'step'");
+            }
+
+            if (HasTask)
+            {
+                if (!TaskValue.is<std::string>())
+                {
+                    throw std::runtime_error("task action field 'task' must be a string");
+                }
+
+                const std::string InvokedTask = TaskValue.as<std::string>();
+                if (InvokedTask.empty())
+                {
+                    throw std::runtime_error("task action field 'task' must not be empty");
+                }
+
+                actions.push_back(core::makeTaskInvocation(InvokedTask));
+                return;
             }
 
             core::TaskStepAction stepAction;
-            stepAction.stepName = NameValue.as<std::string>();
+            stepAction.stepName = parseTaskStepReference(ActionTable);
 
-            const sol::object ConfigValue = StepTable["config"];
+            const sol::object ConfigValue = ActionTable["config"];
             if (ConfigValue.valid())
             {
                 if (!ConfigValue.is<sol::table>())
                 {
-                    throw std::runtime_error("task step invocation field 'config' must be a table");
+                    throw std::runtime_error("task step action field 'config' must be a table");
                 }
 
                 stepAction.config = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
@@ -95,9 +129,11 @@ bool isTaskActionListTable(const sol::table& table)
 
             if (value.is<sol::table>())
             {
-                const sol::table StepTable = value.as<sol::table>();
-                const sol::object NameValue = StepTable["name"];
-                if (NameValue.valid() && NameValue.is<std::string>())
+                const sol::table ActionTable = value.as<sol::table>();
+                const sol::object StepValue = ActionTable["step"];
+                const sol::object TaskValue = ActionTable["task"];
+                if ((StepValue.valid() && StepValue.is<std::string>()) ||
+                    (TaskValue.valid() && TaskValue.is<std::string>()))
                 {
                     hasActionEntry = true;
                 }

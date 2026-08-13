@@ -239,7 +239,7 @@ step({
 })
 task("full_build", {
     "echo start",
-    { name = "cpp:compile" },
+    { step = "cpp:compile" },
     "echo done",
 })
 )");
@@ -267,7 +267,7 @@ step({
     run = "echo compile",
 })
 task("full_build", {
-    { name = "cpp:compile", config = { optimize = "-O3" } },
+    { step = "cpp:compile", config = { optimize = "-O3" } },
 })
 )");
 
@@ -303,7 +303,7 @@ TEST(LuaDslTest, ReturnsFalseWhenTaskStepInvocationConfigIsNotTable)
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
 task("broken", {
-    { name = "cpp:compile", config = "not-a-table" },
+    { step = "cpp:compile", config = "not-a-table" },
 })
 )");
 

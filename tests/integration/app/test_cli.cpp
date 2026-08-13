@@ -141,7 +141,7 @@ step({
         return ctx:wait(job, { exitCode = true }).exitCode
     end,
 })
-task("fail-worker", { { name = "qa-fail" } })
+task("fail-worker", { { step = "qa-fail" } })
 )");
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"fail-worker"});
@@ -179,7 +179,7 @@ step({
     description = "Generate C++ headers",
     run = "true",
 })
-task("build", { { name = "gen-code" } })
+task("build", { { step = "gen-code" } })
 )");
 
     const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"build"});

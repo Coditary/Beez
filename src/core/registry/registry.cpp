@@ -64,7 +64,8 @@ void Registry::registerStep(Step step)
 void Registry::registerPluginStep(Step step,
                                   const std::string& organization,
                                   const std::string& plugin,
-                                  const std::optional<std::string>& version)
+                                  const std::optional<std::string>& version,
+                                  bool allowUnversionedAliases)
 {
     const std::string StepName = step.name;
     const std::string StepId = version.has_value()
@@ -94,7 +95,8 @@ void Registry::registerPluginStep(Step step,
     steps_.emplace(StepId, std::move(step));
     registerStepAlias(StepId, StepId);
 
-    if (!version.has_value())
+    const bool RegisterUnversionedAliases = !version.has_value() || allowUnversionedAliases;
+    if (RegisterUnversionedAliases)
     {
         registerStepAlias(StepName, StepId);
         registerStepAlias(formatShortPluginStepRef(plugin, StepName), StepId);
@@ -106,28 +108,30 @@ void Registry::registerPluginStep(Step step,
             registerStepAlias(formatShortPluginStepRef(plugin, ActionName), StepId);
             registerStepAlias(formatQualifiedStepRef(organization, plugin, ActionName), StepId);
         }
-
-        return;
     }
 
-    const std::string VersionedStepAlias = formatVersionedInvocationRef(StepName, *version);
-    registerStepAlias(VersionedStepAlias, StepId);
-    registerStepAlias(formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName),
-                                                   *version),
-                      StepId);
-    registerStepAlias(formatVersionedInvocationRef(
-                          formatQualifiedStepRef(organization, plugin, StepName), *version),
-                      StepId);
-
-    if (isDefaultScopedStepName(StepName))
+    if (version.has_value())
     {
-        const std::string ActionName = stepActionName(StepName);
-        registerStepAlias(formatVersionedInvocationRef(
-                              formatShortPluginStepRef(plugin, ActionName), *version),
+        const std::string& VersionValue = *version;
+        registerStepAlias(formatVersionedInvocationRef(StepName, VersionValue), StepId);
+        registerStepAlias(formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName),
+                                                       VersionValue),
                           StepId);
         registerStepAlias(formatVersionedInvocationRef(
-                              formatQualifiedStepRef(organization, plugin, ActionName), *version),
+                              formatQualifiedStepRef(organization, plugin, StepName), VersionValue),
                           StepId);
+
+        if (isDefaultScopedStepName(StepName))
+        {
+            const std::string ActionName = stepActionName(StepName);
+            registerStepAlias(formatVersionedInvocationRef(
+                                  formatShortPluginStepRef(plugin, ActionName), VersionValue),
+                              StepId);
+            registerStepAlias(formatVersionedInvocationRef(
+                                  formatQualifiedStepRef(organization, plugin, ActionName),
+                                  VersionValue),
+                              StepId);
+        }
     }
 }
 
@@ -270,11 +274,12 @@ std::optional<Step> Registry::findStep(const std::string& name) const
     return Resolved.value();
 }
 
-Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& reference) const
+Expected<std::string, StepResolutionFailure>
+Registry::resolveStepRegistrationId(const std::string& reference) const
 {
-    if (const auto Direct = findStepById(reference))
+    if (steps_.contains(reference))
     {
-        return *Direct;
+        return reference;
     }
 
     const auto AliasIterator = stepAliases_.find(reference);
@@ -292,10 +297,7 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
             return StepResolutionFailure {.error = StepResolutionError::NotFound};
         }
 
-        if (const auto Found = findStepById(targets.front()))
-        {
-            return *Found;
-        }
+        return targets.front();
     }
 
     const auto [BaseReference, Version] = splitStepReferenceVersion(reference);
@@ -310,9 +312,9 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
                                                   Qualified->stepName)
                 : formatQualifiedStepRef(
                       Qualified->organization, Qualified->plugin, Qualified->stepName);
-        if (const auto Found = findStepById(QualifiedId))
+        if (steps_.contains(QualifiedId))
         {
-            return *Found;
+            return QualifiedId;
         }
     }
 
@@ -337,10 +339,7 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
 
             if (!targets.empty())
             {
-                if (const auto Found = findStepById(targets.front()))
-                {
-                    return *Found;
-                }
+                return targets.front();
             }
         }
     }
@@ -354,12 +353,25 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
             const auto& targets = VersionedIterator->second;
             if (targets.size() == 1U)
             {
-                if (const auto Found = findStepById(targets.front()))
-                {
-                    return *Found;
-                }
+                return targets.front();
             }
         }
+    }
+
+    return StepResolutionFailure {.error = StepResolutionError::NotFound};
+}
+
+Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& reference) const
+{
+    const auto RegistrationId = resolveStepRegistrationId(reference);
+    if (!RegistrationId.hasValue())
+    {
+        return RegistrationId.error();
+    }
+
+    if (const auto Found = findStepById(RegistrationId.value()))
+    {
+        return *Found;
     }
 
     return StepResolutionFailure {.error = StepResolutionError::NotFound};

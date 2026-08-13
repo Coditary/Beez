@@ -106,9 +106,12 @@ add_library(
     api/text/detail/prebyte_backend.cpp
     api/text/diff.cpp
     dsl/task_parser.cpp
+    dsl/task_step_reference.cpp
+    dsl/task_cycle_validation.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
     dsl/registry_validation.cpp
+    dsl/reqpack_beez_plugin_catalog.cpp
     dsl/dsl_binder.cpp
     dsl/reqpack_parser.cpp
     dsl/plugin_loader.cpp
