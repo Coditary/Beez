@@ -4,6 +4,7 @@
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/plugin_loader.hpp"
+#include "beez/plugin/lua/dsl/configure_parser.hpp"
 #include "beez/plugin/lua/dsl/reqpack_parser.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
@@ -101,6 +102,23 @@ class DslBinder
         registry_->configureStep(name, makeLuaStepConfig(LuaState, configTable));
     }
 
+    void configure(const sol::table& entriesTable) const
+    {
+        const auto LuaState = luaState_.lock();
+        if (!LuaState)
+        {
+            throw std::runtime_error("lua state is no longer available");
+        }
+
+        parseConfigureTable(
+            entriesTable,
+            LuaState,
+            [this](const std::string& qualifiedName, const sol::table& configTable)
+            { configurePlugin(qualifiedName, configTable); },
+            [this](const std::string& stepName, const sol::table& configTable)
+            { configureStep(stepName, configTable); });
+    }
+
     void configurePlugin(const std::string& qualifiedName, const sol::table& configTable) const
     {
         const auto LuaState = luaState_.lock();
@@ -176,6 +194,9 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
         { binder->task(name, commands); });
 
     (*luaState)["step"] = [binder](const sol::table& options) { binder->step(options); };
+
+    (*luaState)["configure"] = [binder](const sol::table& entriesTable)
+    { binder->configure(entriesTable); };
 
     (*luaState)["configure_step"] = [binder](const std::string& name, const sol::table& configTable)
     { binder->configureStep(name, configTable); };

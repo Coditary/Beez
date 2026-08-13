@@ -614,6 +614,152 @@ configure_step("check", {
     EXPECT_NE(Fingerprint.find("flag=overlay"), std::string::npos);
 }
 
+TEST(LuaDslPluginTest, ConfigureMergesPluginAndStepConfigs)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        alpha = {
+            phase = "qa",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo alpha",
+        },
+        beta = {
+            phase = "qa",
+            scope = "lint",
+            config = { flag = "base" },
+            run = "echo beta",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+        steps = {
+            alpha = { flag = "alpha" },
+        },
+    }},
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Alpha = registry.findStep("alpha");
+    const auto Beta = registry.findStep("beta");
+    ASSERT_TRUE(Alpha.has_value());
+    ASSERT_TRUE(Beta.has_value());
+    if (!Alpha || !Beta)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Alpha->hasConfig());
+    ASSERT_TRUE(Beta->hasConfig());
+    if (Alpha->config == nullptr || Beta->config == nullptr)
+    {
+        return;
+    }
+
+    const std::string AlphaFingerprint = Alpha->config->cacheFingerprint();
+    const std::string BetaFingerprint = Beta->config->cacheFingerprint();
+    EXPECT_NE(AlphaFingerprint.find("compdb=build/tree"), std::string::npos);
+    EXPECT_NE(BetaFingerprint.find("compdb=build/tree"), std::string::npos);
+    EXPECT_NE(AlphaFingerprint.find("flag=alpha"), std::string::npos);
+    EXPECT_NE(BetaFingerprint.find("flag=base"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, RejectsConfigurePluginNotInReqpackViaConfigure)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/missing", {
+        compdb = "build/tree",
+    }},
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, ConfigureStandaloneStepBeforeRegistration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure({
+    { ":clean:artifacts", {
+        force = true,
+        delete_logs = false,
+    }},
+})
+
+step({
+    name = "clean:artifacts",
+    phase = "clean",
+    scope = "repo",
+    run = "true",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("clean:artifacts");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    const std::string Fingerprint = Found->config->cacheFingerprint();
+    EXPECT_NE(Fingerprint.find("force=true"), std::string::npos);
+    EXPECT_NE(Fingerprint.find("delete_logs=false"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, RejectsConfigureStandaloneStepWithEmptyName)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure({
+    { ":", {
+        force = true,
+    }},
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 TEST(LuaDslPluginTest, LoadsInstalledPluginVersionOnDemand)
 {
     const beez::test::TempProject Project;

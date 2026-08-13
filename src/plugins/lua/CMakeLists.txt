@@ -105,6 +105,7 @@ add_library(
     api/text/template_string.cpp
     api/text/detail/prebyte_backend.cpp
     api/text/diff.cpp
+    dsl/configure_parser.cpp
     dsl/task_parser.cpp
     dsl/task_step_reference.cpp
     dsl/plugin_config_validation.cpp
