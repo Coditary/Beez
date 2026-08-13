@@ -61,6 +61,30 @@ void Registry::registerStep(Step step)
     registerStepAlias(StepName, StepName);
 }
 
+[[nodiscard]] std::string Registry::formatPluginKey(const std::string& organization,
+                                                    const std::string& plugin)
+{
+    return organization + '/' + plugin;
+}
+
+[[nodiscard]] bool Registry::stepBelongsToPlugin(const std::string& stepId,
+                                                   const std::string& pluginKey)
+{
+    return stepId.starts_with(pluginKey + ':') || stepId.starts_with(pluginKey + '@');
+}
+
+void Registry::applyPluginConfigToRegisteredSteps(const std::string& pluginKey,
+                                                  const StepConfigPtr& config)
+{
+    for (auto& [stepId, step] : steps_)
+    {
+        if (stepBelongsToPlugin(stepId, pluginKey))
+        {
+            step.config = mergeStepConfigs(step.config, config);
+        }
+    }
+}
+
 void Registry::registerPluginStep(Step step,
                                   const std::string& organization,
                                   const std::string& plugin,
@@ -72,6 +96,13 @@ void Registry::registerPluginStep(Step step,
                                    ? formatVersionedQualifiedStepRef(
                                          organization, plugin, *version, StepName)
                                    : formatQualifiedStepRef(organization, plugin, StepName);
+
+    const std::string PluginKey = formatPluginKey(organization, plugin);
+    const auto PluginPendingIterator = pendingPluginConfigs_.find(PluginKey);
+    if (PluginPendingIterator != pendingPluginConfigs_.end())
+    {
+        step.config = mergeStepConfigs(step.config, PluginPendingIterator->second);
+    }
 
     const auto PendingIterator = pendingStepConfigs_.find(StepName);
     if (PendingIterator != pendingStepConfigs_.end())
@@ -144,6 +175,31 @@ void Registry::registerStepAlias(const std::string& alias, const std::string& st
 void Registry::configureStep(const std::string& name, const StepConfigPtr& config)
 {
     applyStepConfig(name, config);
+}
+
+void Registry::configurePlugin(const std::string& organization,
+                               const std::string& plugin,
+                               const StepConfigPtr& config)
+{
+    const std::string PluginKey = formatPluginKey(organization, plugin);
+    pendingPluginConfigs_[PluginKey] =
+        mergeStepConfigs(pendingPluginConfigs_[PluginKey], config);
+    applyPluginConfigToRegisteredSteps(PluginKey, config);
+}
+
+bool Registry::hasPluginSteps(const std::string& organization, const std::string& plugin) const
+{
+    const std::string PluginKey = formatPluginKey(organization, plugin);
+    for (const auto& [stepId, step] : steps_)
+    {
+        (void)step;
+        if (stepBelongsToPlugin(stepId, PluginKey))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void Registry::applyStepConfig(const std::string& name, const StepConfigPtr& config)
@@ -239,6 +295,7 @@ void Registry::clear()
     steps_.clear();
     stepAliases_.clear();
     pendingStepConfigs_.clear();
+    pendingPluginConfigs_.clear();
     workflows_.clear();
     stepOrderHints_.clear();
 }

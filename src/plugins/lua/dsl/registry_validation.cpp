@@ -3,6 +3,7 @@
 #include "beez/core/model/task_action.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_resolution.hpp"
+#include "beez/plugin/lua/dsl/plugin_config_validation.hpp"
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 #include "beez/plugin/lua/dsl/task_cycle_validation.hpp"
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
@@ -65,6 +66,7 @@ void validateLoadedRegistry(core::Registry& registry,
     }
 
     validateTaskInvocations(registry);
+    validateConfiguredPlugins(registry, reqpackBeezPlugins);
 
     for (const auto& [workflowName, workflow] : registry.workflows())
     {

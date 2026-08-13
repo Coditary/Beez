@@ -10,6 +10,8 @@
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
+#include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
+
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -25,11 +27,27 @@ namespace beez::plugin::lua
 namespace
 {
 
+[[nodiscard]] std::pair<std::string, std::string> splitQualifiedPluginName(const std::string& name)
+{
+    const auto SlashPosition = name.find('/');
+    if (SlashPosition == std::string::npos || SlashPosition == 0 || SlashPosition == name.size() - 1)
+    {
+        throw std::runtime_error("configure_plugin plugin name '" + name +
+                                 "' must use the form 'organization/plugin'");
+    }
+
+    return {name.substr(0, SlashPosition), name.substr(SlashPosition + 1)};
+}
+
 class DslBinder
 {
   public:
-    DslBinder(core::Registry* registry, std::weak_ptr<sol::state> luaState)
-        : registry_(registry), luaState_(std::move(luaState))
+    DslBinder(core::Registry* registry,
+              std::weak_ptr<sol::state> luaState,
+              ReqpackBeezPluginCatalog* reqpackBeezPlugins)
+        : registry_(registry),
+          luaState_(std::move(luaState)),
+          reqpackBeezPlugins_(reqpackBeezPlugins)
     {
     }
 
@@ -83,6 +101,27 @@ class DslBinder
         registry_->configureStep(name, makeLuaStepConfig(LuaState, configTable));
     }
 
+    void configurePlugin(const std::string& qualifiedName, const sol::table& configTable) const
+    {
+        const auto LuaState = luaState_.lock();
+        if (!LuaState)
+        {
+            throw std::runtime_error("lua state is no longer available");
+        }
+
+        const auto [Organization, Plugin] = splitQualifiedPluginName(qualifiedName);
+        if (reqpackBeezPlugins_ != nullptr && !reqpackBeezPlugins_->empty() &&
+            !reqpackBeezPlugins_->find(Organization, Plugin).has_value())
+        {
+            throw std::runtime_error("configure_plugin references plugin '" + qualifiedName +
+                                     "' which is not declared in reqpack.beez");
+        }
+
+        registry_->configurePlugin(Organization,
+                                   Plugin,
+                                   makeLuaStepConfig(LuaState, configTable));
+    }
+
     void workflow(const std::string& name, const sol::table& steps) const
     {
         registry_->registerWorkflow(parseWorkflow(name, steps));
@@ -116,6 +155,7 @@ class DslBinder
   private:
     core::Registry* registry_;
     std::weak_ptr<sol::state> luaState_;
+    ReqpackBeezPluginCatalog* reqpackBeezPlugins_;
 };
 
 }  // namespace
@@ -128,7 +168,7 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
                  ReqpackBeezPluginCatalog& reqpackBeezPlugins)
 {
     const std::weak_ptr<sol::state> WeakState = luaState;
-    auto binder = std::make_shared<DslBinder>(&registry, WeakState);
+    auto binder = std::make_shared<DslBinder>(&registry, WeakState, &reqpackBeezPlugins);
 
     (*luaState)["task"] = sol::overload(
         [binder](const std::string& name, const std::string& run) { binder->task(name, run); },
@@ -139,6 +179,10 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["configure_step"] = [binder](const std::string& name, const sol::table& configTable)
     { binder->configureStep(name, configTable); };
+
+    (*luaState)["configure_plugin"] =
+        [binder](const std::string& qualifiedName, const sol::table& configTable)
+    { binder->configurePlugin(qualifiedName, configTable); };
 
     (*luaState)["workflow"] = [binder](const std::string& name, const sol::table& steps)
     { binder->workflow(name, steps); };
