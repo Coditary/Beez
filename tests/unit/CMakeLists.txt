@@ -23,6 +23,7 @@ add_executable(
     core/cache/fingerprint/test_include_fingerprint.cpp
     core/cache/storage/test_cache_write_coordinator.cpp
     core/config/paths/test_config_paths.cpp
+    core/plugin/test_plugin_paths.cpp
     core/test_temp_directory.cpp
     core/test_text_table.cpp
     core/cache/storage/test_cache_compress.cpp
@@ -51,6 +52,7 @@ add_executable(
     core/config/schema/test_config_schema.cpp
     plugin/host/test_plugin_host.cpp
     plugin/lua/test_lua_dsl.cpp
+    plugin/lua/test_lua_dsl_plugins.cpp
     plugin/lua/test_lua_dsl_fields.cpp
     plugin/lua/test_reqpack_dsl.cpp
     plugin/lua/test_lua_settings.cpp

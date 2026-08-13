@@ -20,6 +20,7 @@ add_library(
     config/cache/cache_options.cpp
     config/env/env_settings.cpp
     config/paths/config_paths.cpp
+    plugin/paths.cpp
     config/performance/performance_options.cpp
     config/report/cache_rows.cpp
     config/report/detail/report_helpers.cpp

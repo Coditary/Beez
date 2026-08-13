@@ -4,6 +4,7 @@
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/reqpack_parser.hpp"
+#include "beez/plugin/lua/dsl/plugin_loader.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
@@ -125,6 +126,22 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["reqpack"] = [&reqpackManifest](const sol::table& table)
     { reqpackManifest = parseReqPackTable(table); };
+
+    const sol::function OriginalRequire = (*luaState)["require"];
+    (*luaState)["require"] = sol::overload(
+        [OriginalRequire](const std::string& moduleName) -> sol::object
+        {
+            return OriginalRequire(moduleName);
+        },
+        [&registry, &context](const sol::table& dependencies)
+        { loadBeezPlugins(parseBeezRequireTable(dependencies), registry, context); });
+
+    const auto ProjectRoot = context.buildScriptPath().parent_path();
+    const std::string ProjectPathPrefix =
+        ProjectRoot.string() + "/?.lua;" + ProjectRoot.string() + "/?/init.lua";
+    sol::table PackageTable = (*luaState)["package"];
+    const std::string ExistingPath = PackageTable["path"];
+    PackageTable["path"] = ProjectPathPrefix + ";" + ExistingPath;
 
     registerBeezApi(luaState, context, buildSettings);
 }

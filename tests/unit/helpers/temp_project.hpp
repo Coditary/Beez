@@ -45,6 +45,19 @@ class TempProject
         stream << content;
     }
 
+    void writePlugin(const std::string& organization,
+                     const std::string& name,
+                     const std::string& version,
+                     const std::string& content) const
+    {
+        const auto PluginPath =
+            path_ / ".cache" / "beez" / "plugins" / organization / name / version /
+            "beez_plugin.lua";
+        std::filesystem::create_directories(PluginPath.parent_path());
+        std::ofstream stream(PluginPath);
+        stream << content;
+    }
+
   private:
     std::filesystem::path path_;
     static inline std::atomic<int> idCounter {0};
