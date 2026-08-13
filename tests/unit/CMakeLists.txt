@@ -83,4 +83,4 @@ target_link_libraries(
 target_include_directories(beez_tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(GoogleTest)
-gtest_discover_tests(beez_tests)
+gtest_discover_tests(beez_tests PROPERTIES LABELS "unit")

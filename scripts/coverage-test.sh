@@ -28,9 +28,19 @@ fi
 mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/test"
 find "${DEBUG_BUILD_TREE}" -name '*.gcda' -delete
 
-cd "${DEBUG_BUILD_TREE}"
+# Coverage gates src/ line coverage; default to unit tests only (fast).
+# Override with CTEST_ARGS, e.g. CTEST_ARGS='-L unit|integration'
+CTEST_ARGS="${CTEST_ARGS:--L unit}"
 CTEST_JOBS="${CTEST_JOBS:-1}"
-ctest -j"${CTEST_JOBS}" --output-on-failure 2>&1 | tee "${REPORT_FILE}"
+
+cd "${DEBUG_BUILD_TREE}"
+ctest -j"${CTEST_JOBS}" ${CTEST_ARGS} --output-on-failure 2>&1 | tee "${REPORT_FILE}"
+
+if grep -q "No tests were found" "${REPORT_FILE}"; then
+    echo "error: ctest matched no tests (CTEST_ARGS=${CTEST_ARGS})" >&2
+    echo "Re-run configure after adding test LABELS (beez configure:setup or configure:coverage)." >&2
+    exit 1
+fi
 
 if ! find "${DEBUG_BUILD_TREE}" -name '*.gcda' -print -quit | grep -q .; then
     echo "error: no .gcda files after ctest; coverage instrumentation data is missing" >&2

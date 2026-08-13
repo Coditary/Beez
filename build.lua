@@ -16,6 +16,7 @@
 --   beez -s conan_sbom_export             Conan graph + CycloneDX SBOM
 --   beez -s cyclonedx_merge               merge CycloneDX BOM files
 --   beez -s osv_audit_check               OSV vulnerability scan (lockfile)
+--   beez -s test:unit                     unit tests (coditary/ctest plugin)
 --   make lint                          clang-tidy + cmake-format (Makefile, not Beez)
 --   beez clean_cache        clear .cache/ only
 --
@@ -64,6 +65,16 @@ reqpack {
             path = "./plugins/coditary/osv-audit",
             version = "1.0.0",
         },
+        {
+            name = "coditary/ctest",
+            path = "./plugins/coditary/ctest",
+            version = "1.0.0",
+        },
+        {
+            name = "coditary/coverage",
+            path = "./plugins/coditary/coverage",
+            version = "1.0.0",
+        },
     },
 }
 
@@ -80,10 +91,8 @@ end
 local BUILD_TYPE = env_or("BUILD_TYPE", "Release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
 local DEBUG_BUILD_TREE = "build/build/Debug"
-local COVERAGE_STAMP = DEBUG_BUILD_TREE .. "/.beez-coverage-configured"
 local REPORTS_DIR = env_or("REPORTS_DIR", "report")
 local FUZZER_TIME = env_or("FUZZER_TIME", "30")
-local MIN_LINE_COVERAGE = env_or("MIN_LINE_COVERAGE", "85")
 local FUZZER_BIN = DEBUG_BUILD_TREE .. "/fuzz/fuzz_lua_dsl"
 
 local function configure_clang_tidy(step_name, extra)
@@ -169,6 +178,27 @@ order("cyclonedx_check", "cyclonedx_merge")
 order("cyclonedx_merge", "osv_audit_check")
 
 order("configure:setup", "build:compile")
+
+local function configure_test(step_name, extra)
+    if extra ~= nil then
+        configure_step(step_name, extra)
+    end
+end
+
+configure_test("test:unit", { test_rev = "1" })
+configure_test("test:integration", { test_rev = "1" })
+configure_test("test:system", { test_rev = "1" })
+configure_test("test:performance", { test_rev = "1" })
+configure_test("test:coverage", { test_rev = "1" })
+
+configure_step("report:coverage", { report_rev = "1" })
+configure_test("test:sanitize", { test_rev = "1" })
+configure_test("test:tsan", { test_rev = "1" })
+configure_test("test:robustness", { test_rev = "1" })
+
+order("test:unit", "test:integration")
+order("test:integration", "test:system")
+order("test:system", "test:performance")
 
 local CMAKE_FILE_PATTERNS = {
     "CMakeLists.txt",
@@ -272,71 +302,7 @@ task("fuzzer", {
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
--- ── Configure + build (coditary/conan plugin) ────────────────────────────────
-
--- ── Tests (ctest per suite, step cache on binaries + sources) ────────────────
-
-local function make_test_step(stepName, scope, suite, ctest_args, binary, extra_inputs, report_marker)
-    local inputs = {
-        binary,
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-    }
-    for _, pattern in ipairs(extra_inputs) do
-        inputs[#inputs + 1] = pattern
-    end
-
-    step({
-        name = stepName,
-        phase = "test",
-        scope = scope,
-        input = inputs,
-        output = { report_marker },
-        description = "Run " .. suite .. " tests via ctest",
-        run = "mkdir -p report/test && cd " .. BUILD_TREE .. " && ctest " .. ctest_args ..
-            " --output-on-failure && touch ../../../" .. report_marker,
-    })
-end
-
-make_test_step(
-    "test:unit",
-    "code",
-    "unit",
-    "-R beez_tests",
-    BUILD_TREE .. "/tests/unit/beez_tests",
-    { "tests/unit/**/*.cpp" },
-    "report/test/unit.ok"
-)
-
-make_test_step(
-    "test:integration",
-    "code",
-    "integration",
-    "-R beez_integration_tests",
-    BUILD_TREE .. "/tests/integration/beez_integration_tests",
-    { "tests/integration/**/*.cpp" },
-    "report/test/integration.ok"
-)
-
-make_test_step(
-    "test:system",
-    "code",
-    "system",
-    "-L system",
-    BUILD_TREE .. "/tests/system/beez_system_tests",
-    { "tests/system/**/*.cpp" },
-    "report/test/system.ok"
-)
-
-make_test_step(
-    "test:performance",
-    "code",
-    "performance",
-    "-L performance",
-    BUILD_TREE .. "/tests/performance/beez_perf_tests",
-    { "tests/performance/**/*.cpp" },
-    "report/test/performance.ok"
-)
+-- ── Configure + build + tests (coditary/conan + coditary/ctest plugins) ────────
 
 -- ── cmake-format (clang-tidy via coditary/clang-tidy plugin) ────────────────
 
@@ -369,79 +335,9 @@ step({
 
 -- ── Debug build (coditary/conan plugin) ──────────────────────────────────────
 
--- ── Coverage ─────────────────────────────────────────────────────────────────
-step({
-    name = "test:coverage",
-    phase = "test",
-    scope = "coverage",
-    input = {
-        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
-        "src/**/*.cpp",
-        "tests/**/*.cpp",
-        COVERAGE_STAMP,
-    },
-    output = {
-        REPORTS_DIR .. "/test/coverage-test-report.ok",
-        REPORTS_DIR .. "/test/coverage-test-report.txt",
-        DEBUG_BUILD_TREE .. "/**/*.gcda",
-    },
-    description = "Run tests and capture coverage test report",
-    run = "./scripts/coverage-test.sh build " .. REPORTS_DIR,
-})
+-- ── Coverage (coditary/conan + coditary/ctest + coditary/coverage plugins) ───
 
-step({
-    name = "report:coverage",
-    phase = "report",
-    scope = "coverage",
-    input = {
-        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
-        "src/**/*.cpp",
-        REPORTS_DIR .. "/test/coverage-test-report.ok",
-        DEBUG_BUILD_TREE .. "/**/*.gcda",
-    },
-    output = { REPORTS_DIR .. "/coverage/index.html" },
-    description = "Generate HTML coverage report and enforce minimum line coverage (" ..
-        MIN_LINE_COVERAGE .. "%)",
-    run = "MIN_LINE_COVERAGE=" .. MIN_LINE_COVERAGE .. " ./scripts/coverage-report.sh build " ..
-        REPORTS_DIR,
-})
-
--- ── Sanitizer ────────────────────────────────────────────────────────────────
-
-step({
-    name = "test:sanitize",
-    phase = "test",
-    scope = "sanitize",
-    input = {
-        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
-        "src/**/*.cpp",
-        "tests/**/*.cpp",
-    },
-    output = { REPORTS_DIR .. "/sanitize/sanitize-report.ok" },
-    description = "Run tests under ASan/UBSan",
-    run = "mkdir -p " .. REPORTS_DIR .. "/sanitize && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
-        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
-        "/sanitize/sanitize-report.txt' && touch " .. REPORTS_DIR ..
-        "/sanitize/sanitize-report.ok",
-})
-
--- ── ThreadSanitizer ──────────────────────────────────────────────────────────
-
-step({
-    name = "test:tsan",
-    phase = "test",
-    scope = "tsan",
-    input = {
-        DEBUG_BUILD_TREE .. "/tests/unit/beez_tests",
-        "src/**/*.cpp",
-        "tests/**/*.cpp",
-    },
-    output = { REPORTS_DIR .. "/tsan/tsan-report.ok" },
-    description = "Run tests under ThreadSanitizer",
-    run = "mkdir -p " .. REPORTS_DIR .. "/tsan && bash -o pipefail -c 'cd " .. DEBUG_BUILD_TREE ..
-        " && ctest --output-on-failure 2>&1 | tee ../../../" .. REPORTS_DIR ..
-        "/tsan/tsan-report.txt' && touch " .. REPORTS_DIR .. "/tsan/tsan-report.ok",
-})
+-- ── Sanitizer / TSan reports (coditary/ctest plugin runs tests) ─────────────
 
 -- ── Fuzzer ───────────────────────────────────────────────────────────────────
 

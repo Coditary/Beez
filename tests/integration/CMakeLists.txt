@@ -27,4 +27,4 @@ target_include_directories(beez_integration_tests PRIVATE ${CMAKE_SOURCE_DIR}/in
 target_compile_definitions(beez_integration_tests PRIVATE "BEEZ_EXECUTABLE=\"$<TARGET_FILE:beez>\"")
 
 include(GoogleTest)
-gtest_discover_tests(beez_integration_tests)
+gtest_discover_tests(beez_integration_tests PROPERTIES LABELS "integration")
