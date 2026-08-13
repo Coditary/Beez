@@ -75,6 +75,11 @@ reqpack {
             path = "./plugins/coditary/coverage",
             version = "1.0.0",
         },
+        {
+            name = "coditary/fuzzer",
+            path = "./plugins/coditary/fuzzer",
+            version = "1.0.0",
+        },
     },
 }
 
@@ -90,10 +95,7 @@ end
 
 local BUILD_TYPE = env_or("BUILD_TYPE", "Release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
-local DEBUG_BUILD_TREE = "build/build/Debug"
 local REPORTS_DIR = env_or("REPORTS_DIR", "report")
-local FUZZER_TIME = env_or("FUZZER_TIME", "30")
-local FUZZER_BIN = DEBUG_BUILD_TREE .. "/fuzz/fuzz_lua_dsl"
 
 local function configure_clang_tidy(step_name, extra)
     local cfg = { compdb = BUILD_TREE }
@@ -195,6 +197,17 @@ configure_step("report:coverage", { report_rev = "1" })
 configure_test("test:sanitize", { test_rev = "1" })
 configure_test("test:tsan", { test_rev = "1" })
 configure_test("test:robustness", { test_rev = "1" })
+
+local function configure_fuzz(step_name, extra)
+    if extra ~= nil then
+        configure_step(step_name, extra)
+    end
+end
+
+configure_fuzz("fuzz:smoke", { fuzz_rev = "1" })
+configure_fuzz("fuzz:corpus", { fuzz_rev = "1" })
+configure_fuzz("fuzz:seed-verify", { fuzz_rev = "1" })
+configure_fuzz("fuzz:torture", { fuzz_rev = "1" })
 
 order("test:unit", "test:integration")
 order("test:integration", "test:system")
@@ -339,71 +352,7 @@ step({
 
 -- ── Sanitizer / TSan reports (coditary/ctest plugin runs tests) ─────────────
 
--- ── Fuzzer ───────────────────────────────────────────────────────────────────
-
-step({
-    name = "fuzz:smoke",
-    phase = "fuzz",
-    scope = "smoke",
-    input = {
-        FUZZER_BIN,
-        "tests/fuzz/corpus/lua_dsl/*.lua",
-        "tests/fuzz/lua_dsl.dict",
-        "scripts/fuzz-common.sh",
-        "scripts/fuzz-smoke.sh",
-    },
-    output = { REPORTS_DIR .. "/fuzz/fuzz-smoke-report.txt" },
-    description = "Short fuzz run (" .. FUZZER_TIME .. "s default)",
-    run = "FUZZER_TIME=" .. FUZZER_TIME .. " REPORTS_DIR=" .. REPORTS_DIR ..
-        " scripts/fuzz-smoke.sh build",
-})
-
-step({
-    name = "fuzz:corpus",
-    phase = "fuzz",
-    scope = "corpus",
-    input = {
-        FUZZER_BIN,
-        "tests/fuzz/corpus/lua_dsl/*.lua",
-        "tests/fuzz/lua_dsl.dict",
-        "scripts/fuzz-common.sh",
-        "scripts/fuzz-corpus.sh",
-    },
-    output = { REPORTS_DIR .. "/fuzz/fuzz-corpus-report.txt" },
-    description = "Longer fuzz run for corpus collection (60s)",
-    run = "FUZZER_TIME=60 REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-corpus.sh build",
-})
-
-step({
-    name = "fuzz:seed-verify",
-    phase = "fuzz",
-    scope = "verify",
-    input = {
-        FUZZER_BIN,
-        "tests/fuzz/corpus/lua_dsl/*.lua",
-        "scripts/fuzz-seed-verify.sh",
-    },
-    output = { REPORTS_DIR .. "/fuzz/fuzz-seed-verify-report.txt" },
-    description = "Run each committed fuzz seed through the harness once",
-    run = "REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-seed-verify.sh build",
-})
-
-step({
-    name = "fuzz:torture",
-    phase = "fuzz",
-    scope = "torture",
-    input = {
-        FUZZER_BIN,
-        "tests/fuzz/corpus/lua_dsl/*.lua",
-        "tests/fuzz/lua_dsl.dict",
-        "scripts/fuzz-common.sh",
-        "scripts/fuzz-torture.sh",
-    },
-    output = { REPORTS_DIR .. "/fuzz/fuzz-torture-report.txt" },
-    description = "Aggressive multi-minute fuzz run (FUZZER_TIME=300 default)",
-    run = "FUZZER_TIME=" .. (beez.env("FUZZER_TORTURE_TIME") or "300") ..
-        " REPORTS_DIR=" .. REPORTS_DIR .. " scripts/fuzz-torture.sh build",
-})
+-- ── Fuzzer (coditary/fuzzer plugin; configure/build via coditary/conan) ────────
 
 workflow("fuzzer_torture", {
     { phase = "configure", scope = "fuzz" },
