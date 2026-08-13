@@ -10,7 +10,9 @@
 --   beez -s check                      clang-tidy (profiles or custom checks array)
 --   beez -s lint_check                 clang-tidy lint profile only
 --   beez -s analyze_check              clang-tidy analyzer profile only
---   beez -s security_check             clang-tidy security profile only
+--   beez -s cppcheck_check              cppcheck (profiles: analyze, security)
+--   beez -s cppcheck_analyze_check      cppcheck on src/
+--   beez -s cppcheck_security_check     cppcheck security scan
 --   make lint                          clang-tidy + cmake-format (Makefile, not Beez)
 --   beez clean_cache        clear .cache/ only
 --
@@ -37,6 +39,11 @@ reqpack {
         {
             name = "coditary/clang-tidy",
             path = "./plugins/coditary/clang-tidy",
+            version = "1.0.0",
+        },
+        {
+            name = "coditary/cppcheck",
+            path = "./plugins/coditary/cppcheck",
             version = "1.0.0",
         },
     },
@@ -90,14 +97,28 @@ configure_clang_tidy("security_check", {
     security_rev = "3",
 })
 
-local SECURITY_SOURCE_PATTERNS = {
-    "src/**/*.cpp",
-    "src/**/*.hpp",
-    "src/**/*.h",
-    "include/**/*.cpp",
-    "include/**/*.hpp",
-    "include/**/*.h",
-}
+local function configure_cppcheck(step_name, extra)
+    local cfg = {}
+    if extra ~= nil then
+        for key, value in pairs(extra) do
+            cfg[key] = value
+        end
+    end
+    configure_step(step_name, cfg)
+end
+
+configure_cppcheck("cppcheck_check", {
+    profiles = { "analyze", "security" },
+    check_rev = "1",
+})
+
+configure_cppcheck("cppcheck_analyze_check", {
+    analyze_rev = "1",
+})
+
+configure_cppcheck("cppcheck_security_check", {
+    security_rev = "1",
+})
 
 local CMAKE_FILE_PATTERNS = {
     "CMakeLists.txt",
@@ -343,32 +364,7 @@ step({
     end,
 })
 
--- ── Static analysis ──────────────────────────────────────────────────────────
-
-step({
-    name = "qa:cppcheck-analyze",
-    phase = "qa",
-    scope = "code",
-    input = {
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-    },
-    output = { "report/analyze/cppcheck.ok" },
-    description = "cppcheck on src/ (step cache)",
-    run = "mkdir -p report/analyze && scripts/cppcheck-analyze.sh && touch report/analyze/cppcheck.ok",
-})
-
 -- ── Security ─────────────────────────────────────────────────────────────────
-
-step({
-    name = "qa:cppcheck-security",
-    phase = "qa",
-    scope = "code",
-    input = SECURITY_SOURCE_PATTERNS,
-    output = { "report/security/cppcheck.ok" },
-    description = "cppcheck security scan (step cache)",
-    run = "mkdir -p report/security && scripts/cppcheck-security.sh && touch report/security/cppcheck.ok",
-})
 
 step({
     name = "qa:dependency-audit",
