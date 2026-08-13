@@ -52,15 +52,15 @@ configure({
 task("clean_cache", "rm -rf .cache")
 
 task("debug", {
-    { plugin = "coditary/conan", step = "configure", scope = "debug" },
-    { plugin = "coditary/clang-build", step = "compile", scope = "debug" },
-    { plugin = "coditary/clang-build", step = "link", scope = "debug" },
+    { plugin = "coditary/conan", step = "configure[debug]" },
+    { plugin = "coditary/clang-build", step = "compile[debug]" },
+    { plugin = "coditary/clang-build", step = "link[debug]" },
 })
 
 task("fuzzer", {
-    { plugin = "coditary/conan", step = "configure", scope = "fuzzer" },
-    { plugin = "coditary/clang-build", step = "compile", scope = "fuzzer" },
-    { plugin = "coditary/clang-build", step = "link", scope = "fuzzer" },
+    { plugin = "coditary/conan", step = "configure[fuzzer]" },
+    { plugin = "coditary/clang-build", step = "compile[fuzzer]" },
+    { plugin = "coditary/clang-build", step = "link[fuzzer]" },
 })
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)

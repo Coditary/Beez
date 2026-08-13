@@ -12,7 +12,7 @@
 namespace beez::plugin::lua
 {
 
-[[nodiscard]] std::string parseTaskStepReference(const sol::table& stepTable);
+[[nodiscard]] std::vector<std::string> parseTaskStepReferences(const sol::table& stepTable);
 
 void rejectDeprecatedTaskFields(const sol::table& stepTable);
 

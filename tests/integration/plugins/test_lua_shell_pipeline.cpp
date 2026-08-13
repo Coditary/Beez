@@ -119,7 +119,7 @@ step({
 })
 task("full_build", {
     "touch .task-phase-started",
-    { phase = "compile", scope = "code" },
+    { phase = "compile[code]" },
     "touch .task-phase-done",
 })
 )");

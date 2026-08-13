@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 
 #include "beez/core/model/phase_invocation.hpp"
+#include "beez/core/model/phase_scope_reference.hpp"
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
@@ -25,7 +26,8 @@ namespace
     return value.valid() && value.get_type() != sol::type::lua_nil;
 }
 
-[[nodiscard]] core::PhaseInvocation parseTaskPhaseInvocation(const sol::table& actionTable)
+[[nodiscard]] std::vector<core::PhaseInvocation>
+parseTaskPhaseInvocations(const sol::table& actionTable)
 {
     const sol::object PhaseValue = actionTable["phase"];
     if (!isPresent(PhaseValue) || !PhaseValue.is<std::string>() || PhaseValue.as<std::string>().empty())
@@ -33,20 +35,21 @@ namespace
         throw std::runtime_error("task phase action is missing required field 'phase'");
     }
 
-    core::PhaseInvocation invocation {.phase = PhaseValue.as<std::string>()};
-
-    const sol::object ScopeValue = actionTable["scope"];
-    if (isPresent(ScopeValue))
+    const core::ScopedReference Scoped =
+        core::parseScopedReference(PhaseValue.as<std::string>());
+    if (Scoped.scopes.empty())
     {
-        if (!ScopeValue.is<std::string>())
-        {
-            throw std::runtime_error("task phase action field 'scope' must be a string");
-        }
-
-        invocation.scope = ScopeValue.as<std::string>();
+        return {core::PhaseInvocation {.phase = Scoped.name, .scope = {}}};
     }
 
-    return invocation;
+    std::vector<core::PhaseInvocation> invocations;
+    invocations.reserve(Scoped.scopes.size());
+    for (const std::string& Scope : Scoped.scopes)
+    {
+        invocations.push_back(core::PhaseInvocation {.phase = Scoped.name, .scope = Scope});
+    }
+
+    return invocations;
 }
 
 }  // namespace
@@ -110,14 +113,18 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
 
             if (HasPhase)
             {
-                actions.push_back(core::makePhaseAction(parseTaskPhaseInvocation(ActionTable)));
+                for (const core::PhaseInvocation& Invocation :
+                     parseTaskPhaseInvocations(ActionTable))
+                {
+                    actions.push_back(core::makePhaseAction(Invocation));
+                }
                 return;
             }
 
-            core::TaskStepAction stepAction;
-            stepAction.stepName = parseTaskStepReference(ActionTable);
+            const std::vector<std::string> StepReferences = parseTaskStepReferences(ActionTable);
 
             const sol::object ConfigValue = ActionTable["config"];
+            core::StepConfigPtr sharedConfig;
             if (ConfigValue.valid())
             {
                 if (!ConfigValue.is<sol::table>())
@@ -125,10 +132,16 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
                     throw std::runtime_error("task step action field 'config' must be a table");
                 }
 
-                stepAction.config = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
+                sharedConfig = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
             }
 
-            actions.emplace_back(std::move(stepAction));
+            for (const std::string& StepReference : StepReferences)
+            {
+                core::TaskStepAction stepAction;
+                stepAction.stepName = StepReference;
+                stepAction.config = sharedConfig;
+                actions.emplace_back(std::move(stepAction));
+            }
         });
 
     if (actions.empty())

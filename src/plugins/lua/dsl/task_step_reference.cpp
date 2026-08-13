@@ -1,10 +1,12 @@
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
 
+#include "beez/core/model/phase_scope_reference.hpp"
 #include "beez/core/registry/step_reference.hpp"
 
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
@@ -27,7 +29,7 @@ namespace
     return {name.substr(0, SlashPosition), name.substr(SlashPosition + 1)};
 }
 
-[[nodiscard]] std::string readStepField(const sol::table& stepTable)
+[[nodiscard]] std::string readStepFieldValue(const sol::table& stepTable)
 {
     const sol::object StepValue = stepTable["step"];
     if (!StepValue.valid() || StepValue.get_type() == sol::type::lua_nil)
@@ -40,37 +42,43 @@ namespace
         throw std::runtime_error("task action field 'step' must be a string");
     }
 
-    std::string stepName = StepValue.as<std::string>();
-    if (stepName.empty())
+    const std::string StepName = StepValue.as<std::string>();
+    if (StepName.empty())
     {
         throw std::runtime_error("task action field 'step' must not be empty");
     }
 
-    if (stepName.find('@') != std::string::npos)
+    if (StepName.find('@') != std::string::npos)
     {
         throw std::runtime_error(
             "task action field 'step' must not include a version suffix; use reqpack.beez");
     }
 
-    const sol::object ScopeValue = stepTable["scope"];
-    if (ScopeValue.valid() && ScopeValue.get_type() != sol::type::lua_nil)
+    return StepName;
+}
+
+[[nodiscard]] std::vector<std::string>
+buildStepNamesFromScopedReference(const core::ScopedReference& scoped)
+{
+    if (scoped.scopes.empty())
     {
-        if (!ScopeValue.is<std::string>())
-        {
-            throw std::runtime_error("task action field 'scope' must be a string");
-        }
-
-        if (stepName.find(':') != std::string::npos)
-        {
-            throw std::runtime_error(
-                "task action field 'scope' cannot be combined with a scoped step name");
-        }
-
-        stepName += ':';
-        stepName += ScopeValue.as<std::string>();
+        return {scoped.name};
     }
 
-    return stepName;
+    std::vector<std::string> stepNames;
+    stepNames.reserve(scoped.scopes.size());
+    for (const std::string& Scope : scoped.scopes)
+    {
+        if (scoped.name.find(':') != std::string::npos)
+        {
+            throw std::runtime_error(
+                "task action field 'step' cannot combine bracket scopes with a scoped step name");
+        }
+
+        stepNames.push_back(scoped.name + ':' + Scope);
+    }
+
+    return stepNames;
 }
 
 [[nodiscard]] bool isPluginStepRegistrationId(const std::string& stepId)
@@ -95,14 +103,26 @@ void rejectDeprecatedTaskFields(const sol::table& stepTable)
         throw std::runtime_error(
             "task action field 'version' is not supported; declare plugin versions in reqpack.beez");
     }
+
+    const sol::object ScopeValue = stepTable["scope"];
+    if (ScopeValue.valid() && ScopeValue.get_type() != sol::type::lua_nil)
+    {
+        throw std::runtime_error(
+            "task action field 'scope' is no longer supported; use step[name[scope]] or "
+            "phase[name[scope]] syntax");
+    }
 }
 
-std::string parseTaskStepReference(const sol::table& stepTable)
+std::vector<std::string> parseTaskStepReferences(const sol::table& stepTable)
 {
     rejectDeprecatedTaskFields(stepTable);
 
     const sol::object PluginValue = stepTable["plugin"];
-    const std::string StepName = readStepField(stepTable);
+    const std::vector<std::string> StepNames =
+        buildStepNamesFromScopedReference(core::parseScopedReference(readStepFieldValue(stepTable)));
+
+    std::vector<std::string> references;
+    references.reserve(StepNames.size());
 
     if (PluginValue.valid() && PluginValue.get_type() != sol::type::lua_nil)
     {
@@ -112,16 +132,26 @@ std::string parseTaskStepReference(const sol::table& stepTable)
         }
 
         const auto [Organization, Plugin] = splitQualifiedPluginName(PluginValue.as<std::string>());
-        return beez::core::formatQualifiedStepRef(Organization, Plugin, StepName);
+        for (const std::string& StepName : StepNames)
+        {
+            references.push_back(beez::core::formatQualifiedStepRef(Organization, Plugin, StepName));
+        }
+
+        return references;
     }
 
-    if (StepName.find('/') != std::string::npos)
+    for (const std::string& StepName : StepNames)
     {
-        throw std::runtime_error(
-            "task plugin steps require field 'plugin'; local steps must not use qualified names");
+        if (StepName.find('/') != std::string::npos)
+        {
+            throw std::runtime_error(
+                "task plugin steps require field 'plugin'; local steps must not use qualified names");
+        }
+
+        references.push_back(StepName);
     }
 
-    return StepName;
+    return references;
 }
 
 void validateTaskPluginStepReference(const std::string& taskName,

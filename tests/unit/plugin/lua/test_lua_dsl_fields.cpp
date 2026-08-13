@@ -87,11 +87,11 @@ const DslLoadCase TaskFieldCases[] = {
     {"task.empty_action_table", R"(task("empty", {}))", false},
     {"task.invalid_action_type", R"(task("broken", { 42 }))", false},
     {"task.phase_without_registered_steps",
-     R"(task("broken", { { phase = "p", scope = "sc" } }))",
+     R"(task("broken", { { phase = "p[sc]" } }))",
      false},
     {"task.valid_phase_scope",
      R"(step({ name = "s", phase = "p", scope = "sc", run = "true" })
-task("run", { { phase = "p", scope = "sc" } }))",
+task("run", { { phase = "p[sc]" } }))",
      true},
     {"task.step_ref_missing_step", R"(task("broken", { { config = { x = 1 } } }))", false},
     {"task.step_ref_unknown_step_loads", R"(task("run", { { step = "does-not-exist" } }))", false},

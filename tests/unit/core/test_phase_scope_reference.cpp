@@ -12,3 +12,21 @@ TEST(PhaseScopeReferenceTest, ParsesColonAndBracketForms)
     EXPECT_EQ(Bracket.phase, "build");
     EXPECT_EQ(Bracket.scope, "code");
 }
+
+TEST(PhaseScopeReferenceTest, ParsesScopedReference)
+{
+    const auto Unscoped = beez::core::parseScopedReference("configure");
+    EXPECT_EQ(Unscoped.name, "configure");
+    EXPECT_TRUE(Unscoped.scopes.empty());
+
+    const auto Single = beez::core::parseScopedReference("configure[debug]");
+    EXPECT_EQ(Single.name, "configure");
+    ASSERT_EQ(Single.scopes.size(), 1U);
+    EXPECT_EQ(Single.scopes[0], "debug");
+
+    const auto Multiple = beez::core::parseScopedReference(R"(compile["debug", "fuzzer"])");
+    EXPECT_EQ(Multiple.name, "compile");
+    ASSERT_EQ(Multiple.scopes.size(), 2U);
+    EXPECT_EQ(Multiple.scopes[0], "debug");
+    EXPECT_EQ(Multiple.scopes[1], "fuzzer");
+}

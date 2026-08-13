@@ -1101,8 +1101,7 @@ reqpack {
 task("build", {
     {
         plugin = "coditary/demo",
-        step = "configure",
-        scope = "debug",
+        step = "configure[debug]",
     },
 })
 )");
@@ -1114,6 +1113,70 @@ task("build", {
     ASSERT_TRUE(Found.has_value());
     ASSERT_EQ(Found->actions.size(), 1U);
     beez::test::expectStepInvocation(Found, 0, "coditary/demo:configure:debug", false);
+}
+
+TEST(LuaDslPluginTest, ExpandsTaskStepWithMultipleScopes)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        ["configure:debug"] = {
+            phase = "configure",
+            scope = "debug",
+            run = "echo debug",
+        },
+        ["configure:fuzzer"] = {
+            phase = "configure",
+            scope = "fuzzer",
+            run = "echo fuzzer",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    {
+        plugin = "coditary/demo",
+        step = "configure[\"debug\", \"fuzzer\"]",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 2U);
+    beez::test::expectStepInvocation(Found, 0, "coditary/demo:configure:debug", false);
+    beez::test::expectStepInvocation(Found, 1, "coditary/demo:configure:fuzzer", false);
+}
+
+TEST(LuaDslPluginTest, RejectsDeprecatedScopeFieldInTaskAction)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("build", {
+    { plugin = "coditary/demo", step = "configure", scope = "debug" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
 }
 
 TEST(LuaDslPluginTest, LoadsTaskWithTaskInvocation)
@@ -1313,7 +1376,7 @@ step({
     run = "echo local",
 })
 task("build", {
-    { phase = "build", scope = "code", step = "local-step" },
+    { phase = "build[code]", step = "local-step" },
 })
 )");
 

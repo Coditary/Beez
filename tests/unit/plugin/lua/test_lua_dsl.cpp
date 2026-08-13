@@ -291,8 +291,8 @@ TEST(LuaDslTest, LoadsTaskWithPhaseInvocation)
 step({ name = "gen", phase = "generate", scope = "code", run = "true" })
 step({ name = "compile", phase = "compile", scope = "code", run = "true" })
 task("full_build", {
-    { phase = "generate", scope = "code" },
-    { phase = "compile", scope = "code" },
+    { phase = "generate[code]" },
+    { phase = "compile[code]" },
 })
 )");
 
