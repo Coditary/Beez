@@ -1,16 +1,12 @@
 -- Beez — real project pipeline (repo root):
 --
 --   beez build              Conan + CMake configure, compile, run all test suites
---   beez quality            format-check, clang-tidy lint, analyze, security
+--   beez quality            qa phase (includes clang-format plugin steps)
 --   beez all                full QS pipeline (build + quality + coverage + sanitize + fuzz)
---   beez debug              Debug configure + build
---   beez coverage           Coverage configure, build, tests, HTML report
---   beez sanitize           ASan/UBSan configure, build, tests
---   beez tsan               ThreadSanitizer configure, build, tests
---   beez fuzzer_smoke       Build fuzzer + short fuzz run (FUZZER_TIME, default 30s)
---   beez fuzzer_corpus      Build fuzzer + longer corpus run (60s)
---   beez clean              remove build/, report/, .cache/
---   beez format             apply clang-format + cmake-format (incremental)
+--   beez -s format_apply              incremental clang-format apply (coditary/clang-format plugin)
+--   beez -s qa_check                  incremental clang-format check (plugin)
+--   make format             clang-format + cmake-format (Makefile, not Beez)
+--   make format-check       CI format check (Makefile)
 --   beez clang_tidy         clang-tidy only (same as qa:lint step)
 --   beez clean_cache        clear .cache/ only
 --
@@ -20,12 +16,22 @@
 -- BUILD_TYPE / CONAN_PROFILE: process env or .env (default Release / clang-release).
 --
 -- Scopes group steps for workflow/CLI selection (phase + scope), not file domains.
---   code     — programming: configure (Release), build, test, qa, format:apply
+--   code     — programming: configure (Release), build, test, qa
 --   debug    — Debug configure + build (isolated from Release configure)
 --   coverage / sanitize / tsan / fuzz — specialized code toolchains (own configure tree)
 --   smoke / corpus         — fuzz run variants (phase fuzz, separate workflow targets)
 --   repo                   — repository-wide clean (future: book, docs, …)
 -- Steps in the same phase+scope are ordered via order(); independent steps run in parallel.
+
+reqpack {
+    beez = {
+        {
+            name = "coditary/clang-format",
+            path = "./plugins/coditary/clang-format",
+            version = "1.0.0",
+        },
+    },
+}
 
 beez.config(require("config"))
 
@@ -167,10 +173,6 @@ task("clang_tidy", {
     { name = "qa:lint" },
 })
 
-task("format", {
-    { name = "format:apply" },
-})
-
 task("debug", {
     { name = "configure:debug" },
     { name = "build:debug" },
@@ -297,82 +299,6 @@ make_test_step(
     { "tests/performance/**/*.cpp" },
     "report/test/performance.ok"
 )
-
--- ── Format (check + apply) ───────────────────────────────────────────────────
-
-configure_step("qa:format-check", {
-    patterns = CXX_SOURCE_PATTERNS,
-    cmake_patterns = CMAKE_FILE_PATTERNS,
-    format_rev = "1",
-})
-
-step({
-    name = "qa:format-check",
-    phase = "qa",
-    scope = "code",
-    input = CXX_SOURCE_PATTERNS,
-    description = "clang-format + cmake-format check (incremental)",
-    run = function(ctx)
-        local config = ctx.get_config()
-        local clang_code = run_per_file_success_cache(ctx, {
-            log_prefix = "[clang-format]",
-            worker_prefix = "fmt_cpp_",
-            patterns = config.patterns,
-            command_fn = function(_, path)
-                return "scripts/clang-format-one.sh " .. path
-            end,
-        })
-        if clang_code ~= 0 then
-            return clang_code
-        end
-
-        return run_per_file_success_cache(ctx, {
-            log_prefix = "[cmake-format]",
-            worker_prefix = "fmt_cmake_",
-            patterns = config.cmake_patterns,
-            command_fn = function(_, path)
-                return "scripts/cmake-format-one.sh " .. path
-            end,
-        })
-    end,
-})
-
-configure_step("format:apply", {
-    patterns = CXX_SOURCE_PATTERNS,
-    cmake_patterns = CMAKE_FILE_PATTERNS,
-    format_rev = "1",
-})
-
-step({
-    name = "format:apply",
-    phase = "format",
-    scope = "code",
-    mutate = CXX_SOURCE_PATTERNS,
-    description = "Apply clang-format + cmake-format (incremental)",
-    run = function(ctx)
-        local config = ctx.get_config()
-        local clang_code = run_per_file_success_cache(ctx, {
-            log_prefix = "[clang-format]",
-            worker_prefix = "apply_cpp_",
-            patterns = config.patterns,
-            command_fn = function(_, path)
-                return "scripts/clang-format-one.sh " .. path .. " --apply"
-            end,
-        })
-        if clang_code ~= 0 then
-            return clang_code
-        end
-
-        return run_per_file_success_cache(ctx, {
-            log_prefix = "[cmake-format]",
-            worker_prefix = "apply_cmake_",
-            patterns = config.cmake_patterns,
-            command_fn = function(_, path)
-                return "scripts/cmake-format-one.sh " .. path .. " --apply"
-            end,
-        })
-    end,
-})
 
 -- ── Lint (clang-tidy + cmake-format, like scripts/lint.sh) ───────────────────
 

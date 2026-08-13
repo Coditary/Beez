@@ -111,7 +111,6 @@ add_library(
     dsl/registry_validation.cpp
     dsl/dsl_binder.cpp
     dsl/reqpack_parser.cpp
-    dsl/plugin_require_parser.cpp
     dsl/plugin_loader.cpp
     settings/lua_settings.cpp
     settings/settings_overlay.cpp

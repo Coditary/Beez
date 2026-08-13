@@ -50,20 +50,38 @@ std::optional<std::filesystem::path> findPluginScript(const std::string& name,
         return std::nullopt;
     }
 
-    for (const auto& organizationEntry :
-         std::filesystem::directory_iterator(PluginRoot, errorCode))
+    for (const auto& organizationEntry : std::filesystem::directory_iterator(PluginRoot, errorCode))
     {
         if (errorCode || !organizationEntry.is_directory())
         {
             continue;
         }
 
-        const auto ScriptPath =
-            organizationEntry.path() / name / version / "beez_plugin.lua";
+        const auto ScriptPath = organizationEntry.path() / name / version / "beez_plugin.lua";
         if (std::filesystem::is_regular_file(ScriptPath, errorCode) && !errorCode)
         {
             return ScriptPath;
         }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::filesystem::path> findPluginScript(const std::string& organization,
+                                                      const std::string& name,
+                                                      const std::string& version)
+{
+    const auto PluginRoot = beezPluginRoot();
+    if (PluginRoot.empty())
+    {
+        return std::nullopt;
+    }
+
+    const auto ScriptPath = PluginRoot / organization / name / version / "beez_plugin.lua";
+    std::error_code errorCode;
+    if (std::filesystem::is_regular_file(ScriptPath, errorCode) && !errorCode)
+    {
+        return ScriptPath;
     }
 
     return std::nullopt;

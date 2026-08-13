@@ -3,6 +3,7 @@
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -15,11 +16,13 @@ namespace beez::plugin::lua
 
 struct BeezPluginRef
 {
+    std::string organization;
     std::string name;
-    std::string version;
+    std::string path;
+    std::optional<std::string> version;
 };
 
-[[nodiscard]] std::vector<BeezPluginRef> parseBeezRequireTable(const sol::table& table);
+[[nodiscard]] std::vector<BeezPluginRef> parseBeezPluginTable(const sol::table& table);
 
 void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
                      core::Registry& registry,

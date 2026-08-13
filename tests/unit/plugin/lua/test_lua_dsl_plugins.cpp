@@ -7,90 +7,11 @@
 
 #include <gtest/gtest.h>
 
-#include <cstdlib>
-#include <filesystem>
 #include <fstream>
 #include <string>
-#include <utility>
 
 namespace
 {
-
-// NOLINTBEGIN(misc-include-cleaner)
-class ScopedEnv
-{
-  public:
-    ScopedEnv(const char* name, const char* value)
-        // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
-        : name_(name), hadValue_(std::getenv(name) != nullptr)
-    {
-        if (hadValue_)
-        {
-            // NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
-            saved_ = std::getenv(name);
-        }
-
-        if (value[0] == '\0')
-        {
-            // NOLINTNEXTLINE(concurrency-mt-unsafe,bugprone-command-processor,cert-env33-c)
-            unsetenv(name);
-            unset_ = true;
-        }
-        else
-        {
-            // NOLINTNEXTLINE(concurrency-mt-unsafe,bugprone-command-processor,cert-env33-c)
-            setenv(name, value, 1);
-            unset_ = false;
-        }
-    }
-
-    ~ScopedEnv()
-    {
-        if (unset_)
-        {
-            if (hadValue_)
-            {
-                // NOLINTNEXTLINE(concurrency-mt-unsafe,bugprone-command-processor,cert-env33-c)
-                setenv(name_.c_str(), saved_.c_str(), 1);
-            }
-            else
-            {
-                // NOLINTNEXTLINE(concurrency-mt-unsafe,bugprone-command-processor,cert-env33-c)
-                unsetenv(name_.c_str());
-            }
-        }
-        else if (hadValue_)
-        {
-            // NOLINTNEXTLINE(concurrency-mt-unsafe,bugprone-command-processor,cert-env33-c)
-            setenv(name_.c_str(), saved_.c_str(), 1);
-        }
-    }
-
-    ScopedEnv(const ScopedEnv&) = delete;
-    ScopedEnv& operator=(const ScopedEnv&) = delete;
-
-  private:
-    std::string name_;
-    bool hadValue_ = false;
-    bool unset_ = false;
-    std::string saved_;
-};
-// NOLINTEND(misc-include-cleaner)
-
-class PluginHomeFixture
-{
-  public:
-    explicit PluginHomeFixture(const beez::test::TempProject& project)
-        : home_(project.path().string()), homeEnv_("HOME", home_.c_str()),
-          xdgUnset_("XDG_CACHE_HOME", "")
-    {
-    }
-
-  private:
-    std::string home_;
-    ScopedEnv homeEnv_;
-    ScopedEnv xdgUnset_;
-};
 
 bool loadScript(const beez::test::TempProject& project, beez::core::Registry& registry)
 {
@@ -101,14 +22,11 @@ bool loadScript(const beez::test::TempProject& project, beez::core::Registry& re
 
 }  // namespace
 
-TEST(LuaDslPluginTest, LoadsPluginStepsViaRequire)
+TEST(LuaDslPluginTest, LoadsPluginStepsViaReqpack)
 {
     const beez::test::TempProject Project;
-    PluginHomeFixture Home(Project);
-    Project.writePlugin("coditary",
-                        "demo",
-                        "1.0.0",
-                        R"(
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
 plugin("demo", {
     version = "1.0.0",
     description = "Demo plugin",
@@ -124,9 +42,13 @@ plugin("demo", {
 )");
 
     Project.writeBuildLua(R"(
-require {
+reqpack {
     beez = {
-        { name = "demo", version = "1.0.0" },
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
     },
 }
 )");
@@ -151,11 +73,8 @@ require {
 TEST(LuaDslPluginTest, LoadsLazyStepDefinition)
 {
     const beez::test::TempProject Project;
-    PluginHomeFixture Home(Project);
-    Project.writePlugin("unnamed",
-                        "lazy",
-                        "2.0.0",
-                        R"(
+    Project.writePluginAt("plugins/unnamed/lazy/2.0.0",
+                          R"(
 plugin("lazy", {
     version = "2.0.0",
     steps = {
@@ -171,9 +90,13 @@ plugin("lazy", {
 )");
 
     Project.writeBuildLua(R"(
-require {
+reqpack {
     beez = {
-        { name = "lazy", version = "2.0.0" },
+        {
+            name = "unnamed/lazy",
+            path = "./plugins/unnamed/lazy",
+            version = "2.0.0",
+        },
     },
 }
 )");
@@ -195,11 +118,8 @@ require {
 TEST(LuaDslPluginTest, PluginSandboxRejectsTaskCalls)
 {
     const beez::test::TempProject Project;
-    PluginHomeFixture Home(Project);
-    Project.writePlugin("unnamed",
-                        "evil",
-                        "1.0.0",
-                        R"(
+    Project.writePluginAt("plugins/unnamed/evil/1.0.0",
+                          R"(
 task("hack", "echo hacked")
 plugin("evil", {
     version = "1.0.0",
@@ -208,9 +128,13 @@ plugin("evil", {
 )");
 
     Project.writeBuildLua(R"(
-require {
+reqpack {
     beez = {
-        { name = "evil", version = "1.0.0" },
+        {
+            name = "unnamed/evil",
+            path = "./plugins/unnamed/evil",
+            version = "1.0.0",
+        },
     },
 }
 )");
@@ -219,14 +143,51 @@ require {
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
-TEST(LuaDslPluginTest, RejectsMissingPlugin)
+TEST(LuaDslPluginTest, RejectsMissingPluginPath)
 {
     const beez::test::TempProject Project;
-    PluginHomeFixture Home(Project);
     Project.writeBuildLua(R"(
-require {
+reqpack {
     beez = {
-        { name = "missing", version = "1.0.0" },
+        {
+            name = "coditary/missing",
+            path = "./plugins/coditary/missing",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsCacheOnlyPluginEntry)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        { name = "coditary/demo", version = "1.0.0" },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsUnqualifiedPluginName)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
     },
 }
 )");
@@ -238,7 +199,6 @@ require {
 TEST(LuaDslPluginTest, StringRequireStillWorks)
 {
     const beez::test::TempProject Project;
-    PluginHomeFixture Home(Project);
     std::ofstream(Project.path() / "config.lua") << "return { marker = 'ok' }\n";
 
     Project.writeBuildLua(R"(
@@ -258,14 +218,94 @@ task("show", "echo " .. config.marker)
     beez::test::expectShellCommand(Found, 0, "echo ok");
 }
 
+TEST(LuaDslPluginTest, LoadsPluginFromLocalPath)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("vendor/coditary/local/1.0.0",
+                          R"(
+plugin("local", {
+    version = "1.0.0",
+    steps = {
+        run = {
+            phase = "generate",
+            scope = "demo",
+            run = "echo local path",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/local",
+            path = "./vendor/coditary/local",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("run");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "echo local path");
+}
+
+TEST(LuaDslPluginTest, LoadsPluginFromLocalPathWithoutVersionSubfolder)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("vendor/coditary/direct",
+                          R"(
+plugin("direct", {
+    version = "3.0.0",
+    steps = {
+        run = {
+            phase = "generate",
+            scope = "demo",
+            run = "echo direct path",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/direct",
+            path = "./vendor/coditary/direct",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("run");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "echo direct path");
+}
+
 TEST(LuaDslPluginTest, LoadsPluginStepWithConfigAndLuaRun)
 {
     const beez::test::TempProject Project;
-    PluginHomeFixture Home(Project);
-    Project.writePlugin("coditary",
-                        "rich",
-                        "1.0.0",
-                        R"(
+    Project.writePluginAt("plugins/coditary/rich/1.0.0",
+                          R"(
 plugin("rich", {
     version = "1.0.0",
     steps = {
@@ -285,9 +325,13 @@ plugin("rich", {
 )");
 
     Project.writeBuildLua(R"(
-require {
+reqpack {
     beez = {
-        { name = "rich", version = "1.0.0" },
+        {
+            name = "coditary/rich",
+            path = "./plugins/coditary/rich",
+            version = "1.0.0",
+        },
     },
 }
 )");

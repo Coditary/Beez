@@ -75,6 +75,11 @@ core::ReqPackManifest parseReqPackTable(const sol::table& table)
         }
 
         const std::string Plugin = key.as<std::string>();
+        if (Plugin == "beez")
+        {
+            continue;
+        }
+
         if (!value.is<sol::table>())
         {
             throw std::runtime_error("reqpack." + Plugin + " must be an array of packages");

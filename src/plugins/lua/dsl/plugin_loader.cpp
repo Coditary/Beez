@@ -1,6 +1,5 @@
 #include "beez/plugin/lua/dsl/plugin_loader.hpp"
 
-#include "beez/core/plugin/paths.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 
@@ -18,6 +17,64 @@ namespace beez::plugin::lua
 
 namespace
 {
+
+[[nodiscard]] std::pair<std::string, std::string> splitPluginName(const std::string& qualifiedName)
+{
+    const auto SlashPosition = qualifiedName.find('/');
+    if (SlashPosition == std::string::npos)
+    {
+        throw std::runtime_error("reqpack.beez plugin name '" + qualifiedName +
+                                 "' must use the form 'organization/plugin'");
+    }
+
+    if (SlashPosition == 0 || SlashPosition == qualifiedName.size() - 1)
+    {
+        throw std::runtime_error("reqpack.beez plugin name '" + qualifiedName +
+                                 "' must use the form 'organization/plugin'");
+    }
+
+    return {qualifiedName.substr(0, SlashPosition), qualifiedName.substr(SlashPosition + 1)};
+}
+
+[[nodiscard]] BeezPluginRef parsePluginRefEntry(const sol::object& entry)
+{
+    if (!entry.is<sol::table>())
+    {
+        throw std::runtime_error(
+            "reqpack.beez entries must be tables with name, path, and optional version");
+    }
+
+    const sol::table PluginTable = entry.as<sol::table>();
+    const sol::object NameObject = PluginTable["name"];
+    if (!NameObject.is<std::string>())
+    {
+        throw std::runtime_error("reqpack.beez plugin entry requires string name");
+    }
+
+    const sol::object PathObject = PluginTable["path"];
+    if (!PathObject.is<std::string>() || PathObject.as<std::string>().empty())
+    {
+        throw std::runtime_error("reqpack.beez plugin entry requires string path");
+    }
+
+    BeezPluginRef pluginRef;
+    const auto [Organization, PluginName] = splitPluginName(NameObject.as<std::string>());
+    pluginRef.organization = Organization;
+    pluginRef.name = PluginName;
+    pluginRef.path = PathObject.as<std::string>();
+
+    const sol::object VersionObject = PluginTable["version"];
+    if (VersionObject.valid() && VersionObject.get_type() != sol::type::lua_nil)
+    {
+        if (!VersionObject.is<std::string>())
+        {
+            throw std::runtime_error("reqpack.beez plugin version must be a string");
+        }
+        pluginRef.version = VersionObject.as<std::string>();
+    }
+
+    return pluginRef;
+}
 
 void registerPluginSteps(const sol::table& stepsTable,
                          core::Registry& registry,
@@ -74,24 +131,21 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
                       const core::Context& context)
 {
     const auto PluginState = std::make_shared<sol::state>();
-    PluginState->open_libraries(sol::lib::base,
-                                sol::lib::package,
-                                sol::lib::string,
-                                sol::lib::table,
-                                sol::lib::math);
+    PluginState->open_libraries(
+        sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::table, sol::lib::math);
 
     core::BeezSettings pluginSettings;
     registerBeezApi(PluginState, context, pluginSettings);
 
     const auto PluginDirectory = scriptPath.parent_path();
-    const std::string PluginPathPrefix = PluginDirectory.string() + "/?.lua;" +
-                                         PluginDirectory.string() + "/?/init.lua";
+    const std::string PluginPathPrefix =
+        PluginDirectory.string() + "/?.lua;" + PluginDirectory.string() + "/?/init.lua";
     sol::table PackageTable = PluginState->globals()["package"];
     const std::string ExistingPath = PackageTable["path"];
     PackageTable["path"] = PluginPathPrefix + ";" + ExistingPath;
 
-    (*PluginState)["plugin"] = [&registry, &pluginRef, PluginState](const std::string& name,
-                                                                    const sol::table& options)
+    (*PluginState)["plugin"] =
+        [&registry, &pluginRef, PluginState](const std::string& name, const sol::table& options)
     {
         if (name != pluginRef.name)
         {
@@ -105,12 +159,12 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
             throw std::runtime_error("plugin '" + name + "' requires string version");
         }
 
-        if (VersionObject.as<std::string>() != pluginRef.version)
+        if (pluginRef.version.has_value() &&
+            VersionObject.as<std::string>() != pluginRef.version.value())
         {
-            throw std::runtime_error("plugin '" + name + "' version '" +
-                                     VersionObject.as<std::string>() +
-                                     "' does not match required version '" + pluginRef.version +
-                                     "'");
+            throw std::runtime_error(
+                "plugin '" + name + "' version '" + VersionObject.as<std::string>() +
+                "' does not match required version '" + pluginRef.version.value() + "'");
         }
 
         const sol::object StepsObject = options["steps"];
@@ -125,7 +179,41 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
     PluginState->script_file(scriptPath.string());
 }
 
+[[nodiscard]] std::filesystem::path resolvePluginScript(const BeezPluginRef& pluginRef,
+                                                        const core::Context& context)
+{
+    std::filesystem::path PluginDirectory = context.projectRoot() / pluginRef.path;
+    if (pluginRef.version.has_value())
+    {
+        PluginDirectory /= pluginRef.version.value();
+    }
+
+    const auto ScriptPath = PluginDirectory / "beez_plugin.lua";
+    std::error_code errorCode;
+    if (!std::filesystem::is_regular_file(ScriptPath, errorCode) || errorCode)
+    {
+        throw std::runtime_error("beez plugin '" + pluginRef.organization + "/" + pluginRef.name +
+                                 "' was not found at path '" + ScriptPath.string() + "'");
+    }
+
+    return ScriptPath;
+}
+
 }  // namespace
+
+std::vector<BeezPluginRef> parseBeezPluginTable(const sol::table& table)
+{
+    std::vector<BeezPluginRef> plugins;
+    for (const auto& [key, value] : table)
+    {
+        if (!key.is<int>())
+        {
+            throw std::runtime_error("reqpack.beez must be an array of plugin references");
+        }
+        plugins.push_back(parsePluginRefEntry(value));
+    }
+    return plugins;
+}
 
 void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
                      core::Registry& registry,
@@ -133,14 +221,8 @@ void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
 {
     for (const auto& pluginRef : plugins)
     {
-        const auto ScriptPath = core::findPluginScript(pluginRef.name, pluginRef.version);
-        if (!ScriptPath.has_value())
-        {
-            throw std::runtime_error("beez plugin '" + pluginRef.name + "@" + pluginRef.version +
-                                     "' was not found in the plugin cache");
-        }
-
-        loadPluginScript(*ScriptPath, pluginRef, registry, context);
+        const auto ScriptPath = resolvePluginScript(pluginRef, context);
+        loadPluginScript(ScriptPath, pluginRef, registry, context);
     }
 }
 

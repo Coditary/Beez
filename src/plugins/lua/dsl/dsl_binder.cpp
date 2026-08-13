@@ -3,8 +3,8 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
-#include "beez/plugin/lua/dsl/reqpack_parser.hpp"
 #include "beez/plugin/lua/dsl/plugin_loader.hpp"
+#include "beez/plugin/lua/dsl/reqpack_parser.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
@@ -124,17 +124,16 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     (*luaState)["order"] = [binder](const std::string& before, const std::string& after)
     { binder->order(before, after); };
 
-    (*luaState)["reqpack"] = [&reqpackManifest](const sol::table& table)
-    { reqpackManifest = parseReqPackTable(table); };
-
-    const sol::function OriginalRequire = (*luaState)["require"];
-    (*luaState)["require"] = sol::overload(
-        [OriginalRequire](const std::string& moduleName) -> sol::object
+    (*luaState)["reqpack"] = [&reqpackManifest, &registry, &context](const sol::table& table)
+    {
+        const sol::object BeezObject = table["beez"];
+        if (BeezObject.valid() && BeezObject.is<sol::table>())
         {
-            return OriginalRequire(moduleName);
-        },
-        [&registry, &context](const sol::table& dependencies)
-        { loadBeezPlugins(parseBeezRequireTable(dependencies), registry, context); });
+            loadBeezPlugins(parseBeezPluginTable(BeezObject.as<sol::table>()), registry, context);
+        }
+
+        reqpackManifest = parseReqPackTable(table);
+    };
 
     const auto ProjectRoot = context.buildScriptPath().parent_path();
     const std::string ProjectPathPrefix =

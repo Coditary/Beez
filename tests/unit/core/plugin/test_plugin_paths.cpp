@@ -131,9 +131,8 @@ TEST(PluginPathsTest, FindsPluginScriptAcrossOrganizations)
     const ScopedEnv Home("HOME", HomeRoot.c_str());
     const ScopedEnv XdgUnset("XDG_CACHE_HOME", "");
 
-    const auto PluginPath =
-        HomeRoot / ".cache" / "beez" / "plugins" / "coditary" / "my_plugin" / "1.0.0" /
-        "beez_plugin.lua";
+    const auto PluginPath = HomeRoot / ".cache" / "beez" / "plugins" / "coditary" / "my_plugin" /
+                            "1.0.0" / "beez_plugin.lua";
     writeFile(PluginPath, "plugin('my_plugin', { version = '1.0.0' })");
 
     const auto Found = beez::core::findPluginScript("my_plugin", "1.0.0");
@@ -150,4 +149,20 @@ TEST(PluginPathsTest, ReturnsEmptyWhenPluginMissing)
 
     const auto Found = beez::core::findPluginScript("missing", "1.0.0");
     EXPECT_FALSE(Found.has_value());
+}
+
+TEST(PluginPathsTest, FindsPluginScriptForQualifiedOrganization)
+{
+    const auto HomeRoot = beez::core::systemTempDirectory() / "beez_plugin_paths_qualified_test";
+    const ScopedTempTree Cleanup(HomeRoot);
+    const ScopedEnv Home("HOME", HomeRoot.c_str());
+    const ScopedEnv XdgUnset("XDG_CACHE_HOME", "");
+
+    const auto PluginPath = HomeRoot / ".cache" / "beez" / "plugins" / "coditary" / "hello" /
+                            "1.0.0" / "beez_plugin.lua";
+    writeFile(PluginPath, "plugin('hello', { version = '1.0.0' })");
+
+    const auto Found = beez::core::findPluginScript("coditary", "hello", "1.0.0");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(*Found, PluginPath);
 }
