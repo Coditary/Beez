@@ -41,6 +41,7 @@ add_library(
     glob/metadata_cache.cpp
     glob/pattern.cpp
     registry/registry.cpp
+    registry/step_reference.cpp
     registry/step_order.cpp
     orchestrator/orchestrator.cpp
     orchestrator/errors.cpp

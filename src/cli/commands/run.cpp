@@ -5,11 +5,13 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace beez::cli
 {
@@ -42,6 +44,22 @@ void printTargetNotFoundHint(const core::Registry& registry,
     }
 }
 
+void printAmbiguousStepHint(const std::string& reference,
+                            const std::vector<std::string>& candidates,
+                            logging::OutputMode outputMode)
+{
+    if (!logging::writesCliErrorsToConsole(outputMode))
+    {
+        return;
+    }
+
+    std::cerr << "Error: step '" << reference << "' is ambiguous. Qualify it with one of:\n";
+    for (const auto& candidate : candidates)
+    {
+        std::cerr << "  " << candidate << '\n';
+    }
+}
+
 [[nodiscard]] int finishRunResult(const Expected<int, core::OrchestratorError>& result,
                                   logging::OutputMode outputMode)
 {
@@ -63,6 +81,13 @@ int runOrchestratorCommand(core::Orchestrator& orchestrator,
 {
     if (options.stepName.has_value())
     {
+        const auto Resolved = registry.resolveStep(*options.stepName);
+        if (!Resolved.hasValue() && Resolved.error().error == core::StepResolutionError::Ambiguous)
+        {
+            printAmbiguousStepHint(*options.stepName, Resolved.error().candidates, outputMode);
+            return 1;
+        }
+
         return finishRunResult(orchestrator.runStep(*options.stepName), outputMode);
     }
 

@@ -8,6 +8,7 @@ namespace beez::core
 enum class OrchestratorError : std::uint8_t
 {
     NotFound,
+    AmbiguousStep,
     ExecutionFailed,
     BuildScriptNotFound,
     BuildScriptLoadFailed,

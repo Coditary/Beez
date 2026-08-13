@@ -6,6 +6,7 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/registry/step_order.hpp"
+#include "beez/core/registry/step_reference.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <algorithm>
@@ -19,6 +20,19 @@
 namespace beez::core
 {
 
+namespace
+{
+
+void mergeAliasTargets(std::vector<std::string>& targets, const std::string& stepId)
+{
+    if (std::ranges::find(targets, stepId) == targets.end())
+    {
+        targets.push_back(stepId);
+    }
+}
+
+}  // namespace
+
 void Registry::registerTask(Task task)
 {
     if (tasks_.contains(task.name))
@@ -30,18 +44,67 @@ void Registry::registerTask(Task task)
 
 void Registry::registerStep(Step step)
 {
-    const auto PendingIterator = pendingStepConfigs_.find(step.name);
+    const std::string StepName = step.name;
+    const auto PendingIterator = pendingStepConfigs_.find(StepName);
     if (PendingIterator != pendingStepConfigs_.end())
     {
         step.config = mergeStepConfigs(step.config, PendingIterator->second);
         pendingStepConfigs_.erase(PendingIterator);
     }
 
-    if (steps_.contains(step.name))
+    if (steps_.contains(StepName))
     {
-        throw std::runtime_error("duplicate step name '" + step.name + "'");
+        throw std::runtime_error("duplicate step name '" + StepName + "'");
     }
-    steps_.emplace(step.name, std::move(step));
+
+    steps_.emplace(StepName, std::move(step));
+    registerStepAlias(StepName, StepName);
+}
+
+void Registry::registerPluginStep(Step step,
+                                  const std::string& organization,
+                                  const std::string& plugin)
+{
+    const std::string StepName = step.name;
+    const std::string StepId = formatQualifiedStepRef(organization, plugin, StepName);
+
+    const auto PendingIterator = pendingStepConfigs_.find(StepName);
+    if (PendingIterator != pendingStepConfigs_.end())
+    {
+        step.config = mergeStepConfigs(step.config, PendingIterator->second);
+        pendingStepConfigs_.erase(PendingIterator);
+    }
+
+    const auto QualifiedPendingIterator = pendingStepConfigs_.find(StepId);
+    if (QualifiedPendingIterator != pendingStepConfigs_.end())
+    {
+        step.config = mergeStepConfigs(step.config, QualifiedPendingIterator->second);
+        pendingStepConfigs_.erase(QualifiedPendingIterator);
+    }
+
+    if (steps_.contains(StepId))
+    {
+        throw std::runtime_error("duplicate plugin step '" + StepId + "'");
+    }
+
+    steps_.emplace(StepId, std::move(step));
+    registerStepAlias(StepId, StepId);
+    registerStepAlias(StepName, StepId);
+    registerStepAlias(formatShortPluginStepRef(plugin, StepName), StepId);
+    registerStepAlias(formatQualifiedStepRef(organization, plugin, StepName), StepId);
+
+    if (isDefaultScopedStepName(StepName))
+    {
+        const std::string ActionName = stepActionName(StepName);
+        registerStepAlias(formatShortPluginStepRef(plugin, ActionName), StepId);
+        registerStepAlias(formatQualifiedStepRef(organization, plugin, ActionName), StepId);
+    }
+}
+
+void Registry::registerStepAlias(const std::string& alias, const std::string& stepId)
+{
+    auto& targets = stepAliases_[alias];
+    mergeAliasTargets(targets, stepId);
 }
 
 void Registry::configureStep(const std::string& name, const StepConfigPtr& config)
@@ -56,6 +119,26 @@ void Registry::applyStepConfig(const std::string& name, const StepConfigPtr& con
     {
         StepIterator->second.config = mergeStepConfigs(StepIterator->second.config, config);
         return;
+    }
+
+    const auto AliasIterator = stepAliases_.find(name);
+    if (AliasIterator != stepAliases_.end())
+    {
+        if (AliasIterator->second.size() > 1U)
+        {
+            throw std::runtime_error("configure_step reference '" + name + "' is ambiguous");
+        }
+
+        if (!AliasIterator->second.empty())
+        {
+            const auto ResolvedIterator = steps_.find(AliasIterator->second.front());
+            if (ResolvedIterator != steps_.end())
+            {
+                ResolvedIterator->second.config =
+                    mergeStepConfigs(ResolvedIterator->second.config, config);
+                return;
+            }
+        }
     }
 
     pendingStepConfigs_[name] = mergeStepConfigs(pendingStepConfigs_[name], config);
@@ -120,6 +203,7 @@ void Registry::clear()
 {
     tasks_.clear();
     steps_.clear();
+    stepAliases_.clear();
     pendingStepConfigs_.clear();
     workflows_.clear();
     stepOrderHints_.clear();
@@ -135,14 +219,106 @@ std::optional<Task> Registry::findTask(const std::string& name) const
     return TaskIterator->second;
 }
 
-std::optional<Step> Registry::findStep(const std::string& name) const
+std::optional<Step> Registry::findStepById(const std::string& stepId) const
 {
-    const auto StepIterator = steps_.find(name);
+    const auto StepIterator = steps_.find(stepId);
     if (StepIterator == steps_.end())
     {
         return std::nullopt;
     }
     return StepIterator->second;
+}
+
+std::optional<Step> Registry::findStep(const std::string& name) const
+{
+    const auto Resolved = resolveStep(name);
+    if (!Resolved.hasValue())
+    {
+        return std::nullopt;
+    }
+
+    return Resolved.value();
+}
+
+Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& reference) const
+{
+    if (const auto Direct = findStepById(reference))
+    {
+        return *Direct;
+    }
+
+    const auto AliasIterator = stepAliases_.find(reference);
+    if (AliasIterator != stepAliases_.end())
+    {
+        const auto& targets = AliasIterator->second;
+        if (targets.size() > 1U)
+        {
+            return StepResolutionFailure {.error = StepResolutionError::Ambiguous,
+                                          .candidates = targets};
+        }
+
+        if (targets.empty())
+        {
+            return StepResolutionFailure {.error = StepResolutionError::NotFound};
+        }
+
+        if (const auto Found = findStepById(targets.front()))
+        {
+            return *Found;
+        }
+    }
+
+    if (const auto Qualified = parseQualifiedStepRef(reference))
+    {
+        const auto QualifiedId = formatQualifiedStepRef(Qualified->organization,
+                                                        Qualified->plugin,
+                                                        Qualified->stepName);
+        if (const auto Found = findStepById(QualifiedId))
+        {
+            return *Found;
+        }
+    }
+
+    if (const auto ShortPlugin = parseShortPluginStepRef(reference))
+    {
+        const auto ShortAlias = formatShortPluginStepRef(ShortPlugin->first, ShortPlugin->second);
+        const auto ShortIterator = stepAliases_.find(ShortAlias);
+        if (ShortIterator != stepAliases_.end())
+        {
+            const auto& targets = ShortIterator->second;
+            if (targets.size() > 1U)
+            {
+                return StepResolutionFailure {.error = StepResolutionError::Ambiguous,
+                                              .candidates = targets};
+            }
+
+            if (!targets.empty())
+            {
+                if (const auto Found = findStepById(targets.front()))
+                {
+                    return *Found;
+                }
+            }
+        }
+    }
+
+    return StepResolutionFailure {.error = StepResolutionError::NotFound};
+}
+
+std::vector<std::string> Registry::stepInvocationNames() const
+{
+    std::vector<std::string> names;
+    names.reserve(stepAliases_.size());
+
+    for (const auto& [alias, targets] : stepAliases_)
+    {
+        (void)targets;
+        names.push_back(alias);
+    }
+
+    std::ranges::sort(names);
+    names.erase(std::unique(names.begin(), names.end()), names.end());
+    return names;
 }
 
 std::optional<Workflow> Registry::findWorkflow(const std::string& name) const

@@ -53,7 +53,7 @@ std::string helpText()
     stream << "  CLI flags override both.\n";
     stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";
     stream << "  -p, --phase TEXT Run a phase (phase[:scope1,scope2] or phase[\"scope\"])\n";
-    stream << "  -s, --step TEXT  Run a single step by name\n";
+    stream << "  -s, --step TEXT  Run a single step by name (or org/plugin:step when ambiguous)\n";
     return stream.str();
 }
 

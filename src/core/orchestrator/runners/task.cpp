@@ -11,6 +11,7 @@
 #include "beez/core/orchestrator/runners/step.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <variant>
@@ -46,13 +47,18 @@ runTask(Orchestrator& orchestrator, const Task& task, ProgressState& progress)
             return OrchestratorError::ExecutionFailed;
         }
 
-        const auto FoundStep = Access::registry(orchestrator).findStep(stepAction->stepName);
-        if (!FoundStep)
+        const auto ResolvedStep = Access::registry(orchestrator).resolveStep(stepAction->stepName);
+        if (!ResolvedStep.hasValue())
         {
+            if (ResolvedStep.error().error == StepResolutionError::Ambiguous)
+            {
+                return OrchestratorError::AmbiguousStep;
+            }
+
             return OrchestratorError::NotFound;
         }
 
-        Step step = *FoundStep;
+        Step step = ResolvedStep.value();
         step.config = mergeStepConfigs(step.config, stepAction->config);
 
         const auto Result = runStepInstance(orchestrator, step, progress);

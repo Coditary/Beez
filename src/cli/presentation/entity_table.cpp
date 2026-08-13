@@ -109,7 +109,13 @@ scopesByPhase(const core::Registry& registry)
     core::TextTable table({"Name", "Phase", "Scope", "Description"});
     for (const auto& name : names)
     {
-        const auto& step = registry.steps().at(name);
+        const auto Resolved = registry.resolveStep(name);
+        if (!Resolved.hasValue())
+        {
+            continue;
+        }
+
+        const auto& step = Resolved.value();
         table.addRow({name,
                       step.phase.empty() ? "-" : step.phase,
                       step.scope.empty() ? "-" : step.scope,
@@ -160,12 +166,7 @@ std::vector<std::string> collectEntityNames(const core::Registry& registry, cons
     }
     else if (kind == "steps")
     {
-        names.reserve(registry.steps().size());
-        for (const auto& [name, step] : registry.steps())
-        {
-            (void)step;
-            names.push_back(name);
-        }
+        names = registry.stepInvocationNames();
     }
     else if (kind == "phases")
     {

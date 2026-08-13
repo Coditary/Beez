@@ -9,6 +9,8 @@ const char* toString(OrchestratorError error)
     {
     case OrchestratorError::NotFound:
         return "name not found in registry";
+    case OrchestratorError::AmbiguousStep:
+        return "step name is ambiguous";
     case OrchestratorError::ExecutionFailed:
         return "task execution failed";
     case OrchestratorError::BuildScriptNotFound:

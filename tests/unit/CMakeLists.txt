@@ -17,6 +17,7 @@ add_executable(
     cli/presentation/test_entity_table.cpp
     cli/presentation/test_name_suggestion.cpp
     cli/commands/test_run.cpp
+    core/registry/test_step_reference.cpp
     core/registry/test_registry.cpp
     core/config/cache/test_cache_options.cpp
     core/cache/fingerprint/test_content_hash.cpp

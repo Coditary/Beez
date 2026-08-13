@@ -8,6 +8,7 @@
 #include "beez/core/orchestrator/runners/step.hpp"
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <chrono>
@@ -47,19 +48,25 @@ namespace beez::core
 
 Expected<int, OrchestratorError> Orchestrator::runStep(const std::string& name)
 {
-    const auto FoundStep = registry_.findStep(name);
-    if (!FoundStep)
+    const auto Resolved = registry_.resolveStep(name);
+    if (!Resolved.hasValue())
     {
+        if (Resolved.error().error == StepResolutionError::Ambiguous)
+        {
+            return OrchestratorError::AmbiguousStep;
+        }
+
         return OrchestratorError::NotFound;
     }
 
+    const Step& step = Resolved.value();
     return orchestrator_detail::ScopedLoggedRun(
-               *this, "Step", name, orchestrator_detail::RunCacheFlushPolicy::AtRunEnd)
-        .withSegment(name,
+               *this, "Step", step.name, orchestrator_detail::RunCacheFlushPolicy::AtRunEnd)
+        .withSegment(step.name,
                      [&]
                      {
                          ProgressState progress {.total = 1};
-                         return orchestrator_detail::runStepInstance(*this, *FoundStep, progress);
+                         return orchestrator_detail::runStepInstance(*this, step, progress);
                      });
 }
 

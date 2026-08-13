@@ -78,6 +78,7 @@ namespace
 
 void registerPluginSteps(const sol::table& stepsTable,
                          core::Registry& registry,
+                         const BeezPluginRef& pluginRef,
                          const std::shared_ptr<sol::state>& luaState)
 {
     for (const auto& [key, value] : stepsTable)
@@ -121,7 +122,9 @@ void registerPluginSteps(const sol::table& stepsTable,
             StepTable["name"] = StepName;
         }
 
-        registry.registerStep(parseStepTable(StepTable, luaState));
+        registry.registerPluginStep(parseStepTable(StepTable, luaState),
+                                    pluginRef.organization,
+                                    pluginRef.name);
     }
 }
 
@@ -173,7 +176,7 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
             throw std::runtime_error("plugin '" + name + "' requires a steps table");
         }
 
-        registerPluginSteps(StepsObject.as<sol::table>(), registry, PluginState);
+        registerPluginSteps(StepsObject.as<sol::table>(), registry, pluginRef, PluginState);
     };
 
     PluginState->script_file(scriptPath.string());

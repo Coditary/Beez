@@ -1,4 +1,5 @@
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 
@@ -413,4 +414,69 @@ configure_step("check", {
     const std::string Fingerprint = Found->config->cacheFingerprint();
     EXPECT_NE(Fingerprint.find("compdb=build/tree"), std::string::npos);
     EXPECT_NE(Fingerprint.find("flag=overlay"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ResolvesDuplicatePluginStepNamesWithQualifiedReference)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/tidy/1.0.0",
+                          R"(
+plugin("tidy", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "qa",
+            scope = "code",
+            run = "echo tidy",
+        },
+    },
+})
+)");
+    Project.writePluginAt("plugins/coditary/cppcheck/1.0.0",
+                          R"(
+plugin("cppcheck", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "qa",
+            scope = "code",
+            run = "echo cppcheck",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/tidy",
+            path = "./plugins/coditary/tidy",
+            version = "1.0.0",
+        },
+        {
+            name = "coditary/cppcheck",
+            path = "./plugins/coditary/cppcheck",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Tidy = registry.resolveStep("coditary/tidy:check");
+    ASSERT_TRUE(Tidy.hasValue());
+    ASSERT_TRUE(Tidy.value().hasShellRun());
+    EXPECT_EQ(Tidy.value().shellRun.value_or(""), "echo tidy");
+
+    const auto Cppcheck = registry.resolveStep("cppcheck:check");
+    ASSERT_TRUE(Cppcheck.hasValue());
+    ASSERT_TRUE(Cppcheck.value().hasShellRun());
+    EXPECT_EQ(Cppcheck.value().shellRun.value_or(""), "echo cppcheck");
+
+    const auto Ambiguous = registry.resolveStep("check");
+    ASSERT_FALSE(Ambiguous.hasValue());
+    EXPECT_EQ(Ambiguous.error().error, beez::core::StepResolutionError::Ambiguous);
 }

@@ -2,6 +2,7 @@
 
 #include "beez/core/model/task_action.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 
 #include <stdexcept>
 #include <variant>
@@ -17,8 +18,15 @@ void validateLoadedRegistry(core::Registry& registry)
         {
             if (const auto* stepAction = std::get_if<core::TaskStepAction>(&action))
             {
-                if (!registry.findStep(stepAction->stepName).has_value())
+                const auto Resolved = registry.resolveStep(stepAction->stepName);
+                if (!Resolved.hasValue())
                 {
+                    if (Resolved.error().error == core::StepResolutionError::Ambiguous)
+                    {
+                        throw std::runtime_error("task '" + taskName + "' references ambiguous step '" +
+                                                 stepAction->stepName + "'");
+                    }
+
                     throw std::runtime_error("task '" + taskName + "' references undefined step '" +
                                              stepAction->stepName + "'");
                 }
