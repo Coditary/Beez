@@ -67,14 +67,7 @@ M.configure_step_names = {
     "configure:fuzzer",
 }
 
-M.build_step_names = {
-    "build:compile",
-    "build:debug",
-    "build:coverage",
-    "build:sanitize",
-    "build:tsan",
-    "build:fuzzer",
-}
+M.build_step_names = {}
 
 local function debug_outputs()
     return {
@@ -293,13 +286,6 @@ M.configure_step_profiles = {
     ["configure:fuzzer"] = "fuzzer",
 }
 
-M.build_step_profiles = {
-    ["build:compile"] = "code",
-    ["build:debug"] = "debug",
-    ["build:coverage"] = "coverage",
-    ["build:sanitize"] = "sanitize",
-    ["build:tsan"] = "tsan",
-    ["build:fuzzer"] = "fuzzer",
-}
+M.build_step_profiles = {}
 
 return M

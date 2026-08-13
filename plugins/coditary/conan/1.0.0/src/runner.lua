@@ -99,22 +99,4 @@ function M.configure(ctx, step_name)
     return shell.run(ctx, cfg.log_prefix_configure, command.configure(cfg, ctx.project_root))
 end
 
-function M.build(ctx, step_name)
-    local profile_name = defaults.build_step_profiles[step_name]
-    if profile_name == nil then
-        error("unknown build step: " .. tostring(step_name))
-    end
-
-    local fallback = function()
-        return require("src.step_config").build_defaults(profile_name)
-    end
-
-    local step_cfg = resolve_step_config(ctx, fallback)
-    local cfg = config.resolve_build(step_cfg, ctx.project_root, profile_name)
-    local profile = defaults.build_profiles[profile_name]
-
-    print(cfg.log_prefix_build .. " " .. profile.build_description)
-    return shell.run(ctx, cfg.log_prefix_build, command.build(cfg))
-end
-
 return M

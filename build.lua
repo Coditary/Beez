@@ -80,6 +80,11 @@ reqpack {
             path = "./plugins/coditary/fuzzer",
             version = "1.0.0",
         },
+        {
+            name = "coditary/clang-build",
+            path = "./plugins/coditary/clang-build",
+            version = "1.0.0",
+        },
     },
 }
 
@@ -179,7 +184,18 @@ order("conan_sbom_export", "cyclonedx_check")
 order("cyclonedx_check", "cyclonedx_merge")
 order("cyclonedx_merge", "osv_audit_check")
 
-order("configure:setup", "build:compile")
+order("configure:setup", "compile:code")
+order("configure:debug", "compile:debug")
+order("configure:coverage", "compile:coverage")
+order("configure:sanitize", "compile:sanitize")
+order("configure:tsan", "compile:tsan")
+order("configure:fuzzer", "compile:fuzzer")
+order("compile:code", "link:code")
+order("compile:debug", "link:debug")
+order("compile:coverage", "link:coverage")
+order("compile:sanitize", "link:sanitize")
+order("compile:tsan", "link:tsan")
+order("compile:fuzzer", "link:fuzzer")
 
 local function configure_test(step_name, extra)
     if extra ~= nil then
@@ -209,95 +225,28 @@ configure_fuzz("fuzz:corpus", { fuzz_rev = "1" })
 configure_fuzz("fuzz:seed-verify", { fuzz_rev = "1" })
 configure_fuzz("fuzz:torture", { fuzz_rev = "1" })
 
+local function configure_clang_build(step_name, extra)
+    if extra ~= nil then
+        configure_step(step_name, extra)
+    end
+end
+
+configure_clang_build("compile:code", { compile_rev = "1" })
+configure_clang_build("link:code", { link_rev = "1" })
+configure_clang_build("compile:debug", { compile_rev = "1" })
+configure_clang_build("link:debug", { link_rev = "1" })
+configure_clang_build("compile:coverage", { compile_rev = "1" })
+configure_clang_build("link:coverage", { link_rev = "1" })
+configure_clang_build("compile:sanitize", { compile_rev = "1" })
+configure_clang_build("link:sanitize", { link_rev = "1" })
+configure_clang_build("compile:tsan", { compile_rev = "1" })
+configure_clang_build("link:tsan", { link_rev = "1" })
+configure_clang_build("compile:fuzzer", { compile_rev = "1" })
+configure_clang_build("link:fuzzer", { link_rev = "1" })
+
 order("test:unit", "test:integration")
 order("test:integration", "test:system")
 order("test:system", "test:performance")
-
-local CMAKE_FILE_PATTERNS = {
-    "CMakeLists.txt",
-    "src/CMakeLists.txt",
-    "src/app/CMakeLists.txt",
-    "src/cli/CMakeLists.txt",
-    "src/core/CMakeLists.txt",
-    "src/logging/CMakeLists.txt",
-    "src/plugins/CMakeLists.txt",
-    "src/plugins/lua/CMakeLists.txt",
-    "src/plugins/shell/CMakeLists.txt",
-    "tests/CMakeLists.txt",
-    "tests/unit/CMakeLists.txt",
-    "tests/integration/CMakeLists.txt",
-    "tests/system/CMakeLists.txt",
-    "tests/fuzz/CMakeLists.txt",
-    "tests/performance/CMakeLists.txt",
-}
-
-local function run_per_file_success_cache(ctx, opts)
-    local config = ctx.get_config()
-    if config == nil then
-        print(opts.log_prefix .. " missing step config")
-        return 1
-    end
-
-    local patterns = opts.patterns or config.patterns
-    local files = ctx.glob(patterns)
-    if #files == 0 then
-        print(opts.log_prefix .. " no files matched")
-        return 0
-    end
-
-    local misses = ctx.get_cache_misses()
-    if #misses > 0 then
-        print(opts.log_prefix .. " re-checking from previous failures:")
-        for _, entry in ipairs(misses) do
-            print("  - " .. entry)
-        end
-    end
-
-    local checked = 0
-    local skipped = 0
-    local failed = 0
-    local prefix = opts.log_prefix
-    local worker_prefix = opts.worker_prefix
-    local pending_jobs = {}
-    local pending_paths = {}
-
-    for index, source_path in ipairs(files) do
-        if ctx.file_success_cached(source_path) then
-            print(prefix .. " skip (cached): " .. source_path)
-            skipped = skipped + 1
-        else
-            print(prefix .. " checking: " .. source_path)
-            checked = checked + 1
-
-            local cmd = opts.command_fn(config, source_path)
-            pending_jobs[#pending_jobs + 1] = ctx:spawn({
-                cmd = cmd,
-            })
-            pending_paths[#pending_paths + 1] = source_path
-        end
-    end
-
-    if #pending_jobs > 0 then
-        local results = ctx:wait_all(pending_jobs, { exitCode = true, duration = true })
-        for job_index, result in ipairs(results) do
-            local source_path = pending_paths[job_index]
-
-            if result.exitCode ~= 0 then
-                ctx.record_file_cache_miss(source_path)
-                failed = failed + 1
-            else
-                ctx.cache_file_success(source_path, result.duration)
-            end
-        end
-    end
-
-    print(prefix .. " summary: checked=" .. checked .. " skipped=" .. skipped .. " failed=" .. failed)
-
-    if failed > 0 then
-        return 1
-    end
-    return 0
-end
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────
 
@@ -305,44 +254,19 @@ task("clean_cache", "rm -rf .cache")
 
 task("debug", {
     { name = "configure:debug" },
-    { name = "build:debug" },
+    { name = "compile:debug" },
+    { name = "link:debug" },
 })
 
 task("fuzzer", {
     { name = "configure:fuzzer" },
-    { name = "build:fuzzer" },
+    { name = "compile:fuzzer" },
+    { name = "link:fuzzer" },
 })
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
--- ── Configure + build + tests (coditary/conan + coditary/ctest plugins) ────────
-
--- ── cmake-format (clang-tidy via coditary/clang-tidy plugin) ────────────────
-
-configure_step("qa_cmake_check", {
-    cmake_patterns = CMAKE_FILE_PATTERNS,
-    format_rev = "1",
-})
-
-step({
-    name = "qa_cmake_check",
-    phase = "qa",
-    scope = "code",
-    input = CMAKE_FILE_PATTERNS,
-    description = "cmake-format check (incremental)",
-    run = function(ctx)
-        local config = ctx.get_config()
-
-        return run_per_file_success_cache(ctx, {
-            log_prefix = "[cmake-format]",
-            worker_prefix = "lint_cmake_",
-            patterns = config.cmake_patterns,
-            command_fn = function(_, path)
-                return "scripts/cmake-format-one.sh " .. path
-            end,
-        })
-    end,
-})
+-- ── Configure + build (coditary/conan configure + coditary/clang-build) ────────
 
 -- ── Supply chain (coditary/conan + cyclonedx + osv-audit plugins) ────────────
 

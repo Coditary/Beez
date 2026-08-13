@@ -46,33 +46,6 @@ local function configure_step_def(step_name, profile_name)
     }
 end
 
-local function build_step_def(step_name, profile_name)
-    local profile = defaults.build_profiles[profile_name]
-    local build_tree = resolve_profile_build_tree(profile_name)
-
-    local build_inputs = profile.build_inputs
-    if type(build_inputs) == "function" then
-        build_inputs = build_inputs(build_tree)
-    end
-
-    local build_outputs = profile.build_outputs
-    if type(build_outputs) == "function" then
-        build_outputs = build_outputs(build_tree)
-    end
-
-    return {
-        phase = "build",
-        scope = profile.scope,
-        input = build_inputs,
-        output = build_outputs,
-        description = profile.build_description,
-        config = step_config.build_defaults(profile_name),
-        run = function(ctx)
-            return runner.build(ctx, step_name)
-        end,
-    }
-end
-
 local plugin_steps = {
     conan_graph_export = {
         phase = "qa",
@@ -130,26 +103,17 @@ for step_name, profile_name in pairs(defaults.configure_step_profiles) do
     plugin_steps[step_name] = configure_step_def(step_name, profile_name)
 end
 
-for step_name, profile_name in pairs(defaults.build_step_profiles) do
-    plugin_steps[step_name] = build_step_def(step_name, profile_name)
-end
-
 -- Beez Conan plugin
 --
 -- Steps:
 --   conan_install         — conan install only
 --   configure:setup       — conan install + cmake (Release/Debug via BUILD_TYPE)
---   build:compile         — cmake build for scope code
 --   configure:debug       — Debug toolchain configure
---   build:debug           — Debug build
 --   configure:coverage    — coverage configure
---   build:coverage        — coverage build
 --   configure:sanitize    — ASan/UBSan configure
---   build:sanitize        — sanitizer build
 --   configure:tsan        — TSan configure
---   build:tsan            — TSan build
 --   configure:fuzzer      — fuzzer configure
---   build:fuzzer          — fuzzer build
+--   (compile/link via coditary/clang-build plugin)
 --   conan_graph_export    — graph JSON only (scope supply-graph)
 --   conan_lock_create     — lockfile
 --   conan_sbom_export     — graph + CycloneDX
@@ -168,7 +132,7 @@ end
 
 plugin("conan", {
     version = "1.0.0",
-    description = "Conan install, CMake configure/build, graph export, lockfile, CycloneDX SBOM",
+    description = "Conan install, CMake configure, graph export, lockfile, CycloneDX SBOM",
     organization = "coditary",
     steps = plugin_steps,
 })
