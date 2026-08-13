@@ -31,6 +31,7 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
 {
     auto& context = orchestrator_detail::Access::context(orchestrator);
     const auto& runOptions = orchestrator_detail::Access::runOptions(orchestrator);
+    context.setVerboseOutput(runOptions.outputMode == logging::OutputMode::Verbose);
 
     context.setStepConfigAccessor([config = step.config]() -> StepConfigPtr { return config; });
     const StepIdentity Identity {.name = step.name, .phase = step.phase, .scope = step.scope};

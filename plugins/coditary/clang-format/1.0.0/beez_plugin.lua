@@ -26,7 +26,7 @@ plugin("clang-format", {
     organization = "coditary",
 
     steps = {
-        check = {
+        qa_check = {
             phase = "qa",
             scope = "code",
             input = defaults.patterns,
@@ -37,7 +37,7 @@ plugin("clang-format", {
             end,
         },
 
-        apply = {
+        format_apply = {
             phase = "format",
             scope = "code",
             mutate = defaults.patterns,

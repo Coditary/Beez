@@ -24,11 +24,47 @@ namespace beez::plugin::lua
 namespace
 {
 
+sol::object copyLuaObject(const std::shared_ptr<sol::state>& luaState, const sol::object& value)
+{
+    if (value.is<bool>())
+    {
+        return sol::make_object(*luaState, value.as<bool>());
+    }
+
+    if (value.is<int>())
+    {
+        return sol::make_object(*luaState, value.as<int>());
+    }
+
+    if (value.is<double>())
+    {
+        return sol::make_object(*luaState, value.as<double>());
+    }
+
+    if (value.is<std::string>())
+    {
+        return sol::make_object(*luaState, value.as<std::string>());
+    }
+
+    if (value.is<sol::table>())
+    {
+        sol::table copy = luaState->create_table();
+        value.as<sol::table>().for_each(
+            [&copy, luaState](const sol::object& key, const sol::object& entry)
+            {
+                copy[copyLuaObject(luaState, key)] = copyLuaObject(luaState, entry);
+            });
+        return sol::make_object(*luaState, copy);
+    }
+
+    return sol::lua_nil;
+}
+
 sol::table shallowCopyTable(const std::shared_ptr<sol::state>& luaState, const sol::table& source)
 {
     sol::table copy = luaState->create_table();
-    source.for_each([&copy](const sol::object& key, const sol::object& value)
-                    { copy[key] = value; });
+    source.for_each([&copy, luaState](const sol::object& key, const sol::object& value)
+                    { copy[copyLuaObject(luaState, key)] = copyLuaObject(luaState, value); });
     return copy;
 }
 
@@ -37,8 +73,10 @@ sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
                        const sol::table& overlay)
 {
     sol::table merged = shallowCopyTable(luaState, base);
-    overlay.for_each([&merged](const sol::object& key, const sol::object& value)
-                     { merged[key] = value; });
+    overlay.for_each([&merged, luaState](const sol::object& key, const sol::object& value)
+                     {
+                         merged[copyLuaObject(luaState, key)] = copyLuaObject(luaState, value);
+                     });
     return merged;
 }
 
@@ -187,6 +225,7 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
 {
     sol::table stepContext = luaState->create_table();
     stepContext["project_root"] = context.projectRoot().string();
+    stepContext["verbose"] = [&context]() -> bool { return context.verboseOutput(); };
     stepContext["get_config"] = [&context]() -> sol::object
     {
         const core::StepConfigPtr StepConfig = context.getConfig();

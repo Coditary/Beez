@@ -81,6 +81,12 @@ class Context
     void setPendingWorkerDuration(double durationSeconds) const;
     [[nodiscard]] double consumePendingWorkerDuration() const;
 
+    void setVerboseOutput(bool verbose);
+    [[nodiscard]] bool verboseOutput() const
+    {
+        return verboseOutput_;
+    }
+
   private:
     std::filesystem::path projectRoot_;
     std::optional<std::string> buildScriptFileName_;
@@ -92,6 +98,7 @@ class Context
     GlobMetadataCache* globMetadataCache_ = nullptr;
     CacheStatsRecorder cacheStatsRecorder_;
     mutable std::optional<double> pendingWorkerDuration_;
+    bool verboseOutput_ = false;
 };
 
 }  // namespace beez::core

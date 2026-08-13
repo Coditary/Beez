@@ -1,18 +1,22 @@
 -- Beez — real project pipeline (repo root):
 --
 --   beez build              Conan + CMake configure, compile, run all test suites
---   beez quality            qa phase (includes clang-format plugin steps)
+--   beez quality            qa phase (clang-format + clang-tidy plugins, cppcheck, …)
 --   beez all                full QS pipeline (build + quality + coverage + sanitize + fuzz)
 --   beez -s format_apply              incremental clang-format apply (coditary/clang-format plugin)
 --   beez -s qa_check                  incremental clang-format check (plugin)
 --   make format             clang-format + cmake-format (Makefile, not Beez)
 --   make format-check       CI format check (Makefile)
---   beez clang_tidy         clang-tidy only (same as qa:lint step)
+--   beez -s check                      clang-tidy (profiles or custom checks array)
+--   beez -s lint_check                 clang-tidy lint profile only
+--   beez -s analyze_check              clang-tidy analyzer profile only
+--   beez -s security_check             clang-tidy security profile only
+--   make lint                          clang-tidy + cmake-format (Makefile, not Beez)
 --   beez clean_cache        clear .cache/ only
 --
 -- Incremental QA uses per-file success cache (.cache/success/).
 -- Build/test steps use step cache (.cache/) keyed on inputs/outputs.
--- Bump lint_rev / analyze_rev / security_rev in configure_step after toolchain changes.
+-- Bump check_rev / lint_rev / analyze_rev / security_rev after toolchain changes.
 -- BUILD_TYPE / CONAN_PROFILE: process env or .env (default Release / clang-release).
 --
 -- Scopes group steps for workflow/CLI selection (phase + scope), not file domains.
@@ -28,6 +32,11 @@ reqpack {
         {
             name = "coditary/clang-format",
             path = "./plugins/coditary/clang-format",
+            version = "1.0.0",
+        },
+        {
+            name = "coditary/clang-tidy",
+            path = "./plugins/coditary/clang-tidy",
             version = "1.0.0",
         },
     },
@@ -54,21 +63,32 @@ local FUZZER_TIME = env_or("FUZZER_TIME", "30")
 local MIN_LINE_COVERAGE = env_or("MIN_LINE_COVERAGE", "85")
 local FUZZER_BIN = DEBUG_BUILD_TREE .. "/fuzz/fuzz_lua_dsl"
 
-local CXX_SOURCE_PATTERNS = {
-    "src/**/*.cpp",
-    "src/**/*.hpp",
-    "src/**/*.h",
-    "include/**/*.cpp",
-    "include/**/*.hpp",
-    "include/**/*.h",
-    "tests/**/*.cpp",
-    "tests/**/*.hpp",
-    "tests/**/*.h",
-}
+local function configure_clang_tidy(step_name, extra)
+    local cfg = { compdb = BUILD_TREE }
+    if extra ~= nil then
+        for key, value in pairs(extra) do
+            cfg[key] = value
+        end
+    end
+    configure_step(step_name, cfg)
+end
 
-local SRC_CPP_PATTERNS = {
-    "src/**/*.cpp",
-}
+configure_clang_tidy("check", {
+    profiles = { "lint", "analyze", "security" },
+    check_rev = "2",
+})
+
+configure_clang_tidy("lint_check", {
+    lint_rev = "4",
+})
+
+configure_clang_tidy("analyze_check", {
+    analyze_rev = "3",
+})
+
+configure_clang_tidy("security_check", {
+    security_rev = "3",
+})
 
 local SECURITY_SOURCE_PATTERNS = {
     "src/**/*.cpp",
@@ -168,10 +188,6 @@ end
 -- ── Tasks ────────────────────────────────────────────────────────────────────
 
 task("clean_cache", "rm -rf .cache")
-
-task("clang_tidy", {
-    { name = "qa:lint" },
-})
 
 task("debug", {
     { name = "configure:debug" },
@@ -300,36 +316,21 @@ make_test_step(
     "report/test/performance.ok"
 )
 
--- ── Lint (clang-tidy + cmake-format, like scripts/lint.sh) ───────────────────
+-- ── cmake-format (clang-tidy via coditary/clang-tidy plugin) ────────────────
 
-configure_step("qa:lint", {
-    compdb = BUILD_TREE,
-    header_filter = "(src|include|tests)/.*",
-    lint_rev = "3",
-    patterns = CXX_SOURCE_PATTERNS,
+configure_step("qa_cmake_check", {
     cmake_patterns = CMAKE_FILE_PATTERNS,
+    format_rev = "1",
 })
 
 step({
-    name = "qa:lint",
+    name = "qa_cmake_check",
     phase = "qa",
     scope = "code",
-    input = CXX_SOURCE_PATTERNS,
-    description = "clang-tidy + cmake-format check (incremental)",
+    input = CMAKE_FILE_PATTERNS,
+    description = "cmake-format check (incremental)",
     run = function(ctx)
         local config = ctx.get_config()
-        local tidy_code = run_per_file_success_cache(ctx, {
-            log_prefix = "[clang-tidy]",
-            worker_prefix = "tidy_",
-            patterns = config.patterns,
-            command_fn = function(cfg, path)
-                return "scripts/clang-tidy-one.sh " .. cfg.compdb .. " " .. path ..
-                    " '" .. cfg.header_filter .. "'"
-            end,
-        })
-        if tidy_code ~= 0 then
-            return tidy_code
-        end
 
         return run_per_file_success_cache(ctx, {
             log_prefix = "[cmake-format]",
@@ -355,31 +356,6 @@ step({
     output = { "report/analyze/cppcheck.ok" },
     description = "cppcheck on src/ (step cache)",
     run = "mkdir -p report/analyze && scripts/cppcheck-analyze.sh && touch report/analyze/cppcheck.ok",
-})
-
-configure_step("qa:analyze-tidy", {
-    compdb = BUILD_TREE,
-    header_filter = "(src|include|tests)/.*",
-    analyze_rev = "2",
-    patterns = SRC_CPP_PATTERNS,
-})
-
-step({
-    name = "qa:analyze-tidy",
-    phase = "qa",
-    scope = "code",
-    input = SRC_CPP_PATTERNS,
-    description = "clang-tidy analyzer checks on src/ (incremental)",
-    run = function(ctx)
-        return run_per_file_success_cache(ctx, {
-            log_prefix = "[analyze-tidy]",
-            worker_prefix = "analyze_",
-            command_fn = function(cfg, path)
-                return "scripts/analyze-tidy-one.sh " .. cfg.compdb .. " " .. path ..
-                    " '" .. cfg.header_filter .. "'"
-            end,
-        })
-    end,
 })
 
 -- ── Security ─────────────────────────────────────────────────────────────────
@@ -414,31 +390,6 @@ step({
     },
     description = "Dependency vulnerability scan (OSV, Conan SBOM)",
     run = "scripts/dependency-audit.sh build report && touch report/security/dependency-audit.ok",
-})
-
-configure_step("qa:security-tidy", {
-    compdb = BUILD_TREE,
-    header_filter = "(src|include|tests)/.*",
-    security_rev = "2",
-    patterns = SECURITY_SOURCE_PATTERNS,
-})
-
-step({
-    name = "qa:security-tidy",
-    phase = "qa",
-    scope = "code",
-    input = SECURITY_SOURCE_PATTERNS,
-    description = "clang-tidy security checks (incremental)",
-    run = function(ctx)
-        return run_per_file_success_cache(ctx, {
-            log_prefix = "[security-tidy]",
-            worker_prefix = "sec_",
-            command_fn = function(cfg, path)
-                return "scripts/security-tidy-one.sh " .. cfg.compdb .. " " .. path ..
-                    " '" .. cfg.header_filter .. "'"
-            end,
-        })
-    end,
 })
 
 -- ── Debug build ──────────────────────────────────────────────────────────────

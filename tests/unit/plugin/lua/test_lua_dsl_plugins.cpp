@@ -349,3 +349,68 @@ reqpack {
     EXPECT_TRUE(Found->hasCallback());
     EXPECT_FALSE(Found->hasShellRun());
 }
+
+TEST(LuaDslPluginTest, ConfigureStepMergesOverlayIntoPluginStepConfig)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/merge/1.0.0",
+                          R"(
+plugin("merge", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = function(ctx)
+                local config = ctx.get_config()
+                if config.flag ~= "overlay" then
+                    return 1
+                end
+                if config.compdb ~= "build/tree" then
+                    return 2
+                end
+                return 0
+            end,
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/merge",
+            path = "./plugins/coditary/merge",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure_step("check", {
+    compdb = "build/tree",
+    flag = "overlay",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Found->hasConfig());
+    EXPECT_NE(Found->config, nullptr);
+    if (Found->config == nullptr)
+    {
+        return;
+    }
+    const std::string Fingerprint = Found->config->cacheFingerprint();
+    EXPECT_NE(Fingerprint.find("compdb=build/tree"), std::string::npos);
+    EXPECT_NE(Fingerprint.find("flag=overlay"), std::string::npos);
+}

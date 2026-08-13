@@ -139,4 +139,9 @@ double Context::consumePendingWorkerDuration() const
     return Duration;
 }
 
+void Context::setVerboseOutput(const bool verbose)
+{
+    verboseOutput_ = verbose;
+}
+
 }  // namespace beez::core
