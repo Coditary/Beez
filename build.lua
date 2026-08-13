@@ -11,6 +11,7 @@ reqpack {
         { name = "coditary/coverage", path = "./plugins/coditary/coverage", version = "1.0.0" },
         { name = "coditary/fuzzer", path = "./plugins/coditary/fuzzer", version = "1.0.0" },
         { name = "coditary/clang-build", path = "./plugins/coditary/clang-build", version = "1.0.0" },
+        { name = "coditary/pipeline", path = "./plugins/coditary/pipeline", version = "1.0.0" },
     },
 }
 
@@ -31,59 +32,19 @@ local REPORTS_DIR = env_or("REPORTS_DIR", "report")
 -- ── Plugin + step configuration ──────────────────────────────────────────────
 
 configure({
-    { "coditary/clang-tidy", {
-        compdb = BUILD_TREE,
-        check_rev = "2",
-        lint_rev = "4",
-        analyze_rev = "3",
-        security_rev = "3",
-        steps = {
-            check = { profiles = { "lint", "analyze", "security" } },
-        },
-    }},
+    { "coditary/clang-tidy", { compdb = BUILD_TREE, check_rev = "2", lint_rev = "4", analyze_rev = "3", security_rev = "3",
+		steps = { check = { profiles = { "lint", "analyze", "security" } } } } },
 
-    { "coditary/cppcheck", {
-        check_rev = "1",
-        analyze_rev = "1",
-        security_rev = "1",
-        steps = {
-            cppcheck_check = { profiles = { "analyze", "security" } },
-        },
-    }},
+    { "coditary/cppcheck", { check_rev = "1", analyze_rev = "1", security_rev = "1",
+		steps = { cppcheck_check = { profiles = { "analyze", "security" } } } } },
 
-    { "coditary/conan", {
-        reports_dir = REPORTS_DIR,
-        lock_rev = "1",
-        sbom_rev = "1",
-    }},
-
-    { "coditary/cyclonedx", {
-        check_rev = "1",
-        merge_rev = "1",
-        merge_inputs = { REPORTS_DIR .. "/sbom/cyclonedx.json" },
-    }},
-
-    { "coditary/osv-audit", {
-        audit_rev = "1",
-    }},
-
-    { "coditary/ctest", {
-        reports_dir = REPORTS_DIR,
-        test_rev = "1",
-    }},
-
-    { "coditary/coverage", {
-        report_rev = "1",
-    }},
-
-    { "coditary/fuzzer", {
-        fuzz_rev = "1",
-    }},
-
-    { "coditary/clang-build", {
-        compile_rev = "1",
-        link_rev = "1",
-    }},
+    { "coditary/conan", { reports_dir = REPORTS_DIR, lock_rev = "1", sbom_rev = "1" } },
+    { "coditary/cyclonedx", { check_rev = "1", merge_rev = "1", merge_inputs = { REPORTS_DIR .. "/sbom/cyclonedx.json" } } },
+    { "coditary/osv-audit", { audit_rev = "1" } },
+    { "coditary/ctest", { reports_dir = REPORTS_DIR, test_rev = "1" } },
+    { "coditary/coverage", { report_rev = "1" } },
+    { "coditary/fuzzer", { fuzz_rev = "1" } },
+    { "coditary/clang-build", { compile_rev = "1", link_rev = "1" } },
 })
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────
@@ -104,13 +65,6 @@ task("fuzzer", {
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
-
-workflow("fuzzer_torture", {
-    { "configure", { "configure[fuzz]" } },
-    { "build", { "build[fuzz]" } },
-    { "fuzz", { "fuzz[torture]" } },
-})
-
 -- ── Clean ────────────────────────────────────────────────────────────────────
 
 step({
@@ -121,63 +75,18 @@ step({
     run = "rm -rf build " .. REPORTS_DIR .. " .cache",
 })
 
--- ── Workflows ────────────────────────────────────────────────────────────────
+-- ── Workflows (imported from coditary/pipeline) ──────────────────────────────
 
-workflow("build", {
-    { "configure", { "configure[code]" } },
-    { "build", { "build[code]" } },
-    { "test", { "test[code]" } },
-})
-
-workflow("quality", {
-    { "code", { "qa[code]" } },
-    { "supply", { "qa[supply]" } },
-})
-
-workflow("debug", {
-    { "configure", { "configure[debug]" } },
-    { "build", { "build[debug]" } },
-})
-
-workflow("coverage", {
-    { "configure", { "configure[coverage]" } },
-    { "build", { "build[coverage]" } },
-    { "test", { "test[coverage]" } },
-    { "report", { "report[coverage]" } },
-})
-
-workflow("sanitize", {
-    { "configure", { "configure[sanitize]" } },
-    { "build", { "build[sanitize]" } },
-    { "test", { "test[sanitize]" } },
-})
-
-workflow("tsan", {
-    { "configure", { "configure[tsan]" } },
-    { "build", { "build[tsan]" } },
-    { "test", { "test[tsan]" } },
-})
-
-workflow("fuzzer_smoke", {
-    { "configure", { "configure[fuzz]" } },
-    { "build", { "build[fuzz]" } },
-    { "fuzz", { "fuzz[smoke]" } },
-})
-
-workflow("fuzzer_corpus", {
-    { "configure", { "configure[fuzz]" } },
-    { "build", { "build[fuzz]" } },
-    { "fuzz", { "fuzz[corpus]" } },
-})
-
-workflow("all", {
-    { "build", { "configure[code]", "build[code]", "test[code]" } },
-    { "quality", { "qa[code]", "qa[supply]" } },
-    { "coverage", { "configure[coverage]", "build[coverage]", "test[coverage]", "report[coverage]" } },
-    { "sanitize", { "configure[sanitize]", "build[sanitize]", "test[sanitize]" } },
-    { "fuzz", { "configure[fuzz]", "build[fuzz]", "fuzz[smoke]" } },
-})
-
-workflow("clean", {
-    { "clean", { "clean[repo]" } },
+workflows({
+    build = "coditary/pipeline:build",
+    quality = "coditary/pipeline:quality",
+    debug = "coditary/pipeline:debug",
+    coverage = "coditary/pipeline:coverage",
+    sanitize = "coditary/pipeline:sanitize",
+    tsan = "coditary/pipeline:tsan",
+    fuzzer_smoke = "coditary/pipeline:fuzzer_smoke",
+    fuzzer_corpus = "coditary/pipeline:fuzzer_corpus",
+    fuzzer_torture = "coditary/pipeline:fuzzer_torture",
+    all = "coditary/pipeline:all",
+    clean = "coditary/pipeline:clean",
 })
