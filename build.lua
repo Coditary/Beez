@@ -185,17 +185,14 @@ local function order_build_chain(scope)
     order(configure_step, "compile:" .. scope, "link:" .. scope)
 end
 
-order(
-    "conan_lock_create",
-    "conan_sbom_export",
-    "cyclonedx_check",
-    "cyclonedx_merge",
-    "osv_audit_check"
-)
+-- order(
+--     "conan_lock_create",
+--     "conan_sbom_export",
+--     "cyclonedx_check",
+--     "cyclonedx_merge",
+--     "osv_audit_check"
+-- )
 
-for _, scope in ipairs({ "code", "debug", "coverage", "sanitize", "tsan", "fuzzer" }) do
-    order_build_chain(scope)
-end
 
 local function configure_test(step_name, extra)
     if extra ~= nil then
@@ -244,7 +241,7 @@ configure_clang_build("link:tsan", { link_rev = "1" })
 configure_clang_build("compile:fuzzer", { compile_rev = "1" })
 configure_clang_build("link:fuzzer", { link_rev = "1" })
 
-order("test:unit", "test:integration", "test:system", "test:performance")
+-- order("test:unit", "test:integration", "test:system", "test:performance")
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────
 
