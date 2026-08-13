@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+CONVERTER="${ROOT_DIR}/plugins/coditary/conan/1.0.0/scripts/conan-graph-to-cyclonedx.py"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -36,16 +37,16 @@ assert_output_contains() {
 test_conan_graph_converter_rejects_invalid_json() {
     local graph="${TMP_DIR}/invalid-graph.json"
     echo '{"not":"a graph"}' >"${graph}"
-    assert_exit 1 python3 "${ROOT_DIR}/scripts/conan-graph-to-cyclonedx.py" "${graph}" "${TMP_DIR}/out.json"
+    assert_exit 1 python3 "${CONVERTER}" "${graph}" "${TMP_DIR}/out.json"
     assert_output_contains "invalid Conan graph" \
-        python3 "${ROOT_DIR}/scripts/conan-graph-to-cyclonedx.py" "${graph}" "${TMP_DIR}/out.json"
+        python3 "${CONVERTER}" "${graph}" "${TMP_DIR}/out.json"
 }
 
 test_conan_graph_converter_rejects_missing_file() {
-    assert_exit 1 python3 "${ROOT_DIR}/scripts/conan-graph-to-cyclonedx.py" \
+    assert_exit 1 python3 "${CONVERTER}" \
         "${TMP_DIR}/missing.json" "${TMP_DIR}/out.json"
     assert_output_contains "failed to read Conan graph" \
-        python3 "${ROOT_DIR}/scripts/conan-graph-to-cyclonedx.py" \
+        python3 "${CONVERTER}" \
         "${TMP_DIR}/missing.json" "${TMP_DIR}/out.json"
 }
 

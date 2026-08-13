@@ -13,6 +13,9 @@
 --   beez -s cppcheck_check              cppcheck (profiles: analyze, security)
 --   beez -s cppcheck_analyze_check      cppcheck on src/
 --   beez -s cppcheck_security_check     cppcheck security scan
+--   beez -s conan_sbom_export             Conan graph + CycloneDX SBOM
+--   beez -s cyclonedx_merge               merge CycloneDX BOM files
+--   beez -s osv_audit_check               OSV vulnerability scan (lockfile)
 --   make lint                          clang-tidy + cmake-format (Makefile, not Beez)
 --   beez clean_cache        clear .cache/ only
 --
@@ -46,6 +49,21 @@ reqpack {
             path = "./plugins/coditary/cppcheck",
             version = "1.0.0",
         },
+        {
+            name = "coditary/conan",
+            path = "./plugins/coditary/conan",
+            version = "1.0.0",
+        },
+        {
+            name = "coditary/cyclonedx",
+            path = "./plugins/coditary/cyclonedx",
+            version = "1.0.0",
+        },
+        {
+            name = "coditary/osv-audit",
+            path = "./plugins/coditary/osv-audit",
+            version = "1.0.0",
+        },
     },
 }
 
@@ -60,9 +78,7 @@ local function env_or(key, default)
 end
 
 local BUILD_TYPE = env_or("BUILD_TYPE", "Release")
-local CONAN_PROFILE = env_or("CONAN_PROFILE", "clang-release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
-local CMAKE_PRESET = (BUILD_TYPE == "Debug") and "conan-debug" or "conan-release"
 local DEBUG_BUILD_TREE = "build/build/Debug"
 local COVERAGE_STAMP = DEBUG_BUILD_TREE .. "/.beez-coverage-configured"
 local REPORTS_DIR = env_or("REPORTS_DIR", "report")
@@ -119,6 +135,40 @@ configure_cppcheck("cppcheck_analyze_check", {
 configure_cppcheck("cppcheck_security_check", {
     security_rev = "1",
 })
+
+local function configure_supply(step_name, extra)
+    if extra ~= nil then
+        configure_step(step_name, extra)
+    end
+end
+
+configure_supply("conan_lock_create", {
+    lock_rev = "1",
+})
+
+configure_supply("conan_sbom_export", {
+    sbom_rev = "1",
+})
+
+configure_supply("cyclonedx_check", {
+    check_rev = "1",
+})
+
+configure_supply("cyclonedx_merge", {
+    merge_rev = "1",
+    merge_inputs = { REPORTS_DIR .. "/sbom/cyclonedx.json" },
+})
+
+configure_supply("osv_audit_check", {
+    audit_rev = "1",
+})
+
+order("conan_lock_create", "conan_sbom_export")
+order("conan_sbom_export", "cyclonedx_check")
+order("cyclonedx_check", "cyclonedx_merge")
+order("cyclonedx_merge", "osv_audit_check")
+
+order("configure:setup", "build:compile")
 
 local CMAKE_FILE_PATTERNS = {
     "CMakeLists.txt",
@@ -222,56 +272,7 @@ task("fuzzer", {
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
--- ── Configure + build ────────────────────────────────────────────────────────
-
-step({
-    name = "configure:setup",
-    phase = "configure",
-    scope = "code",
-    input = {
-        "conanfile.py",
-        "CMakeLists.txt",
-        "CMakePresets.json",
-        "cmake/**",
-        "conan/**",
-        "src/**/CMakeLists.txt",
-        "tests/**/CMakeLists.txt",
-    },
-    output = {
-        BUILD_TREE .. "/compile_commands.json",
-        BUILD_TREE .. "/build.ninja",
-    },
-    description = "Conan install + CMake configure (" .. BUILD_TYPE .. ")",
-    run = "conan install . --output-folder=build --build=missing " ..
-        "-s build_type=" .. BUILD_TYPE .. " -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset " .. CMAKE_PRESET .. " -DBUILD_TESTING=ON -DBUILD_CACHE=ON",
-})
-
-step({
-    name = "build:compile",
-    phase = "build",
-    scope = "code",
-    input = {
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-        "tests/**/*.cpp",
-        "CMakeLists.txt",
-        "src/**/CMakeLists.txt",
-        "tests/**/CMakeLists.txt",
-        BUILD_TREE .. "/build.ninja",
-    },
-    output = {
-        BUILD_TREE .. "/bin/beez",
-        BUILD_TREE .. "/tests/unit/beez_tests",
-        BUILD_TREE .. "/tests/integration/beez_integration_tests",
-        BUILD_TREE .. "/tests/system/beez_system_tests",
-        BUILD_TREE .. "/tests/performance/beez_perf_tests",
-    },
-    description = "CMake build (app + all test binaries)",
-    run = "cmake --build --preset " .. CMAKE_PRESET,
-})
-
--- order("configure:setup", "build:compile")
+-- ── Configure + build (coditary/conan plugin) ────────────────────────────────
 
 -- ── Tests (ctest per suite, step cache on binaries + sources) ────────────────
 
@@ -364,113 +365,11 @@ step({
     end,
 })
 
--- ── Security ─────────────────────────────────────────────────────────────────
+-- ── Supply chain (coditary/conan + cyclonedx + osv-audit plugins) ────────────
 
-step({
-    name = "qa:dependency-audit",
-    phase = "qa",
-    scope = "code",
-    input = {
-        "conanfile.py",
-        "scripts/sbom-generate.sh",
-        "scripts/conan-graph-to-cyclonedx.py",
-        "scripts/dependency-audit.sh",
-        "scripts/ci-conan-profile.sh",
-        "conan/profiles/**",
-    },
-    output = {
-        "report/security/dependency-audit.ok",
-        "report/security/dependency-audit.txt",
-        "report/sbom/cyclonedx.json",
-        "report/sbom/conan-graph.json",
-    },
-    description = "Dependency vulnerability scan (OSV, Conan SBOM)",
-    run = "scripts/dependency-audit.sh build report && touch report/security/dependency-audit.ok",
-})
-
--- ── Debug build ──────────────────────────────────────────────────────────────
-
-step({
-    name = "configure:debug",
-    phase = "configure",
-    scope = "debug",
-    input = {
-        "conanfile.py",
-        "CMakeLists.txt",
-        "CMakePresets.json",
-        "cmake/**",
-        "conan/**",
-        "src/**/CMakeLists.txt",
-        "tests/**/CMakeLists.txt",
-    },
-    output = {
-        DEBUG_BUILD_TREE .. "/compile_commands.json",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    description = "Conan install + CMake configure (Debug)",
-    run = "conan install . --output-folder=build --build=missing " ..
-        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON",
-})
-
-step({
-    name = "build:debug",
-    phase = "build",
-    scope = "debug",
-    input = {
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-        "tests/**/*.cpp",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    output = { DEBUG_BUILD_TREE .. "/bin/beez" },
-    description = "CMake Debug build",
-    run = "cmake --build --preset conan-debug",
-})
+-- ── Debug build (coditary/conan plugin) ──────────────────────────────────────
 
 -- ── Coverage ─────────────────────────────────────────────────────────────────
-
-step({
-    name = "configure:coverage",
-    phase = "configure",
-    scope = "coverage",
-    input = {
-        "conanfile.py",
-        "CMakeLists.txt",
-        "cmake/**",
-        "src/**/CMakeLists.txt",
-        "tests/**/CMakeLists.txt",
-    },
-    output = {
-        DEBUG_BUILD_TREE .. "/compile_commands.json",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-        COVERAGE_STAMP,
-    },
-    description = "CMake configure with coverage instrumentation",
-    run = "conan install . --output-folder=build --build=missing " ..
-        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON -DBUILD_COVERAGE=ON " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF " ..
-        "&& grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' " .. DEBUG_BUILD_TREE .. "/CMakeCache.txt " ..
-        "&& touch " .. COVERAGE_STAMP,
-})
-
-step({
-    name = "build:coverage",
-    phase = "build",
-    scope = "coverage",
-    input = {
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-        "tests/**/*.cpp",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-        COVERAGE_STAMP,
-    },
-    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
-    description = "Build Debug with coverage flags",
-    run = "cmake --build --preset conan-debug",
-})
-
 step({
     name = "test:coverage",
     phase = "test",
@@ -510,45 +409,6 @@ step({
 -- ── Sanitizer ────────────────────────────────────────────────────────────────
 
 step({
-    name = "configure:sanitize",
-    phase = "configure",
-    scope = "sanitize",
-    input = {
-        "conanfile.py",
-        "CMakeLists.txt",
-        "cmake/**",
-        "src/**/CMakeLists.txt",
-        "tests/**/CMakeLists.txt",
-    },
-    output = {
-        DEBUG_BUILD_TREE .. "/compile_commands.json",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    description = "CMake configure with ASan/UBSan",
-    run = "conan install . --output-folder=build --build=missing " ..
-        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
-        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=ON -DENABLE_UBSAN=ON " ..
-        "&& rm -f " .. COVERAGE_STAMP,
-})
-
-step({
-    name = "build:sanitize",
-    phase = "build",
-    scope = "sanitize",
-    input = {
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-        "tests/**/*.cpp",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
-    description = "Build Debug with sanitizers",
-    run = "cmake --build --preset conan-debug",
-})
-
-step({
     name = "test:sanitize",
     phase = "test",
     scope = "sanitize",
@@ -568,45 +428,6 @@ step({
 -- ── ThreadSanitizer ──────────────────────────────────────────────────────────
 
 step({
-    name = "configure:tsan",
-    phase = "configure",
-    scope = "tsan",
-    input = {
-        "conanfile.py",
-        "CMakeLists.txt",
-        "cmake/**",
-        "src/**/CMakeLists.txt",
-        "tests/**/CMakeLists.txt",
-    },
-    output = {
-        DEBUG_BUILD_TREE .. "/compile_commands.json",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    description = "CMake configure with ThreadSanitizer",
-    run = "conan install . --output-folder=build --build=missing " ..
-        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_CACHE=ON " ..
-        "&& cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=OFF " ..
-        "-DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF -DENABLE_TSAN=ON " ..
-        "&& rm -f " .. COVERAGE_STAMP,
-})
-
-step({
-    name = "build:tsan",
-    phase = "build",
-    scope = "tsan",
-    input = {
-        "src/**/*.cpp",
-        "include/**/*.hpp",
-        "tests/**/*.cpp",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    output = { DEBUG_BUILD_TREE .. "/tests/unit/beez_tests" },
-    description = "Build Debug with ThreadSanitizer",
-    run = "cmake --build --preset conan-debug",
-})
-
-step({
     name = "test:tsan",
     phase = "test",
     scope = "tsan",
@@ -623,40 +444,6 @@ step({
 })
 
 -- ── Fuzzer ───────────────────────────────────────────────────────────────────
-
-step({
-    name = "configure:fuzzer",
-    phase = "configure",
-    scope = "fuzz",
-    input = {
-        "conanfile.py",
-        "CMakeLists.txt",
-        "tests/fuzz/**",
-        "cmake/**",
-    },
-    output = {
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    description = "CMake configure for fuzzer target",
-    run = "conan install . --output-folder=build --build=missing " ..
-        "-s build_type=Debug -pr " .. CONAN_PROFILE .. " -pr:b " .. CONAN_PROFILE ..
-        " && cmake --preset conan-debug -DBUILD_TESTING=OFF -DBUILD_CACHE=ON " ..
-        "&& cmake --preset conan-debug -DBUILD_TESTING=OFF -DBUILD_COVERAGE=OFF " ..
-        "-DBUILD_FUZZER=ON -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF",
-})
-
-step({
-    name = "build:fuzzer",
-    phase = "build",
-    scope = "fuzz",
-    input = {
-        "tests/fuzz/**",
-        DEBUG_BUILD_TREE .. "/build.ninja",
-    },
-    output = { FUZZER_BIN },
-    description = "Build fuzz_lua_dsl",
-    run = "cmake --build --preset conan-debug --target fuzz_lua_dsl",
-})
 
 step({
     name = "fuzz:smoke",
@@ -748,6 +535,7 @@ workflow("build", {
 
 workflow("quality", {
     { phase = "qa", scope = "code" },
+    { phase = "qa", scope = "supply" },
 })
 
 workflow("debug", {
@@ -791,6 +579,7 @@ workflow("all", {
     { phase = "build", scope = "code" },
     { phase = "test", scope = "code" },
     { phase = "qa", scope = "code" },
+    { phase = "qa", scope = "supply" },
     { phase = "configure", scope = "coverage" },
     { phase = "build", scope = "coverage" },
     { phase = "test", scope = "coverage" },

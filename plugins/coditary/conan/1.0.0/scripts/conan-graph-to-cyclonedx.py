@@ -143,7 +143,7 @@ def main() -> int:
             "tools": [
                 {
                     "vendor": "Coditary",
-                    "name": "beez-sbom",
+                    "name": "beez-conan-sbom",
                     "version": "1",
                 }
             ],
