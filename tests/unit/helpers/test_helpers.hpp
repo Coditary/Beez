@@ -148,6 +148,27 @@ inline void expectTaskInvocation(const std::optional<core::Task>& task,
     expectTaskInvocation(*task, index, expectedTaskName);
 }
 
+inline void expectPhaseInvocation(const core::Task& task,
+                                  std::size_t index,
+                                  const std::string& expectedPhase,
+                                  const std::string& expectedScope)
+{
+    if (index >= task.actions.size())
+    {
+        ADD_FAILURE() << "task action index out of range: " << index;
+        return;
+    }
+
+    const auto* phaseAction = std::get_if<core::TaskPhaseAction>(task.actions.data() + index);
+    ASSERT_NE(phaseAction, nullptr);
+    if (phaseAction == nullptr)
+    {
+        return;
+    }
+    EXPECT_EQ(phaseAction->invocation.phase, expectedPhase);
+    EXPECT_EQ(phaseAction->invocation.scope, expectedScope);
+}
+
 inline void expectMixedTaskWithStepInvocation(const core::Task& task)
 {
     ASSERT_EQ(task.actions.size(), 3U);

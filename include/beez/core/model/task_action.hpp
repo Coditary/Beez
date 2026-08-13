@@ -1,5 +1,6 @@
 #pragma once
 
+#include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/step_config.hpp"
 
 #include <string>
@@ -25,7 +26,13 @@ struct TaskInvocationAction
     std::string taskName;
 };
 
-using TaskAction = std::variant<TaskShellAction, TaskStepAction, TaskInvocationAction>;
+struct TaskPhaseAction
+{
+    PhaseInvocation invocation;
+};
+
+using TaskAction =
+    std::variant<TaskShellAction, TaskStepAction, TaskInvocationAction, TaskPhaseAction>;
 
 [[nodiscard]] inline TaskAction makeShellAction(std::string command)
 {
@@ -40,6 +47,11 @@ using TaskAction = std::variant<TaskShellAction, TaskStepAction, TaskInvocationA
 [[nodiscard]] inline TaskAction makeTaskInvocation(std::string taskName)
 {
     return TaskInvocationAction {.taskName = std::move(taskName)};
+}
+
+[[nodiscard]] inline TaskAction makePhaseAction(PhaseInvocation invocation)
+{
+    return TaskPhaseAction {.invocation = std::move(invocation)};
 }
 
 }  // namespace beez::core

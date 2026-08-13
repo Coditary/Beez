@@ -77,6 +77,19 @@ runTaskImpl(Orchestrator& orchestrator,
             continue;
         }
 
+        if (const auto* phaseAction = std::get_if<TaskPhaseAction>(&action))
+        {
+            const auto Result =
+                runPhaseInvocation(orchestrator, phaseAction->invocation, progress);
+            if (!Result)
+            {
+                callStack.pop_back();
+                return Result.error();
+            }
+            lastExitCode = Result.value();
+            continue;
+        }
+
         const auto* stepAction = std::get_if<TaskStepAction>(&action);
         if (stepAction == nullptr)
         {

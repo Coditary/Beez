@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 
+#include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
@@ -22,6 +23,30 @@ namespace
 [[nodiscard]] bool isPresent(const sol::object& value)
 {
     return value.valid() && value.get_type() != sol::type::lua_nil;
+}
+
+[[nodiscard]] core::PhaseInvocation parseTaskPhaseInvocation(const sol::table& actionTable)
+{
+    const sol::object PhaseValue = actionTable["phase"];
+    if (!isPresent(PhaseValue) || !PhaseValue.is<std::string>() || PhaseValue.as<std::string>().empty())
+    {
+        throw std::runtime_error("task phase action is missing required field 'phase'");
+    }
+
+    core::PhaseInvocation invocation {.phase = PhaseValue.as<std::string>()};
+
+    const sol::object ScopeValue = actionTable["scope"];
+    if (isPresent(ScopeValue))
+    {
+        if (!ScopeValue.is<std::string>())
+        {
+            throw std::runtime_error("task phase action field 'scope' must be a string");
+        }
+
+        invocation.scope = ScopeValue.as<std::string>();
+    }
+
+    return invocation;
 }
 
 }  // namespace
@@ -55,12 +80,15 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
 
             const sol::object TaskValue = ActionTable["task"];
             const sol::object StepValue = ActionTable["step"];
+            const sol::object PhaseValue = ActionTable["phase"];
             const bool HasTask = isPresent(TaskValue);
             const bool HasStep = isPresent(StepValue);
+            const bool HasPhase = isPresent(PhaseValue);
 
-            if (HasTask && HasStep)
+            if (HasTask + HasStep + HasPhase > 1)
             {
-                throw std::runtime_error("task action cannot set both 'task' and 'step'");
+                throw std::runtime_error(
+                    "task action must set exactly one of 'task', 'step', or 'phase'");
             }
 
             if (HasTask)
@@ -77,6 +105,12 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
                 }
 
                 actions.push_back(core::makeTaskInvocation(InvokedTask));
+                return;
+            }
+
+            if (HasPhase)
+            {
+                actions.push_back(core::makePhaseAction(parseTaskPhaseInvocation(ActionTable)));
                 return;
             }
 
@@ -132,8 +166,10 @@ bool isTaskActionListTable(const sol::table& table)
                 const sol::table ActionTable = value.as<sol::table>();
                 const sol::object StepValue = ActionTable["step"];
                 const sol::object TaskValue = ActionTable["task"];
+                const sol::object PhaseValue = ActionTable["phase"];
                 if ((StepValue.valid() && StepValue.is<std::string>()) ||
-                    (TaskValue.valid() && TaskValue.is<std::string>()))
+                    (TaskValue.valid() && TaskValue.is<std::string>()) ||
+                    (PhaseValue.valid() && PhaseValue.is<std::string>()))
                 {
                     hasActionEntry = true;
                 }

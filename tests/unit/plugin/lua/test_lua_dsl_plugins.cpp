@@ -858,6 +858,25 @@ task("b", {
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
+TEST(LuaDslPluginTest, RejectsTaskActionWithPhaseAndStep)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "local-step",
+    phase = "build",
+    scope = "code",
+    run = "echo local",
+})
+task("build", {
+    { phase = "build", scope = "code", step = "local-step" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 TEST(LuaDslPluginTest, RejectsUndefinedTaskInvocation)
 {
     const beez::test::TempProject Project;

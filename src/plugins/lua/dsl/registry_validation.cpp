@@ -20,6 +20,29 @@ void validateLoadedRegistry(core::Registry& registry,
     {
         for (const auto& action : task.actions)
         {
+            if (const auto* phaseAction = std::get_if<core::TaskPhaseAction>(&action))
+            {
+                const auto& invocation = phaseAction->invocation;
+                const std::string Scope =
+                    invocation.scope.empty() ? "*" : invocation.scope;
+                const auto Matched = registry.stepsForPhase(invocation.phase, Scope);
+                if (!Matched.hasValue())
+                {
+                    throw std::runtime_error("task '" + taskName +
+                                             "' phase ordering failed for phase '" +
+                                             invocation.phase + "' scope '" + Scope + "'");
+                }
+
+                if (Matched.value().empty())
+                {
+                    throw std::runtime_error("task '" + taskName +
+                                             "' has no registered steps for phase '" +
+                                             invocation.phase + "' scope '" + Scope + "'");
+                }
+
+                continue;
+            }
+
             if (const auto* stepAction = std::get_if<core::TaskStepAction>(&action))
             {
                 validateTaskPluginStepReference(

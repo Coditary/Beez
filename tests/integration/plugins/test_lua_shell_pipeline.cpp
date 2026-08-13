@@ -107,6 +107,34 @@ workflow("build", {
     EXPECT_TRUE(std::filesystem::exists(Project.path() / ".compiled"));
 }
 
+TEST(LuaShellPipelineTest, TaskPhaseInvocationExecutesRegisteredSteps)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "compile",
+    phase = "compile",
+    scope = "code",
+    run = "touch .task-phase-compiled",
+})
+task("full_build", {
+    "touch .task-phase-started",
+    { phase = "compile", scope = "code" },
+    "touch .task-phase-done",
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.run("full_build").hasValue());
+
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-phase-started"));
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-phase-compiled"));
+    EXPECT_TRUE(std::filesystem::exists(Project.path() / ".task-phase-done"));
+}
+
 TEST(LuaShellPipelineTest, TaskStepInvocationUsesConfigureStepOverStepDefault)
 {
     const beez::test::TempProject Project;

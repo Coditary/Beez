@@ -284,6 +284,28 @@ task("full_build", {
     beez::test::expectStepInvocation(Found, 0, "cpp:compile", true);
 }
 
+TEST(LuaDslTest, LoadsTaskWithPhaseInvocation)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "gen", phase = "generate", scope = "code", run = "true" })
+step({ name = "compile", phase = "compile", scope = "code", run = "true" })
+task("full_build", {
+    { phase = "generate", scope = "code" },
+    { phase = "compile", scope = "code" },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "full_build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 2U);
+    beez::test::expectPhaseInvocation(*Found, 0, "generate", "code");
+    beez::test::expectPhaseInvocation(*Found, 1, "compile", "code");
+}
+
 TEST(LuaDslTest, ReturnsFalseWhenTaskStepInvocationMissingName)
 {
     const beez::test::TempProject Project;
