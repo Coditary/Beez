@@ -479,6 +479,53 @@ step({
     EXPECT_EQ(Ordered.value()[1].name, "cpp:format");
 }
 
+TEST(LuaDslTest, LoadsMultiStepOrderDeclaration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+order("alpha", "beta", "gamma", "delta")
+step({
+    name = "delta",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo delta",
+})
+step({
+    name = "gamma",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo gamma",
+})
+step({
+    name = "beta",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo beta",
+})
+step({
+    name = "alpha",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo alpha",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_TRUE(Ordered.hasValue());
+    ASSERT_EQ(Ordered.value().size(), 4U);
+    EXPECT_EQ(Ordered.value()[0].name, "alpha");
+    EXPECT_EQ(Ordered.value()[1].name, "beta");
+    EXPECT_EQ(Ordered.value()[2].name, "gamma");
+    EXPECT_EQ(Ordered.value()[3].name, "delta");
+}
+
 TEST(LuaDslTest, ReturnsFalseWhenArtifactFieldIsNotTable)
 {
     const beez::test::TempProject Project;

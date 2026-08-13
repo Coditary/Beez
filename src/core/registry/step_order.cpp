@@ -91,6 +91,49 @@ void addEdge(const std::string& before,
                                { return hint.before == before && hint.after == after; });
 }
 
+[[nodiscard]] bool isReachableBefore(const std::vector<StepOrderHint>& hints,
+                                     const std::string& before,
+                                     const std::string& after)
+{
+    if (before == after)
+    {
+        return false;
+    }
+
+    if (hasHint(hints, before, after))
+    {
+        return true;
+    }
+
+    std::vector<std::string> queue = {before};
+    std::set<std::string> visited;
+    visited.insert(before);
+
+    while (!queue.empty())
+    {
+        const std::string Current = queue.back();
+        queue.pop_back();
+
+        for (const auto& hint : hints)
+        {
+            if (hint.before != Current || visited.contains(hint.after))
+            {
+                continue;
+            }
+
+            if (hint.after == after)
+            {
+                return true;
+            }
+
+            visited.insert(hint.after);
+            queue.push_back(hint.after);
+        }
+    }
+
+    return false;
+}
+
 void collectPatternRefs(const Step& step,
                         const std::vector<std::string>& patterns,
                         std::vector<PatternRef>& refs)
@@ -240,8 +283,8 @@ resolveMutateOverlap(const Step& step,
                      Adjacency& adjacency,
                      InDegree& inDegree)
 {
-    const bool StepBeforeOther = hasHint(hints, step.name, other.name);
-    const bool OtherBeforeStep = hasHint(hints, other.name, step.name);
+    const bool StepBeforeOther = isReachableBefore(hints, step.name, other.name);
+    const bool OtherBeforeStep = isReachableBefore(hints, other.name, step.name);
 
     if (StepBeforeOther && OtherBeforeStep)
     {

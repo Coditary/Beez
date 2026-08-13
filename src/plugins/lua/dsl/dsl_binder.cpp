@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
@@ -87,9 +88,29 @@ class DslBinder
         registry_->registerWorkflow(parseWorkflow(name, steps));
     }
 
-    void order(const std::string& before, const std::string& after) const
+    void order(sol::variadic_args arguments) const
     {
-        registry_->registerStepOrder(before, after);
+        if (arguments.size() < 2U)
+        {
+            throw std::runtime_error("order() requires at least two step names");
+        }
+
+        std::vector<std::string> stepNames;
+        stepNames.reserve(arguments.size());
+        for (const sol::stack_proxy& argument : arguments)
+        {
+            if (!argument.is<std::string>())
+            {
+                throw std::runtime_error("order() arguments must be step name strings");
+            }
+
+            stepNames.push_back(argument.as<std::string>());
+        }
+
+        for (std::size_t index = 0; index + 1U < stepNames.size(); ++index)
+        {
+            registry_->registerStepOrder(stepNames.at(index), stepNames.at(index + 1U));
+        }
     }
 
   private:
@@ -121,8 +142,7 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     (*luaState)["workflow"] = [binder](const std::string& name, const sol::table& steps)
     { binder->workflow(name, steps); };
 
-    (*luaState)["order"] = [binder](const std::string& before, const std::string& after)
-    { binder->order(before, after); };
+    (*luaState)["order"] = [binder](sol::variadic_args arguments) { binder->order(arguments); };
 
     (*luaState)["reqpack"] = [&reqpackManifest, &registry, &context](const sol::table& table)
     {

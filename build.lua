@@ -32,6 +32,7 @@
 --   smoke / corpus         — fuzz run variants (phase fuzz, separate workflow targets)
 --   repo                   — repository-wide clean (future: book, docs, …)
 -- Steps in the same phase+scope are ordered via order(); independent steps run in parallel.
+-- order() accepts a chain: order("a", "b", "c") means a → b → c.
 
 reqpack {
     beez = {
@@ -179,23 +180,22 @@ configure_supply("osv_audit_check", {
     audit_rev = "1",
 })
 
-order("conan_lock_create", "conan_sbom_export")
-order("conan_sbom_export", "cyclonedx_check")
-order("cyclonedx_check", "cyclonedx_merge")
-order("cyclonedx_merge", "osv_audit_check")
+local function order_build_chain(scope)
+    local configure_step = scope == "code" and "configure:setup" or ("configure:" .. scope)
+    order(configure_step, "compile:" .. scope, "link:" .. scope)
+end
 
-order("configure:setup", "compile:code")
-order("configure:debug", "compile:debug")
-order("configure:coverage", "compile:coverage")
-order("configure:sanitize", "compile:sanitize")
-order("configure:tsan", "compile:tsan")
-order("configure:fuzzer", "compile:fuzzer")
-order("compile:code", "link:code")
-order("compile:debug", "link:debug")
-order("compile:coverage", "link:coverage")
-order("compile:sanitize", "link:sanitize")
-order("compile:tsan", "link:tsan")
-order("compile:fuzzer", "link:fuzzer")
+order(
+    "conan_lock_create",
+    "conan_sbom_export",
+    "cyclonedx_check",
+    "cyclonedx_merge",
+    "osv_audit_check"
+)
+
+for _, scope in ipairs({ "code", "debug", "coverage", "sanitize", "tsan", "fuzzer" }) do
+    order_build_chain(scope)
+end
 
 local function configure_test(step_name, extra)
     if extra ~= nil then
@@ -244,9 +244,7 @@ configure_clang_build("link:tsan", { link_rev = "1" })
 configure_clang_build("compile:fuzzer", { compile_rev = "1" })
 configure_clang_build("link:fuzzer", { link_rev = "1" })
 
-order("test:unit", "test:integration")
-order("test:integration", "test:system")
-order("test:system", "test:performance")
+order("test:unit", "test:integration", "test:system", "test:performance")
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────
 
