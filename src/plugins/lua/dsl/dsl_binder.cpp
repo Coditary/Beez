@@ -6,12 +6,15 @@
 #include "beez/plugin/lua/dsl/plugin_loader.hpp"
 #include "beez/plugin/lua/dsl/configure_parser.hpp"
 #include "beez/plugin/lua/dsl/reqpack_parser.hpp"
+#include "beez/plugin/lua/dsl/workflows_parser.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
+
+#include "beez/core/registry/workflow_reference.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -145,6 +148,30 @@ class DslBinder
         registry_->registerWorkflow(parseWorkflow(name, steps));
     }
 
+    void workflow(const std::string& name, const std::string& pluginWorkflowReference) const
+    {
+        if (reqpackBeezPlugins_ != nullptr && !reqpackBeezPlugins_->empty())
+        {
+            const core::PluginWorkflowRef ParsedReference =
+                core::parsePluginWorkflowReference(pluginWorkflowReference);
+            if (!reqpackBeezPlugins_->find(ParsedReference.organization, ParsedReference.plugin)
+                     .has_value())
+            {
+                throw std::runtime_error("workflow references plugin '" +
+                                         ParsedReference.organization + '/' +
+                                         ParsedReference.plugin +
+                                         "' which is not declared in reqpack.beez");
+            }
+        }
+
+        registry_->registerWorkflowFromPluginReference(name, pluginWorkflowReference);
+    }
+
+    void workflows(const sol::table& workflowsTable) const
+    {
+        parseWorkflowsTable(workflowsTable, *registry_, reqpackBeezPlugins_);
+    }
+
     void order(sol::variadic_args arguments) const
     {
         if (arguments.size() < 2U)
@@ -195,6 +222,15 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["step"] = [binder](const sol::table& options) { binder->step(options); };
 
+    (*luaState)["workflow"] = sol::overload(
+        [binder](const std::string& name, const std::string& pluginWorkflowReference)
+        { binder->workflow(name, pluginWorkflowReference); },
+        [binder](const std::string& name, const sol::table& steps)
+        { binder->workflow(name, steps); });
+
+    (*luaState)["workflows"] = [binder](const sol::table& workflowsTable)
+    { binder->workflows(workflowsTable); };
+
     (*luaState)["configure"] = [binder](const sol::table& entriesTable)
     { binder->configure(entriesTable); };
 
@@ -204,9 +240,6 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     (*luaState)["configure_plugin"] =
         [binder](const std::string& qualifiedName, const sol::table& configTable)
     { binder->configurePlugin(qualifiedName, configTable); };
-
-    (*luaState)["workflow"] = [binder](const std::string& name, const sol::table& steps)
-    { binder->workflow(name, steps); };
 
     (*luaState)["order"] = [binder](sol::variadic_args arguments) { binder->order(arguments); };
 

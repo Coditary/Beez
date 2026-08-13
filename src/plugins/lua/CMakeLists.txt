@@ -106,6 +106,7 @@ add_library(
     api/text/detail/prebyte_backend.cpp
     api/text/diff.cpp
     dsl/configure_parser.cpp
+    dsl/workflows_parser.cpp
     dsl/task_parser.cpp
     dsl/task_cycle_validation.cpp
     dsl/task_step_reference.cpp

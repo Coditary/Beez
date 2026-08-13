@@ -120,16 +120,16 @@ workflow("run", { { phase = "p", scope = "sc" } }))",
     {"workflow.rejects_string_entries", R"(workflow("run", { "ignored-task-name" }))", false},
     {"workflow.rejects_numeric_entries", R"(workflow("run", { 42 }))", false},
     {"workflow.staged_valid",
-     R"(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
+     R"lua(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
 workflow("release", {
     { "prepare", { "clean[artifacts]" } },
-})",
+}))lua",
      true},
     {"workflow.staged_invalid_reference",
-     R"(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
+     R"lua(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
 workflow("release", {
     { "prepare", { "clean-artifacts" } },
-})",
+}))lua",
      false},
 };
 

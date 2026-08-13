@@ -3,6 +3,7 @@
 #include "beez/core/plugin/installer.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
+#include "beez/plugin/lua/dsl/workflow_parser.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -133,6 +134,31 @@ void registerPluginSteps(const sol::table& stepsTable,
     }
 }
 
+void registerPluginWorkflows(const sol::table& workflowsTable,
+                             core::Registry& registry,
+                             const BeezPluginRef& pluginRef)
+{
+    for (const auto& [key, value] : workflowsTable)
+    {
+        if (!key.is<std::string>())
+        {
+            throw std::runtime_error("plugin workflows must use string keys as workflow names");
+        }
+
+        if (!value.is<sol::table>())
+        {
+            throw std::runtime_error("plugin workflow '" + key.as<std::string>() +
+                                     "' must be a table");
+        }
+
+        core::Workflow workflow =
+            parseWorkflow(key.as<std::string>(), value.as<sol::table>());
+        registry.registerPluginWorkflow(std::move(workflow),
+                                        pluginRef.organization,
+                                        pluginRef.name);
+    }
+}
+
 void loadPluginScript(const std::filesystem::path& scriptPath,
                       const BeezPluginRef& pluginRef,
                       core::Registry& registry,
@@ -183,6 +209,10 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
 
         registerPluginSteps(StepsObject.as<sol::table>(), registry, pluginRef, PluginState);
     };
+
+    (*PluginState)["workflows"] =
+        [&registry, &pluginRef](const sol::table& workflowsTable)
+    { registerPluginWorkflows(workflowsTable, registry, pluginRef); };
 
     PluginState->script_file(scriptPath.string());
 }

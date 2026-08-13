@@ -7,6 +7,7 @@
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/registry/step_order.hpp"
 #include "beez/core/registry/step_reference.hpp"
+#include "beez/core/registry/workflow_reference.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <algorithm>
@@ -243,6 +244,44 @@ void Registry::registerWorkflow(Workflow workflow)
     workflows_.emplace(workflow.name, std::move(workflow));
 }
 
+void Registry::registerPluginWorkflow(Workflow workflow,
+                                      const std::string& organization,
+                                      const std::string& plugin)
+{
+    const std::string PluginWorkflowKey =
+        formatPluginWorkflowKey(organization, plugin, workflow.name);
+    if (pluginWorkflows_.contains(PluginWorkflowKey))
+    {
+        throw std::runtime_error("duplicate plugin workflow '" + PluginWorkflowKey + "'");
+    }
+
+    pluginWorkflows_.emplace(PluginWorkflowKey, std::move(workflow));
+}
+
+Workflow Registry::resolvePluginWorkflowReference(const std::string& reference) const
+{
+    const PluginWorkflowRef ParsedReference = parsePluginWorkflowReference(reference);
+    const std::string PluginWorkflowKey =
+        formatPluginWorkflowKey(ParsedReference.organization,
+                                ParsedReference.plugin,
+                                ParsedReference.workflowName);
+    const auto WorkflowIterator = pluginWorkflows_.find(PluginWorkflowKey);
+    if (WorkflowIterator == pluginWorkflows_.end())
+    {
+        throw std::runtime_error("plugin workflow reference '" + reference + "' is not defined");
+    }
+
+    return WorkflowIterator->second;
+}
+
+void Registry::registerWorkflowFromPluginReference(const std::string& localName,
+                                                   const std::string& pluginWorkflowReference)
+{
+    Workflow workflow = resolvePluginWorkflowReference(pluginWorkflowReference);
+    workflow.name = localName;
+    registerWorkflow(std::move(workflow));
+}
+
 void Registry::validateConsistent() const
 {
     if (pendingStepConfigs_.empty())
@@ -297,6 +336,7 @@ void Registry::clear()
     pendingStepConfigs_.clear();
     pendingPluginConfigs_.clear();
     workflows_.clear();
+    pluginWorkflows_.clear();
     stepOrderHints_.clear();
 }
 

@@ -43,6 +43,7 @@ add_library(
     glob/pattern.cpp
     registry/registry.cpp
     registry/step_reference.cpp
+    registry/workflow_reference.cpp
     registry/step_order.cpp
     orchestrator/orchestrator.cpp
     orchestrator/errors.cpp

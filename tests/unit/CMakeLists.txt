@@ -39,6 +39,7 @@ add_executable(
     core/glob/test_pattern.cpp
     core/registry/test_step_order.cpp
     core/test_workflow.cpp
+    core/test_phase_scope_reference.cpp
     core/runtime/test_context.cpp
     core/config/settings/test_settings.cpp
     core/reqpack/test_reqpack_format.cpp

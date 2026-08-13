@@ -760,6 +760,161 @@ configure({
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
+TEST(LuaDslPluginTest, PluginWorkflowsAreStoredWithoutAutoRegistration)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        configure_release = {
+            phase = "configure",
+            scope = "release",
+            run = "echo configure",
+        },
+        build_release = {
+            phase = "build",
+            scope = "release",
+            run = "echo build",
+        },
+    },
+})
+
+workflows {
+    release = {
+        "configure:release",
+        "build:release",
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("release").has_value());
+    EXPECT_EQ(registry.pluginWorkflows().size(), 1U);
+    EXPECT_TRUE(registry.pluginWorkflows().contains("coditary/demo:release"));
+}
+
+TEST(LuaDslPluginTest, WorkflowShorthandImportsPluginWorkflow)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        configure_release = {
+            phase = "configure",
+            scope = "release",
+            run = "echo configure",
+        },
+    },
+})
+
+workflows {
+    release = {
+        "configure:release",
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflow("ship_it", "coditary/demo:release")
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("ship_it");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_EQ(Found->steps.size(), 1U);
+    EXPECT_EQ(Found->steps[0].invocation.phase, "configure");
+    EXPECT_EQ(Found->steps[0].invocation.scope, "release");
+}
+
+TEST(LuaDslPluginTest, WorkflowsBatchImportsPluginWorkflow)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        test_code = {
+            phase = "test",
+            scope = "code",
+            run = "echo test",
+        },
+    },
+})
+
+workflows {
+    verify = {
+        "test:code",
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    release = "coditary/demo:verify",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("release");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_EQ(Found->steps.size(), 1U);
+    EXPECT_EQ(Found->steps[0].invocation.phase, "test");
+    EXPECT_EQ(Found->steps[0].invocation.scope, "code");
+}
+
 TEST(LuaDslPluginTest, LoadsInstalledPluginVersionOnDemand)
 {
     const beez::test::TempProject Project;

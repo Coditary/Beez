@@ -31,6 +31,12 @@ class Registry
                          const std::string& plugin,
                          const StepConfigPtr& config);
     void registerWorkflow(Workflow workflow);
+    void registerPluginWorkflow(Workflow workflow,
+                                const std::string& organization,
+                                const std::string& plugin);
+    [[nodiscard]] Workflow resolvePluginWorkflowReference(const std::string& reference) const;
+    void registerWorkflowFromPluginReference(const std::string& localName,
+                                             const std::string& pluginWorkflowReference);
     void registerStepOrder(const std::string& before, const std::string& after);
 
     void clear();
@@ -76,6 +82,11 @@ class Registry
         return pendingPluginConfigs_;
     }
 
+    [[nodiscard]] const std::unordered_map<std::string, Workflow>& pluginWorkflows() const
+    {
+        return pluginWorkflows_;
+    }
+
   private:
     void applyStepConfig(const std::string& name, const StepConfigPtr& config);
     void applyPluginConfigToRegisteredSteps(const std::string& pluginKey,
@@ -93,6 +104,7 @@ class Registry
     std::unordered_map<std::string, StepConfigPtr> pendingStepConfigs_;
     std::unordered_map<std::string, StepConfigPtr> pendingPluginConfigs_;
     std::unordered_map<std::string, Workflow> workflows_;
+    std::unordered_map<std::string, Workflow> pluginWorkflows_;
     std::vector<StepOrderHint> stepOrderHints_;
 };
 

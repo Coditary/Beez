@@ -93,7 +93,7 @@ core::WorkflowStage parseWorkflowStage(const std::string& workflowName, const so
                                          "' entries must be phase[scope] strings");
             }
 
-            stage.invocations.push_back(core::parsePhaseScopeReference(value.as<std::string>()));
+            stage.invocations.push_back(core::parseWorkflowPhaseReference(value.as<std::string>()));
         });
 
     return stage;
@@ -148,9 +148,11 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
             {
                 if (value.is<std::string>())
                 {
-                    throw std::runtime_error("workflow '" + name +
-                                             "' entry must be a phase table, not a string ('" +
-                                             value.as<std::string>() + "')");
+                    ensureWorkflowFormat(name, stagedFormat, false);
+                    workflow.steps.push_back(
+                        core::WorkflowStep {.invocation = core::parseWorkflowPhaseReference(
+                                                value.as<std::string>())});
+                    return;
                 }
 
                 if (value.is<int>() || value.is<double>())
