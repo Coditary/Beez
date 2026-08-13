@@ -106,9 +106,9 @@ task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
 
 workflow("fuzzer_torture", {
-    { phase = "configure", scope = "fuzz" },
-    { phase = "build", scope = "fuzz" },
-    { phase = "fuzz", scope = "torture" },
+    { "configure", { "configure[fuzz]" } },
+    { "build", { "build[fuzz]" } },
+    { "fuzz", { "fuzz[torture]" } },
 })
 
 -- ── Clean ────────────────────────────────────────────────────────────────────
@@ -124,70 +124,60 @@ step({
 -- ── Workflows ────────────────────────────────────────────────────────────────
 
 workflow("build", {
-    { phase = "configure", scope = "code" },
-    { phase = "build", scope = "code" },
-    { phase = "test", scope = "code" },
+    { "configure", { "configure[code]" } },
+    { "build", { "build[code]" } },
+    { "test", { "test[code]" } },
 })
 
 workflow("quality", {
-    { phase = "qa", scope = "code" },
-    { phase = "qa", scope = "supply" },
+    { "code", { "qa[code]" } },
+    { "supply", { "qa[supply]" } },
 })
 
 workflow("debug", {
-    { phase = "configure", scope = "debug" },
-    { phase = "build", scope = "debug" },
+    { "configure", { "configure[debug]" } },
+    { "build", { "build[debug]" } },
 })
 
 workflow("coverage", {
-    { phase = "configure", scope = "coverage" },
-    { phase = "build", scope = "coverage" },
-    { phase = "test", scope = "coverage" },
-    { phase = "report", scope = "coverage" },
+    { "configure", { "configure[coverage]" } },
+    { "build", { "build[coverage]" } },
+    { "test", { "test[coverage]" } },
+    { "report", { "report[coverage]" } },
 })
 
 workflow("sanitize", {
-    { phase = "configure", scope = "sanitize" },
-    { phase = "build", scope = "sanitize" },
-    { phase = "test", scope = "sanitize" },
+    { "configure", { "configure[sanitize]" } },
+    { "build", { "build[sanitize]" } },
+    { "test", { "test[sanitize]" } },
 })
 
 workflow("tsan", {
-    { phase = "configure", scope = "tsan" },
-    { phase = "build", scope = "tsan" },
-    { phase = "test", scope = "tsan" },
+    { "configure", { "configure[tsan]" } },
+    { "build", { "build[tsan]" } },
+    { "test", { "test[tsan]" } },
 })
 
 workflow("fuzzer_smoke", {
-    { phase = "configure", scope = "fuzz" },
-    { phase = "build", scope = "fuzz" },
-    { phase = "fuzz", scope = "smoke" },
+    { "configure", { "configure[fuzz]" } },
+    { "build", { "build[fuzz]" } },
+    { "fuzz", { "fuzz[smoke]" } },
 })
 
 workflow("fuzzer_corpus", {
-    { phase = "configure", scope = "fuzz" },
-    { phase = "build", scope = "fuzz" },
-    { phase = "fuzz", scope = "corpus" },
+    { "configure", { "configure[fuzz]" } },
+    { "build", { "build[fuzz]" } },
+    { "fuzz", { "fuzz[corpus]" } },
 })
 
 workflow("all", {
-    { phase = "configure", scope = "code" },
-    { phase = "build", scope = "code" },
-    { phase = "test", scope = "code" },
-    { phase = "qa", scope = "code" },
-    { phase = "qa", scope = "supply" },
-    { phase = "configure", scope = "coverage" },
-    { phase = "build", scope = "coverage" },
-    { phase = "test", scope = "coverage" },
-    { phase = "report", scope = "coverage" },
-    { phase = "configure", scope = "sanitize" },
-    { phase = "build", scope = "sanitize" },
-    { phase = "test", scope = "sanitize" },
-    { phase = "configure", scope = "fuzz" },
-    { phase = "build", scope = "fuzz" },
-    { phase = "fuzz", scope = "smoke" },
+    { "build", { "configure[code]", "build[code]", "test[code]" } },
+    { "quality", { "qa[code]", "qa[supply]" } },
+    { "coverage", { "configure[coverage]", "build[coverage]", "test[coverage]", "report[coverage]" } },
+    { "sanitize", { "configure[sanitize]", "build[sanitize]", "test[sanitize]" } },
+    { "fuzz", { "configure[fuzz]", "build[fuzz]", "fuzz[smoke]" } },
 })
 
 workflow("clean", {
-    { phase = "clean", scope = "repo" },
+    { "clean", { "clean[repo]" } },
 })

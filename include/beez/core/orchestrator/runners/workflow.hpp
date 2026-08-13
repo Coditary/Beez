@@ -4,6 +4,9 @@
 #include "beez/core/orchestrator/types.hpp"
 #include "beez/core/util/expected.hpp"
 
+#include <optional>
+#include <string>
+
 namespace beez::core
 {
 
@@ -16,6 +19,10 @@ namespace orchestrator_detail
 
 [[nodiscard]] Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator,
                                                            const Workflow& workflow);
+[[nodiscard]] Expected<int, OrchestratorError>
+runWorkflow(Orchestrator& orchestrator,
+            const Workflow& workflow,
+            const std::optional<std::string>& targetStage);
 void runWorkflowStep(Orchestrator& orchestrator,
                      const WorkflowStep& step,
                      ProgressState& progress,

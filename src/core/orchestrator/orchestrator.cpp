@@ -155,6 +155,28 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
                             { return orchestrator_detail::runWorkflow(*this, *FoundWorkflow); });
     }
 
+    const auto ColonPosition = name.find(':');
+    if (ColonPosition != std::string::npos && ColonPosition > 0U &&
+        ColonPosition + 1U < name.size())
+    {
+        const std::string WorkflowName = name.substr(0, ColonPosition);
+        const std::string StageName = name.substr(ColonPosition + 1U);
+        if (const auto FoundWorkflow =
+                orchestrator_detail::Access::registry(*this).findWorkflow(WorkflowName))
+        {
+            return orchestrator_detail::ScopedLoggedRun(
+                       *this,
+                       "Workflow",
+                       name,
+                       orchestrator_detail::RunCacheFlushPolicy::IfEndStrategy)
+                .withoutSegment(
+                    [&]
+                    {
+                        return orchestrator_detail::runWorkflow(*this, *FoundWorkflow, StageName);
+                    });
+        }
+    }
+
     return OrchestratorError::NotFound;
 }
 

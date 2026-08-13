@@ -2,6 +2,7 @@
 #include "beez/core/orchestrator/orchestrator_access.hpp"
 
 #include "beez/core/model/workflow.hpp"
+#include "beez/core/model/workflow_resolution.hpp"
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/run/lifecycle.hpp"
@@ -14,6 +15,9 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <optional>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -60,23 +64,35 @@ void runWorkflowStep(Orchestrator& orchestrator,
     Access::stats(orchestrator).endSegment(true);
 }
 
-Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator, const Workflow& workflow)
+Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator,
+                                             const Workflow& workflow,
+                                             const std::optional<std::string>& targetStage)
 {
-    if (workflow.steps.empty())
+    std::vector<WorkflowStep> executionSteps;
+    try
+    {
+        executionSteps = resolveWorkflowExecutionSteps(workflow, targetStage);
+    }
+    catch (const std::runtime_error&)
+    {
+        return OrchestratorError::NotFound;
+    }
+
+    if (executionSteps.empty())
     {
         return 0;
     }
 
-    ProgressState progress {.total = countWorkflowSteps(orchestrator, workflow)};
+    ProgressState progress {.total = countWorkflowSteps(orchestrator, executionSteps)};
     WorkflowExecutionState executionState;
 
     tbb::flow::graph graph;
     using WorkflowNode = tbb::flow::continue_node<tbb::flow::continue_msg>;
     std::vector<std::unique_ptr<WorkflowNode>> nodes;
-    nodes.reserve(workflow.steps.size());
+    nodes.reserve(executionSteps.size());
 
     WorkflowNode* predecessor = nullptr;
-    for (const auto& workflowStep : workflow.steps)
+    for (const auto& workflowStep : executionSteps)
     {
         auto node = std::make_unique<WorkflowNode>(
             graph,
@@ -116,6 +132,11 @@ Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator, const W
     }
 
     return 0;
+}
+
+Expected<int, OrchestratorError> runWorkflow(Orchestrator& orchestrator, const Workflow& workflow)
+{
+    return runWorkflow(orchestrator, workflow, std::nullopt);
 }
 
 }  // namespace beez::core::orchestrator_detail

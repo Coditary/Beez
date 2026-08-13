@@ -360,6 +360,53 @@ workflow("build", {
     beez::test::expectWorkflowStep(Found->steps[1], "compile", "code");
 }
 
+TEST(LuaDslTest, LoadsStagedWorkflow)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "clean-artifacts", phase = "clean", scope = "artifacts", run = "true" })
+step({ name = "deps-install", phase = "deps", scope = "install", run = "true" })
+step({ name = "build-backend", phase = "build", scope = "backend", run = "true" })
+workflow("release", {
+    { "prepare", { "clean[artifacts]", "deps[install]" } },
+    { "compile", { "build[backend]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireWorkflow(registry, "release");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Found->isStaged());
+    ASSERT_EQ(Found->stages.size(), 2U);
+    EXPECT_EQ(Found->stages[0].name, "prepare");
+    ASSERT_EQ(Found->stages[0].invocations.size(), 2U);
+    EXPECT_EQ(Found->stages[0].invocations[0].phase, "clean");
+    EXPECT_EQ(Found->stages[0].invocations[0].scope, "artifacts");
+    EXPECT_EQ(Found->stages[1].name, "compile");
+}
+
+TEST(LuaDslTest, RejectsMixedStagedAndLegacyWorkflowEntries)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "gen", phase = "generate", scope = "code", run = "true" })
+workflow("release", {
+    { "prepare", { "generate[code]" } },
+    { phase = "generate", scope = "code" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 TEST(LuaDslTest, RejectsWorkflowWithParallelStep)
 {
     const beez::test::TempProject Project;

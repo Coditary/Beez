@@ -107,6 +107,7 @@ add_library(
     api/text/diff.cpp
     dsl/configure_parser.cpp
     dsl/task_parser.cpp
+    dsl/task_cycle_validation.cpp
     dsl/task_step_reference.cpp
     dsl/plugin_config_validation.cpp
     dsl/step_parser.cpp

@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/dsl/registry_validation.hpp"
 
 #include "beez/core/model/task_action.hpp"
+#include "beez/core/model/workflow_resolution.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_resolution.hpp"
 #include "beez/plugin/lua/dsl/plugin_config_validation.hpp"
@@ -70,7 +71,8 @@ void validateLoadedRegistry(core::Registry& registry,
 
     for (const auto& [workflowName, workflow] : registry.workflows())
     {
-        for (const auto& workflowStep : workflow.steps)
+        const auto ExecutionSteps = core::resolveWorkflowExecutionSteps(workflow);
+        for (const auto& workflowStep : ExecutionSteps)
         {
             const auto& invocation = workflowStep.invocation;
             const auto Matched = registry.stepsForPhase(invocation.phase, invocation.scope);

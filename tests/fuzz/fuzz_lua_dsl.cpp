@@ -267,6 +267,7 @@ void touchRegistryOnSuccess(const beez::core::Registry& registry,
     {
         static_cast<void>(name);
         static_cast<void>(workflow.steps.size());
+        static_cast<void>(workflow.stages.size());
     }
 }
 

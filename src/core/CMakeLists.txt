@@ -70,6 +70,8 @@ add_library(
     execution/concurrency/worker_pool.cpp
     execution/process/stream_capture.cpp
     model/step_config.cpp
+    model/phase_scope_reference.cpp
+    model/workflow_resolution.cpp
     util/text_table.cpp
     util/temp_directory.cpp
 )
