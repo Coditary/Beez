@@ -63,10 +63,14 @@ void Registry::registerStep(Step step)
 
 void Registry::registerPluginStep(Step step,
                                   const std::string& organization,
-                                  const std::string& plugin)
+                                  const std::string& plugin,
+                                  const std::optional<std::string>& version)
 {
     const std::string StepName = step.name;
-    const std::string StepId = formatQualifiedStepRef(organization, plugin, StepName);
+    const std::string StepId = version.has_value()
+                                   ? formatVersionedQualifiedStepRef(
+                                         organization, plugin, *version, StepName)
+                                   : formatQualifiedStepRef(organization, plugin, StepName);
 
     const auto PendingIterator = pendingStepConfigs_.find(StepName);
     if (PendingIterator != pendingStepConfigs_.end())
@@ -89,15 +93,41 @@ void Registry::registerPluginStep(Step step,
 
     steps_.emplace(StepId, std::move(step));
     registerStepAlias(StepId, StepId);
-    registerStepAlias(StepName, StepId);
-    registerStepAlias(formatShortPluginStepRef(plugin, StepName), StepId);
-    registerStepAlias(formatQualifiedStepRef(organization, plugin, StepName), StepId);
+
+    if (!version.has_value())
+    {
+        registerStepAlias(StepName, StepId);
+        registerStepAlias(formatShortPluginStepRef(plugin, StepName), StepId);
+        registerStepAlias(formatQualifiedStepRef(organization, plugin, StepName), StepId);
+
+        if (isDefaultScopedStepName(StepName))
+        {
+            const std::string ActionName = stepActionName(StepName);
+            registerStepAlias(formatShortPluginStepRef(plugin, ActionName), StepId);
+            registerStepAlias(formatQualifiedStepRef(organization, plugin, ActionName), StepId);
+        }
+
+        return;
+    }
+
+    const std::string VersionedStepAlias = formatVersionedInvocationRef(StepName, *version);
+    registerStepAlias(VersionedStepAlias, StepId);
+    registerStepAlias(formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName),
+                                                   *version),
+                      StepId);
+    registerStepAlias(formatVersionedInvocationRef(
+                          formatQualifiedStepRef(organization, plugin, StepName), *version),
+                      StepId);
 
     if (isDefaultScopedStepName(StepName))
     {
         const std::string ActionName = stepActionName(StepName);
-        registerStepAlias(formatShortPluginStepRef(plugin, ActionName), StepId);
-        registerStepAlias(formatQualifiedStepRef(organization, plugin, ActionName), StepId);
+        registerStepAlias(formatVersionedInvocationRef(
+                              formatShortPluginStepRef(plugin, ActionName), *version),
+                          StepId);
+        registerStepAlias(formatVersionedInvocationRef(
+                              formatQualifiedStepRef(organization, plugin, ActionName), *version),
+                          StepId);
     }
 }
 
@@ -268,11 +298,18 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
         }
     }
 
+    const auto [BaseReference, Version] = splitStepReferenceVersion(reference);
+
     if (const auto Qualified = parseQualifiedStepRef(reference))
     {
-        const auto QualifiedId = formatQualifiedStepRef(Qualified->organization,
-                                                        Qualified->plugin,
-                                                        Qualified->stepName);
+        const auto QualifiedId =
+            Qualified->version.has_value()
+                ? formatVersionedQualifiedStepRef(Qualified->organization,
+                                                  Qualified->plugin,
+                                                  *Qualified->version,
+                                                  Qualified->stepName)
+                : formatQualifiedStepRef(
+                      Qualified->organization, Qualified->plugin, Qualified->stepName);
         if (const auto Found = findStepById(QualifiedId))
         {
             return *Found;
@@ -281,7 +318,13 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
 
     if (const auto ShortPlugin = parseShortPluginStepRef(reference))
     {
-        const auto ShortAlias = formatShortPluginStepRef(ShortPlugin->first, ShortPlugin->second);
+        const auto ShortAlias = Version.has_value()
+                                    ? formatVersionedInvocationRef(
+                                          formatShortPluginStepRef(ShortPlugin->first,
+                                                                   ShortPlugin->second),
+                                          *Version)
+                                    : formatShortPluginStepRef(ShortPlugin->first,
+                                                               ShortPlugin->second);
         const auto ShortIterator = stepAliases_.find(ShortAlias);
         if (ShortIterator != stepAliases_.end())
         {
@@ -302,7 +345,42 @@ Expected<Step, StepResolutionFailure> Registry::resolveStep(const std::string& r
         }
     }
 
+    if (Version.has_value())
+    {
+        const auto VersionedAlias = formatVersionedInvocationRef(BaseReference, *Version);
+        const auto VersionedIterator = stepAliases_.find(VersionedAlias);
+        if (VersionedIterator != stepAliases_.end())
+        {
+            const auto& targets = VersionedIterator->second;
+            if (targets.size() == 1U)
+            {
+                if (const auto Found = findStepById(targets.front()))
+                {
+                    return *Found;
+                }
+            }
+        }
+    }
+
     return StepResolutionFailure {.error = StepResolutionError::NotFound};
+}
+
+bool Registry::hasPluginVersionLoaded(const std::string& organization,
+                                      const std::string& plugin,
+                                      const std::string& version) const
+{
+    const std::string Prefix =
+        formatPluginVersionKey(organization, plugin, version) + ':';
+    for (const auto& [stepId, step] : steps_)
+    {
+        (void)step;
+        if (stepId.starts_with(Prefix))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::vector<std::string> Registry::stepInvocationNames() const

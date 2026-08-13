@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/dsl/plugin_loader.hpp"
 
+#include "beez/core/plugin/installer.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 
@@ -122,9 +123,12 @@ void registerPluginSteps(const sol::table& stepsTable,
             StepTable["name"] = StepName;
         }
 
+        const std::optional<std::string> StepVersion =
+            pluginRef.fromInstalledCache ? pluginRef.version : std::nullopt;
         registry.registerPluginStep(parseStepTable(StepTable, luaState),
                                     pluginRef.organization,
-                                    pluginRef.name);
+                                    pluginRef.name,
+                                    StepVersion);
     }
 }
 
@@ -227,6 +231,31 @@ void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
         const auto ScriptPath = resolvePluginScript(pluginRef, context);
         loadPluginScript(ScriptPath, pluginRef, registry, context);
     }
+}
+
+void loadInstalledBeezPlugin(const std::string& organization,
+                             const std::string& name,
+                             const std::string& version,
+                             core::Registry& registry,
+                             const core::Context& context)
+{
+    if (registry.hasPluginVersionLoaded(organization, name, version))
+    {
+        return;
+    }
+
+    const auto ScriptResult = core::resolveInstalledBeezPluginScript(organization, name, version);
+    if (!ScriptResult.hasValue())
+    {
+        throw std::runtime_error(ScriptResult.error());
+    }
+
+    BeezPluginRef pluginRef;
+    pluginRef.organization = organization;
+    pluginRef.name = name;
+    pluginRef.version = version;
+    pluginRef.fromInstalledCache = true;
+    loadPluginScript(ScriptResult.value(), pluginRef, registry, context);
 }
 
 }  // namespace beez::plugin::lua

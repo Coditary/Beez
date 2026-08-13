@@ -8,6 +8,7 @@
 #include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
+#include "beez/plugin/lua/dsl/step_plugin_loader.hpp"
 
 #include <iostream>
 #include <string>
@@ -75,12 +76,24 @@ void printAmbiguousStepHint(const std::string& reference,
 }  // namespace
 
 int runOrchestratorCommand(core::Orchestrator& orchestrator,
-                           const core::Registry& registry,
+                           core::Registry& registry,
+                           const core::Context& context,
                            const ParsedOptions& options,
                            logging::OutputMode outputMode)
 {
     if (options.stepName.has_value())
     {
+        const auto EnsureResult = plugin::lua::ensureInstalledPluginForStepReference(
+            *options.stepName, registry, context);
+        if (!EnsureResult.success)
+        {
+            if (logging::writesCliErrorsToConsole(outputMode))
+            {
+                std::cerr << "Error: " << EnsureResult.message << '\n';
+            }
+            return 1;
+        }
+
         const auto Resolved = registry.resolveStep(*options.stepName);
         if (!Resolved.hasValue() && Resolved.error().error == core::StepResolutionError::Ambiguous)
         {

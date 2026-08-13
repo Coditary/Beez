@@ -415,6 +415,27 @@ TEST(RegistryTest, PluginStepsAllowDuplicateShortNamesWhenQualified)
     ASSERT_EQ(Ambiguous.error().candidates.size(), 2U);
 }
 
+TEST(RegistryTest, ResolvesVersionedPluginStepReference)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile:code";
+    compileStep.phase = "build";
+    compileStep.scope = "code";
+    compileStep.shellRun = "echo versioned";
+    registry.registerPluginStep(
+        std::move(compileStep), "coditary", "clang-build", std::string {"1.0.0"});
+
+    const auto Resolved = registry.resolveStep("clang-build:compile@1.0.0");
+    ASSERT_TRUE(Resolved.hasValue());
+    EXPECT_EQ(Resolved.value().shellRun.value_or(""), "echo versioned");
+
+    const auto Qualified = registry.resolveStep("coditary/clang-build:compile@1.0.0");
+    ASSERT_TRUE(Qualified.hasValue());
+    EXPECT_EQ(Qualified.value().shellRun.value_or(""), "echo versioned");
+}
+
 TEST(RegistryTest, UniquePluginStepKeepsShortNameAlias)
 {
     beez::core::Registry registry;

@@ -20,6 +20,7 @@ struct BeezPluginRef
     std::string name;
     std::string path;
     std::optional<std::string> version;
+    bool fromInstalledCache = false;
 };
 
 [[nodiscard]] std::vector<BeezPluginRef> parseBeezPluginTable(const sol::table& table);
@@ -27,5 +28,11 @@ struct BeezPluginRef
 void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
                      core::Registry& registry,
                      const core::Context& context);
+
+void loadInstalledBeezPlugin(const std::string& organization,
+                             const std::string& name,
+                             const std::string& version,
+                             core::Registry& registry,
+                             const core::Context& context);
 
 }  // namespace beez::plugin::lua

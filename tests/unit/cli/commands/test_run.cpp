@@ -25,7 +25,7 @@ TEST(RunCommandTest, SilentModeSuppressesDidYouMean)
 
     testing::internal::CaptureStderr();
     const int ExitCode = beez::cli::runOrchestratorCommand(
-        orchestrator, registry, options, beez::logging::OutputMode::Silent);
+        orchestrator, registry, context, options, beez::logging::OutputMode::Silent);
     const auto Stderr = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(ExitCode, 1);
@@ -46,7 +46,7 @@ TEST(RunCommandTest, MisspelledTargetPrintsDidYouMean)
 
     testing::internal::CaptureStdout();
     testing::internal::CaptureStderr();
-    const int ExitCode = beez::cli::runOrchestratorCommand(orchestrator, registry, options);
+    const int ExitCode = beez::cli::runOrchestratorCommand(orchestrator, registry, context, options);
     const auto Stderr = testing::internal::GetCapturedStderr();
     testing::internal::GetCapturedStdout();
 

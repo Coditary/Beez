@@ -23,6 +23,17 @@ namespace
     return {qualifiedName.substr(0, SlashPosition), qualifiedName.substr(SlashPosition + 1)};
 }
 
+[[nodiscard]] std::string stripPluginVersionSuffix(std::string pluginPart)
+{
+    const auto AtPosition = pluginPart.rfind('@');
+    if (AtPosition == std::string::npos || AtPosition == 0 || AtPosition == pluginPart.size() - 1)
+    {
+        return pluginPart;
+    }
+
+    return pluginPart.substr(0, AtPosition);
+}
+
 }  // namespace
 
 std::string formatQualifiedStepRef(const std::string& organization,
@@ -32,9 +43,23 @@ std::string formatQualifiedStepRef(const std::string& organization,
     return organization + '/' + plugin + ':' + stepName;
 }
 
+std::string formatVersionedQualifiedStepRef(const std::string& organization,
+                                              const std::string& plugin,
+                                              const std::string& version,
+                                              const std::string& stepName)
+{
+    return organization + '/' + plugin + '@' + version + ':' + stepName;
+}
+
 std::string formatShortPluginStepRef(const std::string& plugin, const std::string& stepName)
 {
     return plugin + ':' + stepName;
+}
+
+std::string formatVersionedInvocationRef(const std::string& baseReference,
+                                         const std::string& version)
+{
+    return baseReference + '@' + version;
 }
 
 std::string stepActionName(const std::string& stepName)
@@ -60,42 +85,87 @@ bool isDefaultScopedStepName(const std::string& stepName)
     return stepName.substr(ColonPosition + 1) == DefaultScope;
 }
 
+std::pair<std::string, std::optional<std::string>>
+splitStepReferenceVersion(const std::string& reference)
+{
+    const auto AtPosition = reference.rfind('@');
+    if (AtPosition == std::string::npos || AtPosition == 0 || AtPosition == reference.size() - 1)
+    {
+        return {reference, std::nullopt};
+    }
+
+    return {reference.substr(0, AtPosition), reference.substr(AtPosition + 1)};
+}
+
 std::optional<QualifiedStepRef> parseQualifiedStepRef(const std::string& reference)
 {
-    const auto SlashPosition = reference.find('/');
+    const auto [BaseReference, Version] = splitStepReferenceVersion(reference);
+    (void)Version;
+    const auto SlashPosition = BaseReference.find('/');
     if (SlashPosition == std::string::npos)
     {
         return std::nullopt;
     }
 
-    const auto ColonPosition = reference.find(':', SlashPosition);
-    if (ColonPosition == std::string::npos || ColonPosition == reference.size() - 1)
+    const auto ColonPosition = BaseReference.find(':', SlashPosition);
+    if (ColonPosition == std::string::npos || ColonPosition == BaseReference.size() - 1)
     {
         return std::nullopt;
     }
 
-    const auto [Organization, Plugin] = splitPluginName(reference.substr(0, ColonPosition));
+    const std::string PluginPart = stripPluginVersionSuffix(BaseReference.substr(0, ColonPosition));
+    const auto [Organization, Plugin] = splitPluginName(PluginPart);
     return QualifiedStepRef {.organization = Organization,
                              .plugin = Plugin,
-                             .stepName = reference.substr(ColonPosition + 1)};
+                             .stepName = BaseReference.substr(ColonPosition + 1),
+                             .version = Version};
 }
 
 std::optional<std::pair<std::string, std::string>>
 parseShortPluginStepRef(const std::string& reference)
 {
-    if (reference.find('/') != std::string::npos)
+    const auto [BaseReference, Version] = splitStepReferenceVersion(reference);
+    (void)Version;
+    if (BaseReference.find('/') != std::string::npos)
     {
         return std::nullopt;
     }
 
-    const auto ColonPosition = reference.find(':');
+    const auto ColonPosition = BaseReference.find(':');
     if (ColonPosition == std::string::npos || ColonPosition == 0 ||
-        ColonPosition == reference.size() - 1)
+        ColonPosition == BaseReference.size() - 1)
     {
         return std::nullopt;
     }
 
-    return std::pair {reference.substr(0, ColonPosition), reference.substr(ColonPosition + 1)};
+    const std::string Plugin = stripPluginVersionSuffix(BaseReference.substr(0, ColonPosition));
+    return std::pair {Plugin, BaseReference.substr(ColonPosition + 1)};
+}
+
+std::optional<PluginIdentity> extractPluginIdentity(const std::string& reference)
+{
+    const auto [BaseReference, Version] = splitStepReferenceVersion(reference);
+    (void)Version;
+    (void)Version;
+
+    if (const auto Qualified = parseQualifiedStepRef(BaseReference))
+    {
+        return PluginIdentity {.organization = Qualified->organization, .plugin = Qualified->plugin};
+    }
+
+    if (const auto ShortPlugin = parseShortPluginStepRef(BaseReference))
+    {
+        return PluginIdentity {.organization = std::nullopt, .plugin = ShortPlugin->first};
+    }
+
+    return std::nullopt;
+}
+
+std::string formatPluginVersionKey(const std::string& organization,
+                                 const std::string& plugin,
+                                 const std::string& version)
+{
+    return organization + '/' + plugin + '@' + version;
 }
 
 }  // namespace beez::core

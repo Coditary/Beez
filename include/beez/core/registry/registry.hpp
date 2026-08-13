@@ -21,7 +21,10 @@ class Registry
   public:
     void registerTask(Task task);
     void registerStep(Step step);
-    void registerPluginStep(Step step, const std::string& organization, const std::string& plugin);
+    void registerPluginStep(Step step,
+                            const std::string& organization,
+                            const std::string& plugin,
+                            const std::optional<std::string>& version = std::nullopt);
     void configureStep(const std::string& name, const StepConfigPtr& config);
     void registerWorkflow(Workflow workflow);
     void registerStepOrder(const std::string& before, const std::string& after);
@@ -33,6 +36,9 @@ class Registry
     [[nodiscard]] std::optional<Step> findStep(const std::string& name) const;
     [[nodiscard]] Expected<Step, StepResolutionFailure> resolveStep(const std::string& reference) const;
     [[nodiscard]] std::vector<std::string> stepInvocationNames() const;
+    [[nodiscard]] bool hasPluginVersionLoaded(const std::string& organization,
+                                              const std::string& plugin,
+                                              const std::string& version) const;
     [[nodiscard]] std::optional<Workflow> findWorkflow(const std::string& name) const;
     [[nodiscard]] Expected<std::vector<Step>, StepOrderError>
     stepsForPhase(const std::string& phase, const std::string& scope) const;

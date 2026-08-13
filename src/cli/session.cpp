@@ -120,7 +120,7 @@ int runWithOrchestrator(LoadedProject& project, const ParsedOptions& options)
 
     core::Orchestrator orchestrator(
         project.registry, project.context, project.pluginHost, runOptions);
-    return runOrchestratorCommand(orchestrator, project.registry, options, OutputMode);
+    return runOrchestratorCommand(orchestrator, project.registry, project.context, options, OutputMode);
 }
 
 }  // namespace beez::cli

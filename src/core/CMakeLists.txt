@@ -21,6 +21,7 @@ add_library(
     config/env/env_settings.cpp
     config/paths/config_paths.cpp
     plugin/paths.cpp
+    plugin/installer.cpp
     config/performance/performance_options.cpp
     config/report/cache_rows.cpp
     config/report/detail/report_helpers.cpp

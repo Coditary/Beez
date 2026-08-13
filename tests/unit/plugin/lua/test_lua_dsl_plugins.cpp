@@ -1,6 +1,8 @@
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/runtime/context.hpp"
+#include "beez/core/util/temp_directory.hpp"
+#include "beez/plugin/lua/dsl/step_plugin_loader.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 
 #include "helpers/temp_project.hpp"
@@ -8,11 +10,64 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <fstream>
+#include <filesystem>
 #include <string>
 
 namespace
 {
+
+// NOLINTBEGIN(misc-include-cleaner,concurrency-mt-unsafe,cert-env33-c,bugprone-command-processor)
+class ScopedEnv
+{
+  public:
+    ScopedEnv(const char* name, const char* value) : name_(name)
+    {
+        if (const char* existing = std::getenv(name); existing != nullptr)
+        {
+            hadValue_ = true;
+            saved_ = existing;
+        }
+
+        if (value[0] == '\0')
+        {
+            unsetenv(name);
+            unset_ = true;
+        }
+        else
+        {
+            setenv(name, value, 1);
+            unset_ = false;
+        }
+    }
+
+    ~ScopedEnv()
+    {
+        if (unset_)
+        {
+            if (hadValue_)
+            {
+                setenv(name_.c_str(), saved_.c_str(), 1);
+            }
+            else
+            {
+                unsetenv(name_.c_str());
+            }
+        }
+        else if (hadValue_)
+        {
+            setenv(name_.c_str(), saved_.c_str(), 1);
+        }
+    }
+
+  private:
+    std::string name_;
+    bool hadValue_ = false;
+    bool unset_ = false;
+    std::string saved_;
+};
+// NOLINTEND(misc-include-cleaner,concurrency-mt-unsafe,cert-env33-c,bugprone-command-processor)
 
 bool loadScript(const beez::test::TempProject& project, beez::core::Registry& registry)
 {
@@ -414,6 +469,51 @@ configure_step("check", {
     const std::string Fingerprint = Found->config->cacheFingerprint();
     EXPECT_NE(Fingerprint.find("compdb=build/tree"), std::string::npos);
     EXPECT_NE(Fingerprint.find("flag=overlay"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, LoadsInstalledPluginVersionOnDemand)
+{
+    const beez::test::TempProject Project;
+    const auto HomeRoot = beez::core::systemTempDirectory() / "beez_installed_plugin_test";
+    std::error_code errorCode;
+    std::filesystem::remove_all(HomeRoot, errorCode);
+    std::filesystem::create_directories(HomeRoot);
+    const ScopedEnv Home("HOME", HomeRoot.c_str());
+    const ScopedEnv XdgUnset("XDG_CACHE_HOME", "");
+
+    const auto PluginPath = HomeRoot / ".cache" / "beez" / "plugins" / "coditary" / "remote" /
+                            "1.0.0" / "beez_plugin.lua";
+    std::filesystem::create_directories(PluginPath.parent_path());
+    std::ofstream(PluginPath) << R"(
+plugin("remote", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "qa",
+            scope = "code",
+            run = "echo remote",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+task("noop", "true")
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto EnsureResult = beez::plugin::lua::ensureInstalledPluginForStepReference(
+        "coditary/remote:check@1.0.0", registry, beez::core::Context(Project.path()));
+    ASSERT_TRUE(EnsureResult.success) << EnsureResult.message;
+
+    const auto Resolved = registry.resolveStep("coditary/remote:check@1.0.0");
+    ASSERT_TRUE(Resolved.hasValue());
+    ASSERT_TRUE(Resolved.value().hasShellRun());
+    EXPECT_EQ(Resolved.value().shellRun.value_or(""), "echo remote");
+
+    std::filesystem::remove_all(HomeRoot, errorCode);
 }
 
 TEST(LuaDslPluginTest, ResolvesDuplicatePluginStepNamesWithQualifiedReference)
