@@ -192,5 +192,56 @@ bool isTaskActionListTable(const sol::table& table)
     return hasActionEntry;
 }
 
+bool isPluginTaskImportTable(const sol::table& table)
+{
+    const sol::object PluginValue = table["plugin"];
+    const sol::object TaskValue = table["task"];
+    if (!isPresent(PluginValue) || !PluginValue.is<std::string>() ||
+        PluginValue.as<std::string>().empty())
+    {
+        return false;
+    }
+
+    if (!isPresent(TaskValue) || !TaskValue.is<std::string>() || TaskValue.as<std::string>().empty())
+    {
+        return false;
+    }
+
+    bool hasNumericActionEntry = false;
+    table.for_each(
+        [&hasNumericActionEntry](const sol::object& key, const sol::object& value)
+        {
+            if (!key.is<int>())
+            {
+                return;
+            }
+
+            if (value.is<std::string>() || value.is<sol::table>())
+            {
+                hasNumericActionEntry = true;
+            }
+        });
+
+    return !hasNumericActionEntry;
+}
+
+std::string buildPluginTaskReference(const sol::table& importTable)
+{
+    if (!isPluginTaskImportTable(importTable))
+    {
+        throw std::runtime_error(
+            "task import table must contain non-empty string fields 'plugin' and 'task'");
+    }
+
+    const std::string Plugin = importTable.get<std::string>("plugin");
+    const std::string TaskName = importTable.get<std::string>("task");
+    if (Plugin.find('/') == std::string::npos)
+    {
+        throw std::runtime_error("task import field 'plugin' must use the form 'organization/plugin'");
+    }
+
+    return Plugin + ':' + TaskName;
+}
+
 }  // namespace beez::plugin::lua
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

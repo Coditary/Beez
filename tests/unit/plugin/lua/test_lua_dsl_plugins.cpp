@@ -1490,3 +1490,108 @@ workflows({
     beez::core::Registry registry;
     EXPECT_FALSE(loadScript(Project, registry));
 }
+
+TEST(LuaDslPluginTest, TaskShorthandImportsPluginTask)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        greet = {
+            phase = "quality",
+            scope = "lint",
+            run = "echo hello",
+        },
+    },
+})
+
+tasks {
+    format = {
+        { plugin = "coditary/demo", step = "greet" },
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("coditary/demo:format")
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    ASSERT_TRUE(registry.pluginTasks().contains("coditary/demo:format"));
+    const auto Found = registry.findTask("format");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_EQ(Found->actions.size(), 1U);
+}
+
+TEST(LuaDslPluginTest, TaskImportTableAliasesPluginTask)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        greet = {
+            phase = "quality",
+            scope = "lint",
+            run = "echo hello",
+        },
+    },
+})
+
+tasks {
+    format = {
+        { plugin = "coditary/demo", step = "greet" },
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("formater", {
+    plugin = "coditary/demo",
+    task = "format",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findTask("formater");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->name, "formater");
+    ASSERT_EQ(Found->actions.size(), 1U);
+}

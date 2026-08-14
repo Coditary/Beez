@@ -19,6 +19,7 @@ add_executable(
     cli/commands/test_run.cpp
     core/registry/test_step_reference.cpp
     core/registry/test_registry.cpp
+    core/registry/test_task_reference.cpp
     core/config/cache/test_cache_options.cpp
     core/cache/fingerprint/test_content_hash.cpp
     core/cache/fingerprint/test_include_fingerprint.cpp

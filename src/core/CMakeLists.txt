@@ -44,6 +44,7 @@ add_library(
     registry/registry.cpp
     registry/step_reference.cpp
     registry/workflow_reference.cpp
+    registry/task_reference.cpp
     registry/step_order.cpp
     orchestrator/orchestrator.cpp
     orchestrator/errors.cpp

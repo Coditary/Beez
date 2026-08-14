@@ -15,6 +15,7 @@
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
 #include "beez/core/registry/workflow_reference.hpp"
+#include "beez/core/registry/task_reference.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -66,6 +67,12 @@ class DslBinder
 
     void task(const std::string& name, const sol::table& actions) const
     {
+        if (isPluginTaskImportTable(actions))
+        {
+            registerTaskFromPluginReference(name, buildPluginTaskReference(actions));
+            return;
+        }
+
         if (!isTaskActionListTable(actions))
         {
             throw std::runtime_error("task '" + name + "' table form must be a list of actions");
@@ -81,6 +88,45 @@ class DslBinder
         task.name = name;
         task.actions = parseTaskActions(actions, LuaState);
         registry_->registerTask(std::move(task));
+    }
+
+    void task(const std::string& pluginTaskReference) const
+    {
+        if (!core::looksLikePluginTaskReference(pluginTaskReference))
+        {
+            throw std::runtime_error("task reference '" + pluginTaskReference +
+                                     "' must use the form 'organization/plugin:task'");
+        }
+
+        const core::PluginTaskRef ParsedReference =
+            core::parsePluginTaskReference(pluginTaskReference);
+        validatePluginTaskReference(pluginTaskReference);
+        registry_->registerTaskFromPluginReference(ParsedReference.taskName, pluginTaskReference);
+    }
+
+    void registerTaskFromPluginReference(const std::string& localName,
+                                         const std::string& pluginTaskReference) const
+    {
+        validatePluginTaskReference(pluginTaskReference);
+        registry_->registerTaskFromPluginReference(localName, pluginTaskReference);
+    }
+
+    void validatePluginTaskReference(const std::string& pluginTaskReference) const
+    {
+        if (reqpackBeezPlugins_ == nullptr || reqpackBeezPlugins_->empty())
+        {
+            return;
+        }
+
+        const core::PluginTaskRef ParsedReference =
+            core::parsePluginTaskReference(pluginTaskReference);
+        if (!reqpackBeezPlugins_->find(ParsedReference.organization, ParsedReference.plugin)
+                 .has_value())
+        {
+            throw std::runtime_error("task references plugin '" + ParsedReference.organization + '/' +
+                                     ParsedReference.plugin +
+                                     "' which is not declared in reqpack.beez");
+        }
     }
 
     void step(const sol::table& options) const
@@ -218,7 +264,8 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     (*luaState)["task"] = sol::overload(
         [binder](const std::string& name, const std::string& run) { binder->task(name, run); },
         [binder](const std::string& name, const sol::table& commands)
-        { binder->task(name, commands); });
+        { binder->task(name, commands); },
+        [binder](const std::string& pluginTaskReference) { binder->task(pluginTaskReference); });
 
     (*luaState)["step"] = [binder](const sol::table& options) { binder->step(options); };
 

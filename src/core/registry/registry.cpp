@@ -8,6 +8,7 @@
 #include "beez/core/registry/step_order.hpp"
 #include "beez/core/registry/step_reference.hpp"
 #include "beez/core/registry/workflow_reference.hpp"
+#include "beez/core/registry/task_reference.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <algorithm>
@@ -258,6 +259,19 @@ void Registry::registerPluginWorkflow(Workflow workflow,
     pluginWorkflows_.emplace(PluginWorkflowKey, std::move(workflow));
 }
 
+void Registry::registerPluginTask(Task task,
+                                  const std::string& organization,
+                                  const std::string& plugin)
+{
+    const std::string PluginTaskKey = formatPluginTaskKey(organization, plugin, task.name);
+    if (pluginTasks_.contains(PluginTaskKey))
+    {
+        throw std::runtime_error("duplicate plugin task '" + PluginTaskKey + "'");
+    }
+
+    pluginTasks_.emplace(PluginTaskKey, std::move(task));
+}
+
 Workflow Registry::resolvePluginWorkflowReference(const std::string& reference) const
 {
     const PluginWorkflowRef ParsedReference = parsePluginWorkflowReference(reference);
@@ -280,6 +294,30 @@ void Registry::registerWorkflowFromPluginReference(const std::string& localName,
     Workflow workflow = resolvePluginWorkflowReference(pluginWorkflowReference);
     workflow.name = localName;
     registerWorkflow(std::move(workflow));
+}
+
+Task Registry::resolvePluginTaskReference(const std::string& reference) const
+{
+    const PluginTaskRef ParsedReference = parsePluginTaskReference(reference);
+    const std::string PluginTaskKey =
+        formatPluginTaskKey(ParsedReference.organization,
+                            ParsedReference.plugin,
+                            ParsedReference.taskName);
+    const auto TaskIterator = pluginTasks_.find(PluginTaskKey);
+    if (TaskIterator == pluginTasks_.end())
+    {
+        throw std::runtime_error("plugin task reference '" + reference + "' is not defined");
+    }
+
+    return TaskIterator->second;
+}
+
+void Registry::registerTaskFromPluginReference(const std::string& localName,
+                                               const std::string& pluginTaskReference)
+{
+    Task task = resolvePluginTaskReference(pluginTaskReference);
+    task.name = localName;
+    registerTask(std::move(task));
 }
 
 void Registry::validateConsistent() const
@@ -337,6 +375,7 @@ void Registry::clear()
     pendingPluginConfigs_.clear();
     workflows_.clear();
     pluginWorkflows_.clear();
+    pluginTasks_.clear();
     stepOrderHints_.clear();
 }
 
