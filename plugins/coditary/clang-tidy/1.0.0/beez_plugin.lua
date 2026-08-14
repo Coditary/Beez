@@ -44,7 +44,7 @@ plugin("clang-tidy", {
     steps = {
         check = {
             phase = "quality",
-            scope = "code",
+            scope = "lint",
             input = defaults.patterns_all,
             description = "clang-tidy check (configurable profiles or checks)",
             config = step_config.check_defaults(),

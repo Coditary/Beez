@@ -30,7 +30,7 @@ plugin("osv-audit", {
     steps = {
         osv_audit_check = {
             phase = "verify",
-            scope = "supply",
+            scope = "audit",
             input = {
                 defaults.lockfile,
                 defaults.sbom_json,

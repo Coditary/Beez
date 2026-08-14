@@ -28,7 +28,7 @@ plugin("clang-format", {
     steps = {
         qa_check = {
             phase = "quality",
-            scope = "code",
+            scope = "format",
             input = defaults.patterns,
             description = "clang-format check (incremental)",
             config = step_config.defaults(),
@@ -39,7 +39,7 @@ plugin("clang-format", {
 
         format_apply = {
             phase = "quality",
-            scope = "code",
+            scope = "format",
             mutate = defaults.patterns,
             description = "Apply clang-format (incremental)",
             config = step_config.defaults(),

@@ -1,7 +1,8 @@
 -- Reusable staged workflows for Beez C++ projects.
 -- Import in build.lua via workflows({ build = "coditary/pipeline:build", ... }).
--- All workflows use the standard stage names: setup, generate, quality, compile,
--- bundle, test, package, verify, publish.
+-- Standard phases: setup, generate, quality, compile, bundle, test, package, verify, publish
+-- Standard scopes: app, debug, coverage, sanitize, tsan, fuzz, test, lint, format, analyze,
+--                  security, audit, docs, code, repo
 
 plugin("pipeline", {
     version = "1.0.0",
@@ -12,16 +13,16 @@ plugin("pipeline", {
 
 workflows {
     build = {
-        { "setup", { "setup[code]" } },
-        { "compile", { "compile[code]" } },
-        { "bundle", { "bundle[code]" } },
-        { "test", { "test[code]" } },
+        { "setup", { "setup[app]" } },
+        { "compile", { "compile[app]" } },
+        { "bundle", { "bundle[app]" } },
+        { "test", { "test[test]" } },
     },
 
     quality = {
-        { "quality", { "quality[code]" } },
-        { "package", { "package[supply]" } },
-        { "verify", { "verify[supply]" } },
+        { "quality", { "quality[lint]", "quality[format]", "quality[analyze]" } },
+        { "package", { "package[audit]" } },
+        { "verify", { "verify[security]", "verify[audit]" } },
     },
 
     debug = {
@@ -53,31 +54,31 @@ workflows {
         { "setup", { "setup[fuzz]" } },
         { "compile", { "compile[fuzz]" } },
         { "bundle", { "bundle[fuzz]" } },
-        { "test", { "test[smoke]" } },
+        { "test", { "test[fuzz]" } },
     },
 
     fuzzer_corpus = {
         { "setup", { "setup[fuzz]" } },
         { "compile", { "compile[fuzz]" } },
         { "bundle", { "bundle[fuzz]" } },
-        { "test", { "test[corpus]" } },
+        { "test", { "test[fuzz]" } },
     },
 
     fuzzer_torture = {
         { "setup", { "setup[fuzz]" } },
         { "compile", { "compile[fuzz]" } },
         { "bundle", { "bundle[fuzz]" } },
-        { "test", { "test[torture]" } },
+        { "test", { "test[fuzz]" } },
     },
 
     all = {
-        { "setup", { "setup[code]", "setup[coverage]", "setup[sanitize]", "setup[fuzz]" } },
-        { "compile", { "compile[code]", "compile[coverage]", "compile[sanitize]", "compile[fuzz]" } },
-        { "bundle", { "bundle[code]", "bundle[coverage]", "bundle[sanitize]", "bundle[fuzz]" } },
-        { "test", { "test[code]", "test[coverage]", "test[sanitize]", "test[smoke]" } },
-        { "quality", { "quality[code]" } },
-        { "package", { "package[supply]", "package[coverage]" } },
-        { "verify", { "verify[supply]" } },
+        { "setup", { "setup[app]", "setup[coverage]", "setup[sanitize]", "setup[fuzz]" } },
+        { "compile", { "compile[app]", "compile[coverage]", "compile[sanitize]", "compile[fuzz]" } },
+        { "bundle", { "bundle[app]", "bundle[coverage]", "bundle[sanitize]", "bundle[fuzz]" } },
+        { "test", { "test[test]", "test[coverage]", "test[sanitize]", "test[fuzz]" } },
+        { "quality", { "quality[lint]", "quality[format]", "quality[analyze]" } },
+        { "verify", { "verify[security]", "verify[audit]", "verify[fuzz]" } },
+        { "package", { "package[audit]", "package[coverage]" } },
     },
 
     clean = {

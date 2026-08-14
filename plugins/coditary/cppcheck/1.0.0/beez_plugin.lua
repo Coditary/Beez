@@ -37,7 +37,7 @@ plugin("cppcheck", {
     steps = {
         cppcheck_check = {
             phase = "quality",
-            scope = "code",
+            scope = "analyze",
             input = defaults.patterns_security,
             description = "cppcheck (configurable profiles)",
             config = step_config.check_defaults(),
@@ -48,7 +48,7 @@ plugin("cppcheck", {
 
         cppcheck_analyze_check = {
             phase = "quality",
-            scope = "cppcheck_analyze",
+            scope = "analyze",
             input = defaults.patterns_analyze,
             description = "cppcheck on src/ (incremental)",
             config = step_config.analyze_defaults(),
@@ -59,7 +59,7 @@ plugin("cppcheck", {
 
         cppcheck_security_check = {
             phase = "verify",
-            scope = "cppcheck_security",
+            scope = "security",
             input = defaults.patterns_security,
             description = "cppcheck security scan (incremental)",
             config = step_config.security_defaults(),

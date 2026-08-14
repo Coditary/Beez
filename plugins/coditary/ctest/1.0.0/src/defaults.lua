@@ -13,7 +13,7 @@ M.test_rev = "1"
 
 M.suites = {
     unit = {
-        scope = "code",
+        scope = "test",
         mode = "ctest",
         ctest_args = "-L unit",
         binary_rel = "tests/unit/beez_tests",
@@ -25,7 +25,7 @@ M.suites = {
     },
 
     integration = {
-        scope = "code",
+        scope = "test",
         mode = "ctest",
         ctest_args = "-L integration",
         binary_rel = "tests/integration/beez_integration_tests",
@@ -37,7 +37,7 @@ M.suites = {
     },
 
     system = {
-        scope = "code",
+        scope = "test",
         mode = "ctest",
         ctest_args = "-L system -E FuzzCorpusSeedsDoNotCrashBeez",
         binary_rel = "tests/system/beez_system_tests",
@@ -49,7 +49,7 @@ M.suites = {
     },
 
     performance = {
-        scope = "code",
+        scope = "test",
         mode = "ctest",
         ctest_args = "-L performance",
         binary_rel = "tests/performance/beez_perf_tests",
@@ -106,7 +106,7 @@ M.suites = {
     },
 
     robustness = {
-        scope = "robustness",
+        scope = "test",
         mode = "ctest",
         ctest_args = "-R 'SystemRobustnessTest|SystemNegativeFixtureTest|SystemCacheAdversarialTest|SystemDslFieldMatrixTest'",
         binary_rel = "tests/system/beez_system_tests",

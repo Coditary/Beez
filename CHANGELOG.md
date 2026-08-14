@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`coditary/pipeline:standard` workflow** — staged pipeline with unscoped phases: `setup`, `generate`, `quality`, `compile`, `bundle`, `test`, `package`, `verify`, `publish`. Import via `workflows({ standard = "coditary/pipeline:standard" })` once matching steps are registered.
 - **Unscoped workflow phase references** — staged workflow invocations may use bare phase names (e.g. `{ "setup", { "setup" } }`) to run all scopes for that phase, consistent with CLI `-p` and task phase actions.
 - **Standard pipeline phases** — coditary plugins and `coditary/pipeline` workflows now use the standard phase names (`setup`, `quality`, `compile`, `bundle`, `test`, `package`, `verify`) instead of legacy names (`configure`, `build`, `qa`, `fuzz`, `report`, `clean`).
+- **Standard pipeline scopes** — unified scope vocabulary across all coditary plugins: `app`, `debug`, `coverage`, `sanitize`, `tsan`, `fuzz`, `test`, `lint`, `format`, `analyze`, `security`, `audit`, `docs`, `code`, `repo`. Plugin-specific scopes (`code`, `supply`, `smoke`, `cppcheck_analyze`, …) removed. `fuzz:seed-verify` is phase `verify` scope `fuzz`; SBOM/supply-chain steps use scope `audit`; publish maps to scope `app`.
 
 - **`beez --init`** (beta) — embeds [Tempify](https://github.com/Coditary/Tempify) for project scaffolding from templates. Tempify is fetched at CMake configure time (pinned tag `v0.1.2`; **git** required unless you use a local tree). All arguments after `--init` are passed to Tempify unchanged:
 

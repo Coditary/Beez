@@ -49,7 +49,7 @@ end
 local plugin_steps = {
     conan_graph_export = {
         phase = "package",
-        scope = "supply-graph",
+        scope = "audit",
         input = defaults.input_patterns,
         output = { defaults.graph_json },
         description = "Export Conan dependency graph (JSON)",
@@ -61,7 +61,7 @@ local plugin_steps = {
 
     conan_lock_create = {
         phase = "package",
-        scope = "supply",
+        scope = "audit",
         input = defaults.input_patterns,
         output = { defaults.lockfile },
         description = "Create Conan lockfile",
@@ -73,7 +73,7 @@ local plugin_steps = {
 
     conan_sbom_export = {
         phase = "package",
-        scope = "supply",
+        scope = "audit",
         input = defaults.input_patterns,
         output = {
             defaults.graph_json,
@@ -88,7 +88,7 @@ local plugin_steps = {
 
     conan_install = {
         phase = "setup",
-        scope = "conan",
+        scope = "app",
         input = defaults.input_patterns,
         output = { defaults.conan_output_folder .. "//**" },
         description = "Conan install only (no CMake configure)",

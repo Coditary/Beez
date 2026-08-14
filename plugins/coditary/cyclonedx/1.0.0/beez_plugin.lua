@@ -31,7 +31,7 @@ plugin("cyclonedx", {
     steps = {
         cyclonedx_check = {
             phase = "package",
-            scope = "supply",
+            scope = "audit",
             input = { defaults.cyclonedx_json },
             output = { defaults.cyclonedx_json },
             description = "Validate CycloneDX SBOM",
@@ -43,7 +43,7 @@ plugin("cyclonedx", {
 
         cyclonedx_merge = {
             phase = "package",
-            scope = "supply",
+            scope = "audit",
             input = defaults.default_merge_inputs,
             output = { defaults.merged_json },
             description = "Merge CycloneDX SBOM files",

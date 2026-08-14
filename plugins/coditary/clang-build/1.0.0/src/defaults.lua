@@ -32,7 +32,7 @@ M.link_order = {
 
 M.build_profiles = {
     code = {
-        scope = "code",
+        scope = "app",
         build_type_env = true,
         build_tree_from_build_type = true,
         compile_inputs = {

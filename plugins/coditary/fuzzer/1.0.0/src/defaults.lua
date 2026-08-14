@@ -13,7 +13,8 @@ M.fuzz_rev = "1"
 
 M.runs = {
     smoke = {
-        scope = "smoke",
+        phase = "test",
+        scope = "fuzz",
         script = "scripts/fuzz-smoke.sh",
         report_file = "report/fuzz/fuzz-smoke-report.txt",
         fuzzer_time_env = "FUZZER_TIME",
@@ -24,7 +25,8 @@ M.runs = {
     },
 
     corpus = {
-        scope = "corpus",
+        phase = "test",
+        scope = "fuzz",
         script = "scripts/fuzz-corpus.sh",
         report_file = "report/fuzz/fuzz-corpus-report.txt",
         fuzzer_time = "60",
@@ -34,7 +36,8 @@ M.runs = {
     },
 
     seed_verify = {
-        scope = "verify",
+        phase = "verify",
+        scope = "fuzz",
         script = "scripts/fuzz-seed-verify.sh",
         report_file = "report/fuzz/fuzz-seed-verify-report.txt",
         needs_dict = false,
@@ -43,7 +46,8 @@ M.runs = {
     },
 
     torture = {
-        scope = "torture",
+        phase = "test",
+        scope = "fuzz",
         script = "scripts/fuzz-torture.sh",
         report_file = "report/fuzz/fuzz-torture-report.txt",
         fuzzer_time_env = "FUZZER_TORTURE_TIME",
@@ -55,7 +59,8 @@ M.runs = {
     },
 
     seeds_generate = {
-        scope = "seeds",
+        phase = "test",
+        scope = "fuzz",
         script = "scripts/generate-fuzz-seeds.sh",
         report_file = "report/fuzz/fuzz-seeds.ok",
         mode = "direct",

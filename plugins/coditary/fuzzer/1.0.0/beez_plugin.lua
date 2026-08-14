@@ -32,7 +32,7 @@ for step_name, run_name in pairs(defaults.fuzz_step_runs) do
     local run = defaults.runs[run_name]
 
     plugin_steps[step_name] = {
-        phase = "test",
+        phase = run.phase or "test",
         scope = run.scope,
         input = build_inputs(run_name),
         output = { run.report_file },
