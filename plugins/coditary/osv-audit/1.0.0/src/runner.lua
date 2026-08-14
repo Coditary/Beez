@@ -3,17 +3,12 @@ local command = require("src.command")
 
 local M = {}
 
-local function resolve_step_config(ctx, fallback)
-    local from_context = ctx.get_config()
-    if from_context ~= nil then
-        return from_context
+function M.audit_check(ctx)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("osv-audit step config is missing")
     end
 
-    return fallback()
-end
-
-function M.audit_check(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").audit_defaults)
     local cfg = config.resolve(step_cfg)
     local root = ctx.project_root
 

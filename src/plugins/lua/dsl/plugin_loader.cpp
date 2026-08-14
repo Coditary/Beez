@@ -3,6 +3,7 @@
 #include "beez/core/plugin/installer.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
+#include "beez/plugin/lua/runtime/plugin_config.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
 
@@ -125,9 +126,17 @@ void registerPluginSteps(const sol::table& stepsTable,
             StepTable["name"] = StepName;
         }
 
+        core::Step step = parseStepTable(StepTable, luaState);
+        const sol::object ConfigValue = StepTable["config"];
+        if (ConfigValue.valid() && ConfigValue.is<sol::table>())
+        {
+            const std::string PluginKey = pluginRef.organization + "/" + pluginRef.name;
+            step.config = makePluginStepConfig(luaState, PluginKey, ConfigValue.as<sol::table>());
+        }
+
         const std::optional<std::string> StepVersion = pluginRef.version;
         const bool AllowUnversionedAliases = !pluginRef.fromInstalledCache;
-        registry.registerPluginStep(parseStepTable(StepTable, luaState),
+        registry.registerPluginStep(step,
                                     pluginRef.organization,
                                     pluginRef.name,
                                     StepVersion,
@@ -222,6 +231,19 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
             throw std::runtime_error(
                 "plugin '" + name + "' version '" + VersionObject.as<std::string>() +
                 "' does not match required version '" + pluginRef.version.value() + "'");
+        }
+
+        const sol::object ConfigObject = options["config"];
+        if (ConfigObject.valid())
+        {
+            if (!ConfigObject.is<sol::table>())
+            {
+                throw std::runtime_error("plugin '" + name + "' field 'config' must be a table");
+            }
+
+            const std::string PluginKey =
+                pluginRef.organization + "/" + pluginRef.name;
+            registerPluginConfigDefinition(PluginKey, PluginState, ConfigObject.as<sol::table>());
         }
 
         const sol::object StepsObject = options["steps"];

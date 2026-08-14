@@ -1,38 +1,47 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
-
--- Beez cppcheck plugin
---
--- Steps (after load):
---   cppcheck_check           — configurable profiles (analyze, security)
---   cppcheck_analyze_check   — src/**/*.cpp
---   cppcheck_security_check  — src/ + include/ security scan
---
--- configure_step("cppcheck_check", {
---     profiles = { "analyze", "security" },
---     check_rev = "1",
--- })
---
--- configure_step("check", {
---     enable = { "warning", "style", "performance", "portability" },
---     include_paths = { "include" },
---     patterns = { "src/**/*.cpp" },
--- })
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/cppcheck",
---             path = "./plugins/coditary/cppcheck",
---             version = "1.0.0",
---         },
---     },
--- }
 
 plugin("cppcheck", {
     version = "1.0.0",
     description = "Incremental cppcheck static analysis",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            binary = defaults.binary,
+            std = defaults.std,
+            enable = defaults.enable,
+            include_paths = defaults.include_paths,
+            suppressions = defaults.suppressions,
+            inline_suppr = defaults.inline_suppr,
+            quiet = defaults.quiet,
+            issue_path_pattern = defaults.issue_path_pattern,
+            exclude_substrings = defaults.exclude_substrings,
+            parallelism = defaults.parallelism,
+            extra_args = defaults.extra_args,
+            warnings_as_errors = defaults.warnings_as_errors,
+        },
+
+        profile_defs = {
+            analyze = {
+                patterns = defaults.patterns_analyze,
+                log_prefix = defaults.log_prefix_analyze,
+                worker_prefix = defaults.worker_prefix_analyze,
+                check_rev = defaults.analyze_rev,
+            },
+            security = {
+                patterns = defaults.patterns_security,
+                log_prefix = defaults.log_prefix_security,
+                worker_prefix = defaults.worker_prefix_security,
+                check_rev = defaults.security_rev,
+            },
+        },
+
+        finalize = function(resolved)
+            local config = require("src.config")
+            resolved.enable = config.normalize_enable(resolved.enable)
+            return resolved
+        end,
+    },
 
     steps = {
         cppcheck_check = {
@@ -40,7 +49,10 @@ plugin("cppcheck", {
             scope = "analyze",
             input = defaults.patterns_security,
             description = "cppcheck (configurable profiles)",
-            config = step_config.check_defaults(),
+            config = {
+                profile = "analyze",
+                profiles = { "analyze" },
+            },
             run = function(ctx)
                 return require("src.runner").check(ctx)
             end,
@@ -51,7 +63,7 @@ plugin("cppcheck", {
             scope = "analyze",
             input = defaults.patterns_analyze,
             description = "cppcheck on src/ (incremental)",
-            config = step_config.analyze_defaults(),
+            config = { profile = "analyze" },
             run = function(ctx)
                 return require("src.runner").analyze_check(ctx)
             end,
@@ -62,7 +74,7 @@ plugin("cppcheck", {
             scope = "security",
             input = defaults.patterns_security,
             description = "cppcheck security scan (incremental)",
-            config = step_config.security_defaults(),
+            config = { profile = "security" },
             run = function(ctx)
                 return require("src.runner").security_check(ctx)
             end,

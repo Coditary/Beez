@@ -4,15 +4,6 @@ local defaults = require("src.defaults")
 
 local M = {}
 
-local function resolve_step_config(ctx, fallback)
-    local from_context = ctx.get_config()
-    if from_context ~= nil then
-        return from_context
-    end
-
-    return fallback()
-end
-
 local function run_graph(ctx, cfg)
     print(cfg.log_prefix_graph .. " exporting Conan dependency graph")
     local code = beez.shell.run(ctx, cfg.log_prefix_graph, command.mkdir_sbom_dir(cfg, ctx.project_root))
@@ -24,7 +15,11 @@ local function run_graph(ctx, cfg)
 end
 
 function M.graph_export(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").graph_defaults)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("conan graph export step config is missing")
+    end
+
     local cfg = config.resolve_supply(step_cfg, ctx.project_root)
 
     local code = run_graph(ctx, cfg)
@@ -36,7 +31,11 @@ function M.graph_export(ctx)
 end
 
 function M.lock_create(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").lock_defaults)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("conan lock create step config is missing")
+    end
+
     local cfg = config.resolve_supply(step_cfg, ctx.project_root)
 
     print(cfg.log_prefix_lock .. " creating Conan lockfile")
@@ -49,7 +48,11 @@ function M.lock_create(ctx)
 end
 
 function M.sbom_export(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").sbom_defaults)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("conan sbom export step config is missing")
+    end
+
     local cfg = config.resolve_supply(step_cfg, ctx.project_root)
 
     local code = run_graph(ctx, cfg)
@@ -67,7 +70,11 @@ function M.sbom_export(ctx)
 end
 
 function M.install(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").install_defaults)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("conan install step config is missing")
+    end
+
     local profile_name = step_cfg.profile or "code"
     local cfg = config.resolve_build(step_cfg, ctx.project_root, profile_name)
 
@@ -81,11 +88,11 @@ function M.configure(ctx, step_name)
         error("unknown configure step: " .. tostring(step_name))
     end
 
-    local fallback = function()
-        return require("src.step_config").configure_defaults(profile_name)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("conan configure step config is missing")
     end
 
-    local step_cfg = resolve_step_config(ctx, fallback)
     local cfg = config.resolve_build(step_cfg, ctx.project_root, profile_name)
     local profile = defaults.build_profiles[profile_name]
 

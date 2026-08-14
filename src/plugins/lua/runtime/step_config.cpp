@@ -2,7 +2,10 @@
 
 #include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/execution/concurrency/worker_pool.hpp"
+#include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
+#include "beez/plugin/lua/api/data/schema.hpp"
 #include "beez/plugin/lua/api/fs/detail/glob.hpp"
+#include "beez/plugin/lua/runtime/lua_table_util.hpp"
 #include "beez/plugin/lua/runtime/worker_parser.hpp"
 
 #include <algorithm>
@@ -48,11 +51,7 @@ sol::object copyLuaObject(const std::shared_ptr<sol::state>& luaState, const sol
 
     if (value.is<sol::table>())
     {
-        sol::table copy = luaState->create_table();
-        value.as<sol::table>().for_each(
-            [&copy, luaState](const sol::object& key, const sol::object& entry)
-            { copy[copyLuaObject(luaState, key)] = copyLuaObject(luaState, entry); });
-        return sol::make_object(*luaState, copy);
+        return sol::make_object(*luaState, cloneLuaTable(luaState, value.as<sol::table>()));
     }
 
     return sol::lua_nil;
@@ -66,14 +65,54 @@ sol::table shallowCopyTable(const std::shared_ptr<sol::state>& luaState, const s
     return copy;
 }
 
-sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
-                       const sol::table& base,
-                       const sol::table& overlay)
+void validateConfigSchema(const std::shared_ptr<sol::state>& luaState,
+                          const sol::table& data,
+                          const sol::table& schema)
 {
-    sol::table merged = shallowCopyTable(luaState, base);
-    overlay.for_each([&merged, luaState](const sol::object& key, const sol::object& value)
-                     { merged[copyLuaObject(luaState, key)] = copyLuaObject(luaState, value); });
-    return merged;
+    if (!schema.valid())
+    {
+        return;
+    }
+
+    const data_detail::YyjsonMutDocPtr DataDocument =
+        data_detail::luaToYyjsonDocument(sol::make_object(*luaState, data));
+    const std::string DataJson = data_detail::yyjsonDocumentToString(*DataDocument, false);
+    const data_detail::YyjsonDocPtr ImmutableData = data_detail::parseYyjsonDocument(DataJson);
+
+    const data_detail::YyjsonMutDocPtr SchemaMutable =
+        data_detail::luaToYyjsonDocument(sol::make_object(*luaState, schema));
+    const std::string SchemaJson = data_detail::yyjsonDocumentToString(*SchemaMutable, false);
+    const data_detail::YyjsonDocPtr SchemaDocument = data_detail::parseYyjsonDocument(SchemaJson);
+
+    std::string error;
+    if (!data_detail::validateJson(yyjson_doc_get_root(ImmutableData.get()),
+                                   yyjson_doc_get_root(SchemaDocument.get()),
+                                   error))
+    {
+        throw std::runtime_error(error);
+    }
+}
+
+[[nodiscard]] sol::table applyFinalize(const sol::protected_function& finalize, sol::table resolved)
+{
+    if (!finalize.valid())
+    {
+        return resolved;
+    }
+
+    const sol::protected_function_result Result = finalize(resolved);
+    if (!Result.valid())
+    {
+        const sol::error LuaError = Result;
+        throw std::runtime_error(std::string("step config finalize failed: ") + LuaError.what());
+    }
+
+    if (Result.return_count() == 0 || !Result.get<sol::object>(0).is<sol::table>())
+    {
+        return resolved;
+    }
+
+    return Result.get<sol::table>(0);
 }
 
 [[nodiscard]] std::string serializeArrayTable(const sol::table& table)
@@ -150,8 +189,11 @@ sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
 class LuaStepConfig final : public core::StepConfig
 {
   public:
-    LuaStepConfig(std::shared_ptr<sol::state> luaState, std::function<sol::table()> lazyBuilder)
-        : luaState_(std::move(luaState)), lazyBuilder_(std::move(lazyBuilder))
+    LuaStepConfig(std::shared_ptr<sol::state> luaState,
+                  std::function<sol::table()> lazyBuilder,
+                  LuaStepConfigOptions options = {})
+        : luaState_(std::move(luaState)), lazyBuilder_(std::move(lazyBuilder)),
+          options_(std::move(options))
     {
     }
 
@@ -185,15 +227,20 @@ class LuaStepConfig final : public core::StepConfig
             {
                 const sol::table BaseTable = baseBuilder();
                 const sol::table OverlayTable = overlayBuilder();
-                return mergeTables(luaState, BaseTable, OverlayTable);
-            });
+                const sol::table OverlayInBaseState = cloneLuaTable(luaState, OverlayTable);
+                return deepMergeLuaTablesCopy(luaState, BaseTable, OverlayInBaseState);
+            },
+            options_);
     }
 
     [[nodiscard]] sol::table materialize() const
     {
         if (!cachedTable_.has_value())
         {
-            cachedTable_ = lazyBuilder_();
+            sol::table resolved = lazyBuilder_();
+            resolved = applyFinalize(options_.finalize, resolved);
+            validateConfigSchema(luaState_, resolved, options_.schema);
+            cachedTable_ = resolved;
         }
 
         return cachedTable_.value();
@@ -202,6 +249,7 @@ class LuaStepConfig final : public core::StepConfig
   private:
     std::shared_ptr<sol::state> luaState_;
     std::function<sol::table()> lazyBuilder_;
+    LuaStepConfigOptions options_;
     mutable std::optional<sol::table> cachedTable_;
 };
 
@@ -210,9 +258,16 @@ class LuaStepConfig final : public core::StepConfig
 core::StepConfigPtr makeLuaStepConfig(const std::shared_ptr<sol::state>& luaState,
                                       const sol::table& configTable)
 {
-    return std::make_shared<LuaStepConfig>(luaState,
-                                           [luaState, configTable]() -> sol::table
-                                           { return shallowCopyTable(luaState, configTable); });
+    return makeLuaStepConfig(luaState,
+                             [luaState, configTable]() -> sol::table
+                             { return shallowCopyTable(luaState, configTable); });
+}
+
+core::StepConfigPtr makeLuaStepConfig(const std::shared_ptr<sol::state>& luaState,
+                                      std::function<sol::table()> lazyBuilder,
+                                      LuaStepConfigOptions options)
+{
+    return std::make_shared<LuaStepConfig>(luaState, std::move(lazyBuilder), std::move(options));
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity) -- step context API surface

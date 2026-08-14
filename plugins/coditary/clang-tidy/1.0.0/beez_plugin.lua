@@ -1,45 +1,66 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
-
--- Beez clang-tidy plugin
---
--- Steps (after load):
---   check           — configurable clang-tidy (profiles or custom checks array)
---   lint_check      — preset profile: lint (.clang-tidy defaults)
---   analyze_check   — preset profile: analyzer / bugprone / guidelines
---   security_check  — preset profile: security checks
---
--- Required configure_step override (compile db path):
---   configure_step("check", {
---       compdb = "build/build/Release",
---       profiles = { "lint", "analyze", "security" },
---       check_rev = "1",
---   })
---
--- Custom checks (array joins to --checks=-*,name1,name2):
---   configure_step("check", {
---       compdb = "build/build/Release",
---       checks = { "bugprone-*", "modernize-use-nullptr" },
---       patterns = { "src/**/*.cpp" },
---   })
---
--- Optional fields: patterns, header_filter, binary, extra_args,
---   issue_path_pattern, exclude_substrings, log_prefix, worker_prefix
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/clang-tidy",
---             path = "./plugins/coditary/clang-tidy",
---             version = "1.0.0",
---         },
---     },
--- }
 
 plugin("clang-tidy", {
     version = "1.0.0",
     description = "Incremental clang-tidy lint, analyzer, and security checks",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            binary = defaults.binary,
+            header_filter = defaults.header_filter,
+            issue_path_pattern = defaults.issue_path_pattern,
+            exclude_substrings = defaults.exclude_substrings,
+            extra_args = defaults.extra_args,
+            parallelism = defaults.parallelism,
+            warnings_as_errors = defaults.warnings_as_errors,
+        },
+
+        profile_defs = {
+            lint = {
+                patterns = defaults.patterns_all,
+                log_prefix = defaults.log_prefix_lint,
+                worker_prefix = defaults.worker_prefix_lint,
+                lint_rev = defaults.lint_rev,
+            },
+            analyze = {
+                patterns = defaults.patterns_src_cpp,
+                checks = defaults.checks_analyze,
+                log_prefix = defaults.log_prefix_analyze,
+                worker_prefix = defaults.worker_prefix_analyze,
+                analyze_rev = defaults.analyze_rev,
+            },
+            security = {
+                patterns = defaults.patterns_security,
+                checks = defaults.checks_security,
+                log_prefix = defaults.log_prefix_security,
+                worker_prefix = defaults.worker_prefix_security,
+                security_rev = defaults.security_rev,
+            },
+        },
+
+        finalize = function(resolved)
+            local config = require("src.config")
+            if resolved.compdb == nil or resolved.compdb == "" then
+                resolved.compdb = config.default_compdb()
+            end
+
+            local extra_args = {}
+            if resolved.extra_args ~= nil then
+                for _, argument in ipairs(resolved.extra_args) do
+                    extra_args[#extra_args + 1] = argument
+                end
+            end
+
+            if resolved.warnings_as_errors then
+                extra_args[#extra_args + 1] = "--warnings-as-errors=*"
+            end
+
+            resolved.extra_args = extra_args
+            resolved.checks = config.normalize_checks(resolved.checks)
+            return resolved
+        end,
+    },
 
     steps = {
         check = {
@@ -47,7 +68,13 @@ plugin("clang-tidy", {
             scope = "lint",
             input = defaults.patterns_all,
             description = "clang-tidy check (configurable profiles or checks)",
-            config = step_config.check_defaults(),
+            config = {
+                profile = "lint",
+                profiles = { "lint" },
+                check_rev = defaults.check_rev,
+                log_prefix = defaults.log_prefix_check,
+                worker_prefix = defaults.worker_prefix_check,
+            },
             run = function(ctx)
                 return require("src.runner").check(ctx)
             end,
@@ -58,7 +85,10 @@ plugin("clang-tidy", {
             scope = "lint",
             input = defaults.patterns_all,
             description = "clang-tidy lint (incremental)",
-            config = step_config.lint_defaults(),
+            config = {
+                profile = "lint",
+                profiles = { "lint" },
+            },
             run = function(ctx)
                 return require("src.runner").lint_check(ctx)
             end,
@@ -69,7 +99,10 @@ plugin("clang-tidy", {
             scope = "analyze",
             input = defaults.patterns_src_cpp,
             description = "clang-tidy analyzer checks (incremental)",
-            config = step_config.analyze_defaults(),
+            config = {
+                profile = "analyze",
+                profiles = { "analyze" },
+            },
             run = function(ctx)
                 return require("src.runner").analyze_check(ctx)
             end,
@@ -80,7 +113,10 @@ plugin("clang-tidy", {
             scope = "security",
             input = defaults.patterns_security,
             description = "clang-tidy security checks (incremental)",
-            config = step_config.security_defaults(),
+            config = {
+                profile = "security",
+                profiles = { "security" },
+            },
             run = function(ctx)
                 return require("src.runner").security_check(ctx)
             end,

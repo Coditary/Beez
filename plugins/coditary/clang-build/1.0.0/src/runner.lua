@@ -3,18 +3,8 @@ local compdb = require("src.compdb")
 local compile = require("src.compile")
 local defaults = require("src.defaults")
 local link = require("src.link")
-local step_config = require("src.step_config")
 
 local M = {}
-
-local function resolve_step_config(ctx, fallback)
-    local from_context = ctx.get_config()
-    if from_context ~= nil then
-        return from_context
-    end
-
-    return fallback()
-end
 
 function M.compile(ctx, step_name)
     local profile_name = defaults.compile_step_profiles[step_name]
@@ -22,11 +12,11 @@ function M.compile(ctx, step_name)
         error("unknown compile step: " .. tostring(step_name))
     end
 
-    local fallback = function()
-        return step_config.compile_defaults(profile_name)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("clang-build compile step config is missing")
     end
 
-    local step_cfg = resolve_step_config(ctx, fallback)
     local cfg = config.resolve(step_cfg, profile_name, ctx.project_root)
     local profile = defaults.build_profiles[profile_name]
 
@@ -46,11 +36,11 @@ function M.link(ctx, step_name)
         error("unknown link step: " .. tostring(step_name))
     end
 
-    local fallback = function()
-        return step_config.link_defaults(profile_name)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("clang-build link step config is missing")
     end
 
-    local step_cfg = resolve_step_config(ctx, fallback)
     local cfg = config.resolve(step_cfg, profile_name, ctx.project_root)
     local profile = defaults.build_profiles[profile_name]
 

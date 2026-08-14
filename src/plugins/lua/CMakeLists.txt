@@ -127,6 +127,8 @@ add_library(
     settings/lua_settings.cpp
     settings/settings_overlay.cpp
     runtime/step_config.cpp
+    runtime/plugin_config.cpp
+    runtime/lua_table_util.cpp
     runtime/worker_parser.cpp
 )
 

@@ -3,17 +3,12 @@ local command = require("src.command")
 
 local M = {}
 
-local function resolve_step_config(ctx, fallback)
-    local from_context = ctx.get_config()
-    if from_context ~= nil then
-        return from_context
+function M.check(ctx)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("cyclonedx check step config is missing")
     end
 
-    return fallback()
-end
-
-function M.check(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").check_defaults)
     local cfg = config.resolve(step_cfg)
 
     print(cfg.log_prefix_check .. " validating " .. cfg.cyclonedx_json)
@@ -21,7 +16,11 @@ function M.check(ctx)
 end
 
 function M.merge(ctx)
-    local step_cfg = resolve_step_config(ctx, require("src.step_config").merge_defaults)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("cyclonedx merge step config is missing")
+    end
+
     local cfg = config.resolve(step_cfg)
     local root = ctx.project_root
 

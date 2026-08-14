@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
 
 local runner = require("src.runner")
 
@@ -38,7 +37,7 @@ local function configure_step_def(step_name, profile_name)
         input = profile.configure_inputs,
         output = configure_outputs,
         description = description,
-        config = step_config.configure_defaults(profile_name),
+        config = { profile = profile_name },
         run = function(ctx)
             return runner.configure(ctx, step_name)
         end,
@@ -52,7 +51,7 @@ local plugin_steps = {
         input = defaults.input_patterns,
         output = { defaults.graph_json },
         description = "Export Conan dependency graph (JSON)",
-        config = step_config.graph_defaults(),
+        config = {},
         run = function(ctx)
             return runner.graph_export(ctx)
         end,
@@ -64,7 +63,7 @@ local plugin_steps = {
         input = defaults.input_patterns,
         output = { defaults.lockfile },
         description = "Create Conan lockfile",
-        config = step_config.lock_defaults(),
+        config = {},
         run = function(ctx)
             return runner.lock_create(ctx)
         end,
@@ -79,7 +78,7 @@ local plugin_steps = {
             defaults.cyclonedx_json,
         },
         description = "Export Conan graph and CycloneDX SBOM",
-        config = step_config.sbom_defaults(),
+        config = {},
         run = function(ctx)
             return runner.sbom_export(ctx)
         end,
@@ -91,7 +90,7 @@ local plugin_steps = {
         input = defaults.input_patterns,
         output = { defaults.conan_output_folder .. "//**" },
         description = "Conan install only (no CMake configure)",
-        config = step_config.install_defaults(),
+        config = { profile = "code" },
         run = function(ctx)
             return runner.install(ctx)
         end,
@@ -102,36 +101,40 @@ for step_name, profile_name in pairs(defaults.configure_step_profiles) do
     plugin_steps[step_name] = configure_step_def(step_name, profile_name)
 end
 
--- Beez Conan plugin
---
--- Steps:
---   conan_install         — conan install only
---   configure:setup       — conan install + cmake (Release/Debug via BUILD_TYPE)
---   configure:debug       — Debug toolchain configure
---   configure:coverage    — coverage configure
---   configure:sanitize    — ASan/UBSan configure
---   configure:tsan        — TSan configure
---   configure:fuzzer      — fuzzer configure
---   (compile/link via coditary/clang-build plugin)
---   conan_graph_export    — graph JSON only (scope supply-graph)
---   conan_lock_create     — lockfile
---   conan_sbom_export     — graph + CycloneDX
---
--- Env: BUILD_TYPE, CONAN_PROFILE, REPORTS_DIR (via beez.env / .env)
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/conan",
---             path = "./plugins/coditary/conan",
---             version = "1.0.0",
---         },
---     },
--- }
-
 plugin("conan", {
     version = "1.0.0",
     description = "Conan install, CMake configure, graph export, lockfile, CycloneDX SBOM",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            conanfile = defaults.conanfile,
+            conan_binary = defaults.conan_binary,
+            python_binary = defaults.python_binary,
+            cmake_binary = defaults.cmake_binary,
+            conan_output_folder = defaults.conan_output_folder,
+            build_policy = defaults.build_policy,
+            converter_script = defaults.converter_script,
+            profile_script = defaults.profile_script,
+            sbom_dir = defaults.sbom_dir,
+            graph_json = defaults.graph_json,
+            cyclonedx_json = defaults.cyclonedx_json,
+            lockfile = defaults.lockfile,
+            input_patterns = defaults.input_patterns,
+            log_prefix_graph = defaults.log_prefix_graph,
+            log_prefix_lock = defaults.log_prefix_lock,
+            log_prefix_sbom = defaults.log_prefix_sbom,
+            log_prefix_install = defaults.log_prefix_install,
+            log_prefix_configure = defaults.log_prefix_configure,
+            log_prefix_build = defaults.log_prefix_build,
+            graph_rev = defaults.graph_rev,
+            lock_rev = defaults.lock_rev,
+            sbom_rev = defaults.sbom_rev,
+            install_rev = defaults.install_rev,
+            configure_rev = defaults.configure_rev,
+            build_rev = defaults.build_rev,
+        },
+    },
+
     steps = plugin_steps,
 })

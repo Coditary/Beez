@@ -614,6 +614,90 @@ configure_step("check", {
     EXPECT_NE(Fingerprint.find("flag=overlay"), std::string::npos);
 }
 
+TEST(LuaDslPluginTest, PluginConfigDefaultsProfilesAndDeepMerge)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    config = {
+        defaults = {
+            binary = "base",
+            threads = 4,
+        },
+        profile_defs = {
+            fast = {
+                flags = "-O0",
+                threads = 8,
+            },
+        },
+        finalize = function(cfg)
+            cfg.enable = cfg.enable or "all"
+            return cfg
+        end,
+    },
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { profile = "fast" },
+            run = function(ctx)
+                local cfg = ctx.get_config()
+                if cfg.binary ~= "overlay" then
+                    return 1
+                end
+                if cfg.flags ~= "-O0" then
+                    return 2
+                end
+                if cfg.threads ~= 8 then
+                    return 3
+                end
+                if cfg.enable ~= "all" then
+                    return 4
+                end
+                if cfg.override ~= "yes" then
+                    return 5
+                end
+                return 0
+            end,
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure_step("check", {
+    override = "yes",
+    binary = "overlay",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_TRUE(Found->hasConfig());
+    ASSERT_NE(Found->config, nullptr);
+    const std::string Fingerprint = Found->config->cacheFingerprint();
+    EXPECT_NE(Fingerprint.find("binary=overlay"), std::string::npos) << Fingerprint;
+    EXPECT_NE(Fingerprint.find("flags=-O0"), std::string::npos) << Fingerprint;
+    EXPECT_NE(Fingerprint.find("threads=8"), std::string::npos) << Fingerprint;
+    EXPECT_NE(Fingerprint.find("enable=all"), std::string::npos) << Fingerprint;
+    EXPECT_NE(Fingerprint.find("override=yes"), std::string::npos) << Fingerprint;
+}
+
 TEST(LuaDslPluginTest, ConfigureMergesPluginAndStepConfigs)
 {
     const beez::test::TempProject Project;

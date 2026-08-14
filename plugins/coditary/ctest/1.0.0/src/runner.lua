@@ -4,15 +4,6 @@ local defaults = require("src.defaults")
 
 local M = {}
 
-local function resolve_step_config(ctx, suite_name)
-    local from_context = ctx.get_config()
-    if from_context ~= nil then
-        return from_context
-    end
-
-    return require("src.step_config").suite_defaults(suite_name)
-end
-
 local function build_command(cfg, root)
     if cfg.mode == "ctest" then
         return command.ctest(cfg, root)
@@ -36,7 +27,11 @@ function M.run(ctx, step_name)
     end
 
     local suite = defaults.suites[suite_name]
-    local step_cfg = resolve_step_config(ctx, suite_name)
+    local step_cfg = ctx.get_config()
+    if step_cfg == nil then
+        error("ctest step config is missing")
+    end
+
     local cfg = config.resolve(step_cfg, suite_name)
     local root = ctx.project_root
 

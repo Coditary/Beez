@@ -1,5 +1,7 @@
 #include "beez/plugin/lua/lua_dsl.hpp"
 
+#include "beez/plugin/lua/runtime/plugin_config.hpp"
+
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
@@ -32,6 +34,7 @@ LuaDslLoader::~LuaDslLoader() = default;
 bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 {
     registry.clear();
+    clearPluginConfigRegistry();
     try
     {
         impl_->buildSettings = {};

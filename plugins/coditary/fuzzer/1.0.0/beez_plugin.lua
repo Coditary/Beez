@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
 
 local runner = require("src.runner")
 
@@ -37,37 +36,28 @@ for step_name, run_name in pairs(defaults.fuzz_step_runs) do
         input = build_inputs(run_name),
         output = { run.report_file },
         description = run.description,
-        config = step_config.run_defaults(run_name),
+        config = {
+            log_prefix = run.log_prefix,
+        },
         run = function(ctx)
             return runner.run(ctx, step_name)
         end,
     }
 end
 
--- Beez fuzzer plugin
---
--- Steps (configure/build via coditary/conan: configure:fuzzer, build:fuzzer):
---   fuzz:smoke        — short libFuzzer run (FUZZER_TIME, default 30s)
---   fuzz:corpus       — 60s corpus collection run
---   fuzz:seed-verify  — run each seed once
---   fuzz:torture      — long run (FUZZER_TORTURE_TIME, default 300s)
---   fuzz:seeds        — regenerate seeds (scope seeds, not in default workflows)
---
--- Env: FUZZER_TIME, FUZZER_TORTURE_TIME, FUZZER_RSS_LIMIT_MB, REPORTS_DIR
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/fuzzer",
---             path = "./plugins/coditary/fuzzer",
---             version = "1.0.0",
---         },
---     },
--- }
-
 plugin("fuzzer", {
     version = "1.0.0",
     description = "libFuzzer smoke, corpus, seed-verify, and torture runs",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            fuzz_rev = defaults.fuzz_rev,
+            reports_dir = defaults.reports_dir,
+            build_dir = defaults.build_dir,
+            fuzzer_bin = defaults.fuzzer_bin,
+        },
+    },
+
     steps = plugin_steps,
 })

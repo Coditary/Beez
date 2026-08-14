@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
 
 local runner = require("src.runner")
 
@@ -66,39 +65,26 @@ for step_name, suite_name in pairs(defaults.test_step_suites) do
         input = build_inputs(suite_name),
         output = build_outputs(suite_name),
         description = suite.description,
-        config = step_config.suite_defaults(suite_name),
+        config = {
+            log_prefix = suite.log_prefix,
+        },
         run = function(ctx)
             return runner.run(ctx, step_name)
         end,
     }
 end
 
--- Beez ctest plugin
---
--- Steps:
---   test:unit         — ctest -L unit
---   test:integration  — ctest -L integration
---   test:system       — ctest -L system
---   test:performance  — ctest -L performance
---   test:coverage     — coverage test script + gcda outputs
---   test:sanitize     — full ctest under ASan/UBSan with report
---   test:tsan         — full ctest under TSan with report
---
--- Env: BUILD_TYPE (code-scope build tree), REPORTS_DIR
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/ctest",
---             path = "./plugins/coditary/ctest",
---             version = "1.0.0",
---         },
---     },
--- }
-
 plugin("ctest", {
     version = "1.0.0",
     description = "CTest suite runs for unit, integration, coverage, and sanitizer workflows",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            test_rev = defaults.test_rev,
+            common_inputs = defaults.common_inputs,
+        },
+    },
+
     steps = plugin_steps,
 })

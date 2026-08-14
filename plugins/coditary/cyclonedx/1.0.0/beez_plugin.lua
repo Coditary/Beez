@@ -1,32 +1,26 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
-
--- Beez CycloneDX plugin
---
--- Steps:
---   cyclonedx_check  — validate CycloneDX BOM structure
---   cyclonedx_merge  — merge multiple BOM files into cyclonedx-merged.json
---
--- configure_step("cyclonedx_merge", {
---     merge_inputs = { "report/sbom/cyclonedx.json", "extra/sbom.json" },
---     merged_json = "report/sbom/cyclonedx-merged.json",
---     merge_rev = "1",
--- })
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/cyclonedx",
---             path = "./plugins/coditary/cyclonedx",
---             version = "1.0.0",
---         },
---     },
--- }
 
 plugin("cyclonedx", {
     version = "1.0.0",
     description = "CycloneDX SBOM validation and merge",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            python_binary = defaults.python_binary,
+            cyclonedx_cli = defaults.cyclonedx_cli,
+            sbom_dir = defaults.sbom_dir,
+            cyclonedx_json = defaults.cyclonedx_json,
+            merged_json = defaults.merged_json,
+            check_script = defaults.check_script,
+            merge_script = defaults.merge_script,
+            merge_inputs = defaults.default_merge_inputs,
+            log_prefix_check = defaults.log_prefix_check,
+            log_prefix_merge = defaults.log_prefix_merge,
+            check_rev = defaults.check_rev,
+            merge_rev = defaults.merge_rev,
+        },
+    },
 
     steps = {
         cyclonedx_check = {
@@ -35,7 +29,7 @@ plugin("cyclonedx", {
             input = { defaults.cyclonedx_json },
             output = { defaults.cyclonedx_json },
             description = "Validate CycloneDX SBOM",
-            config = step_config.check_defaults(),
+            config = {},
             run = function(ctx)
                 return require("src.runner").check(ctx)
             end,
@@ -47,7 +41,7 @@ plugin("cyclonedx", {
             input = defaults.default_merge_inputs,
             output = { defaults.merged_json },
             description = "Merge CycloneDX SBOM files",
-            config = step_config.merge_defaults(),
+            config = {},
             run = function(ctx)
                 return require("src.runner").merge(ctx)
             end,

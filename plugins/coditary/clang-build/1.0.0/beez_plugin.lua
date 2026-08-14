@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
 
 local runner = require("src.runner")
 
@@ -36,7 +35,10 @@ local function compile_step_def(step_name, profile_name)
         input = profile.compile_inputs,
         output = resolve_outputs(profile, build_tree),
         description = profile.compile_description,
-        config = step_config.compile_defaults(profile_name),
+        config = {
+            profile = profile_name,
+            cache_key = profile_name .. ":compile",
+        },
         run = function(ctx)
             return runner.compile(ctx, step_name)
         end,
@@ -60,7 +62,10 @@ local function link_step_def(step_name, profile_name)
         },
         output = link_outputs,
         description = profile.link_description,
-        config = step_config.link_defaults(profile_name),
+        config = {
+            profile = profile_name,
+            cache_key = profile_name .. ":link",
+        },
         run = function(ctx)
             return runner.link(ctx, step_name)
         end,
@@ -77,34 +82,22 @@ for step_name, profile_name in pairs(defaults.link_step_profiles) do
     plugin_steps[step_name] = link_step_def(step_name, profile_name)
 end
 
--- Beez clang-build plugin
---
--- Direct Clang compile + link using compile_commands.json from CMake configure.
--- Configure stays in coditary/conan (conan install + cmake --preset).
---
--- Steps (phase build, per profile scope):
---   compile:code / link:code       — Release/Debug app + all test binaries
---   compile:debug / link:debug     — Debug app only
---   compile:coverage / link:coverage
---   compile:sanitize / link:sanitize
---   compile:tsan / link:tsan
---   compile:fuzzer / link:fuzzer   — fuzz_lua_dsl
---
--- Env: BUILD_TYPE, CC, CXX, REPORTS_DIR
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/clang-build",
---             path = "./plugins/coditary/clang-build",
---             version = "1.0.0",
---         },
---     },
--- }
-
 plugin("clang-build", {
     version = "1.0.0",
     description = "Clang compile and link steps from compile_commands.json",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            index_script = defaults.index_script,
+            python_binary = defaults.python_binary,
+            compile_rev = defaults.compile_rev,
+            link_rev = defaults.link_rev,
+            log_prefix_compile = defaults.log_prefix_compile,
+            log_prefix_link = defaults.log_prefix_link,
+            parallelism = 16,
+        },
+    },
+
     steps = plugin_steps,
 })

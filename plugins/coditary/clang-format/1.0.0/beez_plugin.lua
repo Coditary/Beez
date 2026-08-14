@@ -1,29 +1,31 @@
 local defaults = require("src.defaults")
-local step_config = require("src.step_config")
-
--- Beez clang-format plugin
---
--- Steps (after load):
---   qa_check       — phase qa, scope code
---   format_apply   — phase format, scope code
---
--- Optional overrides from build.lua (after reqpack):
---   configure_step("qa_check", { format_rev = "2", patterns = { ... } })
---
--- reqpack {
---     beez = {
---         {
---             name = "coditary/clang-format",
---             path = "./plugins/coditary/clang-format",
---             version = "1.0.0",
---         },
---     },
--- }
 
 plugin("clang-format", {
     version = "1.0.0",
     description = "Incremental clang-format check and apply",
     organization = "coditary",
+
+    config = {
+        defaults = {
+            patterns = defaults.patterns,
+            binary = defaults.binary,
+            extra_args = {},
+            werror = defaults.werror,
+        },
+
+        profile_defs = {
+            check = {
+                format_rev = defaults.format_rev,
+                log_prefix = defaults.log_prefix_check,
+                worker_prefix = defaults.worker_prefix_check,
+            },
+            apply = {
+                format_rev = defaults.format_rev,
+                log_prefix = defaults.log_prefix_apply,
+                worker_prefix = defaults.worker_prefix_apply,
+            },
+        },
+    },
 
     steps = {
         qa_check = {
@@ -31,7 +33,7 @@ plugin("clang-format", {
             scope = "format",
             input = defaults.patterns,
             description = "clang-format check (incremental)",
-            config = step_config.defaults(),
+            config = { profile = "check" },
             run = function(ctx)
                 return require("src.runner").check(ctx)
             end,
@@ -42,7 +44,7 @@ plugin("clang-format", {
             scope = "format",
             mutate = defaults.patterns,
             description = "Apply clang-format (incremental)",
-            config = step_config.defaults(),
+            config = { profile = "apply" },
             run = function(ctx)
                 return require("src.runner").apply(ctx)
             end,
