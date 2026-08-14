@@ -347,6 +347,7 @@ constexpr std::array<const char*, 48> DslFragments = {
     "configure_step(",
     "order(",
     "beez.env(",
+    "beez.env_or(",
     "name = ",
     "phase = ",
     "scope = ",

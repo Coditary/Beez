@@ -2,32 +2,24 @@
 reqpack {
     beez = {
         { name = "coditary/clang-format", path = "./plugins/coditary/clang-format", version = "1.0.0" },
-        { name = "coditary/clang-tidy", path = "./plugins/coditary/clang-tidy", version = "1.0.0" },
-        { name = "coditary/cppcheck", path = "./plugins/coditary/cppcheck", version = "1.0.0" },
-        { name = "coditary/conan", path = "./plugins/coditary/conan", version = "1.0.0" },
-        { name = "coditary/cyclonedx", path = "./plugins/coditary/cyclonedx", version = "1.0.0" },
-        { name = "coditary/osv-audit", path = "./plugins/coditary/osv-audit", version = "1.0.0" },
-        { name = "coditary/ctest", path = "./plugins/coditary/ctest", version = "1.0.0" },
-        { name = "coditary/coverage", path = "./plugins/coditary/coverage", version = "1.0.0" },
-        { name = "coditary/fuzzer", path = "./plugins/coditary/fuzzer", version = "1.0.0" },
-        { name = "coditary/clang-build", path = "./plugins/coditary/clang-build", version = "1.0.0" },
-        { name = "coditary/pipeline", path = "./plugins/coditary/pipeline", version = "1.0.0" },
+        { name = "coditary/clang-tidy",   path = "./plugins/coditary/clang-tidy",   version = "1.0.0" },
+        { name = "coditary/cppcheck",     path = "./plugins/coditary/cppcheck",     version = "1.0.0" },
+        { name = "coditary/conan",        path = "./plugins/coditary/conan",        version = "1.0.0" },
+        { name = "coditary/cyclonedx",    path = "./plugins/coditary/cyclonedx",    version = "1.0.0" },
+        { name = "coditary/osv-audit",    path = "./plugins/coditary/osv-audit",    version = "1.0.0" },
+        { name = "coditary/ctest",        path = "./plugins/coditary/ctest",        version = "1.0.0" },
+        { name = "coditary/coverage",     path = "./plugins/coditary/coverage",     version = "1.0.0" },
+        { name = "coditary/fuzzer",       path = "./plugins/coditary/fuzzer",       version = "1.0.0" },
+        { name = "coditary/clang-build",  path = "./plugins/coditary/clang-build",  version = "1.0.0" },
+        { name = "coditary/pipeline",     path = "./plugins/coditary/pipeline",     version = "1.0.0" },
     },
 }
 
 beez.config(require("config"))
 
-local function env_or(key, default)
-    local value = beez.env(key)
-    if value == nil then
-        return default
-    end
-    return value
-end
-
-local BUILD_TYPE = env_or("BUILD_TYPE", "Release")
+local BUILD_TYPE = beez.env_or("BUILD_TYPE", "Release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
-local REPORTS_DIR = env_or("REPORTS_DIR", "report")
+local REPORTS_DIR = beez.env_or("REPORTS_DIR", "report")
 
 -- ── Plugin + step configuration ──────────────────────────────────────────────
 
@@ -48,8 +40,6 @@ configure({
 })
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────
-
-task("clean_cache", "rm -rf .cache")
 
 task("debug", {
     { plugin = "coditary/conan", step = "configure[debug]" },

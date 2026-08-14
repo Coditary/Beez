@@ -698,6 +698,64 @@ step({
     ASSERT_TRUE(registry.findStep("check-env").has_value());
 }
 
+TEST(LuaDslTest, BeezEnvTriesKeysInOrder)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("SECOND_KEY=second-value\n");
+    Project.writeBuildLua(R"(
+task("chain-env", "echo " .. beez.env("FIRST_KEY", "SECOND_KEY"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "chain-env");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo second-value");
+}
+
+TEST(LuaDslTest, BeezEnvOrUsesDefaultWhenNoKeyMatches)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("fallback-env", "echo " .. beez.env_or("FIRST_KEY", "SECOND_KEY", "klaus"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "fallback-env");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo klaus");
+}
+
+TEST(LuaDslTest, BeezEnvOrUsesFirstMatchingKey)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("BETA=beta-value\n");
+    Project.writeBuildLua(R"(
+task("prefer-alpha", "echo " .. beez.env_or("ALPHA", "BETA", "klaus"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "prefer-alpha");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo beta-value");
+}
+
+TEST(LuaDslTest, BeezEnvOrRejectsTooFewArguments)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("bad-env-or", "echo " .. beez.env_or("only"))
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 TEST(LuaDslTest, BeezEnvDoesNotReadDotEnvUntilCalled)
 {
     const beez::test::TempProject Project;
