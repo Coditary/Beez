@@ -31,9 +31,8 @@ std::unordered_map<std::string, PluginConfigDefinition>& pluginConfigDefinitions
     return definitions;
 }
 
-[[nodiscard]] sol::table requireTableField(const sol::table& table,
-                                           const char* fieldName,
-                                           const std::string& pluginKey)
+[[nodiscard]] sol::table
+requireTableField(const sol::table& table, const char* fieldName, const std::string& pluginKey)
 {
     const sol::object Value = table[fieldName];
     if (!Value.valid() || !Value.is<sol::table>())
@@ -46,7 +45,7 @@ std::unordered_map<std::string, PluginConfigDefinition>& pluginConfigDefinitions
 }
 
 [[nodiscard]] sol::table resolveStepConfigTable(const PluginConfigDefinition& definition,
-                                                  const sol::table& stepConfigTable)
+                                                const sol::table& stepConfigTable)
 {
     sol::table resolved = cloneLuaTable(definition.luaState, definition.defaults);
 
@@ -82,7 +81,8 @@ void registerPluginConfigDefinition(const std::string& pluginKey,
 {
     PluginConfigDefinition definition;
     definition.luaState = luaState;
-    definition.defaults = cloneLuaTable(luaState, requireTableField(configTable, "defaults", pluginKey));
+    definition.defaults =
+        cloneLuaTable(luaState, requireTableField(configTable, "defaults", pluginKey));
 
     const sol::object ProfileDefsValue = configTable["profile_defs"];
     if (ProfileDefsValue.valid() && ProfileDefsValue.is<sol::table>())
@@ -102,8 +102,9 @@ void registerPluginConfigDefinition(const std::string& pluginKey,
                                              "' config.profile_defs values must be tables");
                 }
 
-                definition.profileDefs.emplace(key.as<std::string>(),
-                                             cloneLuaTable(definition.luaState, value.as<sol::table>()));
+                definition.profileDefs.emplace(
+                    key.as<std::string>(),
+                    cloneLuaTable(definition.luaState, value.as<sol::table>()));
             });
     }
 

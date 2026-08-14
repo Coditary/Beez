@@ -20,6 +20,7 @@ beez.config(require("config"))
 local BUILD_TYPE = beez.env_or("BUILD_TYPE", "Release")
 local BUILD_TREE = "build/build/" .. BUILD_TYPE
 local REPORTS_DIR = beez.env_or("REPORTS_DIR", "report")
+local OSV_SCANNER = beez.env_or("OSV_SCANNER", beez.env_or("HOME", "") .. "/.local/bin/osv-scanner")
 
 -- ── Plugin + step configuration ──────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ configure({
 
     { "coditary/conan", { reports_dir = REPORTS_DIR, lock_rev = "1", sbom_rev = "1" } },
     { "coditary/cyclonedx", { check_rev = "1", merge_rev = "1", merge_inputs = { REPORTS_DIR .. "/sbom/cyclonedx.json" } } },
-    { "coditary/osv-audit", { audit_rev = "1" } },
+    { "coditary/osv-audit", { audit_rev = "1", osv_scanner = OSV_SCANNER } },
     { "coditary/ctest", { reports_dir = REPORTS_DIR, test_rev = "4" } },
     { "coditary/coverage", { report_rev = "1" } },
     { "coditary/fuzzer", { fuzz_rev = "4" } },

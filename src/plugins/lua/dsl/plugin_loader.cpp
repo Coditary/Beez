@@ -3,9 +3,9 @@
 #include "beez/core/plugin/installer.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
-#include "beez/plugin/lua/runtime/plugin_config.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
+#include "beez/plugin/lua/runtime/plugin_config.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -136,11 +136,8 @@ void registerPluginSteps(const sol::table& stepsTable,
 
         const std::optional<std::string> StepVersion = pluginRef.version;
         const bool AllowUnversionedAliases = !pluginRef.fromInstalledCache;
-        registry.registerPluginStep(step,
-                                    pluginRef.organization,
-                                    pluginRef.name,
-                                    StepVersion,
-                                    AllowUnversionedAliases);
+        registry.registerPluginStep(
+            step, pluginRef.organization, pluginRef.name, StepVersion, AllowUnversionedAliases);
     }
 }
 
@@ -241,8 +238,7 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
                 throw std::runtime_error("plugin '" + name + "' field 'config' must be a table");
             }
 
-            const std::string PluginKey =
-                pluginRef.organization + "/" + pluginRef.name;
+            const std::string PluginKey = pluginRef.organization + "/" + pluginRef.name;
             registerPluginConfigDefinition(PluginKey, PluginState, ConfigObject.as<sol::table>());
         }
 

@@ -11,8 +11,15 @@ function M.audit_check(ctx)
 
     local cfg = config.resolve(step_cfg)
     local root = ctx.project_root
+    local scanner_path = cfg.osv_scanner
 
-    local scanner_env = config.resolve_scanner_cmd(cfg, root)
+    if scanner_path == nil or scanner_path == "" then
+        print("error: osv-scanner not found in PATH")
+        print("Install it with: " .. root .. "/" .. cfg.install_script)
+        print("Or set auto_install = true in configure_step(\"osv_audit_check\", ...)")
+        return 2
+    end
+
     local mkdir_code = beez.shell.run(ctx, cfg.log_prefix, command.mkdir_security(cfg, root))
     if mkdir_code ~= 0 then
         return mkdir_code
@@ -22,15 +29,8 @@ function M.audit_check(ctx)
     print(cfg.log_prefix .. " SBOM: " .. cfg.sbom_json)
     print(cfg.log_prefix .. " lockfile: " .. cfg.lockfile)
 
-    local scan_cmd = command.scan(cfg, root, scanner_env)
-    local code, output = beez.shell.run(ctx, cfg.log_prefix, scan_cmd, { return_output = true })
-
-    if code == 2 then
-        print("error: osv-scanner not found in PATH")
-        print("Install it with: " .. root .. "/" .. cfg.install_script)
-        print("Or set auto_install = true in configure_step(\"osv_audit_check\", ...)")
-        return 2
-    end
+    local scan_cmd = command.scan(cfg, root, scanner_path)
+    local code = beez.shell.run(ctx, cfg.log_prefix, scan_cmd)
 
     if code == 0 then
         print(cfg.log_prefix .. " passed (no known vulnerabilities in OSV)")

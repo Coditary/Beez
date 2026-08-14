@@ -5,14 +5,13 @@ function M.mkdir_security(config, root)
     return "mkdir -p " .. beez.char.quote(root .. "/" .. config.security_dir)
 end
 
-function M.scan(config, root, scanner_env)
+function M.scan(config, root, scanner_path)
     local lock_path = root .. "/" .. config.lockfile
     local report_path = root .. "/" .. config.audit_report
 
     local parts = {
-        scanner_env,
-        "&&",
-        "\"$OSV_SCANNER\" scan",
+        beez.char.quote(scanner_path),
+        "scan",
         "--lockfile=" .. beez.char.quote(lock_path),
         "--format=vertical",
         "--verbosity=warn",

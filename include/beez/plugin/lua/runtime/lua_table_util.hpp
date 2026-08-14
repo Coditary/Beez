@@ -15,7 +15,7 @@ namespace beez::plugin::lua
 void deepMergeLuaTables(sol::table& target, const sol::table& source);
 
 [[nodiscard]] sol::table deepMergeLuaTablesCopy(const std::shared_ptr<sol::state>& luaState,
-                                                  const sol::table& base,
-                                                  const sol::table& overlay);
+                                                const sol::table& base,
+                                                const sol::table& overlay);
 
 }  // namespace beez::plugin::lua

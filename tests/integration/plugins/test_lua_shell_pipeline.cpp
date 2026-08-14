@@ -284,6 +284,71 @@ step({
     EXPECT_TRUE(std::filesystem::exists(Project.path() / "build" / "main.o"));
 }
 
+TEST(LuaShellPipelineTest, BeezShellRunExecutesCommandSuccessfully)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "shell-run",
+    phase = "test",
+    scope = "code",
+    run = function(ctx)
+        return beez.shell.run(ctx, "[test]", "echo shell-run-ok")
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("shell-run").hasValue());
+}
+
+TEST(LuaShellPipelineTest, BeezShellRunPropagatesFailureExitCode)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "shell-fail",
+    phase = "test",
+    scope = "code",
+    run = function(ctx)
+        return beez.shell.run(ctx, "[test]", "exit 7")
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    const auto Result = orchestrator.runStep("shell-fail");
+    ASSERT_FALSE(Result.hasValue());
+}
+
+TEST(LuaShellPipelineTest, BeezShellRunReturnOutputOnSuccess)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "shell-output",
+    phase = "test",
+    scope = "code",
+    run = function(ctx)
+        beez.shell.run(ctx, "[test]", "echo hello-shell", { return_output = true })
+        return 0
+    end,
+})
+)");
+
+    beez::test::BeezRuntime runtime(Project.path());
+    auto orchestrator = runtime.orchestrator();
+
+    ASSERT_TRUE(orchestrator.loadBuildScript().hasValue());
+    ASSERT_TRUE(orchestrator.runStep("shell-output").hasValue());
+}
+
 TEST(LuaShellPipelineTest, StepSpawnSupportsMultipleCommands)
 {
     const beez::test::TempProject Project;

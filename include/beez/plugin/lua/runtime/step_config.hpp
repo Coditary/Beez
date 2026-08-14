@@ -22,10 +22,9 @@ struct LuaStepConfigOptions
 [[nodiscard]] core::StepConfigPtr makeLuaStepConfig(const std::shared_ptr<sol::state>& luaState,
                                                     const sol::table& configTable);
 
-[[nodiscard]] core::StepConfigPtr
-makeLuaStepConfig(const std::shared_ptr<sol::state>& luaState,
-                  std::function<sol::table()> lazyBuilder,
-                  LuaStepConfigOptions options = {});
+[[nodiscard]] core::StepConfigPtr makeLuaStepConfig(const std::shared_ptr<sol::state>& luaState,
+                                                    std::function<sol::table()> lazyBuilder,
+                                                    LuaStepConfigOptions options = {});
 
 [[nodiscard]] sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
                                          const core::Context& context);

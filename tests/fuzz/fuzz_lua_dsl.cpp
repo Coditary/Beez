@@ -339,7 +339,7 @@ std::vector<uint8_t> assembleScript(const FuzzSections& sections)
     return script;
 }
 
-constexpr std::array<const char*, 48> DslFragments = {
+constexpr std::array<const char*, 49> DslFragments = {
     "task(",
     "workflow(",
     "step({",

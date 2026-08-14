@@ -57,9 +57,7 @@ sol::object runShellCommand(sol::object context,
 
         if (ReturnOutput)
         {
-            sol::stack::push(lua, ExitCode);
-            sol::stack::push(lua, Output);
-            return sol::object(lua, sol::in_place, 2);
+            return sol::make_object(lua, std::make_pair(ExitCode, Output));
         }
 
         return sol::make_object(lua, ExitCode);
@@ -73,9 +71,7 @@ sol::object runShellCommand(sol::object context,
 
     if (ReturnOutput)
     {
-        sol::stack::push(lua, 0);
-        sol::stack::push(lua, Output);
-        return sol::object(lua, sol::in_place, 2);
+        return sol::make_object(lua, std::make_pair(0, Output));
     }
 
     return sol::make_object(lua, 0);

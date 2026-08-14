@@ -754,6 +754,89 @@ reqpack {
     EXPECT_NE(Fingerprint.find("binary=conan"), std::string::npos) << Fingerprint;
 }
 
+TEST(LuaDslPluginTest, PluginConfigRejectsUnknownProfile)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    config = {
+        defaults = { binary = "base" },
+        profile_defs = {
+            fast = { flags = "-O0" },
+        },
+    },
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { profile = "missing" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_TRUE(Found->hasConfig());
+    EXPECT_THROW(Found->config->cacheFingerprint(), std::runtime_error);
+}
+
+TEST(LuaDslPluginTest, PluginConfigRejectsMissingDefaultsTable)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    config = {
+        profile_defs = {
+            fast = { flags = "-O0" },
+        },
+    },
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 TEST(LuaDslPluginTest, ConfigureMergesPluginAndStepConfigs)
 {
     const beez::test::TempProject Project;

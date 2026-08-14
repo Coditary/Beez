@@ -27,6 +27,7 @@ fi
 
 mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/test"
 find "${COVERAGE_BUILD_TREE}" -name '*.gcda' -delete
+export GCOV_ERROR_FILE=/dev/null
 
 # Coverage gates src/ line coverage; run fast labeled tests (exclude slow fuzz-corpus robustness).
 CTEST_LABEL_REGEX="${CTEST_LABEL_REGEX:-unit|integration|system|performance}"

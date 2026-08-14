@@ -18,9 +18,8 @@ void registerPluginConfigDefinition(const std::string& pluginKey,
                                     const std::shared_ptr<sol::state>& luaState,
                                     const sol::table& configTable);
 
-[[nodiscard]] core::StepConfigPtr
-makePluginStepConfig(const std::shared_ptr<sol::state>& luaState,
-                     const std::string& pluginKey,
-                     const sol::table& stepConfigTable);
+[[nodiscard]] core::StepConfigPtr makePluginStepConfig(const std::shared_ptr<sol::state>& luaState,
+                                                       const std::string& pluginKey,
+                                                       const sol::table& stepConfigTable);
 
 }  // namespace beez::plugin::lua
