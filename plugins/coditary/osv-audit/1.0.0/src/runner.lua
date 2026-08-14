@@ -1,6 +1,5 @@
 local config = require("src.config")
 local command = require("src.command")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -19,7 +18,7 @@ function M.audit_check(ctx)
     local root = ctx.project_root
 
     local scanner_env = config.resolve_scanner_cmd(cfg, root)
-    local mkdir_code = shell.run(ctx, cfg.log_prefix, command.mkdir_security(cfg, root))
+    local mkdir_code = beez.shell.run(ctx, cfg.log_prefix, command.mkdir_security(cfg, root))
     if mkdir_code ~= 0 then
         return mkdir_code
     end
@@ -29,7 +28,7 @@ function M.audit_check(ctx)
     print(cfg.log_prefix .. " lockfile: " .. cfg.lockfile)
 
     local scan_cmd = command.scan(cfg, root, scanner_env)
-    local code, output = shell.run(ctx, cfg.log_prefix, scan_cmd)
+    local code, output = beez.shell.run(ctx, cfg.log_prefix, scan_cmd, { return_output = true })
 
     if code == 2 then
         print("error: osv-scanner not found in PATH")

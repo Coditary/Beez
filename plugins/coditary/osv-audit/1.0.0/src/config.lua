@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -22,10 +21,10 @@ end
 
 function M.resolve_scanner_path_expr(config, root)
     if config.osv_scanner ~= nil and config.osv_scanner ~= "" then
-        return shell.quote(config.osv_scanner)
+        return beez.char.quote(config.osv_scanner)
     end
 
-    local install = shell.quote(root .. "/" .. config.install_script)
+    local install = beez.char.quote(root .. "/" .. config.install_script)
     local auto = config.auto_install and "1" or "0"
 
     return "$(" ..

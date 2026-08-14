@@ -1,6 +1,5 @@
 local defaults = require("src.defaults")
 local step_config = require("src.step_config")
-local env = require("src.env")
 
 local runner = require("src.runner")
 
@@ -11,7 +10,7 @@ local function resolve_profile_build_tree(profile_name)
     end
 
     if profile.build_tree_from_build_type then
-        local build_type = env.env_or("BUILD_TYPE", "Release")
+        local build_type = beez.env_or("BUILD_TYPE", "Release")
         return "build/build/" .. build_type
     end
 
@@ -21,7 +20,7 @@ end
 local function configure_step_def(step_name, profile_name)
     local profile = defaults.build_profiles[profile_name]
     local build_tree = resolve_profile_build_tree(profile_name)
-    local build_type = profile.build_type or env.env_or("BUILD_TYPE", "Release")
+    local build_type = profile.build_type or beez.env_or("BUILD_TYPE", "Release")
 
     local configure_outputs = profile.configure_outputs
     if type(configure_outputs) == "function" then

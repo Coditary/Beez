@@ -1,6 +1,4 @@
 local defaults = require("src.defaults")
-local env = require("src.env")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -14,7 +12,7 @@ function M.resolve_build_tree(profile, step_cfg)
     end
 
     if profile.build_tree_from_build_type then
-        local build_type = env.env_or("BUILD_TYPE", "Release")
+        local build_type = beez.env_or("BUILD_TYPE", "Release")
         return "build/build/" .. build_type
     end
 
@@ -38,8 +36,8 @@ function M.resolve(step_cfg, profile_name, root)
         index_lua = build_tree .. "/.beez-clang-index.lua",
         index_script = cfg.index_script or defaults.index_script,
         python_binary = cfg.python_binary or defaults.python_binary,
-        cxx = cfg.cxx or env.env_or("CXX", "clang++"),
-        cc = cfg.cc or env.env_or("CC", "clang"),
+        cxx = cfg.cxx or beez.env_or("CXX", "clang++"),
+        cc = cfg.cc or beez.env_or("CC", "clang"),
         log_prefix_compile = cfg.log_prefix_compile or cfg.log_prefix or defaults.log_prefix_compile,
         log_prefix_link = cfg.log_prefix_link or defaults.log_prefix_link,
         compile_rev = cfg.compile_rev or defaults.compile_rev,

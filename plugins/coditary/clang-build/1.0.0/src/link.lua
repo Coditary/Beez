@@ -1,6 +1,5 @@
 local defaults = require("src.defaults")
 local command = require("src.command")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -85,7 +84,7 @@ function M.run(ctx, config, profile, index, root)
 
     for _, link_entry in ipairs(links) do
         print(config.log_prefix_link .. " linking: " .. link_entry.target)
-        local code = shell.run(ctx, config.log_prefix_link, command.link(config, link_entry))
+        local code = beez.shell.run(ctx, config.log_prefix_link, command.link(config, link_entry))
         if code ~= 0 then
             return code
         end
@@ -95,7 +94,7 @@ function M.run(ctx, config, profile, index, root)
         local post_link_cmd = profile.post_link(config.build_tree)
         if post_link_cmd ~= nil and post_link_cmd ~= "" then
             print(config.log_prefix_link .. " post-link: " .. post_link_cmd)
-            local post_code = shell.run(ctx, config.log_prefix_link, post_link_cmd)
+            local post_code = beez.shell.run(ctx, config.log_prefix_link, post_link_cmd)
             if post_code ~= 0 then
                 return post_code
             end

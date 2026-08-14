@@ -2,7 +2,12 @@ add_library(
     beez_plugin_lua STATIC
     lua_dsl.cpp
     api/beez_table.cpp
+    api/char/char_table.cpp
+    api/char/quote.cpp
     api/env/env.cpp
+    api/increment/increment_table.cpp
+    api/shell/run.cpp
+    api/shell/shell_table.cpp
     api/fs/fs_table.cpp
     api/fs/glob.cpp
     api/fs/exists.cpp
@@ -126,6 +131,11 @@ add_library(
 )
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+target_compile_definitions(
+    beez_plugin_lua
+    PRIVATE BEEZ_LUA_API_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/api"
+)
 
 target_link_libraries(
     beez_plugin_lua

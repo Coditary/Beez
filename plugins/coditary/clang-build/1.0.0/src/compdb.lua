@@ -1,5 +1,4 @@
 local command = require("src.command")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -13,7 +12,7 @@ local function load_index(config, root, ctx)
         return nil, 2
     end
 
-    local code = shell.run(ctx, config.log_prefix_compile, command.index(config, root))
+    local code = beez.shell.run(ctx, config.log_prefix_compile, command.index(config, root))
     if code ~= 0 then
         return nil, code
     end

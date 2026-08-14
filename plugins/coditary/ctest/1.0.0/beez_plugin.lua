@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local env = require("src.env")
 local step_config = require("src.step_config")
 
 local runner = require("src.runner")
@@ -11,7 +10,7 @@ local function resolve_build_tree(suite_name)
     end
 
     if suite.build_tree_from_build_type then
-        local build_type = env.env_or("BUILD_TYPE", "Release")
+        local build_type = beez.env_or("BUILD_TYPE", "Release")
         return "build/build/" .. build_type
     end
 
@@ -42,7 +41,7 @@ end
 
 local function build_outputs(suite_name)
     local suite = defaults.suites[suite_name]
-    local reports_dir = env.env_or("REPORTS_DIR", defaults.reports_dir)
+    local reports_dir = beez.env_or("REPORTS_DIR", defaults.reports_dir)
     local build_tree = resolve_build_tree(suite_name)
 
     if suite.report_outputs ~= nil then

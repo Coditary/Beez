@@ -1,6 +1,4 @@
 local defaults = require("src.defaults")
-local env = require("src.env")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -25,10 +23,10 @@ local function copy_string_array(values, fallback)
 end
 
 function M.resolve_profile_shell(config, root)
-    local script = shell.quote(root .. "/" .. config.profile_script)
+    local script = beez.char.quote(root .. "/" .. config.profile_script)
 
     if config.conan_profile ~= nil and config.conan_profile ~= "" then
-        return "CONAN_PROFILE=" .. shell.quote(config.conan_profile)
+        return "CONAN_PROFILE=" .. beez.char.quote(config.conan_profile)
     end
 
     return "CONAN_PROFILE=\"${CONAN_PROFILE:-$(" .. "bash " .. script .. ")}\""
@@ -44,7 +42,7 @@ local function resolve_build_type(profile, step_cfg)
     end
 
     if profile.build_type_env then
-        return env.env_or("BUILD_TYPE", "Release")
+        return beez.env_or("BUILD_TYPE", "Release")
     end
 
     return "Release"
@@ -104,14 +102,14 @@ function M.resolve_supply(config, root)
         conanfile = cfg.conanfile or defaults.conanfile,
         conan_binary = cfg.conan_binary or defaults.conan_binary,
         python_binary = cfg.python_binary or defaults.python_binary,
-        reports_dir = cfg.reports_dir or env.env_or("REPORTS_DIR", defaults.reports_dir),
+        reports_dir = cfg.reports_dir or beez.env_or("REPORTS_DIR", defaults.reports_dir),
         sbom_dir = cfg.sbom_dir or defaults.sbom_dir,
         graph_json = cfg.graph_json or defaults.graph_json,
         cyclonedx_json = cfg.cyclonedx_json or defaults.cyclonedx_json,
         lockfile = cfg.lockfile or defaults.lockfile,
         converter_script = cfg.converter_script or defaults.converter_script,
         profile_script = cfg.profile_script or defaults.profile_script,
-        conan_profile = cfg.conan_profile or env.env_or("CONAN_PROFILE", nil),
+        conan_profile = cfg.conan_profile or beez.env("CONAN_PROFILE"),
         log_prefix_graph = cfg.log_prefix_graph or defaults.log_prefix_graph,
         log_prefix_lock = cfg.log_prefix_lock or defaults.log_prefix_lock,
         log_prefix_sbom = cfg.log_prefix_sbom or defaults.log_prefix_sbom,
@@ -147,8 +145,8 @@ function M.resolve_build(step_cfg, root, profile_name)
             .. build_type
             .. "/generators"
         cmake_bootstrap_args = {
-            "-DCMAKE_TOOLCHAIN_FILE=" .. shell.quote(generators_dir .. "/conan_toolchain.cmake"),
-            "-DCMAKE_PREFIX_PATH=" .. shell.quote(generators_dir),
+            "-DCMAKE_TOOLCHAIN_FILE=" .. beez.char.quote(generators_dir .. "/conan_toolchain.cmake"),
+            "-DCMAKE_PREFIX_PATH=" .. beez.char.quote(generators_dir),
         }
     end
 
@@ -162,7 +160,7 @@ function M.resolve_build(step_cfg, root, profile_name)
         conan_output_folder = cfg.conan_output_folder or defaults.conan_output_folder,
         build_policy = cfg.build_policy or defaults.build_policy,
         profile_script = cfg.profile_script or defaults.profile_script,
-        conan_profile = cfg.conan_profile or env.env_or("CONAN_PROFILE", nil),
+        conan_profile = cfg.conan_profile or beez.env("CONAN_PROFILE"),
         conan_output_folder = cfg.conan_output_folder or defaults.conan_output_folder,
         build_type = build_type,
         build_tree = build_tree,

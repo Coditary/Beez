@@ -1,6 +1,3 @@
-local env = require("src.env")
-local shell = require("src.shell")
-
 local M = {}
 
 local COMPILER_PATTERN = "^(/usr/bin/)?(llvm-)?(clang|clang\\+\\+)(%+%+)?"
@@ -23,20 +20,20 @@ function M.replace_compiler(command, cxx, cc)
 end
 
 function M.compile(config, entry)
-    return "bash " .. shell.quote(entry.script)
+    return "bash " .. beez.char.quote(entry.script)
 end
 
 function M.link(config, link_entry)
-    return "bash " .. shell.quote(link_entry.script)
+    return "bash " .. beez.char.quote(link_entry.script)
 end
 
 function M.index(config, root)
     local script = root .. "/" .. config.index_script
     local parts = {
         config.python_binary,
-        shell.quote(script),
-        shell.quote(config.build_tree_abs),
-        shell.quote(config.build_tree_abs .. "/.beez-clang-index.lua"),
+        beez.char.quote(script),
+        beez.char.quote(config.build_tree_abs),
+        beez.char.quote(config.build_tree_abs .. "/.beez-clang-index.lua"),
     }
 
     return table.concat(parts, " ")

@@ -1,7 +1,6 @@
 local config = require("src.config")
 local command = require("src.command")
 local defaults = require("src.defaults")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -16,12 +15,12 @@ end
 
 local function run_graph(ctx, cfg)
     print(cfg.log_prefix_graph .. " exporting Conan dependency graph")
-    local code = shell.run(ctx, cfg.log_prefix_graph, command.mkdir_sbom_dir(cfg, ctx.project_root))
+    local code = beez.shell.run(ctx, cfg.log_prefix_graph, command.mkdir_sbom_dir(cfg, ctx.project_root))
     if code ~= 0 then
         return code
     end
 
-    return shell.run(ctx, cfg.log_prefix_graph, command.graph_info(cfg, ctx.project_root))
+    return beez.shell.run(ctx, cfg.log_prefix_graph, command.graph_info(cfg, ctx.project_root))
 end
 
 function M.graph_export(ctx)
@@ -41,7 +40,7 @@ function M.lock_create(ctx)
     local cfg = config.resolve_supply(step_cfg, ctx.project_root)
 
     print(cfg.log_prefix_lock .. " creating Conan lockfile")
-    local code = shell.run(ctx, cfg.log_prefix_lock, command.lock_create(cfg, ctx.project_root))
+    local code = beez.shell.run(ctx, cfg.log_prefix_lock, command.lock_create(cfg, ctx.project_root))
     if code == 0 then
         print(cfg.log_prefix_lock .. " written to " .. cfg.lockfile)
     end
@@ -59,7 +58,7 @@ function M.sbom_export(ctx)
     end
 
     print(cfg.log_prefix_sbom .. " converting graph to CycloneDX")
-    code = shell.run(ctx, cfg.log_prefix_sbom, command.cyclonedx_convert(cfg, ctx.project_root))
+    code = beez.shell.run(ctx, cfg.log_prefix_sbom, command.cyclonedx_convert(cfg, ctx.project_root))
     if code == 0 then
         print(cfg.log_prefix_sbom .. " written to " .. cfg.cyclonedx_json)
     end
@@ -73,7 +72,7 @@ function M.install(ctx)
     local cfg = config.resolve_build(step_cfg, ctx.project_root, profile_name)
 
     print(cfg.log_prefix_install .. " installing dependencies (" .. cfg.build_type .. ")")
-    return shell.run(ctx, cfg.log_prefix_install, command.install(cfg, ctx.project_root))
+    return beez.shell.run(ctx, cfg.log_prefix_install, command.install(cfg, ctx.project_root))
 end
 
 function M.configure(ctx, step_name)
@@ -96,7 +95,7 @@ function M.configure(ctx, step_name)
     end
 
     print(cfg.log_prefix_configure .. " " .. description)
-    return shell.run(ctx, cfg.log_prefix_configure, command.configure(cfg, ctx.project_root))
+    return beez.shell.run(ctx, cfg.log_prefix_configure, command.configure(cfg, ctx.project_root))
 end
 
 return M

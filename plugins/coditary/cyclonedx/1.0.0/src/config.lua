@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local shell = require("src.shell")
 
 local M = {}
 

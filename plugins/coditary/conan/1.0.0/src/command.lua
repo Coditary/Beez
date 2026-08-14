@@ -1,4 +1,3 @@
-local shell = require("src.shell")
 
 local M = {}
 
@@ -12,8 +11,8 @@ function M.install(config, root)
         "&&",
         config.conan_binary,
         "install",
-        shell.quote(config.conanfile),
-        "--output-folder=" .. shell.quote(config.conan_output_folder),
+        beez.char.quote(config.conanfile),
+        "--output-folder=" .. beez.char.quote(config.conan_output_folder),
         "--build=" .. config.build_policy,
         "-s build_type=" .. config.build_type,
         profile_pr_args(),
@@ -31,7 +30,7 @@ local function cmake_args_line(config, args)
 
     if config.build_tree ~= nil and config.build_tree ~= "" then
         parts[#parts + 1] = "-B"
-        parts[#parts + 1] = shell.quote(config.build_tree)
+        parts[#parts + 1] = beez.char.quote(config.build_tree)
     end
 
     if config.cmake_bootstrap_args ~= nil then
@@ -70,17 +69,17 @@ function M.codegen(config, root)
     local completions = root .. "/scripts/completions"
 
     return "mkdir -p "
-        .. shell.quote(completion_dir)
+        .. beez.char.quote(completion_dir)
         .. " && "
-        .. shell.quote(config.python_binary or "python3")
+        .. beez.char.quote(config.python_binary or "python3")
         .. " "
-        .. shell.quote(script)
+        .. beez.char.quote(script)
         .. " "
-        .. shell.quote(completions)
+        .. beez.char.quote(completions)
         .. " "
-        .. shell.quote(completion_cpp)
+        .. beez.char.quote(completion_cpp)
         .. " && clang-format -i "
-        .. shell.quote(completion_cpp)
+        .. beez.char.quote(completion_cpp)
 end
 
 function M.configure(config, root)
@@ -99,7 +98,7 @@ function M.build(config)
     local parts = {
         config.cmake_binary,
         "--build",
-        shell.quote(config.build_tree),
+        beez.char.quote(config.build_tree),
     }
 
     if config.build_target ~= nil and config.build_target ~= "" then
@@ -117,10 +116,10 @@ function M.graph_info(config, root)
         "&&",
         config.conan_binary,
         "graph info",
-        shell.quote(config.conanfile),
+        beez.char.quote(config.conanfile),
         profile_pr_args(),
         "--format=json",
-        "--out-file=" .. shell.quote(graph_path),
+        "--out-file=" .. beez.char.quote(graph_path),
     }
 
     return table.concat(parts, " ")
@@ -133,9 +132,9 @@ function M.lock_create(config, root)
         "&&",
         config.conan_binary,
         "lock create",
-        shell.quote(root .. "/" .. config.conanfile),
+        beez.char.quote(root .. "/" .. config.conanfile),
         profile_pr_args(),
-        "--lockfile-out=" .. shell.quote(lock_path),
+        "--lockfile-out=" .. beez.char.quote(lock_path),
     }
 
     return table.concat(parts, " ")
@@ -148,16 +147,16 @@ function M.cyclonedx_convert(config, root)
 
     local parts = {
         config.python_binary,
-        shell.quote(converter),
-        shell.quote(graph_path),
-        shell.quote(cyclonedx_path),
+        beez.char.quote(converter),
+        beez.char.quote(graph_path),
+        beez.char.quote(cyclonedx_path),
     }
 
     return table.concat(parts, " ")
 end
 
 function M.mkdir_sbom_dir(config, root)
-    return "mkdir -p " .. shell.quote(root .. "/" .. config.sbom_dir)
+    return "mkdir -p " .. beez.char.quote(root .. "/" .. config.sbom_dir)
 end
 
 return M

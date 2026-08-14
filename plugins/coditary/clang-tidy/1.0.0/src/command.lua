@@ -1,21 +1,17 @@
 local M = {}
 
-function M.quote(path)
-    return "'" .. path:gsub("'", "'\\''") .. "'"
-end
-
 function M.build(config, path)
     local parts = {
         config.binary,
         "-p",
-        M.quote(config.compdb),
-        M.quote(path),
-        "--header-filter=" .. M.quote(config.header_filter),
+        beez.char.quote(config.compdb),
+        beez.char.quote(path),
+        "--header-filter=" .. beez.char.quote(config.header_filter),
         "--use-color",
     }
 
     if config.checks ~= nil and config.checks ~= "" then
-        parts[#parts + 1] = "--checks=" .. M.quote(config.checks)
+        parts[#parts + 1] = "--checks=" .. beez.char.quote(config.checks)
     end
 
     for _, argument in ipairs(config.extra_args) do

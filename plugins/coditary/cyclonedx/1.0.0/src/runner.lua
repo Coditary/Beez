@@ -1,6 +1,5 @@
 local config = require("src.config")
 local command = require("src.command")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -18,7 +17,7 @@ function M.check(ctx)
     local cfg = config.resolve(step_cfg)
 
     print(cfg.log_prefix_check .. " validating " .. cfg.cyclonedx_json)
-    return shell.run(ctx, cfg.log_prefix_check, command.check(cfg, ctx.project_root))
+    return beez.shell.run(ctx, cfg.log_prefix_check, command.check(cfg, ctx.project_root))
 end
 
 function M.merge(ctx)
@@ -31,7 +30,7 @@ function M.merge(ctx)
         print("  - " .. input)
     end
 
-    local code = shell.run(ctx, cfg.log_prefix_merge, command.mkdir_sbom_dir(cfg, root))
+    local code = beez.shell.run(ctx, cfg.log_prefix_merge, command.mkdir_sbom_dir(cfg, root))
     if code ~= 0 then
         return code
     end
@@ -43,7 +42,7 @@ function M.merge(ctx)
         merge_cmd = command.merge_python(cfg, root)
     end
 
-    code = shell.run(ctx, cfg.log_prefix_merge, merge_cmd)
+    code = beez.shell.run(ctx, cfg.log_prefix_merge, merge_cmd)
     if code == 0 then
         print(cfg.log_prefix_merge .. " written to " .. cfg.merged_json)
     end

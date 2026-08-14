@@ -1,5 +1,4 @@
 local defaults = require("src.defaults")
-local env = require("src.env")
 
 local M = {}
 
@@ -33,7 +32,7 @@ function M.resolve_build_tree(suite, step_cfg)
     end
 
     if suite.build_tree_from_build_type then
-        local build_type = step_cfg.build_type or env.env_or("BUILD_TYPE", "Release")
+        local build_type = step_cfg.build_type or beez.env_or("BUILD_TYPE", "Release")
         return "build/build/" .. build_type
     end
 
@@ -47,7 +46,7 @@ function M.resolve(step_cfg, suite_name)
         error("unknown ctest suite: " .. tostring(suite_name))
     end
 
-    local reports_dir = cfg.reports_dir or env.env_or("REPORTS_DIR", defaults.reports_dir)
+    local reports_dir = cfg.reports_dir or beez.env_or("REPORTS_DIR", defaults.reports_dir)
     local build_tree = M.resolve_build_tree(suite, cfg)
 
     return {

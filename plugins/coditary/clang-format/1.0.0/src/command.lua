@@ -1,9 +1,5 @@
 local M = {}
 
-function M.quote(path)
-    return "'" .. path:gsub("'", "'\\''") .. "'"
-end
-
 function M.build(config, path, mode)
     local parts = { config.binary }
 
@@ -28,7 +24,7 @@ function M.build(config, path, mode)
         parts[#parts + 1] = "-i"
     end
 
-    parts[#parts + 1] = M.quote(path)
+    parts[#parts + 1] = beez.char.quote(path)
     return table.concat(parts, " ")
 end
 

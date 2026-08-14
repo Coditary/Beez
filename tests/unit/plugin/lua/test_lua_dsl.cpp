@@ -756,6 +756,21 @@ task("bad-env-or", "echo " .. beez.env_or("only"))
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
+TEST(LuaDslTest, BeezCharQuoteEscapesSingleQuotes)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("quote-path", "echo " .. beez.char.quote("it's fine"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "quote-path");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo 'it'\\''s fine'");
+}
+
 TEST(LuaDslTest, BeezEnvDoesNotReadDotEnvUntilCalled)
 {
     const beez::test::TempProject Project;

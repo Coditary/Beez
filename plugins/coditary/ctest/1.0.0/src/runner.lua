@@ -1,7 +1,6 @@
 local config = require("src.config")
 local command = require("src.command")
 local defaults = require("src.defaults")
-local shell = require("src.shell")
 
 local M = {}
 
@@ -42,7 +41,7 @@ function M.run(ctx, step_name)
     local root = ctx.project_root
 
     print(cfg.log_prefix .. " " .. suite.description)
-    return shell.run(ctx, cfg.log_prefix, build_command(cfg, root))
+    return beez.shell.run(ctx, cfg.log_prefix, build_command(cfg, root))
 end
 
 return M
