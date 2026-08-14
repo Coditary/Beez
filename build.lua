@@ -69,7 +69,7 @@ task("clean_reports", "rm -rf " .. REPORTS_DIR)
 
 step({
     name = "clean:artifacts",
-    phase = "clean",
+    phase = "setup",
     scope = "repo",
     description = "Remove build tree, reports, and caches",
     run = "rm -rf build " .. REPORTS_DIR .. " .cache",

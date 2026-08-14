@@ -32,7 +32,7 @@ local function compile_step_def(step_name, profile_name)
     local build_tree = resolve_profile_build_tree(profile_name)
 
     return {
-        phase = "build",
+        phase = "compile",
         scope = profile.scope,
         input = profile.compile_inputs,
         output = resolve_outputs(profile, build_tree),
@@ -53,7 +53,7 @@ local function link_step_def(step_name, profile_name)
     end
 
     return {
-        phase = "build",
+        phase = "bundle",
         scope = profile.scope,
         input = {
             build_tree .. "/.beez-clang-index.lua",

@@ -1,76 +1,98 @@
 -- Reusable staged workflows for Beez C++ projects.
 -- Import in build.lua via workflows({ build = "coditary/pipeline:build", ... }).
+-- All workflows use the standard stage names: setup, generate, quality, compile,
+-- bundle, test, package, verify, publish.
 
 plugin("pipeline", {
     version = "1.0.0",
-    description = "Standard staged workflows (build, quality, coverage, fuzz, …)",
+    description = "Standard staged workflows (build, quality, coverage, fuzz, standard, …)",
     organization = "coditary",
     steps = {},
 })
 
 workflows {
     build = {
-        { "configure", { "configure[code]" } },
-        { "build", { "build[code]" } },
+        { "setup", { "setup[code]" } },
+        { "compile", { "compile[code]" } },
+        { "bundle", { "bundle[code]" } },
         { "test", { "test[code]" } },
     },
 
     quality = {
-        { "code", { "qa[code]" } },
-        { "supply", { "qa[supply]" } },
+        { "quality", { "quality[code]" } },
+        { "package", { "package[supply]" } },
+        { "verify", { "verify[supply]" } },
     },
 
     debug = {
-        { "configure", { "configure[debug]" } },
-        { "build", { "build[debug]" } },
+        { "setup", { "setup[debug]" } },
+        { "compile", { "compile[debug]" } },
+        { "bundle", { "bundle[debug]" } },
     },
 
     coverage = {
-        { "configure", { "configure[coverage]" } },
-        { "build", { "build[coverage]" } },
+        { "setup", { "setup[coverage]" } },
+        { "compile", { "compile[coverage]" } },
         { "test", { "test[coverage]" } },
-        { "report", { "report[coverage]" } },
+        { "package", { "package[coverage]" } },
     },
 
     sanitize = {
-        { "configure", { "configure[sanitize]" } },
-        { "build", { "build[sanitize]" } },
+        { "setup", { "setup[sanitize]" } },
+        { "compile", { "compile[sanitize]" } },
         { "test", { "test[sanitize]" } },
     },
 
     tsan = {
-        { "configure", { "configure[tsan]" } },
-        { "build", { "build[tsan]" } },
+        { "setup", { "setup[tsan]" } },
+        { "compile", { "compile[tsan]" } },
         { "test", { "test[tsan]" } },
     },
 
     fuzzer_smoke = {
-        { "configure", { "configure[fuzz]" } },
-        { "build", { "build[fuzz]" } },
-        { "fuzz", { "fuzz[smoke]" } },
+        { "setup", { "setup[fuzz]" } },
+        { "compile", { "compile[fuzz]" } },
+        { "bundle", { "bundle[fuzz]" } },
+        { "test", { "test[smoke]" } },
     },
 
     fuzzer_corpus = {
-        { "configure", { "configure[fuzz]" } },
-        { "build", { "build[fuzz]" } },
-        { "fuzz", { "fuzz[corpus]" } },
+        { "setup", { "setup[fuzz]" } },
+        { "compile", { "compile[fuzz]" } },
+        { "bundle", { "bundle[fuzz]" } },
+        { "test", { "test[corpus]" } },
     },
 
     fuzzer_torture = {
-        { "configure", { "configure[fuzz]" } },
-        { "build", { "build[fuzz]" } },
-        { "fuzz", { "fuzz[torture]" } },
+        { "setup", { "setup[fuzz]" } },
+        { "compile", { "compile[fuzz]" } },
+        { "bundle", { "bundle[fuzz]" } },
+        { "test", { "test[torture]" } },
     },
 
     all = {
-        { "build", { "configure[code]", "build[code]", "test[code]" } },
-        { "quality", { "qa[code]", "qa[supply]" } },
-        { "coverage", { "configure[coverage]", "build[coverage]", "test[coverage]", "report[coverage]" } },
-        { "sanitize", { "configure[sanitize]", "build[sanitize]", "test[sanitize]" } },
-        { "fuzz", { "configure[fuzz]", "build[fuzz]", "fuzz[smoke]" } },
+        { "setup", { "setup[code]", "setup[coverage]", "setup[sanitize]", "setup[fuzz]" } },
+        { "compile", { "compile[code]", "compile[coverage]", "compile[sanitize]", "compile[fuzz]" } },
+        { "bundle", { "bundle[code]", "bundle[coverage]", "bundle[sanitize]", "bundle[fuzz]" } },
+        { "test", { "test[code]", "test[coverage]", "test[sanitize]", "test[smoke]" } },
+        { "quality", { "quality[code]" } },
+        { "package", { "package[supply]", "package[coverage]" } },
+        { "verify", { "verify[supply]" } },
     },
 
     clean = {
-        { "clean", { "clean[repo]" } },
+        { "setup", { "setup[repo]" } },
+    },
+
+    standard = {
+        { "setup", { "setup" } },
+        { "generate", { "generate" } },
+        { "quality", { "quality" } },
+        { "compile", { "compile" } },
+        { "bundle", { "bundle" } },
+        { "test", { "test" } },
+        { "package", { "package" } },
+        { "verify", { "verify" } },
+        { "publish", { "publish" } },
     },
 }

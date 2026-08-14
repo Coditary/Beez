@@ -125,10 +125,16 @@ workflow("release", {
     { "prepare", { "clean[artifacts]" } },
 }))lua",
      true},
+    {"workflow.staged_valid_unscoped",
+     R"lua(step({ name = "s", phase = "setup", scope = "default", run = "true" })
+workflow("standard", {
+    { "setup", { "setup" } },
+}))lua",
+     true},
     {"workflow.staged_invalid_reference",
      R"lua(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
 workflow("release", {
-    { "prepare", { "clean-artifacts" } },
+    { "prepare", { "[artifacts]" } },
 }))lua",
      false},
 };

@@ -145,12 +145,22 @@ PhaseInvocation parsePhaseColonReference(const std::string& reference)
 
 PhaseInvocation parseWorkflowPhaseReference(const std::string& reference)
 {
+    if (reference.empty())
+    {
+        throw std::runtime_error("workflow phase reference must not be empty");
+    }
+
     if (reference.find('[') != std::string::npos)
     {
         return parsePhaseScopeReference(reference);
     }
 
-    return parsePhaseColonReference(reference);
+    if (reference.find(':') != std::string::npos)
+    {
+        return parsePhaseColonReference(reference);
+    }
+
+    return PhaseInvocation {.phase = reference, .scope = {}};
 }
 
 ScopedReference parseScopedReference(const std::string& reference)

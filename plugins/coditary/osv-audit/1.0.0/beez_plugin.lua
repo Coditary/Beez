@@ -29,7 +29,7 @@ plugin("osv-audit", {
 
     steps = {
         osv_audit_check = {
-            phase = "qa",
+            phase = "verify",
             scope = "supply",
             input = {
                 defaults.lockfile,

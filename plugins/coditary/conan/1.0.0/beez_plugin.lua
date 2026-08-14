@@ -34,7 +34,7 @@ local function configure_step_def(step_name, profile_name)
     end
 
     return {
-        phase = "configure",
+        phase = "setup",
         scope = profile.scope,
         input = profile.configure_inputs,
         output = configure_outputs,
@@ -48,7 +48,7 @@ end
 
 local plugin_steps = {
     conan_graph_export = {
-        phase = "qa",
+        phase = "package",
         scope = "supply-graph",
         input = defaults.input_patterns,
         output = { defaults.graph_json },
@@ -60,7 +60,7 @@ local plugin_steps = {
     },
 
     conan_lock_create = {
-        phase = "qa",
+        phase = "package",
         scope = "supply",
         input = defaults.input_patterns,
         output = { defaults.lockfile },
@@ -72,7 +72,7 @@ local plugin_steps = {
     },
 
     conan_sbom_export = {
-        phase = "qa",
+        phase = "package",
         scope = "supply",
         input = defaults.input_patterns,
         output = {
@@ -87,7 +87,7 @@ local plugin_steps = {
     },
 
     conan_install = {
-        phase = "configure",
+        phase = "setup",
         scope = "conan",
         input = defaults.input_patterns,
         output = { defaults.conan_output_folder .. "//**" },

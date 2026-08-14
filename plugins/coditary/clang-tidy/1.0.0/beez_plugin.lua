@@ -43,7 +43,7 @@ plugin("clang-tidy", {
 
     steps = {
         check = {
-            phase = "qa",
+            phase = "quality",
             scope = "code",
             input = defaults.patterns_all,
             description = "clang-tidy check (configurable profiles or checks)",
@@ -54,7 +54,7 @@ plugin("clang-tidy", {
         },
 
         lint_check = {
-            phase = "qa",
+            phase = "quality",
             scope = "lint",
             input = defaults.patterns_all,
             description = "clang-tidy lint (incremental)",
@@ -65,7 +65,7 @@ plugin("clang-tidy", {
         },
 
         analyze_check = {
-            phase = "qa",
+            phase = "quality",
             scope = "analyze",
             input = defaults.patterns_src_cpp,
             description = "clang-tidy analyzer checks (incremental)",
@@ -76,7 +76,7 @@ plugin("clang-tidy", {
         },
 
         security_check = {
-            phase = "qa",
+            phase = "verify",
             scope = "security",
             input = defaults.patterns_security,
             description = "clang-tidy security checks (incremental)",

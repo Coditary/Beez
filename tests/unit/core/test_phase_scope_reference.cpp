@@ -13,6 +13,13 @@ TEST(PhaseScopeReferenceTest, ParsesColonAndBracketForms)
     EXPECT_EQ(Bracket.scope, "code");
 }
 
+TEST(PhaseScopeReferenceTest, ParsesUnscopedWorkflowPhaseReference)
+{
+    const auto Unscoped = beez::core::parseWorkflowPhaseReference("setup");
+    EXPECT_EQ(Unscoped.phase, "setup");
+    EXPECT_TRUE(Unscoped.scope.empty());
+}
+
 TEST(PhaseScopeReferenceTest, ParsesScopedReference)
 {
     const auto Unscoped = beez::core::parseScopedReference("configure");

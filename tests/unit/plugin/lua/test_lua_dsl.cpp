@@ -392,6 +392,40 @@ workflow("release", {
     EXPECT_EQ(Found->stages[1].name, "compile");
 }
 
+TEST(LuaDslTest, LoadsStagedWorkflowWithUnscopedReferences)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "setup-default", phase = "setup", scope = "default", run = "true" })
+step({ name = "setup-extra", phase = "setup", scope = "extra", run = "true" })
+step({ name = "compile-default", phase = "compile", scope = "default", run = "true" })
+workflow("standard", {
+    { "setup", { "setup" } },
+    { "compile", { "compile" } },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireWorkflow(registry, "standard");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Found->isStaged());
+    ASSERT_EQ(Found->stages.size(), 2U);
+    EXPECT_EQ(Found->stages[0].name, "setup");
+    ASSERT_EQ(Found->stages[0].invocations.size(), 1U);
+    EXPECT_EQ(Found->stages[0].invocations[0].phase, "setup");
+    EXPECT_TRUE(Found->stages[0].invocations[0].scope.empty());
+    EXPECT_EQ(Found->stages[1].name, "compile");
+    EXPECT_EQ(Found->stages[1].invocations[0].phase, "compile");
+    EXPECT_TRUE(Found->stages[1].invocations[0].scope.empty());
+}
+
 TEST(LuaDslTest, RejectsMixedStagedAndLegacyWorkflowEntries)
 {
     const beez::test::TempProject Project;

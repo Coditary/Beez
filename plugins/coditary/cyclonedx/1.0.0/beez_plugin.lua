@@ -30,7 +30,7 @@ plugin("cyclonedx", {
 
     steps = {
         cyclonedx_check = {
-            phase = "qa",
+            phase = "package",
             scope = "supply",
             input = { defaults.cyclonedx_json },
             output = { defaults.cyclonedx_json },
@@ -42,7 +42,7 @@ plugin("cyclonedx", {
         },
 
         cyclonedx_merge = {
-            phase = "qa",
+            phase = "package",
             scope = "supply",
             input = defaults.default_merge_inputs,
             output = { defaults.merged_json },

@@ -90,7 +90,7 @@ core::WorkflowStage parseWorkflowStage(const std::string& workflowName, const so
             if (!value.is<std::string>())
             {
                 throw std::runtime_error("workflow '" + workflowName + "' stage '" + stageName +
-                                         "' entries must be phase[scope] strings");
+                                         "' entries must be phase[scope] or unscoped phase strings");
             }
 
             stage.invocations.push_back(core::parseWorkflowPhaseReference(value.as<std::string>()));

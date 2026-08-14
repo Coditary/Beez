@@ -1396,3 +1396,97 @@ task("build", {
     beez::core::Registry registry;
     EXPECT_FALSE(loadScript(Project, registry));
 }
+
+TEST(LuaDslPluginTest, PipelineStandardWorkflowDefinesUnscopedStages)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/pipeline/1.0.0",
+                          R"(
+plugin("pipeline", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    standard = {
+        { "setup", { "setup" } },
+        { "generate", { "generate" } },
+        { "quality", { "quality" } },
+        { "compile", { "compile" } },
+        { "bundle", { "bundle" } },
+        { "test", { "test" } },
+        { "package", { "package" } },
+        { "verify", { "verify" } },
+        { "publish", { "publish" } },
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/pipeline",
+            path = "./plugins/coditary/pipeline",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    ASSERT_TRUE(registry.pluginWorkflows().contains("coditary/pipeline:standard"));
+    const auto& Workflow = registry.pluginWorkflows().at("coditary/pipeline:standard");
+    ASSERT_TRUE(Workflow.isStaged());
+    ASSERT_EQ(Workflow.stages.size(), 9U);
+
+    const std::vector<std::string> ExpectedStages = {
+        "setup", "generate", "quality", "compile", "bundle", "test", "package", "verify", "publish",
+    };
+    for (std::size_t index = 0; index < ExpectedStages.size(); ++index)
+    {
+        EXPECT_EQ(Workflow.stages[index].name, ExpectedStages[index]);
+        ASSERT_EQ(Workflow.stages[index].invocations.size(), 1U);
+        EXPECT_EQ(Workflow.stages[index].invocations[0].phase, ExpectedStages[index]);
+        EXPECT_TRUE(Workflow.stages[index].invocations[0].scope.empty());
+    }
+}
+
+TEST(LuaDslPluginTest, RejectsImportedPluginWorkflowWithoutMatchingSteps)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/pipeline/1.0.0",
+                          R"(
+plugin("pipeline", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    standard = {
+        { "setup", { "setup" } },
+    },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/pipeline",
+            path = "./plugins/coditary/pipeline",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    standard = "coditary/pipeline:standard",
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}

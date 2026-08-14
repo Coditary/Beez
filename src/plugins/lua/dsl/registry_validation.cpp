@@ -75,43 +75,21 @@ void validateLoadedRegistry(core::Registry& registry,
         for (const auto& workflowStep : ExecutionSteps)
         {
             const auto& invocation = workflowStep.invocation;
-            const auto Matched = registry.stepsForPhase(invocation.phase, invocation.scope);
+            const std::string Scope =
+                invocation.scope.empty() ? "*" : invocation.scope;
+            const auto Matched = registry.stepsForPhase(invocation.phase, Scope);
             if (!Matched.hasValue())
             {
                 throw std::runtime_error("workflow '" + workflowName +
                                          "' step ordering failed for phase '" + invocation.phase +
-                                         "' scope '" + invocation.scope + "'");
+                                         "' scope '" + Scope + "'");
             }
 
             if (Matched.value().empty())
             {
                 throw std::runtime_error("workflow '" + workflowName +
                                          "' has no registered steps for phase '" +
-                                         invocation.phase + "' scope '" + invocation.scope + "'");
-            }
-        }
-    }
-
-    for (const auto& [pluginWorkflowKey, workflow] : registry.pluginWorkflows())
-    {
-        (void)pluginWorkflowKey;
-        const auto ExecutionSteps = core::resolveWorkflowExecutionSteps(workflow);
-        for (const auto& workflowStep : ExecutionSteps)
-        {
-            const auto& invocation = workflowStep.invocation;
-            const auto Matched = registry.stepsForPhase(invocation.phase, invocation.scope);
-            if (!Matched.hasValue())
-            {
-                throw std::runtime_error("plugin workflow '" + workflow.name +
-                                         "' step ordering failed for phase '" + invocation.phase +
-                                         "' scope '" + invocation.scope + "'");
-            }
-
-            if (Matched.value().empty())
-            {
-                throw std::runtime_error("plugin workflow '" + workflow.name +
-                                         "' has no registered steps for phase '" +
-                                         invocation.phase + "' scope '" + invocation.scope + "'");
+                                         invocation.phase + "' scope '" + Scope + "'");
             }
         }
     }
