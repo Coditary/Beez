@@ -51,9 +51,7 @@ sol::object copyLuaObject(const std::shared_ptr<sol::state>& luaState, const sol
         sol::table copy = luaState->create_table();
         value.as<sol::table>().for_each(
             [&copy, luaState](const sol::object& key, const sol::object& entry)
-            {
-                copy[copyLuaObject(luaState, key)] = copyLuaObject(luaState, entry);
-            });
+            { copy[copyLuaObject(luaState, key)] = copyLuaObject(luaState, entry); });
         return sol::make_object(*luaState, copy);
     }
 
@@ -74,9 +72,7 @@ sol::table mergeTables(const std::shared_ptr<sol::state>& luaState,
 {
     sol::table merged = shallowCopyTable(luaState, base);
     overlay.for_each([&merged, luaState](const sol::object& key, const sol::object& value)
-                     {
-                         merged[copyLuaObject(luaState, key)] = copyLuaObject(luaState, value);
-                     });
+                     { merged[copyLuaObject(luaState, key)] = copyLuaObject(luaState, value); });
     return merged;
 }
 

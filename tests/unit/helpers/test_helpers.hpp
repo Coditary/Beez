@@ -123,9 +123,8 @@ inline const core::TaskInvocationAction* taskInvocationAt(const core::Task& task
     return std::get_if<core::TaskInvocationAction>(task.actions.data() + index);
 }
 
-inline void expectTaskInvocation(const core::Task& task,
-                                 std::size_t index,
-                                 const std::string& expectedTaskName)
+inline void
+expectTaskInvocation(const core::Task& task, std::size_t index, const std::string& expectedTaskName)
 {
     const auto* invocation = taskInvocationAt(task, index);
     ASSERT_NE(invocation, nullptr);

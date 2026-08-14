@@ -58,6 +58,7 @@ add_executable(
     plugin/lua/test_lua_dsl_plugins.cpp
     plugin/lua/test_lua_dsl_fields.cpp
     plugin/lua/test_reqpack_dsl.cpp
+    plugin/lua/test_reqpack_beez_plugin_catalog.cpp
     plugin/lua/test_lua_settings.cpp
     plugin/lua/api/test_fs.cpp
     plugin/lua/api/test_crypto.cpp

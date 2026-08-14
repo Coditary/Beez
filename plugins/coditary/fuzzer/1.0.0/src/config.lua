@@ -25,6 +25,7 @@ function M.resolve(step_cfg, run_name)
         fuzzer_bin = cfg.fuzzer_bin or defaults.fuzzer_bin,
         fuzzer_time = fuzzer_time,
         fuzzer_profile = cfg.fuzzer_profile or run.fuzzer_profile,
+        fuzzer_rss_limit_mb = cfg.fuzzer_rss_limit_mb or env.env_or("FUZZER_RSS_LIMIT_MB", nil),
         mode = cfg.mode or run.mode or "script",
         needs_dict = run.needs_dict,
         log_prefix = cfg.log_prefix or run.log_prefix,

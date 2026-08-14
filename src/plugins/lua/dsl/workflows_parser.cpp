@@ -22,9 +22,8 @@ void validatePluginWorkflowReference(const std::string& reference,
     if (reqpackBeezPlugins != nullptr && !reqpackBeezPlugins->empty() &&
         !reqpackBeezPlugins->find(ParsedReference.organization, ParsedReference.plugin).has_value())
     {
-        throw std::runtime_error("workflows reference '" + reference +
-                                 "' references plugin '" + ParsedReference.organization + '/' +
-                                 ParsedReference.plugin +
+        throw std::runtime_error("workflows reference '" + reference + "' references plugin '" +
+                                 ParsedReference.organization + '/' + ParsedReference.plugin +
                                  "' which is not declared in reqpack.beez");
     }
 }

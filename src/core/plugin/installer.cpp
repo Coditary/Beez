@@ -41,7 +41,7 @@ resolveInstalledBeezPluginScript(const std::optional<std::string>& organization,
 }
 
 std::optional<std::string> resolveInstalledBeezPluginOrganization(const std::string& name,
-                                                                const std::string& version)
+                                                                  const std::string& version)
 {
     const auto PluginRoot = beezPluginRoot();
     if (PluginRoot.empty())
@@ -62,8 +62,7 @@ std::optional<std::string> resolveInstalledBeezPluginOrganization(const std::str
             continue;
         }
 
-        const auto ScriptPath =
-            organizationEntry.path() / name / version / "beez_plugin.lua";
+        const auto ScriptPath = organizationEntry.path() / name / version / "beez_plugin.lua";
         if (std::filesystem::is_regular_file(ScriptPath, errorCode) && !errorCode)
         {
             return organizationEntry.path().filename().string();
@@ -101,8 +100,8 @@ BeezPluginInstallResult ensureBeezPluginInstalled(const std::optional<std::strin
     if (CommandResult.exitCode != 0)
     {
         std::ostringstream stream;
-        stream << "failed to install beez plugin '" << *organization << '/' << name << '@' << version
-               << "' (exit code " << CommandResult.exitCode << ')';
+        stream << "failed to install beez plugin '" << *organization << '/' << name << '@'
+               << version << "' (exit code " << CommandResult.exitCode << ')';
         if (!CommandResult.output.empty())
         {
             stream << "\n" << CommandResult.output;

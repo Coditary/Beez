@@ -53,7 +53,7 @@ end
 --   fuzz:torture      — long run (FUZZER_TORTURE_TIME, default 300s)
 --   fuzz:seeds        — regenerate seeds (scope seeds, not in default workflows)
 --
--- Env: FUZZER_TIME, FUZZER_TORTURE_TIME, REPORTS_DIR
+-- Env: FUZZER_TIME, FUZZER_TORTURE_TIME, FUZZER_RSS_LIMIT_MB, REPORTS_DIR
 --
 -- reqpack {
 --     beez = {

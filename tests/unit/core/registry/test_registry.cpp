@@ -449,11 +449,8 @@ TEST(RegistryTest, InstalledPluginVersionKeepsVersionedAliasesOnly)
     compileStep.phase = "build";
     compileStep.scope = "code";
     compileStep.shellRun = "echo versioned";
-    registry.registerPluginStep(std::move(compileStep),
-                                "coditary",
-                                "clang-build",
-                                std::string {"1.0.0"},
-                                false);
+    registry.registerPluginStep(
+        std::move(compileStep), "coditary", "clang-build", std::string {"1.0.0"}, false);
 
     const auto Versioned = registry.resolveStep("clang-build:compile@1.0.0");
     ASSERT_TRUE(Versioned.hasValue());

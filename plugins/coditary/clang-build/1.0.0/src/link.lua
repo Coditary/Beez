@@ -91,6 +91,17 @@ function M.run(ctx, config, profile, index, root)
         end
     end
 
+    if profile.post_link ~= nil then
+        local post_link_cmd = profile.post_link(config.build_tree)
+        if post_link_cmd ~= nil and post_link_cmd ~= "" then
+            print(config.log_prefix_link .. " post-link: " .. post_link_cmd)
+            local post_code = shell.run(ctx, config.log_prefix_link, post_link_cmd)
+            if post_code ~= 0 then
+                return post_code
+            end
+        end
+    end
+
     return 0
 end
 

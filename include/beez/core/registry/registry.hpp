@@ -34,9 +34,7 @@ class Registry
     void registerPluginWorkflow(Workflow workflow,
                                 const std::string& organization,
                                 const std::string& plugin);
-    void registerPluginTask(Task task,
-                            const std::string& organization,
-                            const std::string& plugin);
+    void registerPluginTask(Task task, const std::string& organization, const std::string& plugin);
     [[nodiscard]] Workflow resolvePluginWorkflowReference(const std::string& reference) const;
     [[nodiscard]] Task resolvePluginTaskReference(const std::string& reference) const;
     void registerWorkflowFromPluginReference(const std::string& localName,
@@ -50,7 +48,8 @@ class Registry
 
     [[nodiscard]] std::optional<Task> findTask(const std::string& name) const;
     [[nodiscard]] std::optional<Step> findStep(const std::string& name) const;
-    [[nodiscard]] Expected<Step, StepResolutionFailure> resolveStep(const std::string& reference) const;
+    [[nodiscard]] Expected<Step, StepResolutionFailure>
+    resolveStep(const std::string& reference) const;
     [[nodiscard]] Expected<std::string, StepResolutionFailure>
     resolveStepRegistrationId(const std::string& reference) const;
     [[nodiscard]] std::vector<std::string> stepInvocationNames() const;
@@ -83,7 +82,8 @@ class Registry
     [[nodiscard]] bool hasPluginSteps(const std::string& organization,
                                       const std::string& plugin) const;
 
-    [[nodiscard]] const std::unordered_map<std::string, StepConfigPtr>& configuredPluginConfigs() const
+    [[nodiscard]] const std::unordered_map<std::string, StepConfigPtr>&
+    configuredPluginConfigs() const
     {
         return pendingPluginConfigs_;
     }

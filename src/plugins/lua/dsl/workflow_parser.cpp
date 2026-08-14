@@ -68,7 +68,8 @@ core::WorkflowStep parseWorkflowStep(const sol::table& stepTable)
            InvocationsValue.is<sol::table>();
 }
 
-core::WorkflowStage parseWorkflowStage(const std::string& workflowName, const sol::table& stageTable)
+core::WorkflowStage parseWorkflowStage(const std::string& workflowName,
+                                       const sol::table& stageTable)
 {
     const sol::object StageNameValue = stageTable[1];
     const sol::object InvocationsValue = stageTable[2];
@@ -80,7 +81,7 @@ core::WorkflowStage parseWorkflowStage(const std::string& workflowName, const so
 
     InvocationsTable.for_each(
         [&workflowName, &stageName = stage.name, &stage](const sol::object& key,
-                                                          const sol::object& value)
+                                                         const sol::object& value)
         {
             if (!key.is<int>())
             {
@@ -89,8 +90,9 @@ core::WorkflowStage parseWorkflowStage(const std::string& workflowName, const so
 
             if (!value.is<std::string>())
             {
-                throw std::runtime_error("workflow '" + workflowName + "' stage '" + stageName +
-                                         "' entries must be phase[scope] or unscoped phase strings");
+                throw std::runtime_error(
+                    "workflow '" + workflowName + "' stage '" + stageName +
+                    "' entries must be phase[scope] or unscoped phase strings");
             }
 
             stage.invocations.push_back(core::parseWorkflowPhaseReference(value.as<std::string>()));
@@ -142,16 +144,15 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
 
     stepsTable.for_each(
         [&workflow, &name, &stagedFormat, &stageNames](const sol::object& /*key*/,
-                                                         const sol::object& value)
+                                                       const sol::object& value)
         {
             if (!value.is<sol::table>())
             {
                 if (value.is<std::string>())
                 {
                     ensureWorkflowFormat(name, stagedFormat, false);
-                    workflow.steps.push_back(
-                        core::WorkflowStep {.invocation = core::parseWorkflowPhaseReference(
-                                                value.as<std::string>())});
+                    workflow.steps.push_back(core::WorkflowStep {
+                        .invocation = core::parseWorkflowPhaseReference(value.as<std::string>())});
                     return;
                 }
 
@@ -168,10 +169,8 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
             if (isStagedWorkflowEntry(EntryTable))
             {
                 ensureWorkflowFormat(name, stagedFormat, true);
-                registerWorkflowStage(name,
-                                      workflow,
-                                      stageNames,
-                                      parseWorkflowStage(name, EntryTable));
+                registerWorkflowStage(
+                    name, workflow, stageNames, parseWorkflowStage(name, EntryTable));
                 return;
             }
 

@@ -15,6 +15,10 @@ local function env_exports(config)
         parts[#parts + 1] = "FUZZER_PROFILE=" .. shell.quote(config.fuzzer_profile)
     end
 
+    if config.fuzzer_rss_limit_mb ~= nil and config.fuzzer_rss_limit_mb ~= "" then
+        parts[#parts + 1] = "FUZZER_RSS_LIMIT_MB=" .. shell.quote(config.fuzzer_rss_limit_mb)
+    end
+
     return table.concat(parts, " ")
 end
 

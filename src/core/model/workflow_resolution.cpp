@@ -1,5 +1,8 @@
 #include "beez/core/model/workflow_resolution.hpp"
 
+#include <algorithm>
+#include <iterator>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -13,15 +16,8 @@ namespace
 
 [[nodiscard]] bool containsStage(const Workflow& workflow, const std::string& stageName)
 {
-    for (const WorkflowStage& stage : workflow.stages)
-    {
-        if (stage.name == stageName)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of(workflow.stages,
+                               [&](const WorkflowStage& stage) { return stage.name == stageName; });
 }
 
 }  // namespace
@@ -54,10 +50,10 @@ resolveWorkflowExecutionSteps(const Workflow& workflow,
     std::vector<WorkflowStep> resolved;
     for (const WorkflowStage& stage : workflow.stages)
     {
-        for (const PhaseInvocation& invocation : stage.invocations)
-        {
-            resolved.push_back(WorkflowStep {.invocation = invocation});
-        }
+        std::ranges::transform(stage.invocations,
+                               std::back_inserter(resolved),
+                               [](const PhaseInvocation& invocation)
+                               { return WorkflowStep {.invocation = invocation}; });
 
         if (targetStage.has_value() && stage.name == *targetStage)
         {

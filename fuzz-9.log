@@ -1,0 +1,769 @@
+INFO: found LLVMFuzzerCustomMutator (0x4d05e8). Disabling -len_control by default.
+Dictionary: 286 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 962597329
+INFO: Loaded 1 modules   (4931 inline 8-bit counters): 4931 [0x1494dbc, 0x14960ff), 
+INFO: Loaded 1 PC tables (4931 PCs): 4931 [0x11acb48,0x11bff78), 
+INFO:     2272 files found in report/fuzz/corpus/lua_dsl
+INFO: seed corpus: files: 2272 min: 1b max: 65536b total: 4554433b rss: 31Mb
+#2048	pulse  cov: 1656 ft: 6058 corp: 388/44Kb exec/s: 1024 rss: 460Mb
+#2252	INITED cov: 1656 ft: 6332 corp: 486/2402Kb exec/s: 1126 rss: 509Mb
+#2253	NEW    cov: 1656 ft: 6338 corp: 487/2402Kb lim: 65536 exec/s: 1126 rss: 509Mb L: 65/65536 MS: 2 CrossOver-Custom-
+#2260	NEW    cov: 1656 ft: 6338 corp: 487/2402Kb lim: 65536 exec/s: 1130 rss: 511Mb L: 2/65536 MS: 3 EraseBytes-Custom-CustomCrossOver-
+#2261	NEW    cov: 1656 ft: 6338 corp: 485/2402Kb lim: 65536 exec/s: 1130 rss: 511Mb L: 4/65536 MS: 2 ManualDict-Custom- DE: "CC"-
+#2262	NEW    cov: 1656 ft: 6338 corp: 485/2402Kb lim: 65536 exec/s: 1131 rss: 511Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2263	NEW    cov: 1656 ft: 6338 corp: 483/2401Kb lim: 65536 exec/s: 1131 rss: 511Mb L: 42/65536 MS: 1 CustomCrossOver-
+#2264	NEW    cov: 1656 ft: 6341 corp: 483/2341Kb lim: 65536 exec/s: 1132 rss: 511Mb L: 725/65536 MS: 2 EraseBytes-Custom-
+#2265	NEW    cov: 1656 ft: 6341 corp: 484/2341Kb lim: 65536 exec/s: 1132 rss: 512Mb L: 3/65536 MS: 2 PersAutoDict-Custom- DE: "CC"-
+#2266	NEW    cov: 1656 ft: 6341 corp: 482/2317Kb lim: 65536 exec/s: 1133 rss: 512Mb L: 23/65536 MS: 1 CustomCrossOver-
+#2267	NEW    cov: 1656 ft: 6341 corp: 483/2317Kb lim: 65536 exec/s: 1133 rss: 512Mb L: 47/65536 MS: 2 CopyPart-Custom-
+#2268	NEW    cov: 1656 ft: 6341 corp: 482/2316Kb lim: 65536 exec/s: 1134 rss: 512Mb L: 3/65536 MS: 1 CustomCrossOver-
+#2275	NEW    cov: 1656 ft: 6341 corp: 482/2316Kb lim: 65536 exec/s: 1137 rss: 514Mb L: 18/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2286	NEW    cov: 1656 ft: 6341 corp: 483/2316Kb lim: 65536 exec/s: 1143 rss: 516Mb L: 19/65536 MS: 2 CrossOver-Custom-
+#2297	NEW    cov: 1656 ft: 6341 corp: 483/2316Kb lim: 65536 exec/s: 1148 rss: 519Mb L: 1/65536 MS: 2 ChangeByte-Custom-
+#2298	NEW    cov: 1656 ft: 6341 corp: 482/2316Kb lim: 65536 exec/s: 1149 rss: 519Mb L: 56/65536 MS: 2 PersAutoDict-Custom- DE: "CC"-
+#2303	NEW    cov: 1656 ft: 6341 corp: 483/2316Kb lim: 65536 exec/s: 1151 rss: 520Mb L: 11/65536 MS: 7 ShuffleBytes-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver-ManualDict-Custom- DE: "outputs"-
+#2304	NEW    cov: 1656 ft: 6341 corp: 484/2316Kb lim: 65536 exec/s: 1152 rss: 520Mb L: 18/65536 MS: 1 CustomCrossOver-
+#2305	NEW    cov: 1656 ft: 6342 corp: 485/2376Kb lim: 65536 exec/s: 1152 rss: 521Mb L: 61529/65536 MS: 1 CustomCrossOver-
+#2306	NEW    cov: 1656 ft: 6342 corp: 485/2373Kb lim: 65536 exec/s: 1153 rss: 521Mb L: 80/65536 MS: 2 CrossOver-Custom-
+#2312	NEW    cov: 1656 ft: 6343 corp: 486/2373Kb lim: 65536 exec/s: 1156 rss: 522Mb L: 609/65536 MS: 2 CopyPart-Custom-
+#2314	NEW    cov: 1656 ft: 6343 corp: 486/2373Kb lim: 65536 exec/s: 1157 rss: 523Mb L: 2/65536 MS: 3 PersAutoDict-Custom-CustomCrossOver- DE: "CC"-
+#2316	NEW    cov: 1656 ft: 6343 corp: 487/2373Kb lim: 65536 exec/s: 1158 rss: 523Mb L: 12/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2318	NEW    cov: 1656 ft: 6343 corp: 487/2333Kb lim: 65536 exec/s: 1159 rss: 524Mb L: 24575/65536 MS: 3 ChangeBinInt-Custom-CustomCrossOver-
+#2323	NEW    cov: 1656 ft: 6343 corp: 487/2325Kb lim: 65536 exec/s: 1161 rss: 525Mb L: 130/65536 MS: 9 CopyPart-Custom-CMP-Custom-ChangeBit-Custom-CustomCrossOver-ChangeByte-Custom- DE: "sol.so"-
+#2324	NEW    cov: 1656 ft: 6343 corp: 488/2325Kb lim: 65536 exec/s: 1162 rss: 525Mb L: 2/65536 MS: 2 ChangeBinInt-Custom-
+#2325	NEW    cov: 1656 ft: 6343 corp: 488/2325Kb lim: 65536 exec/s: 1162 rss: 525Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2335	NEW    cov: 1656 ft: 6343 corp: 488/2325Kb lim: 65536 exec/s: 1167 rss: 528Mb L: 65/65536 MS: 8 CustomCrossOver-InsertByte-Custom-CMP-Custom-ShuffleBytes-Custom-CustomCrossOver- DE: "~\377\377\377\377\377\377\376"-
+#2339	NEW    cov: 1656 ft: 6343 corp: 489/2325Kb lim: 65536 exec/s: 1169 rss: 528Mb L: 3/65536 MS: 7 CustomCrossOver-CopyPart-Custom-CopyPart-Custom-CopyPart-Custom-
+#2340	NEW    cov: 1656 ft: 6343 corp: 489/2325Kb lim: 65536 exec/s: 1170 rss: 529Mb L: 8/65536 MS: 1 CustomCrossOver-
+#2341	NEW    cov: 1656 ft: 6343 corp: 489/2325Kb lim: 65536 exec/s: 1170 rss: 529Mb L: 10/65536 MS: 2 PersAutoDict-Custom- DE: "~\377\377\377\377\377\377\376"-
+#2348	NEW    cov: 1656 ft: 6344 corp: 490/2333Kb lim: 65536 exec/s: 1174 rss: 531Mb L: 8585/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2349	NEW    cov: 1656 ft: 6346 corp: 491/2334Kb lim: 65536 exec/s: 1174 rss: 531Mb L: 33/65536 MS: 1 CustomCrossOver-
+#2350	NEW    cov: 1656 ft: 6348 corp: 492/2334Kb lim: 65536 exec/s: 1175 rss: 531Mb L: 18/65536 MS: 2 ChangeBit-Custom-
+#2351	NEW    cov: 1656 ft: 6348 corp: 492/2333Kb lim: 65536 exec/s: 1175 rss: 531Mb L: 2955/65536 MS: 1 CustomCrossOver-
+#2352	NEW    cov: 1656 ft: 6348 corp: 493/2333Kb lim: 65536 exec/s: 1176 rss: 531Mb L: 9/65536 MS: 2 CrossOver-Custom-
+#2354	NEW    cov: 1656 ft: 6348 corp: 491/2272Kb lim: 65536 exec/s: 1177 rss: 532Mb L: 334/65536 MS: 3 CustomCrossOver-CopyPart-Custom-
+#2355	NEW    cov: 1656 ft: 6351 corp: 492/2335Kb lim: 65536 exec/s: 1177 rss: 532Mb L: 65411/65536 MS: 2 ChangeASCIIInt-Custom-
+#2356	NEW    cov: 1656 ft: 6351 corp: 491/2335Kb lim: 65536 exec/s: 1178 rss: 532Mb L: 1/65536 MS: 1 CustomCrossOver-
+#2358	NEW    cov: 1656 ft: 6352 corp: 492/2337Kb lim: 65536 exec/s: 1179 rss: 532Mb L: 1280/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2359	NEW    cov: 1656 ft: 6352 corp: 490/2337Kb lim: 65536 exec/s: 1179 rss: 533Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2361	NEW    cov: 1656 ft: 6358 corp: 489/2337Kb lim: 65536 exec/s: 1180 rss: 533Mb L: 2/65536 MS: 4 ChangeByte-Custom-CrossOver-Custom-
+#2362	NEW    cov: 1656 ft: 6361 corp: 490/2345Kb lim: 65536 exec/s: 1181 rss: 533Mb L: 8191/65536 MS: 2 ChangeBit-Custom-
+#2363	NEW    cov: 1656 ft: 6365 corp: 490/2343Kb lim: 65536 exec/s: 1181 rss: 533Mb L: 252/65536 MS: 2 CrossOver-Custom-
+#2364	NEW    cov: 1656 ft: 6366 corp: 491/2354Kb lim: 65536 exec/s: 1182 rss: 534Mb L: 11135/65536 MS: 2 CopyPart-Custom-
+#2368	NEW    cov: 1656 ft: 6366 corp: 492/2354Kb lim: 65536 exec/s: 1184 rss: 535Mb L: 2/65536 MS: 7 ChangeByte-Custom-CopyPart-Custom-CopyPart-Custom-CustomCrossOver-
+#2369	NEW    cov: 1656 ft: 6366 corp: 492/2354Kb lim: 65536 exec/s: 1184 rss: 535Mb L: 30/65536 MS: 2 ShuffleBytes-Custom-
+#2370	NEW    cov: 1656 ft: 6369 corp: 493/2354Kb lim: 65536 exec/s: 1185 rss: 535Mb L: 3/65536 MS: 1 CustomCrossOver-
+#2371	NEW    cov: 1656 ft: 6369 corp: 493/2354Kb lim: 65536 exec/s: 1185 rss: 535Mb L: 11/65536 MS: 1 CustomCrossOver-
+#2373	NEW    cov: 1656 ft: 6369 corp: 493/2353Kb lim: 65536 exec/s: 1186 rss: 536Mb L: 125/65536 MS: 3 CustomCrossOver-InsertRepeatedBytes-Custom-
+#2375	NEW    cov: 1656 ft: 6369 corp: 494/2353Kb lim: 65536 exec/s: 1187 rss: 536Mb L: 7/65536 MS: 4 ChangeBit-Custom-PersAutoDict-Custom- DE: "sol.so"-
+#2378	NEW    cov: 1656 ft: 6375 corp: 495/2417Kb lim: 65536 exec/s: 1189 rss: 537Mb L: 65284/65536 MS: 5 InsertRepeatedBytes-Custom-InsertRepeatedBytes-Custom-CustomCrossOver-
+#2384	NEW    cov: 1656 ft: 6376 corp: 496/2439Kb lim: 65536 exec/s: 1192 rss: 538Mb L: 22813/65536 MS: 1 CustomCrossOver-
+#2385	NEW    cov: 1656 ft: 6376 corp: 496/2439Kb lim: 65536 exec/s: 1192 rss: 539Mb L: 12/65536 MS: 1 CustomCrossOver-
+#2387	NEW    cov: 1656 ft: 6376 corp: 496/2439Kb lim: 65536 exec/s: 1193 rss: 539Mb L: 67/65536 MS: 3 CopyPart-Custom-CustomCrossOver-
+#2393	NEW    cov: 1656 ft: 6376 corp: 496/2439Kb lim: 65536 exec/s: 1196 rss: 540Mb L: 82/65536 MS: 2 CopyPart-Custom-
+#2394	NEW    cov: 1656 ft: 6376 corp: 497/2439Kb lim: 65536 exec/s: 1197 rss: 541Mb L: 5/65536 MS: 2 CMP-Custom- DE: "\377\377\377\377"-
+#2396	NEW    cov: 1656 ft: 6377 corp: 498/2503Kb lim: 65536 exec/s: 1198 rss: 541Mb L: 65517/65536 MS: 4 ManualDict-Custom-ChangeByte-Custom- DE: "mask_secrets"-
+#2397	NEW    cov: 1656 ft: 6377 corp: 498/2503Kb lim: 65536 exec/s: 1198 rss: 541Mb L: 2/65536 MS: 2 InsertByte-Custom-
+#2413	NEW    cov: 1656 ft: 6377 corp: 497/2503Kb lim: 65536 exec/s: 1206 rss: 545Mb L: 18/65536 MS: 1 CustomCrossOver-
+#2414	NEW    cov: 1656 ft: 6377 corp: 497/2500Kb lim: 65536 exec/s: 1207 rss: 545Mb L: 8579/65536 MS: 1 CustomCrossOver-
+#2415	NEW    cov: 1656 ft: 6377 corp: 497/2500Kb lim: 65536 exec/s: 1207 rss: 545Mb L: 4/65536 MS: 2 ShuffleBytes-Custom-
+#2419	NEW    cov: 1656 ft: 6377 corp: 495/2500Kb lim: 65536 exec/s: 1209 rss: 546Mb L: 2/65536 MS: 6 CustomCrossOver-InsertRepeatedBytes-Custom-CopyPart-Custom-CustomCrossOver-
+#2421	NEW    cov: 1656 ft: 6377 corp: 496/2501Kb lim: 65536 exec/s: 1210 rss: 547Mb L: 626/65536 MS: 4 ChangeBinInt-Custom-EraseBytes-Custom-
+#2422	NEW    cov: 1656 ft: 6380 corp: 496/2500Kb lim: 65536 exec/s: 1211 rss: 547Mb L: 7/65536 MS: 1 CustomCrossOver-
+#2424	NEW    cov: 1656 ft: 6380 corp: 495/2500Kb lim: 65536 exec/s: 1212 rss: 547Mb L: 3/65536 MS: 4 InsertByte-Custom-InsertByte-Custom-
+#2425	NEW    cov: 1656 ft: 6380 corp: 496/2500Kb lim: 65536 exec/s: 1212 rss: 547Mb L: 27/65536 MS: 2 CopyPart-Custom-
+#2432	NEW    cov: 1656 ft: 6380 corp: 496/2500Kb lim: 65536 exec/s: 1216 rss: 549Mb L: 2/65536 MS: 3 InsertByte-Custom-CustomCrossOver-
+#2433	NEW    cov: 1656 ft: 6386 corp: 497/2500Kb lim: 65536 exec/s: 1216 rss: 549Mb L: 119/65536 MS: 2 ChangeByte-Custom-
+#2434	NEW    cov: 1656 ft: 6386 corp: 496/2500Kb lim: 65536 exec/s: 1217 rss: 549Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2436	NEW    cov: 1656 ft: 6386 corp: 497/2500Kb lim: 65536 exec/s: 1218 rss: 550Mb L: 3/65536 MS: 3 CrossOver-Custom-CustomCrossOver-
+#2437	NEW    cov: 1656 ft: 6386 corp: 498/2500Kb lim: 65536 exec/s: 1218 rss: 550Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2444	NEW    cov: 1656 ft: 6386 corp: 498/2492Kb lim: 65536 exec/s: 1222 rss: 552Mb L: 18/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2445	NEW    cov: 1656 ft: 6387 corp: 498/2470Kb lim: 65536 exec/s: 1222 rss: 552Mb L: 252/65536 MS: 2 InsertByte-Custom-
+#2446	NEW    cov: 1656 ft: 6387 corp: 498/2470Kb lim: 65536 exec/s: 1223 rss: 552Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2450	NEW    cov: 1656 ft: 6391 corp: 499/2470Kb lim: 65536 exec/s: 1225 rss: 553Mb L: 16/65536 MS: 7 CustomCrossOver-ChangeBinInt-Custom-ManualDict-Custom-CrossOver-Custom- DE: "list"-
+#2451	NEW    cov: 1656 ft: 6393 corp: 500/2470Kb lim: 65536 exec/s: 1225 rss: 553Mb L: 39/65536 MS: 1 CustomCrossOver-
+#2455	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1227 rss: 554Mb L: 12410/65536 MS: 7 ChangeBinInt-Custom-EraseBytes-Custom-CustomCrossOver-PersAutoDict-Custom- DE: "list"-
+#2456	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1228 rss: 554Mb L: 10/65536 MS: 2 ShuffleBytes-Custom-
+#2458	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1229 rss: 555Mb L: 7/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2459	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1229 rss: 555Mb L: 7/65536 MS: 1 CustomCrossOver-
+#2460	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1230 rss: 555Mb L: 34/65536 MS: 2 ChangeBinInt-Custom-
+#2466	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1233 rss: 556Mb L: 5/65536 MS: 2 CMP-Custom- DE: "\000\021"-
+#2467	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1233 rss: 557Mb L: 35/65536 MS: 2 CMP-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#2483	NEW    cov: 1656 ft: 6393 corp: 500/2456Kb lim: 65536 exec/s: 1241 rss: 560Mb L: 3/65536 MS: 1 CustomCrossOver-
+#2497	NEW    cov: 1656 ft: 6393 corp: 499/2453Kb lim: 65536 exec/s: 1248 rss: 563Mb L: 110/65536 MS: 7 InsertByte-Custom-InsertByte-Custom-CustomCrossOver-InsertRepeatedBytes-Custom-
+#2499	NEW    cov: 1656 ft: 6393 corp: 500/2453Kb lim: 65536 exec/s: 1249 rss: 564Mb L: 36/65536 MS: 3 CustomCrossOver-InsertByte-Custom-
+#2502	NEW    cov: 1656 ft: 6394 corp: 501/2454Kb lim: 65536 exec/s: 1251 rss: 565Mb L: 1130/65536 MS: 6 CMP-Custom-InsertRepeatedBytes-Custom-CopyPart-Custom- DE: "to_l"-
+#2520	NEW    cov: 1656 ft: 6396 corp: 501/2454Kb lim: 65536 exec/s: 1260 rss: 569Mb L: 3/65536 MS: 5 EraseBytes-Custom-InsertRepeatedBytes-Custom-CustomCrossOver-
+#2521	NEW    cov: 1656 ft: 6397 corp: 502/2454Kb lim: 65536 exec/s: 1260 rss: 569Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2522	NEW    cov: 1656 ft: 6397 corp: 503/2454Kb lim: 65536 exec/s: 1261 rss: 570Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2527	NEW    cov: 1656 ft: 6398 corp: 504/2454Kb lim: 65536 exec/s: 1263 rss: 571Mb L: 2/65536 MS: 7 PersAutoDict-Custom-CustomCrossOver-CustomCrossOver-ShuffleBytes-Custom-CustomCrossOver- DE: "\001\000\000\000\000\000\000\000"-
+#2530	NEW    cov: 1656 ft: 6398 corp: 504/2454Kb lim: 65536 exec/s: 1265 rss: 571Mb L: 1/65536 MS: 5 InsertRepeatedBytes-Custom-InsertByte-Custom-CustomCrossOver-
+#2532	NEW    cov: 1656 ft: 6398 corp: 505/2454Kb lim: 65536 exec/s: 1266 rss: 571Mb L: 24/65536 MS: 3 CrossOver-Custom-CustomCrossOver-
+#2534	NEW    cov: 1656 ft: 6398 corp: 506/2454Kb lim: 65536 exec/s: 1267 rss: 572Mb L: 5/65536 MS: 3 ManualDict-Custom-CustomCrossOver- DE: "errors"-
+#2535	NEW    cov: 1656 ft: 6398 corp: 507/2454Kb lim: 65536 exec/s: 1267 rss: 572Mb L: 1/65536 MS: 1 CustomCrossOver-
+#2536	NEW    cov: 1656 ft: 6398 corp: 507/2454Kb lim: 65536 exec/s: 1268 rss: 572Mb L: 1/65536 MS: 1 CustomCrossOver-
+#2537	NEW    cov: 1656 ft: 6398 corp: 508/2454Kb lim: 65536 exec/s: 1268 rss: 572Mb L: 110/65536 MS: 2 InsertByte-Custom-
+#2541	NEW    cov: 1656 ft: 6399 corp: 509/2454Kb lim: 65536 exec/s: 1270 rss: 573Mb L: 92/65536 MS: 8 EraseBytes-Custom-CrossOver-Custom-ManualDict-Custom-InsertByte-Custom- DE: "references"-
+#2544	NEW    cov: 1656 ft: 6399 corp: 510/2455Kb lim: 65536 exec/s: 1272 rss: 574Mb L: 509/65536 MS: 5 CopyPart-Custom-CustomCrossOver-CMP-Custom- DE: "\030\000"-
+#2550	NEW    cov: 1656 ft: 6399 corp: 511/2455Kb lim: 65536 exec/s: 1275 rss: 575Mb L: 3/65536 MS: 1 CustomCrossOver-
+#2552	NEW    cov: 1656 ft: 6399 corp: 511/2454Kb lim: 65536 exec/s: 1276 rss: 575Mb L: 35/65536 MS: 3 ChangeBinInt-Custom-CustomCrossOver-
+#2555	NEW    cov: 1656 ft: 6399 corp: 512/2454Kb lim: 65536 exec/s: 1277 rss: 576Mb L: 4/65536 MS: 4 ChangeASCIIInt-Custom-CustomCrossOver-CustomCrossOver-
+#2556	NEW    cov: 1656 ft: 6403 corp: 513/2455Kb lim: 65536 exec/s: 1278 rss: 576Mb L: 271/65536 MS: 2 CrossOver-Custom-
+#2557	NEW    cov: 1656 ft: 6405 corp: 513/2455Kb lim: 65536 exec/s: 1278 rss: 576Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2568	NEW    cov: 1656 ft: 6405 corp: 513/2455Kb lim: 65536 exec/s: 1284 rss: 579Mb L: 33/65536 MS: 2 ShuffleBytes-Custom-
+#2571	NEW    cov: 1656 ft: 6405 corp: 513/2439Kb lim: 65536 exec/s: 1285 rss: 579Mb L: 10065/65536 MS: 4 CustomCrossOver-CustomCrossOver-CrossOver-Custom-
+#2575	NEW    cov: 1656 ft: 6405 corp: 513/2439Kb lim: 65536 exec/s: 1287 rss: 580Mb L: 17/65536 MS: 5 CustomCrossOver-CustomCrossOver-CustomCrossOver-CopyPart-Custom-
+#2576	NEW    cov: 1656 ft: 6405 corp: 511/2439Kb lim: 65536 exec/s: 1288 rss: 580Mb L: 14/65536 MS: 2 InsertByte-Custom-
+#2582	NEW    cov: 1656 ft: 6405 corp: 512/2463Kb lim: 65536 exec/s: 1291 rss: 582Mb L: 24575/65536 MS: 1 CustomCrossOver-
+#2587	NEW    cov: 1656 ft: 6405 corp: 512/2463Kb lim: 65536 exec/s: 1293 rss: 583Mb L: 4/65536 MS: 8 ChangeByte-Custom-CustomCrossOver-ChangeBinInt-Custom-CopyPart-Custom-CustomCrossOver-
+#2588	NEW    cov: 1656 ft: 6405 corp: 513/2463Kb lim: 65536 exec/s: 1294 rss: 583Mb L: 13/65536 MS: 2 InsertByte-Custom-
+#2589	NEW    cov: 1656 ft: 6406 corp: 514/2463Kb lim: 65536 exec/s: 1294 rss: 583Mb L: 95/65536 MS: 1 CustomCrossOver-
+#2596	NEW    cov: 1656 ft: 6406 corp: 513/2463Kb lim: 65536 exec/s: 1298 rss: 585Mb L: 3/65536 MS: 3 ChangeBit-Custom-CustomCrossOver-
+#2597	NEW    cov: 1656 ft: 6406 corp: 514/2463Kb lim: 65536 exec/s: 1298 rss: 585Mb L: 2/65536 MS: 2 ShuffleBytes-Custom-
+#2608	NEW    cov: 1656 ft: 6406 corp: 515/2463Kb lim: 65536 exec/s: 1304 rss: 587Mb L: 1/65536 MS: 2 EraseBytes-Custom-
+#2619	NEW    cov: 1656 ft: 6406 corp: 515/2463Kb lim: 65536 exec/s: 1309 rss: 590Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2620	NEW    cov: 1656 ft: 6406 corp: 516/2463Kb lim: 65536 exec/s: 1310 rss: 590Mb L: 16/65536 MS: 1 CustomCrossOver-
+#2621	NEW    cov: 1656 ft: 6406 corp: 515/2463Kb lim: 65536 exec/s: 1310 rss: 590Mb L: 32/65536 MS: 2 ShuffleBytes-Custom-
+#2622	NEW    cov: 1656 ft: 6406 corp: 516/2463Kb lim: 65536 exec/s: 1311 rss: 590Mb L: 2/65536 MS: 2 CopyPart-Custom-
+#2623	NEW    cov: 1656 ft: 6407 corp: 517/2463Kb lim: 65536 exec/s: 1311 rss: 590Mb L: 1/65536 MS: 2 ChangeByte-Custom-
+#2624	NEW    cov: 1656 ft: 6407 corp: 517/2463Kb lim: 65536 exec/s: 1312 rss: 591Mb L: 34/65536 MS: 1 CustomCrossOver-
+#2645	NEW    cov: 1656 ft: 6407 corp: 517/2463Kb lim: 65536 exec/s: 1322 rss: 595Mb L: 6/65536 MS: 2 CMP-Custom- DE: "join"-
+#2646	NEW    cov: 1656 ft: 6407 corp: 518/2463Kb lim: 65536 exec/s: 1323 rss: 595Mb L: 2/65536 MS: 2 InsertByte-Custom-
+#2648	NEW    cov: 1656 ft: 6407 corp: 519/2463Kb lim: 65536 exec/s: 1324 rss: 596Mb L: 2/65536 MS: 3 PersAutoDict-Custom-CustomCrossOver- DE: "CC"-
+#2652	NEW    cov: 1656 ft: 6407 corp: 518/2463Kb lim: 65536 exec/s: 1326 rss: 597Mb L: 2/65536 MS: 6 CustomCrossOver-InsertRepeatedBytes-Custom-CMP-Custom-CustomCrossOver- DE: "fs"-
+#2653	NEW    cov: 1656 ft: 6407 corp: 519/2525Kb lim: 65536 exec/s: 1326 rss: 597Mb L: 63568/65536 MS: 2 ManualDict-Custom- DE: "and"-
+#2669	NEW    cov: 1656 ft: 6407 corp: 520/2525Kb lim: 65536 exec/s: 1334 rss: 601Mb L: 6/65536 MS: 1 CustomCrossOver-
+#2680	NEW    cov: 1656 ft: 6407 corp: 519/2525Kb lim: 65536 exec/s: 1340 rss: 603Mb L: 29/65536 MS: 1 CustomCrossOver-
+#2698	NEW    cov: 1656 ft: 6407 corp: 520/2525Kb lim: 65536 exec/s: 1349 rss: 607Mb L: 8/65536 MS: 6 ChangeBit-Custom-ChangeByte-Custom-EraseBytes-Custom-
+#2705	NEW    cov: 1656 ft: 6407 corp: 519/2525Kb lim: 65536 exec/s: 1352 rss: 609Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2716	NEW    cov: 1656 ft: 6407 corp: 520/2525Kb lim: 65536 exec/s: 1358 rss: 612Mb L: 26/65536 MS: 2 CopyPart-Custom-
+#2721	NEW    cov: 1656 ft: 6408 corp: 521/2525Kb lim: 65536 exec/s: 1360 rss: 612Mb L: 2/65536 MS: 8 CustomCrossOver-ChangeBit-Custom-InsertRepeatedBytes-Custom-EraseBytes-Custom-CustomCrossOver-
+#2733	NEW    cov: 1656 ft: 6408 corp: 522/2526Kb lim: 65536 exec/s: 1366 rss: 615Mb L: 1055/65536 MS: 3 CustomCrossOver-ChangeASCIIInt-Custom-
+#2734	NEW    cov: 1656 ft: 6408 corp: 522/2515Kb lim: 65536 exec/s: 1367 rss: 616Mb L: 1325/65536 MS: 1 CustomCrossOver-
+#2735	NEW    cov: 1656 ft: 6408 corp: 523/2515Kb lim: 65536 exec/s: 1367 rss: 616Mb L: 3/65536 MS: 2 CopyPart-Custom-
+#2746	NEW    cov: 1656 ft: 6408 corp: 524/2515Kb lim: 65536 exec/s: 1373 rss: 618Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2748	NEW    cov: 1656 ft: 6408 corp: 524/2515Kb lim: 65536 exec/s: 1374 rss: 618Mb L: 11/65536 MS: 3 ShuffleBytes-Custom-CustomCrossOver-
+#2749	NEW    cov: 1656 ft: 6408 corp: 525/2515Kb lim: 65536 exec/s: 1374 rss: 618Mb L: 2/65536 MS: 2 EraseBytes-Custom-
+#2757	NEW    cov: 1656 ft: 6408 corp: 525/2515Kb lim: 65536 exec/s: 1378 rss: 620Mb L: 32/65536 MS: 6 ManualDict-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom- DE: "length"-
+#2777	NEW    cov: 1656 ft: 6408 corp: 525/2510Kb lim: 65536 exec/s: 1388 rss: 625Mb L: 3934/65536 MS: 10 ManualDict-Custom-ChangeASCIIInt-Custom-EraseBytes-Custom-CMP-Custom-PersAutoDict-Custom- DE: "\\r"-"sol.sol::"-"errors"-
+#2783	NEW    cov: 1656 ft: 6408 corp: 526/2534Kb lim: 65536 exec/s: 1391 rss: 627Mb L: 24576/65536 MS: 2 ChangeByte-Custom-
+#2791	NEW    cov: 1656 ft: 6408 corp: 526/2534Kb lim: 65536 exec/s: 930 rss: 628Mb L: 2/65536 MS: 3 CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#2792	NEW    cov: 1656 ft: 6408 corp: 527/2534Kb lim: 65536 exec/s: 930 rss: 629Mb L: 22/65536 MS: 2 PersAutoDict-Custom- DE: "to_l"-
+#2795	NEW    cov: 1656 ft: 6408 corp: 527/2534Kb lim: 65536 exec/s: 931 rss: 629Mb L: 18/65536 MS: 4 CustomCrossOver-ShuffleBytes-Custom-CustomCrossOver-
+#2796	NEW    cov: 1656 ft: 6408 corp: 527/2534Kb lim: 65536 exec/s: 932 rss: 630Mb L: 38/65536 MS: 2 CopyPart-Custom-
+#2797	NEW    cov: 1656 ft: 6409 corp: 528/2534Kb lim: 65536 exec/s: 932 rss: 630Mb L: 115/65536 MS: 1 CustomCrossOver-
+#2818	NEW    cov: 1656 ft: 6409 corp: 528/2534Kb lim: 65536 exec/s: 939 rss: 634Mb L: 2/65536 MS: 1 CustomCrossOver-
+#2821	NEW    cov: 1656 ft: 6409 corp: 528/2531Kb lim: 65536 exec/s: 940 rss: 635Mb L: 183/65536 MS: 6 CrossOver-Custom-CrossOver-Custom-InsertRepeatedBytes-Custom-
+#2834	NEW    cov: 1656 ft: 6409 corp: 528/2531Kb lim: 65536 exec/s: 944 rss: 637Mb L: 43/65536 MS: 6 ManualDict-Custom-ManualDict-Custom-InsertByte-Custom- DE: "BEEZ_ENV"-"mmap_hashing_min_bytes"-
+#2847	NEW    cov: 1656 ft: 6409 corp: 529/2531Kb lim: 65536 exec/s: 949 rss: 640Mb L: 24/65536 MS: 5 EraseBytes-Custom-CustomCrossOver-CrossOver-Custom-
+#2850	NEW    cov: 1656 ft: 6409 corp: 529/2531Kb lim: 65536 exec/s: 950 rss: 641Mb L: 1/65536 MS: 6 PersAutoDict-Custom-ChangeByte-Custom-EraseBytes-Custom- DE: "\\r"-
+#2867	NEW    cov: 1656 ft: 6409 corp: 530/2531Kb lim: 65536 exec/s: 955 rss: 645Mb L: 4/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2879	NEW    cov: 1656 ft: 6409 corp: 531/2532Kb lim: 65536 exec/s: 959 rss: 647Mb L: 9/65536 MS: 3 ChangeBit-Custom-CustomCrossOver-
+#2887	NEW    cov: 1656 ft: 6410 corp: 532/2532Kb lim: 65536 exec/s: 962 rss: 649Mb L: 207/65536 MS: 4 CrossOver-Custom-CustomCrossOver-CustomCrossOver-
+#2890	NEW    cov: 1656 ft: 6410 corp: 531/2532Kb lim: 65536 exec/s: 963 rss: 650Mb L: 10/65536 MS: 4 ChangeByte-Custom-CustomCrossOver-CustomCrossOver-
+#2891	NEW    cov: 1656 ft: 6410 corp: 532/2535Kb lim: 65536 exec/s: 963 rss: 650Mb L: 3648/65536 MS: 2 ChangeByte-Custom-
+#2893	NEW    cov: 1656 ft: 6411 corp: 533/2535Kb lim: 65536 exec/s: 964 rss: 651Mb L: 51/65536 MS: 3 ChangeBit-Custom-CustomCrossOver-
+#2922	NEW    cov: 1656 ft: 6411 corp: 534/2535Kb lim: 65536 exec/s: 974 rss: 657Mb L: 2/65536 MS: 5 ShuffleBytes-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#2935	NEW    cov: 1656 ft: 6411 corp: 534/2535Kb lim: 65536 exec/s: 978 rss: 660Mb L: 2/65536 MS: 5 InsertByte-Custom-ShuffleBytes-Custom-CustomCrossOver-
+#2936	NEW    cov: 1656 ft: 6412 corp: 535/2535Kb lim: 65536 exec/s: 978 rss: 660Mb L: 11/65536 MS: 2 CrossOver-Custom-
+#2938	NEW    cov: 1656 ft: 6413 corp: 535/2535Kb lim: 65536 exec/s: 979 rss: 660Mb L: 3/65536 MS: 4 InsertByte-Custom-ChangeBit-Custom-
+#2945	NEW    cov: 1656 ft: 6413 corp: 536/2536Kb lim: 65536 exec/s: 981 rss: 662Mb L: 514/65536 MS: 3 ManualDict-Custom-CustomCrossOver- DE: "task-"-
+#2954	NEW    cov: 1656 ft: 6413 corp: 537/2536Kb lim: 65536 exec/s: 984 rss: 664Mb L: 2/65536 MS: 6 ManualDict-Custom-ChangeASCIIInt-Custom-CustomCrossOver-CustomCrossOver- DE: "require"-
+#2968	NEW    cov: 1656 ft: 6413 corp: 537/2536Kb lim: 65536 exec/s: 989 rss: 667Mb L: 28/65536 MS: 8 EraseBytes-Custom-InsertByte-Custom-PersAutoDict-Custom-ChangeBit-Custom- DE: "to_l"-
+#2974	NEW    cov: 1656 ft: 6413 corp: 535/2534Kb lim: 65536 exec/s: 991 rss: 668Mb L: 16/65536 MS: 1 CustomCrossOver-
+#2976	NEW    cov: 1656 ft: 6413 corp: 535/2534Kb lim: 65536 exec/s: 992 rss: 669Mb L: 107/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#2992	NEW    cov: 1656 ft: 6413 corp: 535/2534Kb lim: 65536 exec/s: 997 rss: 672Mb L: 4/65536 MS: 1 CustomCrossOver-
+#2994	NEW    cov: 1656 ft: 6413 corp: 535/2533Kb lim: 65536 exec/s: 998 rss: 673Mb L: 22382/65536 MS: 3 CustomCrossOver-EraseBytes-Custom-
+#2997	NEW    cov: 1656 ft: 6413 corp: 536/2533Kb lim: 65536 exec/s: 999 rss: 673Mb L: 4/65536 MS: 3 CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#2998	NEW    cov: 1656 ft: 6413 corp: 535/2473Kb lim: 65536 exec/s: 999 rss: 674Mb L: 18/65536 MS: 1 CustomCrossOver-
+#3049	NEW    cov: 1656 ft: 6414 corp: 536/2473Kb lim: 65536 exec/s: 1016 rss: 684Mb L: 3/65536 MS: 2 ChangeBit-Custom-
+#3050	NEW    cov: 1656 ft: 6414 corp: 536/2473Kb lim: 65536 exec/s: 1016 rss: 684Mb L: 9/65536 MS: 1 CustomCrossOver-
+#3111	NEW    cov: 1656 ft: 6414 corp: 537/2473Kb lim: 65536 exec/s: 1037 rss: 698Mb L: 4/65536 MS: 1 CustomCrossOver-
+#3122	NEW    cov: 1656 ft: 6414 corp: 538/2473Kb lim: 65536 exec/s: 1040 rss: 701Mb L: 8/65536 MS: 2 ManualDict-Custom- DE: "unpack"-
+#3124	NEW    cov: 1656 ft: 6414 corp: 539/2473Kb lim: 65536 exec/s: 1041 rss: 701Mb L: 1/65536 MS: 3 ChangeBinInt-Custom-CustomCrossOver-
+#3739	RELOAD cov: 1656 ft: 6430 corp: 574/2403Kb lim: 65536 exec/s: 1246 rss: 832Mb
+#3775	NEW    cov: 1656 ft: 6430 corp: 574/2403Kb lim: 65536 exec/s: 943 rss: 838Mb L: 10/65536 MS: 2 ShuffleBytes-Custom-
+#3778	NEW    cov: 1656 ft: 6433 corp: 575/2467Kb lim: 65536 exec/s: 944 rss: 839Mb L: 65504/65536 MS: 6 ChangeBinInt-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-
+#3804	NEW    cov: 1656 ft: 6434 corp: 576/2468Kb lim: 65536 exec/s: 951 rss: 845Mb L: 737/65536 MS: 2 ChangeBinInt-Custom-
+#3851	NEW    cov: 1656 ft: 6434 corp: 577/2468Kb lim: 65536 exec/s: 962 rss: 856Mb L: 9/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#3893	NEW    cov: 1656 ft: 6434 corp: 577/2468Kb lim: 65536 exec/s: 973 rss: 865Mb L: 10/65536 MS: 3 PersAutoDict-Custom-CustomCrossOver- DE: "BEEZ_ENV"-
+#3896	NEW    cov: 1656 ft: 6434 corp: 576/2459Kb lim: 65536 exec/s: 974 rss: 865Mb L: 128/65536 MS: 6 CrossOver-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-
+#3905	NEW    cov: 1656 ft: 6434 corp: 576/2458Kb lim: 65536 exec/s: 976 rss: 867Mb L: 33/65536 MS: 6 CustomCrossOver-CustomCrossOver-ManualDict-Custom-EraseBytes-Custom- DE: "performance"-
+#3917	NEW    cov: 1656 ft: 6434 corp: 576/2458Kb lim: 65536 exec/s: 979 rss: 870Mb L: 4/65536 MS: 3 ChangeBinInt-Custom-CustomCrossOver-
+#3933	NEW    cov: 1656 ft: 6434 corp: 576/2458Kb lim: 65536 exec/s: 983 rss: 873Mb L: 80/65536 MS: 1 CustomCrossOver-
+#3989	NEW    cov: 1656 ft: 6434 corp: 576/2458Kb lim: 65536 exec/s: 997 rss: 885Mb L: 2/65536 MS: 1 CustomCrossOver-
+#4006	NEW    cov: 1656 ft: 6434 corp: 576/2458Kb lim: 65536 exec/s: 1001 rss: 889Mb L: 20/65536 MS: 3 CustomCrossOver-CopyPart-Custom-
+#4041	NEW    cov: 1656 ft: 6434 corp: 576/2458Kb lim: 65536 exec/s: 1010 rss: 896Mb L: 72/65536 MS: 9 InsertByte-Custom-ShuffleBytes-Custom-PersAutoDict-Custom-CMP-Custom-CustomCrossOver- DE: "join"-"\000\000\000\000\000\000\000\000"-
+#4045	NEW    cov: 1656 ft: 6434 corp: 577/2458Kb lim: 65536 exec/s: 1011 rss: 897Mb L: 11/65536 MS: 6 CustomCrossOver-CMP-Custom-EraseBytes-Custom-CustomCrossOver- DE: "copy"-
+#4051	NEW    cov: 1656 ft: 6434 corp: 577/2458Kb lim: 65536 exec/s: 1012 rss: 899Mb L: 23/65536 MS: 2 CMP-Custom- DE: "sol."-
+#4062	NEW    cov: 1656 ft: 6434 corp: 578/2458Kb lim: 65536 exec/s: 1015 rss: 901Mb L: 2/65536 MS: 1 CustomCrossOver-
+#4070	NEW    cov: 1656 ft: 6434 corp: 579/2458Kb lim: 65536 exec/s: 1017 rss: 903Mb L: 1/65536 MS: 3 CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#4071	NEW    cov: 1656 ft: 6434 corp: 579/2458Kb lim: 65536 exec/s: 1017 rss: 903Mb L: 65286/65536 MS: 2 InsertByte-Custom-
+#4096	pulse  cov: 1656 ft: 6434 corp: 579/2458Kb lim: 65536 exec/s: 1024 rss: 910Mb
+#4135	NEW    cov: 1656 ft: 6434 corp: 578/2458Kb lim: 65536 exec/s: 1033 rss: 919Mb L: 25/65536 MS: 8 ChangeByte-Custom-ChangeBinInt-Custom-ManualDict-Custom-InsertByte-Custom- DE: "config"-
+#4140	NEW    cov: 1656 ft: 6435 corp: 579/2458Kb lim: 65536 exec/s: 1035 rss: 920Mb L: 307/65536 MS: 8 ShuffleBytes-Custom-CustomCrossOver-EraseBytes-Custom-InsertRepeatedBytes-Custom-CustomCrossOver-
+#4147	NEW    cov: 1656 ft: 6435 corp: 580/2458Kb lim: 65536 exec/s: 1036 rss: 921Mb L: 16/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#4196	NEW    cov: 1656 ft: 6435 corp: 581/2458Kb lim: 65536 exec/s: 1049 rss: 932Mb L: 79/65536 MS: 6 CustomCrossOver-ChangeByte-Custom-CustomCrossOver-InsertRepeatedBytes-Custom-
+#4215	NEW    cov: 1656 ft: 6435 corp: 580/2458Kb lim: 65536 exec/s: 1053 rss: 935Mb L: 33/65536 MS: 6 CustomCrossOver-ChangeByte-Custom-CustomCrossOver-ChangeByte-Custom-
+#4238	NEW    cov: 1656 ft: 6435 corp: 580/2457Kb lim: 65536 exec/s: 1059 rss: 939Mb L: 23543/65536 MS: 5 CrossOver-Custom-CustomCrossOver-ManualDict-Custom- DE: "mmap"-
+#4262	NEW    cov: 1656 ft: 6435 corp: 580/2448Kb lim: 65536 exec/s: 1065 rss: 945Mb L: 1023/65536 MS: 6 ShuffleBytes-Custom-ChangeByte-Custom-CustomCrossOver-CustomCrossOver-
+#4307	NEW    cov: 1656 ft: 6435 corp: 581/2449Kb lim: 65536 exec/s: 1076 rss: 954Mb L: 25/65536 MS: 7 CustomCrossOver-CrossOver-Custom-CrossOver-Custom-CustomCrossOver-CustomCrossOver-
+#4309	NEW    cov: 1656 ft: 6436 corp: 582/2449Kb lim: 65536 exec/s: 1077 rss: 954Mb L: 366/65536 MS: 3 CustomCrossOver-EraseBytes-Custom-
+#4337	NEW    cov: 1656 ft: 6436 corp: 581/2449Kb lim: 65536 exec/s: 1084 rss: 960Mb L: 31/65536 MS: 5 EraseBytes-Custom-CrossOver-Custom-CustomCrossOver-
+#4343	NEW    cov: 1656 ft: 6436 corp: 581/2449Kb lim: 65536 exec/s: 1085 rss: 961Mb L: 2/65536 MS: 1 CustomCrossOver-
+#4356	NEW    cov: 1656 ft: 6436 corp: 581/2433Kb lim: 65536 exec/s: 1089 rss: 964Mb L: 33353/65536 MS: 4 CopyPart-Custom-CustomCrossOver-CustomCrossOver-
+#4391	NEW    cov: 1656 ft: 6436 corp: 582/2434Kb lim: 65536 exec/s: 1097 rss: 973Mb L: 104/65536 MS: 8 PersAutoDict-Custom-CustomCrossOver-ChangeBit-Custom-InsertByte-Custom-CustomCrossOver- DE: "mask_secrets"-
+#4392	NEW    cov: 1656 ft: 6436 corp: 583/2434Kb lim: 65536 exec/s: 1098 rss: 973Mb L: 1/65536 MS: 1 CustomCrossOver-
+#4412	NEW    cov: 1656 ft: 6436 corp: 582/2425Kb lim: 65536 exec/s: 1103 rss: 978Mb L: 28/65536 MS: 10 PersAutoDict-Custom-ChangeBinInt-Custom-PersAutoDict-Custom-ChangeBit-Custom-PersAutoDict-Custom- DE: "outputs"-"\\r"-"length"-
+#4418	NEW    cov: 1656 ft: 6436 corp: 583/2425Kb lim: 65536 exec/s: 1104 rss: 979Mb L: 3/65536 MS: 2 InsertByte-Custom-
+#4424	NEW    cov: 1656 ft: 6436 corp: 583/2425Kb lim: 65536 exec/s: 1106 rss: 980Mb L: 8/65536 MS: 1 CustomCrossOver-
+#4451	NEW    cov: 1656 ft: 6436 corp: 583/2401Kb lim: 65536 exec/s: 1112 rss: 987Mb L: 8546/65536 MS: 3 CopyPart-Custom-CustomCrossOver-
+#4482	NEW    cov: 1656 ft: 6437 corp: 584/2401Kb lim: 65536 exec/s: 1120 rss: 993Mb L: 105/65536 MS: 2 CMP-Custom- DE: "not enough me"-
+#4490	NEW    cov: 1656 ft: 6437 corp: 584/2401Kb lim: 65536 exec/s: 1122 rss: 995Mb L: 53/65536 MS: 6 InsertRepeatedBytes-Custom-ManualDict-Custom-CrossOver-Custom- DE: "name"-
+#4511	NEW    cov: 1656 ft: 6437 corp: 584/2401Kb lim: 65536 exec/s: 1127 rss: 1000Mb L: 64/65536 MS: 1 CustomCrossOver-
+#4519	NEW    cov: 1656 ft: 6440 corp: 585/2401Kb lim: 65536 exec/s: 1129 rss: 1002Mb L: 168/65536 MS: 5 ChangeByte-Custom-CustomCrossOver-ChangeBinInt-Custom-
+#4547	NEW    cov: 1656 ft: 6440 corp: 585/2401Kb lim: 65536 exec/s: 1136 rss: 1008Mb L: 60/65536 MS: 6 EraseBytes-Custom-CopyPart-Custom-ChangeByte-Custom-
+#4567	NEW    cov: 1656 ft: 6440 corp: 585/2397Kb lim: 65536 exec/s: 1141 rss: 1014Mb L: 69/65536 MS: 10 ChangeBinInt-Custom-PersAutoDict-Custom-ChangeBinInt-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom- DE: "BEEZ_ENV"-
+#4569	NEW    cov: 1656 ft: 6440 corp: 586/2397Kb lim: 65536 exec/s: 1142 rss: 1014Mb L: 30/65536 MS: 3 CustomCrossOver-PersAutoDict-Custom- DE: "mask_secrets"-
+#4581	NEW    cov: 1656 ft: 6440 corp: 587/2397Kb lim: 65536 exec/s: 1145 rss: 1017Mb L: 19/65536 MS: 3 EraseBytes-Custom-CustomCrossOver-
+#4621	NEW    cov: 1656 ft: 6440 corp: 587/2397Kb lim: 65536 exec/s: 1155 rss: 1025Mb L: 1/65536 MS: 8 ChangeASCIIInt-Custom-InsertByte-Custom-CustomCrossOver-ChangeByte-Custom-CustomCrossOver-
+#4627	NEW    cov: 1656 ft: 6440 corp: 587/2397Kb lim: 65536 exec/s: 1156 rss: 1026Mb L: 20/65536 MS: 2 InsertByte-Custom-
+#4669	NEW    cov: 1656 ft: 6441 corp: 588/2397Kb lim: 65536 exec/s: 1167 rss: 1035Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#4670	NEW    cov: 1656 ft: 6441 corp: 589/2398Kb lim: 65536 exec/s: 1167 rss: 1035Mb L: 513/65536 MS: 2 ManualDict-Custom- DE: "files"-
+#4676	NEW    cov: 1656 ft: 6441 corp: 590/2398Kb lim: 65536 exec/s: 1169 rss: 1037Mb L: 2/65536 MS: 2 CopyPart-Custom-
+#5104	RELOAD cov: 1656 ft: 6450 corp: 606/2314Kb lim: 65536 exec/s: 1020 rss: 1128Mb
+#5114	NEW    cov: 1656 ft: 6450 corp: 607/2314Kb lim: 65536 exec/s: 1022 rss: 1129Mb L: 20/65536 MS: 9 ChangeBit-Custom-CustomCrossOver-InsertByte-Custom-ChangeBit-Custom-CrossOver-Custom-
+#5175	NEW    cov: 1656 ft: 6450 corp: 608/2314Kb lim: 65536 exec/s: 1035 rss: 1141Mb L: 11/65536 MS: 2 ChangeByte-Custom-
+#5195	NEW    cov: 1656 ft: 6450 corp: 609/2315Kb lim: 65536 exec/s: 1039 rss: 1145Mb L: 219/65536 MS: 10 EraseBytes-Custom-InsertRepeatedBytes-Custom-CMP-Custom-InsertByte-Custom-InsertRepeatedBytes-Custom- DE: "\001\000\000\022"-
+#5240	NEW    cov: 1656 ft: 6450 corp: 609/2315Kb lim: 65536 exec/s: 1048 rss: 1156Mb L: 27/65536 MS: 10 ManualDict-Custom-PersAutoDict-Custom-ChangeBinInt-Custom-ChangeByte-Custom-ManualDict-Custom- DE: "compact"-"sol."-"hide_cache_hits"-
+#5335	NEW    cov: 1656 ft: 6452 corp: 610/2317Kb lim: 65536 exec/s: 1067 rss: 1176Mb L: 2101/65536 MS: 9 CustomCrossOver-ChangeASCIIInt-Custom-ChangeBinInt-Custom-EraseBytes-Custom-ChangeBinInt-Custom-
+#5348	NEW    cov: 1656 ft: 6452 corp: 610/2316Kb lim: 65536 exec/s: 1069 rss: 1179Mb L: 895/65536 MS: 4 CustomCrossOver-CustomCrossOver-ChangeByte-Custom-
+#5366	NEW    cov: 1656 ft: 6452 corp: 611/2316Kb lim: 65536 exec/s: 1073 rss: 1183Mb L: 67/65536 MS: 4 CustomCrossOver-ChangeBit-Custom-CustomCrossOver-
+#5497	NEW    cov: 1656 ft: 6453 corp: 612/2316Kb lim: 65536 exec/s: 1099 rss: 1211Mb L: 49/65536 MS: 2 InsertByte-Custom-
+#5606	NEW    cov: 1656 ft: 6453 corp: 612/2316Kb lim: 65536 exec/s: 1121 rss: 1233Mb L: 4/65536 MS: 8 InsertByte-Custom-CopyPart-Custom-ChangeBit-Custom-EraseBytes-Custom-
+#5612	NEW    cov: 1656 ft: 6453 corp: 611/2284Kb lim: 65536 exec/s: 1122 rss: 1234Mb L: 32787/65536 MS: 2 CopyPart-Custom-
+#5632	NEW    cov: 1656 ft: 6453 corp: 611/2284Kb lim: 65536 exec/s: 1126 rss: 1238Mb L: 17/65536 MS: 8 ChangeByte-Custom-CustomCrossOver-CustomCrossOver-ChangeBinInt-Custom-CrossOver-Custom-
+#5698	NEW    cov: 1656 ft: 6453 corp: 610/2284Kb lim: 65536 exec/s: 949 rss: 1253Mb L: 2/65536 MS: 1 CustomCrossOver-
+#5714	NEW    cov: 1656 ft: 6453 corp: 610/2284Kb lim: 65536 exec/s: 952 rss: 1256Mb L: 5/65536 MS: 2 ManualDict-Custom- DE: "0x"-
+#5772	NEW    cov: 1656 ft: 6453 corp: 610/2284Kb lim: 65536 exec/s: 962 rss: 1269Mb L: 154/65536 MS: 5 CustomCrossOver-ManualDict-Custom-ManualDict-Custom- DE: "sequential"-"max_threads"-
+#5783	NEW    cov: 1656 ft: 6453 corp: 611/2284Kb lim: 65536 exec/s: 963 rss: 1271Mb L: 1/65536 MS: 2 ChangeBit-Custom-
+#5791	NEW    cov: 1656 ft: 6453 corp: 611/2284Kb lim: 65536 exec/s: 965 rss: 1273Mb L: 2/65536 MS: 4 PersAutoDict-Custom-CustomCrossOver-CustomCrossOver- DE: "name"-
+#5838	NEW    cov: 1656 ft: 6457 corp: 610/2284Kb lim: 65536 exec/s: 973 rss: 1283Mb L: 78/65536 MS: 3 CustomCrossOver-EraseBytes-Custom-
+#5844	NEW    cov: 1656 ft: 6457 corp: 610/2284Kb lim: 65536 exec/s: 974 rss: 1284Mb L: 54/65536 MS: 2 ManualDict-Custom- DE: "}"-
+#5854	NEW    cov: 1656 ft: 6457 corp: 610/2284Kb lim: 65536 exec/s: 975 rss: 1286Mb L: 20/65536 MS: 9 InsertByte-Custom-ChangeBit-Custom-ManualDict-Custom-InsertByte-Custom-CustomCrossOver- DE: "hash"-
+#5860	NEW    cov: 1656 ft: 6457 corp: 610/2284Kb lim: 65536 exec/s: 976 rss: 1287Mb L: 61/65536 MS: 1 CustomCrossOver-
+#5882	NEW    cov: 1656 ft: 6457 corp: 611/2284Kb lim: 65536 exec/s: 980 rss: 1291Mb L: 17/65536 MS: 4 EraseBytes-Custom-CopyPart-Custom-
+#5897	NEW    cov: 1656 ft: 6457 corp: 611/2284Kb lim: 65536 exec/s: 982 rss: 1294Mb L: 9/65536 MS: 7 CustomCrossOver-CopyPart-Custom-CustomCrossOver-CMP-Custom-CustomCrossOver- DE: "require"-
+#5925	NEW    cov: 1656 ft: 6458 corp: 612/2284Kb lim: 65536 exec/s: 987 rss: 1300Mb L: 16/65536 MS: 5 CopyPart-Custom-ShuffleBytes-Custom-CustomCrossOver-
+#5981	NEW    cov: 1656 ft: 6458 corp: 610/2284Kb lim: 65536 exec/s: 996 rss: 1312Mb L: 3/65536 MS: 1 CustomCrossOver-
+#6012	NEW    cov: 1656 ft: 6458 corp: 611/2284Kb lim: 65536 exec/s: 1002 rss: 1319Mb L: 2/65536 MS: 2 ChangeBit-Custom-
+	NEW_FUNC[1/3]: 0x000000503470 in std::vector<beez::core::WorkflowStage, std::allocator<beez::core::WorkflowStage>>::size() const /usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/stl_vector.h:1108
+	NEW_FUNC[2/3]: 0x0000005038e0 in std::__detail::_Node_const_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const, beez::core::Workflow>, false, true>::operator++() /usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/hashtable_policy.h:506
+#6342	RELOAD cov: 1682 ft: 6669 corp: 616/2185Kb lim: 65536 exec/s: 1057 rss: 1388Mb
+#6392	NEW    cov: 1682 ft: 6669 corp: 616/2185Kb lim: 65536 exec/s: 1065 rss: 1398Mb L: 20/65536 MS: 8 CustomCrossOver-InsertByte-Custom-EraseBytes-Custom-ChangeBinInt-Custom-CustomCrossOver-
+#6443	NEW    cov: 1682 ft: 6669 corp: 616/2185Kb lim: 65536 exec/s: 1073 rss: 1409Mb L: 33/65536 MS: 1 CustomCrossOver-
+#6447	NEW    cov: 1682 ft: 6672 corp: 616/2122Kb lim: 65536 exec/s: 1074 rss: 1410Mb L: 1125/65536 MS: 8 ShuffleBytes-Custom-ChangeBinInt-Custom-EraseBytes-Custom-ChangeASCIIInt-Custom-
+#6488	NEW    cov: 1682 ft: 6672 corp: 616/2122Kb lim: 65536 exec/s: 1081 rss: 1419Mb L: 22/65536 MS: 1 CustomCrossOver-
+#6495	NEW    cov: 1682 ft: 6673 corp: 617/2146Kb lim: 65536 exec/s: 1082 rss: 1421Mb L: 24576/65536 MS: 3 InsertRepeatedBytes-Custom-CustomCrossOver-
+#6496	NEW    cov: 1682 ft: 6673 corp: 617/2145Kb lim: 65536 exec/s: 1082 rss: 1422Mb L: 2330/65536 MS: 2 EraseBytes-Custom-
+#6498	NEW    cov: 1682 ft: 6673 corp: 618/2145Kb lim: 65536 exec/s: 1083 rss: 1422Mb L: 19/65536 MS: 4 ChangeBinInt-Custom-ShuffleBytes-Custom-
+#6534	NEW    cov: 1682 ft: 6673 corp: 618/2142Kb lim: 65536 exec/s: 933 rss: 1430Mb L: 26/65536 MS: 2 ChangeBinInt-Custom-
+#6565	NEW    cov: 1682 ft: 6675 corp: 619/2173Kb lim: 65536 exec/s: 937 rss: 1436Mb L: 31167/65536 MS: 2 ShuffleBytes-Custom-
+#6568	NEW    cov: 1682 ft: 6675 corp: 620/2173Kb lim: 65536 exec/s: 938 rss: 1437Mb L: 31/65536 MS: 6 InsertRepeatedBytes-Custom-EraseBytes-Custom-EraseBytes-Custom-
+#6576	NEW    cov: 1682 ft: 6676 corp: 621/2173Kb lim: 65536 exec/s: 939 rss: 1438Mb L: 4/65536 MS: 6 EraseBytes-Custom-ChangeBit-Custom-ChangeBit-Custom-
+#6577	NEW    cov: 1682 ft: 6676 corp: 621/2173Kb lim: 65536 exec/s: 939 rss: 1438Mb L: 1/65536 MS: 2 ChangeBit-Custom-
+#6598	NEW    cov: 1682 ft: 6676 corp: 621/2173Kb lim: 65536 exec/s: 942 rss: 1443Mb L: 17/65536 MS: 2 ChangeBit-Custom-
+#6648	NEW    cov: 1682 ft: 6676 corp: 621/2173Kb lim: 65536 exec/s: 949 rss: 1454Mb L: 3/65536 MS: 8 EraseBytes-Custom-ManualDict-Custom-ShuffleBytes-Custom-CustomCrossOver-CustomCrossOver- DE: "flags"-
+#6668	NEW    cov: 1682 ft: 6676 corp: 622/2173Kb lim: 65536 exec/s: 952 rss: 1457Mb L: 34/65536 MS: 10 CMP-Custom-InsertByte-Custom-PersAutoDict-Custom-CMP-Custom-PersAutoDict-Custom- DE: "\000\001"-"task-"-"\026\000"-"length"-
+#6679	NEW    cov: 1682 ft: 6677 corp: 623/2189Kb lim: 65536 exec/s: 954 rss: 1460Mb L: 16384/65536 MS: 1 CustomCrossOver-
+#6710	NEW    cov: 1682 ft: 6677 corp: 624/2189Kb lim: 65536 exec/s: 958 rss: 1467Mb L: 4/65536 MS: 2 ChangeByte-Custom-
+#6756	NEW    cov: 1682 ft: 6677 corp: 625/2189Kb lim: 65536 exec/s: 965 rss: 1478Mb L: 26/65536 MS: 2 PersAutoDict-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#6758	NEW    cov: 1682 ft: 6677 corp: 625/2189Kb lim: 65536 exec/s: 965 rss: 1478Mb L: 3/65536 MS: 3 CustomCrossOver-CMP-Custom- DE: "\001\000"-
+#6796	NEW    cov: 1682 ft: 6677 corp: 625/2189Kb lim: 65536 exec/s: 970 rss: 1485Mb L: 7/65536 MS: 5 CMP-Custom-EraseBytes-Custom-CustomCrossOver- DE: "\012\000"-
+#6834	NEW    cov: 1682 ft: 6677 corp: 625/2189Kb lim: 65536 exec/s: 976 rss: 1493Mb L: 2/65536 MS: 5 CustomCrossOver-CopyPart-Custom-ShuffleBytes-Custom-
+#6858	NEW    cov: 1682 ft: 6677 corp: 626/2189Kb lim: 65536 exec/s: 979 rss: 1497Mb L: 1/65536 MS: 5 CustomCrossOver-CustomCrossOver-CustomCrossOver-EraseBytes-Custom-
+#6906	NEW    cov: 1682 ft: 6677 corp: 627/2189Kb lim: 65536 exec/s: 986 rss: 1509Mb L: 14/65536 MS: 6 PersAutoDict-Custom-ChangeBit-Custom-ShuffleBytes-Custom- DE: "compact"-
+#6907	NEW    cov: 1682 ft: 6678 corp: 627/2189Kb lim: 65536 exec/s: 986 rss: 1509Mb L: 18/65536 MS: 1 CustomCrossOver-
+#6908	NEW    cov: 1682 ft: 6678 corp: 625/2189Kb lim: 65536 exec/s: 986 rss: 1509Mb L: 3/65536 MS: 2 InsertByte-Custom-
+#6912	NEW    cov: 1682 ft: 6679 corp: 626/2189Kb lim: 65536 exec/s: 987 rss: 1510Mb L: 158/65536 MS: 7 CrossOver-Custom-ChangeBit-Custom-CrossOver-Custom-CustomCrossOver-
+#6925	NEW    cov: 1682 ft: 6679 corp: 626/2189Kb lim: 65536 exec/s: 989 rss: 1513Mb L: 27/65536 MS: 6 ChangeByte-Custom-ChangeBinInt-Custom-ChangeBit-Custom-
+#6926	NEW    cov: 1682 ft: 6679 corp: 625/2189Kb lim: 65536 exec/s: 989 rss: 1513Mb L: 25/65536 MS: 2 ManualDict-Custom- DE: "PATH"-
+#6983	NEW    cov: 1682 ft: 6679 corp: 625/2189Kb lim: 65536 exec/s: 997 rss: 1525Mb L: 40/65536 MS: 4 ShuffleBytes-Custom-ShuffleBytes-Custom-
+#6990	NEW    cov: 1682 ft: 6687 corp: 626/2189Kb lim: 65536 exec/s: 998 rss: 1526Mb L: 98/65536 MS: 4 CMP-Custom-ChangeBinInt-Custom- DE: "\000\000\000\000\000\000\000\000"-
+#6991	NEW    cov: 1682 ft: 6687 corp: 626/2189Kb lim: 65536 exec/s: 998 rss: 1526Mb L: 17/65536 MS: 1 CustomCrossOver-
+#7018	NEW    cov: 1682 ft: 6687 corp: 626/2180Kb lim: 65536 exec/s: 1002 rss: 1532Mb L: 657/65536 MS: 4 PersAutoDict-Custom-ChangeASCIIInt-Custom- DE: "references"-
+#7029	NEW    cov: 1682 ft: 6687 corp: 627/2180Kb lim: 65536 exec/s: 1004 rss: 1534Mb L: 2/65536 MS: 1 CustomCrossOver-
+#7055	NEW    cov: 1682 ft: 6687 corp: 627/2180Kb lim: 65536 exec/s: 1007 rss: 1540Mb L: 18/65536 MS: 2 EraseBytes-Custom-
+#7063	NEW    cov: 1682 ft: 6687 corp: 627/2180Kb lim: 65536 exec/s: 1009 rss: 1542Mb L: 22/65536 MS: 4 PersAutoDict-Custom-CustomCrossOver-CustomCrossOver- DE: "BEEZ_ENV"-
+#7084	NEW    cov: 1682 ft: 6687 corp: 626/2180Kb lim: 65536 exec/s: 1012 rss: 1546Mb L: 7/65536 MS: 2 InsertByte-Custom-
+#7085	NEW    cov: 1682 ft: 6687 corp: 626/2180Kb lim: 65536 exec/s: 1012 rss: 1546Mb L: 16/65536 MS: 2 ChangeBit-Custom-
+#7091	NEW    cov: 1682 ft: 6687 corp: 627/2180Kb lim: 65536 exec/s: 1013 rss: 1548Mb L: 4/65536 MS: 2 CopyPart-Custom-
+#7092	NEW    cov: 1682 ft: 6687 corp: 627/2180Kb lim: 65536 exec/s: 1013 rss: 1548Mb L: 51/65536 MS: 2 ChangeBit-Custom-
+#7107	NEW    cov: 1682 ft: 6687 corp: 628/2180Kb lim: 65536 exec/s: 1015 rss: 1552Mb L: 237/65536 MS: 10 InsertRepeatedBytes-Custom-CopyPart-Custom-PersAutoDict-Custom-InsertByte-Custom-ManualDict-Custom- DE: "~\377\377\377\377\377\377\376"-"sequential"-
+#7110	NEW    cov: 1682 ft: 6687 corp: 629/2180Kb lim: 65536 exec/s: 1015 rss: 1553Mb L: 4/65536 MS: 5 InsertRepeatedBytes-Custom-CustomCrossOver-CopyPart-Custom-
+#7111	NEW    cov: 1682 ft: 6689 corp: 630/2180Kb lim: 65536 exec/s: 1015 rss: 1553Mb L: 121/65536 MS: 2 InsertRepeatedBytes-Custom-
+#7115	NEW    cov: 1682 ft: 6689 corp: 630/2180Kb lim: 65536 exec/s: 1016 rss: 1554Mb L: 2/65536 MS: 4 CustomCrossOver-CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#7125	NEW    cov: 1682 ft: 6693 corp: 631/2180Kb lim: 65536 exec/s: 1017 rss: 1556Mb L: 80/65536 MS: 10 InsertByte-Custom-CMP-Custom-ChangeBit-Custom-ShuffleBytes-Custom-CMP-Custom- DE: "sol.sol::function_detail::functor_function<(lambda at /home/Leod"-"\377\377\000\000\000\000\000\000"-
+#7132	NEW    cov: 1682 ft: 6693 corp: 631/2180Kb lim: 65536 exec/s: 1018 rss: 1557Mb L: 6/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#7133	NEW    cov: 1682 ft: 6694 corp: 630/2116Kb lim: 65536 exec/s: 1019 rss: 1558Mb L: 515/65536 MS: 2 CopyPart-Custom-
+#7135	NEW    cov: 1682 ft: 6694 corp: 629/2092Kb lim: 65536 exec/s: 1019 rss: 1558Mb L: 26/65536 MS: 3 CrossOver-Custom-CustomCrossOver-
+#7152	NEW    cov: 1682 ft: 6694 corp: 629/2092Kb lim: 65536 exec/s: 1021 rss: 1560Mb L: 387/65536 MS: 3 CustomCrossOver-PersAutoDict-Custom- DE: "sol.so"-
+#7217	NEW    cov: 1682 ft: 6698 corp: 629/2092Kb lim: 65536 exec/s: 1031 rss: 1575Mb L: 2/65536 MS: 8 ChangeASCIIInt-Custom-ManualDict-Custom-CustomCrossOver-ChangeByte-Custom-CustomCrossOver- DE: "designated"-
+#7301	NEW    cov: 1682 ft: 6698 corp: 630/2092Kb lim: 65536 exec/s: 1043 rss: 1593Mb L: 2/65536 MS: 7 CrossOver-Custom-ShuffleBytes-Custom-ChangeBit-Custom-CustomCrossOver-
+#7581	RELOAD cov: 1682 ft: 6765 corp: 638/2098Kb lim: 65536 exec/s: 947 rss: 1654Mb
+#7604	NEW    cov: 1682 ft: 6765 corp: 638/2098Kb lim: 65536 exec/s: 950 rss: 1658Mb L: 29/65536 MS: 6 EraseBytes-Custom-EraseBytes-Custom-ManualDict-Custom- DE: "lz4"-
+#7727	NEW    cov: 1682 ft: 6765 corp: 639/2098Kb lim: 65536 exec/s: 965 rss: 1686Mb L: 25/65536 MS: 6 ManualDict-Custom-InsertByte-Custom-ChangeASCIIInt-Custom- DE: "~="-
+#7748	NEW    cov: 1682 ft: 6765 corp: 638/2094Kb lim: 65536 exec/s: 968 rss: 1690Mb L: 2054/65536 MS: 2 InsertByte-Custom-
+#7776	NEW    cov: 1682 ft: 6765 corp: 638/2094Kb lim: 65536 exec/s: 972 rss: 1696Mb L: 26/65536 MS: 6 ShuffleBytes-Custom-ChangeBit-Custom-ManualDict-Custom- DE: "mutate"-
+#7790	NEW    cov: 1682 ft: 6765 corp: 638/2094Kb lim: 65536 exec/s: 973 rss: 1699Mb L: 5/65536 MS: 6 CustomCrossOver-InsertByte-Custom-CustomCrossOver-CMP-Custom- DE: "\377\013"-
+#7821	NEW    cov: 1682 ft: 6768 corp: 639/2094Kb lim: 65536 exec/s: 977 rss: 1706Mb L: 51/65536 MS: 1 CustomCrossOver-
+#7874	NEW    cov: 1682 ft: 6768 corp: 639/2094Kb lim: 65536 exec/s: 984 rss: 1718Mb L: 7/65536 MS: 5 InsertByte-Custom-CopyPart-Custom-CustomCrossOver-
+#7969	NEW    cov: 1682 ft: 6769 corp: 640/2094Kb lim: 65536 exec/s: 996 rss: 1738Mb L: 7/65536 MS: 10 ShuffleBytes-Custom-ShuffleBytes-Custom-ManualDict-Custom-ShuffleBytes-Custom-ChangeBinInt-Custom- DE: "dots"-
+#7973	NEW    cov: 1682 ft: 6772 corp: 641/2096Kb lim: 65536 exec/s: 996 rss: 1739Mb L: 2181/65536 MS: 8 ChangeByte-Custom-InsertRepeatedBytes-Custom-InsertRepeatedBytes-Custom-PersAutoDict-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#8022	NEW    cov: 1682 ft: 6772 corp: 642/2096Kb lim: 65536 exec/s: 1002 rss: 1749Mb L: 70/65536 MS: 6 ManualDict-Custom-CustomCrossOver-CustomCrossOver-InsertRepeatedBytes-Custom- DE: "["-
+#8023	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1002 rss: 1750Mb L: 3/65536 MS: 2 ChangeBit-Custom-
+#8024	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1003 rss: 1750Mb L: 25/65536 MS: 1 CustomCrossOver-
+#8081	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1010 rss: 1761Mb L: 4/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#8128	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1016 rss: 1772Mb L: 25/65536 MS: 4 PersAutoDict-Custom-InsertRepeatedBytes-Custom- DE: "0x"-
+#8141	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1017 rss: 1775Mb L: 142/65536 MS: 6 EraseBytes-Custom-InsertRepeatedBytes-Custom-InsertRepeatedBytes-Custom-
+#8171	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1021 rss: 1781Mb L: 6/65536 MS: 8 CustomCrossOver-CustomCrossOver-ChangeBit-Custom-PersAutoDict-Custom-ChangeBinInt-Custom- DE: "0x"-
+#8185	NEW    cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1023 rss: 1784Mb L: 7/65536 MS: 6 CustomCrossOver-EraseBytes-Custom-InsertByte-Custom-CustomCrossOver-
+#8192	pulse  cov: 1682 ft: 6772 corp: 643/2096Kb lim: 65536 exec/s: 1024 rss: 1785Mb
+#8223	NEW    cov: 1682 ft: 6782 corp: 644/2120Kb lim: 65536 exec/s: 1027 rss: 1792Mb L: 24587/65536 MS: 5 ChangeBit-Custom-CustomCrossOver-ChangeBinInt-Custom-
+#8233	NEW    cov: 1682 ft: 6782 corp: 645/2120Kb lim: 65536 exec/s: 1029 rss: 1794Mb L: 2/65536 MS: 8 CustomCrossOver-ShuffleBytes-Custom-InsertByte-Custom-ManualDict-Custom-CustomCrossOver- DE: "TMPDIR"-
+#8271	NEW    cov: 1682 ft: 6782 corp: 646/2120Kb lim: 65536 exec/s: 1033 rss: 1802Mb L: 142/65536 MS: 5 CustomCrossOver-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-
+#8347	NEW    cov: 1682 ft: 6782 corp: 646/2120Kb lim: 65536 exec/s: 1043 rss: 1818Mb L: 34/65536 MS: 2 ChangeByte-Custom-
+#8370	NEW    cov: 1682 ft: 6782 corp: 646/2120Kb lim: 65536 exec/s: 1046 rss: 1823Mb L: 23/65536 MS: 6 InsertRepeatedBytes-Custom-InsertByte-Custom-ManualDict-Custom- DE: "performance"-
+#8456	NEW    cov: 1682 ft: 6783 corp: 647/2120Kb lim: 65536 exec/s: 939 rss: 1840Mb L: 116/65536 MS: 2 InsertByte-Custom-
+#8699	RELOAD cov: 1682 ft: 6785 corp: 647/2123Kb lim: 65536 exec/s: 966 rss: 1894Mb
+#8801	NEW    cov: 1682 ft: 6785 corp: 646/2122Kb lim: 65536 exec/s: 977 rss: 1916Mb L: 25/65536 MS: 4 CMP-Custom-ChangeBinInt-Custom- DE: "\022\000\000\000"-
+#8935	NEW    cov: 1682 ft: 6785 corp: 647/2122Kb lim: 65536 exec/s: 992 rss: 1943Mb L: 78/65536 MS: 8 CopyPart-Custom-EraseBytes-Custom-ShuffleBytes-Custom-PersAutoDict-Custom- DE: "\001\000\000\022"-
+#9009	NEW    cov: 1682 ft: 6787 corp: 648/2123Kb lim: 65536 exec/s: 1001 rss: 1960Mb L: 323/65536 MS: 5 InsertRepeatedBytes-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#9020	NEW    cov: 1682 ft: 6787 corp: 648/2123Kb lim: 65536 exec/s: 1002 rss: 1963Mb L: 21/65536 MS: 2 InsertByte-Custom-
+#9036	NEW    cov: 1682 ft: 6787 corp: 648/2123Kb lim: 65536 exec/s: 1004 rss: 1966Mb L: 16/65536 MS: 2 ShuffleBytes-Custom-
+#9039	NEW    cov: 1682 ft: 6787 corp: 648/2123Kb lim: 65536 exec/s: 1004 rss: 1967Mb L: 21/65536 MS: 6 CopyPart-Custom-ChangeBit-Custom-EraseBytes-Custom-
+#9270	NEW    cov: 1682 ft: 6787 corp: 648/2123Kb lim: 65536 exec/s: 1030 rss: 2015Mb L: 19/65536 MS: 2 CrossOver-Custom-
+#9272	NEW    cov: 1682 ft: 6787 corp: 649/2123Kb lim: 65536 exec/s: 1030 rss: 2016Mb L: 5/65536 MS: 3 ManualDict-Custom-CustomCrossOver- DE: "}"-
+#9421	NEW    cov: 1682 ft: 6787 corp: 649/2099Kb lim: 65536 exec/s: 1046 rss: 2048Mb L: 4/65536 MS: 6 CustomCrossOver-CrossOver-Custom-CustomCrossOver-CopyPart-Custom-
+#9428	NEW    cov: 1682 ft: 6787 corp: 649/2099Kb lim: 65536 exec/s: 942 rss: 2050Mb L: 2/65536 MS: 3 InsertRepeatedBytes-Custom-CustomCrossOver-
+#9444	NEW    cov: 1682 ft: 6787 corp: 650/2099Kb lim: 65536 exec/s: 944 rss: 2053Mb L: 2/65536 MS: 2 ChangeBit-Custom-
+#9515	NEW    cov: 1682 ft: 6789 corp: 649/2029Kb lim: 65536 exec/s: 951 rss: 2070Mb L: 18727/65536 MS: 2 EraseBytes-Custom-
+#9592	NEW    cov: 1682 ft: 6789 corp: 646/2023Kb lim: 65536 exec/s: 959 rss: 2087Mb L: 88/65536 MS: 4 InsertRepeatedBytes-Custom-InsertRepeatedBytes-Custom-
+#9628	NEW    cov: 1682 ft: 6789 corp: 646/2023Kb lim: 65536 exec/s: 962 rss: 2094Mb L: 4/65536 MS: 1 CustomCrossOver-
+#9806	RELOAD cov: 1682 ft: 6792 corp: 647/2047Kb lim: 65536 exec/s: 980 rss: 2133Mb
+#9815	NEW    cov: 1682 ft: 6793 corp: 648/2075Kb lim: 65536 exec/s: 981 rss: 2134Mb L: 27712/65536 MS: 7 CustomCrossOver-CopyPart-Custom-CrossOver-Custom-ManualDict-Custom- DE: "lz4"-
+#9816	NEW    cov: 1682 ft: 6793 corp: 648/2059Kb lim: 65536 exec/s: 981 rss: 2134Mb L: 8151/65536 MS: 2 ManualDict-Custom- DE: "designated"-
+#9881	NEW    cov: 1682 ft: 6793 corp: 648/2059Kb lim: 65536 exec/s: 988 rss: 2148Mb L: 505/65536 MS: 10 InsertByte-Custom-ChangeBit-Custom-CopyPart-Custom-PersAutoDict-Custom-InsertByte-Custom- DE: "hash"-
+#9955	NEW    cov: 1682 ft: 6793 corp: 648/2059Kb lim: 65536 exec/s: 995 rss: 2163Mb L: 25/65536 MS: 8 PersAutoDict-Custom-InsertByte-Custom-ChangeBit-Custom-CMP-Custom- DE: "hide_cache_hits"-"\001\001"-
+#9980	NEW    cov: 1682 ft: 6793 corp: 648/2059Kb lim: 65536 exec/s: 998 rss: 2169Mb L: 189/65536 MS: 10 ChangeByte-Custom-CopyPart-Custom-CMP-Custom-ChangeBit-Custom-ChangeBinInt-Custom- DE: "replace"-
+#10067	NEW    cov: 1682 ft: 6793 corp: 648/2052Kb lim: 65536 exec/s: 1006 rss: 2187Mb L: 25189/65536 MS: 4 CrossOver-Custom-EraseBytes-Custom-
+#10124	NEW    cov: 1682 ft: 6793 corp: 649/2052Kb lim: 65536 exec/s: 1012 rss: 2199Mb L: 86/65536 MS: 3 CustomCrossOver-EraseBytes-Custom-
+#10185	NEW    cov: 1682 ft: 6793 corp: 649/2052Kb lim: 65536 exec/s: 1018 rss: 2212Mb L: 2/65536 MS: 1 CustomCrossOver-
+#10233	NEW    cov: 1682 ft: 6793 corp: 650/2053Kb lim: 65536 exec/s: 1023 rss: 2222Mb L: 663/65536 MS: 6 ChangeBinInt-Custom-InsertRepeatedBytes-Custom-CopyPart-Custom-
+#10258	NEW    cov: 1682 ft: 6793 corp: 650/2053Kb lim: 65536 exec/s: 1025 rss: 2228Mb L: 16457/65536 MS: 9 CopyPart-Custom-ChangeBinInt-Custom-CustomCrossOver-ChangeASCIIInt-Custom-InsertRepeatedBytes-Custom-
+#10329	NEW    cov: 1682 ft: 6793 corp: 651/2053Kb lim: 65536 exec/s: 1032 rss: 2242Mb L: 19/65536 MS: 2 PersAutoDict-Custom- DE: "\001\000\000\022"-
+#10375	NEW    cov: 1682 ft: 6793 corp: 651/2052Kb lim: 65536 exec/s: 1037 rss: 2252Mb L: 64/65536 MS: 2 InsertRepeatedBytes-Custom-
+#10531	NEW    cov: 1682 ft: 6794 corp: 652/2052Kb lim: 65536 exec/s: 957 rss: 2288Mb L: 16/65536 MS: 2 InsertByte-Custom-
+#10567	NEW    cov: 1682 ft: 6794 corp: 652/2044Kb lim: 65536 exec/s: 960 rss: 2296Mb L: 16459/65536 MS: 2 PersAutoDict-Custom- DE: "sequential"-
+#10568	NEW    cov: 1682 ft: 6794 corp: 652/2044Kb lim: 65536 exec/s: 960 rss: 2296Mb L: 16386/65536 MS: 1 CustomCrossOver-
+#10620	NEW    cov: 1682 ft: 6794 corp: 653/2044Kb lim: 65536 exec/s: 965 rss: 2306Mb L: 4/65536 MS: 3 ManualDict-Custom-CustomCrossOver- DE: "init"-
+#10658	NEW    cov: 1682 ft: 6794 corp: 652/2044Kb lim: 65536 exec/s: 968 rss: 2315Mb L: 17/65536 MS: 6 ShuffleBytes-Custom-InsertByte-Custom-EraseBytes-Custom-
+#10675	NEW    cov: 1682 ft: 6796 corp: 652/2044Kb lim: 65536 exec/s: 970 rss: 2318Mb L: 14/65536 MS: 4 EraseBytes-Custom-PersAutoDict-Custom- DE: "compact"-
+#10706	NEW    cov: 1682 ft: 6796 corp: 652/2044Kb lim: 65536 exec/s: 973 rss: 2324Mb L: 6/65536 MS: 2 PersAutoDict-Custom- DE: "dots"-
+#10788	NEW    cov: 1682 ft: 6796 corp: 652/2044Kb lim: 65536 exec/s: 980 rss: 2343Mb L: 95/65536 MS: 4 InsertRepeatedBytes-Custom-EraseBytes-Custom-
+#10947	RELOAD cov: 1682 ft: 6796 corp: 651/2059Kb lim: 65536 exec/s: 995 rss: 2378Mb
+#10959	NEW    cov: 1682 ft: 6796 corp: 650/2047Kb lim: 65536 exec/s: 996 rss: 2380Mb L: 104/65536 MS: 3 PersAutoDict-Custom-CustomCrossOver- DE: "not enough me"-
+#11301	NEW    cov: 1682 ft: 6796 corp: 651/2047Kb lim: 65536 exec/s: 1027 rss: 2456Mb L: 21/65536 MS: 3 CustomCrossOver-ManualDict-Custom- DE: "and"-
+#11489	NEW    cov: 1682 ft: 6796 corp: 651/2047Kb lim: 65536 exec/s: 957 rss: 2497Mb L: 27/65536 MS: 6 ChangeBit-Custom-ChangeBit-Custom-ChangeByte-Custom-
+#11490	NEW    cov: 1682 ft: 6796 corp: 651/2047Kb lim: 65536 exec/s: 957 rss: 2498Mb L: 16392/65536 MS: 1 CustomCrossOver-
+#11524	NEW    cov: 1682 ft: 6797 corp: 652/2047Kb lim: 65536 exec/s: 960 rss: 2505Mb L: 2/65536 MS: 6 CustomCrossOver-CustomCrossOver-ChangeByte-Custom-CopyPart-Custom-
+#11575	NEW    cov: 1682 ft: 6798 corp: 653/2047Kb lim: 65536 exec/s: 964 rss: 2516Mb L: 123/65536 MS: 1 CustomCrossOver-
+#11581	NEW    cov: 1682 ft: 6798 corp: 652/2047Kb lim: 65536 exec/s: 965 rss: 2518Mb L: 15/65536 MS: 2 CMP-Custom- DE: "exis"-
+#11610	NEW    cov: 1682 ft: 6798 corp: 652/2047Kb lim: 65536 exec/s: 967 rss: 2524Mb L: 27/65536 MS: 8 CopyPart-Custom-EraseBytes-Custom-ChangeBinInt-Custom-CopyPart-Custom-
+#11710	NEW    cov: 1682 ft: 6798 corp: 652/2009Kb lim: 65536 exec/s: 975 rss: 2545Mb L: 7936/65536 MS: 10 ChangeBit-Custom-CopyPart-Custom-EraseBytes-Custom-ChangeBinInt-Custom-CMP-Custom- DE: "\377\377\377\377\377\377\377\177"-
+#11716	NEW    cov: 1682 ft: 6806 corp: 652/2009Kb lim: 65536 exec/s: 976 rss: 2546Mb L: 6/65536 MS: 2 EraseBytes-Custom-
+#11732	NEW    cov: 1682 ft: 6807 corp: 653/2025Kb lim: 65536 exec/s: 977 rss: 2549Mb L: 16599/65536 MS: 2 PersAutoDict-Custom- DE: "\030\000"-
+#11736	NEW    cov: 1682 ft: 6807 corp: 652/2025Kb lim: 65536 exec/s: 978 rss: 2550Mb L: 8/65536 MS: 7 CMP-Custom-ChangeBit-Custom-CustomCrossOver-CrossOver-Custom- DE: "pid"-
+#11737	NEW    cov: 1682 ft: 6807 corp: 652/2025Kb lim: 65536 exec/s: 978 rss: 2551Mb L: 18/65536 MS: 1 CustomCrossOver-
+#11762	NEW    cov: 1682 ft: 6807 corp: 652/2025Kb lim: 65536 exec/s: 980 rss: 2556Mb L: 17/65536 MS: 8 PersAutoDict-Custom-InsertRepeatedBytes-Custom-CustomCrossOver-CopyPart-Custom-CustomCrossOver- DE: "not enough me"-
+#11833	NEW    cov: 1682 ft: 6807 corp: 652/2025Kb lim: 65536 exec/s: 986 rss: 2571Mb L: 514/65536 MS: 1 CustomCrossOver-
+#11859	NEW    cov: 1682 ft: 6807 corp: 653/2025Kb lim: 65536 exec/s: 988 rss: 2577Mb L: 5/65536 MS: 2 InsertByte-Custom-
+#11861	NEW    cov: 1682 ft: 6807 corp: 653/2025Kb lim: 65536 exec/s: 988 rss: 2577Mb L: 21/65536 MS: 4 PersAutoDict-Custom-ManualDict-Custom- DE: "not enough me"-"false"-
+#11867	NEW    cov: 1682 ft: 6807 corp: 652/2025Kb lim: 65536 exec/s: 988 rss: 2579Mb L: 8/65536 MS: 2 CopyPart-Custom-
+#11871	NEW    cov: 1682 ft: 6808 corp: 653/2026Kb lim: 65536 exec/s: 989 rss: 2580Mb L: 547/65536 MS: 6 CustomCrossOver-CrossOver-Custom-InsertRepeatedBytes-Custom-CustomCrossOver-
+#11880	NEW    cov: 1682 ft: 6808 corp: 653/2025Kb lim: 65536 exec/s: 990 rss: 2582Mb L: 113/65536 MS: 8 ShuffleBytes-Custom-ChangeByte-Custom-CMP-Custom-InsertRepeatedBytes-Custom- DE: "\377\377\377\377\377\377\377\377"-
+	NEW_FUNC[1/52]: 0x000000500800 in std::__detail::_Node_const_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const, beez::core::Task>, false, true>::operator*() const /usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/hashtable_policy.h:498
+	NEW_FUNC[2/52]: 0x000000500c88 in std::tuple_element<0ul, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const, beez::core::Task>>::type const& std::get<0ul, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const, beez::core::Task>(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const, beez::core::Task> const&) /usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/stl_pair.h:1299
+#12085	RELOAD cov: 1880 ft: 7077 corp: 653/2017Kb lim: 65536 exec/s: 1007 rss: 2628Mb
+#12212	NEW    cov: 1880 ft: 7275 corp: 654/2081Kb lim: 65536 exec/s: 1017 rss: 2656Mb L: 65407/65536 MS: 4 InsertByte-Custom-CMP-Custom- DE: "__idiv"-
+#12239	NEW    cov: 1880 ft: 7275 corp: 655/2081Kb lim: 65536 exec/s: 1019 rss: 2662Mb L: 2/65536 MS: 3 PersAutoDict-Custom-CustomCrossOver- DE: "errors"-
+#12390	NEW    cov: 1880 ft: 7275 corp: 654/2081Kb lim: 65536 exec/s: 953 rss: 2694Mb L: 4/65536 MS: 1 CustomCrossOver-
+#12666	NEW    cov: 1880 ft: 7275 corp: 654/2081Kb lim: 65536 exec/s: 974 rss: 2755Mb L: 48/65536 MS: 2 ManualDict-Custom- DE: "does-not-exist"-
+#12792	NEW    cov: 1880 ft: 7275 corp: 654/2081Kb lim: 65536 exec/s: 984 rss: 2781Mb L: 18/65536 MS: 2 ShuffleBytes-Custom-
+#12805	NEW    cov: 1880 ft: 7275 corp: 655/2081Kb lim: 65536 exec/s: 985 rss: 2784Mb L: 17/65536 MS: 6 EraseBytes-Custom-ManualDict-Custom-InsertByte-Custom- DE: "run_log_file"-
+#12891	NEW    cov: 1880 ft: 7275 corp: 655/2074Kb lim: 65536 exec/s: 991 rss: 2803Mb L: 9772/65536 MS: 2 CopyPart-Custom-
+#12923	NEW    cov: 1880 ft: 7275 corp: 655/2074Kb lim: 65536 exec/s: 994 rss: 2810Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#12959	NEW    cov: 1880 ft: 7275 corp: 655/2074Kb lim: 65536 exec/s: 996 rss: 2818Mb L: 24/65536 MS: 2 PersAutoDict-Custom- DE: "mmap_hashing_min_bytes"-
+#13024	NEW    cov: 1880 ft: 7275 corp: 656/2074Kb lim: 65536 exec/s: 1001 rss: 2832Mb L: 53/65536 MS: 8 ChangeByte-Custom-CrossOver-Custom-CustomCrossOver-CustomCrossOver-InsertRepeatedBytes-Custom-
+#13111	RELOAD cov: 1880 ft: 7405 corp: 662/2091Kb lim: 65536 exec/s: 1008 rss: 2852Mb
+#13135	NEW    cov: 1880 ft: 7405 corp: 662/2028Kb lim: 65536 exec/s: 1010 rss: 2857Mb L: 16/65536 MS: 4 CustomCrossOver-CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#13138	NEW    cov: 1880 ft: 7406 corp: 663/2028Kb lim: 65536 exec/s: 1010 rss: 2858Mb L: 5/65536 MS: 4 CustomCrossOver-ShuffleBytes-Custom-CustomCrossOver-
+#13146	NEW    cov: 1880 ft: 7406 corp: 663/2027Kb lim: 65536 exec/s: 1011 rss: 2859Mb L: 4/65536 MS: 6 EraseBytes-Custom-ChangeByte-Custom-ChangeByte-Custom-
+#13167	NEW    cov: 1880 ft: 7406 corp: 664/2028Kb lim: 65536 exec/s: 1012 rss: 2864Mb L: 590/65536 MS: 2 InsertRepeatedBytes-Custom-
+#13257	NEW    cov: 1880 ft: 7518 corp: 664/2028Kb lim: 65536 exec/s: 1019 rss: 2883Mb L: 9/65536 MS: 7 CustomCrossOver-EraseBytes-Custom-CustomCrossOver-CustomCrossOver-PersAutoDict-Custom- DE: "mutate"-
+#13414	NEW    cov: 1880 ft: 7518 corp: 664/2028Kb lim: 65536 exec/s: 958 rss: 2916Mb L: 16/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#13449	NEW    cov: 1880 ft: 7518 corp: 664/2028Kb lim: 65536 exec/s: 960 rss: 2924Mb L: 5/65536 MS: 7 CustomCrossOver-CMP-Custom-CustomCrossOver-CustomCrossOver-ChangeBit-Custom- DE: "not enough "-
+#13496	NEW    cov: 1880 ft: 7518 corp: 663/2012Kb lim: 65536 exec/s: 964 rss: 2934Mb L: 28/65536 MS: 4 CopyPart-Custom-ChangeBinInt-Custom-
+#13498	NEW    cov: 1880 ft: 7518 corp: 663/2012Kb lim: 65536 exec/s: 964 rss: 2935Mb L: 2/65536 MS: 3 ChangeBinInt-Custom-CustomCrossOver-
+#13624	NEW    cov: 1880 ft: 7518 corp: 664/2012Kb lim: 65536 exec/s: 973 rss: 2961Mb L: 2/65536 MS: 1 CustomCrossOver-
+#13636	NEW    cov: 1880 ft: 7518 corp: 664/2012Kb lim: 65536 exec/s: 974 rss: 2963Mb L: 18/65536 MS: 4 CMP-Custom-CMP-Custom- DE: "\001\000\000\000\000\000\000\000"-"~\377\377\377\377\377\377\376"-
+#13732	NEW    cov: 1880 ft: 7519 corp: 663/1979Kb lim: 65536 exec/s: 980 rss: 2984Mb L: 4093/65536 MS: 1 CustomCrossOver-
+#13733	NEW    cov: 1880 ft: 7519 corp: 663/1979Kb lim: 65536 exec/s: 980 rss: 2984Mb L: 1/65536 MS: 2 ChangeByte-Custom-
+#13914	NEW    cov: 1880 ft: 7527 corp: 662/1979Kb lim: 65536 exec/s: 993 rss: 3022Mb L: 10/65536 MS: 2 PersAutoDict-Custom- DE: "\001\000"-
+#13925	NEW    cov: 1880 ft: 7527 corp: 662/1977Kb lim: 65536 exec/s: 994 rss: 3025Mb L: 18/65536 MS: 1 CustomCrossOver-
+#14007	NEW    cov: 1880 ft: 7527 corp: 662/1968Kb lim: 65536 exec/s: 1000 rss: 3042Mb L: 23973/65536 MS: 4 ManualDict-Custom-ShuffleBytes-Custom- DE: "buildScriptPath"-
+#14090	NEW    cov: 1880 ft: 7528 corp: 662/1968Kb lim: 65536 exec/s: 1006 rss: 3059Mb L: 17/65536 MS: 4 CustomCrossOver-ShuffleBytes-Custom-CustomCrossOver-
+#14225	RELOAD cov: 1880 ft: 7528 corp: 663/1969Kb lim: 65536 exec/s: 1016 rss: 3089Mb
+#14236	NEW    cov: 1880 ft: 7528 corp: 664/1969Kb lim: 65536 exec/s: 1016 rss: 3091Mb L: 2/65536 MS: 1 CustomCrossOver-
+#14238	NEW    cov: 1880 ft: 7528 corp: 664/1969Kb lim: 65536 exec/s: 1017 rss: 3091Mb L: 16/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#14266	NEW    cov: 1880 ft: 7528 corp: 665/1969Kb lim: 65536 exec/s: 1019 rss: 3098Mb L: 8/65536 MS: 6 EraseBytes-Custom-ChangeByte-Custom-ChangeBinInt-Custom-
+#14431	NEW    cov: 1880 ft: 7528 corp: 665/1969Kb lim: 65536 exec/s: 962 rss: 3134Mb L: 4/65536 MS: 7 CustomCrossOver-ChangeByte-Custom-ChangeByte-Custom-CustomCrossOver-CustomCrossOver-
+#14550	NEW    cov: 1880 ft: 7528 corp: 666/1970Kb lim: 65536 exec/s: 970 rss: 3161Mb L: 1027/65536 MS: 8 ChangeBinInt-Custom-PersAutoDict-Custom-InsertRepeatedBytes-Custom-ChangeByte-Custom- DE: "\377\377\377\377"-
+#14578	NEW    cov: 1880 ft: 7528 corp: 665/1938Kb lim: 65536 exec/s: 971 rss: 3167Mb L: 67/65536 MS: 4 CMP-Custom-CustomCrossOver-CustomCrossOver- DE: "\377\377\377\377\377\377\377\020"-
+#14579	NEW    cov: 1880 ft: 7528 corp: 666/1938Kb lim: 65536 exec/s: 971 rss: 3167Mb L: 263/65536 MS: 2 ChangeByte-Custom-
+#14580	NEW    cov: 1880 ft: 7528 corp: 666/1938Kb lim: 65536 exec/s: 972 rss: 3167Mb L: 58/65536 MS: 2 InsertRepeatedBytes-Custom-
+#14749	NEW    cov: 1880 ft: 7529 corp: 667/1987Kb lim: 65536 exec/s: 983 rss: 3205Mb L: 50433/65536 MS: 8 PersAutoDict-Custom-EraseBytes-Custom-EraseBytes-Custom-ChangeBit-Custom- DE: "\001\000"-
+#14756	NEW    cov: 1880 ft: 7529 corp: 667/1987Kb lim: 65536 exec/s: 983 rss: 3206Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#14778	NEW    cov: 1880 ft: 7529 corp: 666/1987Kb lim: 65536 exec/s: 985 rss: 3210Mb L: 3/65536 MS: 4 ChangeByte-Custom-InsertByte-Custom-
+#14824	NEW    cov: 1880 ft: 7529 corp: 666/1987Kb lim: 65536 exec/s: 988 rss: 3220Mb L: 32/65536 MS: 2 ShuffleBytes-Custom-
+#14896	NEW    cov: 1880 ft: 7529 corp: 667/2033Kb lim: 65536 exec/s: 993 rss: 3236Mb L: 46939/65536 MS: 4 ChangeBit-Custom-CopyPart-Custom-
+#14952	NEW    cov: 1880 ft: 7529 corp: 667/2033Kb lim: 65536 exec/s: 996 rss: 3247Mb L: 51/65536 MS: 2 ChangeBinInt-Custom-
+#14979	NEW    cov: 1880 ft: 7529 corp: 667/2033Kb lim: 65536 exec/s: 998 rss: 3254Mb L: 25/65536 MS: 4 PersAutoDict-Custom-ChangeByte-Custom- DE: "\\r"-
+#14985	NEW    cov: 1880 ft: 7529 corp: 668/2033Kb lim: 65536 exec/s: 999 rss: 3255Mb L: 4/65536 MS: 2 InsertByte-Custom-
+#15032	NEW    cov: 1880 ft: 7530 corp: 669/2033Kb lim: 65536 exec/s: 1002 rss: 3266Mb L: 3/65536 MS: 4 InsertByte-Custom-ChangeByte-Custom-
+#15048	NEW    cov: 1880 ft: 7530 corp: 670/2033Kb lim: 65536 exec/s: 1003 rss: 3270Mb L: 19/65536 MS: 2 ChangeBit-Custom-
+#15066	NEW    cov: 1880 ft: 7530 corp: 671/2033Kb lim: 65536 exec/s: 1004 rss: 3274Mb L: 2/65536 MS: 4 InsertByte-Custom-CustomCrossOver-CustomCrossOver-
+#15090	NEW    cov: 1880 ft: 7531 corp: 672/2033Kb lim: 65536 exec/s: 1006 rss: 3279Mb L: 30/65536 MS: 8 ShuffleBytes-Custom-ManualDict-Custom-ChangeBit-Custom-ChangeBinInt-Custom- DE: "use_mmap_for_hashing"-
+#15285	RELOAD cov: 1880 ft: 7534 corp: 675/2097Kb lim: 65536 exec/s: 955 rss: 3323Mb
+#15338	NEW    cov: 1880 ft: 7535 corp: 676/2121Kb lim: 65536 exec/s: 958 rss: 3334Mb L: 24578/65536 MS: 5 CustomCrossOver-CMP-Custom-ManualDict-Custom- DE: "\002\000\000\000\000\000\000\000"-"for"-
+#15339	NEW    cov: 1880 ft: 7535 corp: 675/2121Kb lim: 65536 exec/s: 958 rss: 3334Mb L: 16/65536 MS: 2 PersAutoDict-Custom- DE: "copy"-
+#15340	NEW    cov: 1880 ft: 7535 corp: 676/2121Kb lim: 65536 exec/s: 958 rss: 3335Mb L: 2/65536 MS: 1 CustomCrossOver-
+#15363	NEW    cov: 1880 ft: 7536 corp: 677/2121Kb lim: 65536 exec/s: 960 rss: 3339Mb L: 6/65536 MS: 6 CMP-Custom-InsertByte-Custom-InsertByte-Custom- DE: "join"-
+#15535	NEW    cov: 1880 ft: 7536 corp: 677/2121Kb lim: 65536 exec/s: 970 rss: 3376Mb L: 17/65536 MS: 3 ChangeByte-Custom-CustomCrossOver-
+#15551	NEW    cov: 1880 ft: 7536 corp: 677/2121Kb lim: 65536 exec/s: 971 rss: 3380Mb L: 16/65536 MS: 2 ChangeBit-Custom-
+#15767	NEW    cov: 1880 ft: 7537 corp: 678/2121Kb lim: 65536 exec/s: 985 rss: 3426Mb L: 51/65536 MS: 2 ChangeBit-Custom-
+#15973	NEW    cov: 1880 ft: 7537 corp: 678/2121Kb lim: 65536 exec/s: 998 rss: 3468Mb L: 16/65536 MS: 2 ChangeBit-Custom-
+#16001	NEW    cov: 1880 ft: 7537 corp: 678/2121Kb lim: 65536 exec/s: 1000 rss: 3474Mb L: 15/65536 MS: 6 ChangeBinInt-Custom-PersAutoDict-Custom-EraseBytes-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#16153	NEW    cov: 1880 ft: 7537 corp: 678/2121Kb lim: 65536 exec/s: 950 rss: 3508Mb L: 3/65536 MS: 3 CustomCrossOver-ShuffleBytes-Custom-
+#16155	NEW    cov: 1880 ft: 7537 corp: 679/2121Kb lim: 65536 exec/s: 950 rss: 3509Mb L: 23/65536 MS: 4 ChangeByte-Custom-InsertRepeatedBytes-Custom-
+#16161	NEW    cov: 1880 ft: 7537 corp: 680/2121Kb lim: 65536 exec/s: 950 rss: 3510Mb L: 4/65536 MS: 2 EraseBytes-Custom-
+#16164	NEW    cov: 1880 ft: 7537 corp: 680/2121Kb lim: 65536 exec/s: 950 rss: 3510Mb L: 21/65536 MS: 5 CustomCrossOver-ChangeBit-Custom-EraseBytes-Custom-
+#16167	NEW    cov: 1880 ft: 7537 corp: 680/2121Kb lim: 65536 exec/s: 951 rss: 3511Mb L: 16/65536 MS: 3 CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#16304	RELOAD cov: 1880 ft: 7544 corp: 682/2172Kb lim: 65536 exec/s: 959 rss: 3542Mb
+#16316	NEW    cov: 1880 ft: 7551 corp: 683/2172Kb lim: 65536 exec/s: 959 rss: 3543Mb L: 17/65536 MS: 4 ChangeBinInt-Custom-ChangeByte-Custom-
+#16335	NEW    cov: 1880 ft: 7551 corp: 683/2172Kb lim: 65536 exec/s: 960 rss: 3548Mb L: 8/65536 MS: 8 ChangeByte-Custom-ChangeByte-Custom-EraseBytes-Custom-CMP-Custom- DE: "\035\000\000\000"-
+#16383	NEW    cov: 1880 ft: 7551 corp: 683/2172Kb lim: 65536 exec/s: 963 rss: 3558Mb L: 2/65536 MS: 5 PersAutoDict-Custom-PersAutoDict-Custom-CustomCrossOver- DE: "hide_cache_hits"-"unpack"-
+#16384	pulse  cov: 1880 ft: 7551 corp: 683/2172Kb lim: 65536 exec/s: 963 rss: 3559Mb
+#16446	NEW    cov: 1880 ft: 7551 corp: 683/2172Kb lim: 65536 exec/s: 967 rss: 3572Mb L: 23/65536 MS: 6 ShuffleBytes-Custom-ShuffleBytes-Custom-EraseBytes-Custom-
+#16448	NEW    cov: 1880 ft: 7551 corp: 683/2172Kb lim: 65536 exec/s: 967 rss: 3572Mb L: 1/65536 MS: 4 PersAutoDict-Custom-ShuffleBytes-Custom- DE: "["-
+#16494	NEW    cov: 1880 ft: 7551 corp: 683/2109Kb lim: 65536 exec/s: 970 rss: 3582Mb L: 1035/65536 MS: 2 ChangeByte-Custom-
+#16518	NEW    cov: 1880 ft: 7551 corp: 683/2109Kb lim: 65536 exec/s: 971 rss: 3588Mb L: 64/65536 MS: 8 EraseBytes-Custom-PersAutoDict-Custom-ManualDict-Custom-InsertRepeatedBytes-Custom- DE: "flags"-"{"-
+#16550	NEW    cov: 1880 ft: 7551 corp: 684/2109Kb lim: 65536 exec/s: 973 rss: 3595Mb L: 8/65536 MS: 4 ChangeBinInt-Custom-ChangeByte-Custom-
+#16572	NEW    cov: 1880 ft: 7552 corp: 685/2109Kb lim: 65536 exec/s: 974 rss: 3600Mb L: 41/65536 MS: 3 CrossOver-Custom-CustomCrossOver-
+#16579	NEW    cov: 1880 ft: 7552 corp: 685/2109Kb lim: 65536 exec/s: 975 rss: 3601Mb L: 1/65536 MS: 4 ChangeBit-Custom-ShuffleBytes-Custom-
+#16596	NEW    cov: 1880 ft: 7553 corp: 686/2109Kb lim: 65536 exec/s: 976 rss: 3604Mb L: 91/65536 MS: 4 CopyPart-Custom-CopyPart-Custom-
+#16598	NEW    cov: 1880 ft: 7553 corp: 686/2109Kb lim: 65536 exec/s: 976 rss: 3605Mb L: 98/65536 MS: 4 InsertRepeatedBytes-Custom-ChangeByte-Custom-
+#16603	NEW    cov: 1880 ft: 7554 corp: 686/2091Kb lim: 65536 exec/s: 976 rss: 3606Mb L: 4098/65536 MS: 8 CustomCrossOver-CMP-Custom-InsertRepeatedBytes-Custom-ShuffleBytes-Custom-CustomCrossOver- DE: "\037\000\000\000\000\000\000\000"-
+#16609	NEW    cov: 1880 ft: 7554 corp: 685/2090Kb lim: 65536 exec/s: 977 rss: 3607Mb L: 2/65536 MS: 1 CustomCrossOver-
+#16610	NEW    cov: 1880 ft: 7554 corp: 685/2090Kb lim: 65536 exec/s: 977 rss: 3608Mb L: 19/65536 MS: 1 CustomCrossOver-
+#16678	NEW    cov: 1880 ft: 7554 corp: 685/2090Kb lim: 65536 exec/s: 981 rss: 3622Mb L: 89/65536 MS: 6 InsertByte-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-
+#16776	NEW    cov: 1880 ft: 7554 corp: 685/2083Kb lim: 65536 exec/s: 986 rss: 3643Mb L: 104/65536 MS: 4 ChangeBit-Custom-CustomCrossOver-CustomCrossOver-
+#16999	NEW    cov: 1880 ft: 7556 corp: 686/2099Kb lim: 65536 exec/s: 944 rss: 3692Mb L: 16384/65536 MS: 4 ManualDict-Custom-CustomCrossOver-CustomCrossOver- DE: "~="-
+#17176	RELOAD cov: 1880 ft: 7565 corp: 689/2101Kb lim: 65536 exec/s: 954 rss: 3730Mb
+#17177	NEW    cov: 1880 ft: 7565 corp: 690/2101Kb lim: 65536 exec/s: 954 rss: 3730Mb L: 24/65536 MS: 2 CMP-Custom- DE: "\012\000\000\000\000\000\000\000"-
+#17230	NEW    cov: 1880 ft: 7565 corp: 690/2075Kb lim: 65536 exec/s: 957 rss: 3739Mb L: 1184/65536 MS: 4 CustomCrossOver-CustomCrossOver-InsertByte-Custom-
+#17294	NEW    cov: 1880 ft: 7567 corp: 691/2075Kb lim: 65536 exec/s: 960 rss: 3752Mb L: 266/65536 MS: 6 CustomCrossOver-CrossOver-Custom-PersAutoDict-Custom-CustomCrossOver- DE: "\377\377\377\377\377\377\377\177"-
+#17320	NEW    cov: 1880 ft: 7567 corp: 691/2075Kb lim: 65536 exec/s: 962 rss: 3756Mb L: 16/65536 MS: 2 CopyPart-Custom-
+#17424	NEW    cov: 1880 ft: 7567 corp: 691/2075Kb lim: 65536 exec/s: 968 rss: 3778Mb L: 141/65536 MS: 8 ChangeBit-Custom-InsertByte-Custom-ChangeByte-Custom-EraseBytes-Custom-
+#17538	NEW    cov: 1880 ft: 7568 corp: 692/2086Kb lim: 65536 exec/s: 974 rss: 3805Mb L: 11095/65536 MS: 8 InsertByte-Custom-ChangeBit-Custom-EraseBytes-Custom-EraseBytes-Custom-
+#17749	NEW    cov: 1880 ft: 7568 corp: 692/2085Kb lim: 65536 exec/s: 934 rss: 3849Mb L: 13/65536 MS: 2 CMP-Custom- DE: "replace"-
+#17755	NEW    cov: 1880 ft: 7568 corp: 692/2085Kb lim: 65536 exec/s: 934 rss: 3850Mb L: 11/65536 MS: 2 ManualDict-Custom- DE: "not-a-mode"-
+#17756	NEW    cov: 1880 ft: 7568 corp: 692/2085Kb lim: 65536 exec/s: 934 rss: 3851Mb L: 3/65536 MS: 2 InsertByte-Custom-
+#17802	NEW    cov: 1880 ft: 7568 corp: 692/2085Kb lim: 65536 exec/s: 936 rss: 3860Mb L: 19/65536 MS: 1 CustomCrossOver-
+#17804	NEW    cov: 1880 ft: 7568 corp: 692/2085Kb lim: 65536 exec/s: 937 rss: 3861Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#17815	NEW    cov: 1880 ft: 7568 corp: 693/2085Kb lim: 65536 exec/s: 937 rss: 3863Mb L: 20/65536 MS: 2 CMP-Custom- DE: "\377\377\377\377"-
+#17997	RELOAD cov: 1880 ft: 7571 corp: 693/2033Kb lim: 65536 exec/s: 947 rss: 3903Mb
+#18195	NEW    cov: 1880 ft: 7571 corp: 694/2033Kb lim: 65536 exec/s: 957 rss: 3945Mb L: 2/65536 MS: 4 CustomCrossOver-ShuffleBytes-Custom-CustomCrossOver-
+#18201	NEW    cov: 1880 ft: 7571 corp: 694/2033Kb lim: 65536 exec/s: 957 rss: 3947Mb L: 34/65536 MS: 2 ChangeBit-Custom-
+#18437	NEW    cov: 1880 ft: 7571 corp: 695/2057Kb lim: 65536 exec/s: 921 rss: 3996Mb L: 24579/65536 MS: 2 ChangeBinInt-Custom-
+#18813	RELOAD cov: 1880 ft: 7571 corp: 696/2048Kb lim: 65536 exec/s: 940 rss: 4075Mb
+#18849	NEW    cov: 1880 ft: 7571 corp: 697/2048Kb lim: 65536 exec/s: 942 rss: 4083Mb L: 16/65536 MS: 2 CMP-Custom- DE: "\000\000\000\000\001\000\000\000"-
+#18915	NEW    cov: 1880 ft: 7571 corp: 697/2048Kb lim: 65536 exec/s: 945 rss: 4099Mb L: 2/65536 MS: 1 CustomCrossOver-
+#19013	NEW    cov: 1880 ft: 7572 corp: 698/2048Kb lim: 65536 exec/s: 950 rss: 4120Mb L: 4/65536 MS: 6 ChangeBinInt-Custom-PersAutoDict-Custom-ChangeBinInt-Custom- DE: "\000\021"-
+#19023	NEW    cov: 1880 ft: 7573 corp: 699/2048Kb lim: 65536 exec/s: 951 rss: 4122Mb L: 172/65536 MS: 8 CustomCrossOver-ChangeBinInt-Custom-CustomCrossOver-CrossOver-Custom-EraseBytes-Custom-
+#19061	NEW    cov: 1880 ft: 7574 corp: 699/2048Kb lim: 65536 exec/s: 953 rss: 4130Mb L: 17/65536 MS: 6 EraseBytes-Custom-PersAutoDict-Custom-PersAutoDict-Custom- DE: "name"-"false"-
+#19063	NEW    cov: 1880 ft: 7577 corp: 700/2048Kb lim: 65536 exec/s: 953 rss: 4130Mb L: 20/65536 MS: 4 InsertByte-Custom-ChangeBit-Custom-
+#19080	NEW    cov: 1880 ft: 7580 corp: 701/2093Kb lim: 65536 exec/s: 908 rss: 4135Mb L: 46583/65536 MS: 4 PersAutoDict-Custom-EraseBytes-Custom- DE: "\001\000\000\000\000\000\000\000"-
+#19254	NEW    cov: 1880 ft: 7582 corp: 702/2094Kb lim: 65536 exec/s: 916 rss: 4170Mb L: 1184/65536 MS: 7 InsertRepeatedBytes-Custom-ChangeBit-Custom-InsertByte-Custom-CustomCrossOver-
+#19338	NEW    cov: 1880 ft: 7582 corp: 702/2094Kb lim: 65536 exec/s: 920 rss: 4188Mb L: 1/65536 MS: 6 InsertRepeatedBytes-Custom-CMP-Custom-CustomCrossOver-CustomCrossOver- DE: "is_tty"-
+#19574	RELOAD cov: 1880 ft: 7582 corp: 703/2126Kb lim: 65536 exec/s: 932 rss: 4238Mb
+#19576	NEW    cov: 1880 ft: 7582 corp: 703/2125Kb lim: 65536 exec/s: 932 rss: 4238Mb L: 2/65536 MS: 4 ChangeByte-Custom-CopyPart-Custom-
+#19670	NEW    cov: 1880 ft: 7582 corp: 702/2125Kb lim: 65536 exec/s: 936 rss: 4258Mb L: 24/65536 MS: 5 ChangeBit-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#19799	NEW    cov: 1880 ft: 7582 corp: 702/2125Kb lim: 65536 exec/s: 942 rss: 4286Mb L: 60/65536 MS: 8 PersAutoDict-Custom-ChangeBit-Custom-InsertByte-Custom-ShuffleBytes-Custom- DE: "use_mmap_for_hashing"-
+#19842	NEW    cov: 1880 ft: 7582 corp: 702/2125Kb lim: 65536 exec/s: 901 rss: 4295Mb L: 86/65536 MS: 6 ManualDict-Custom-ManualDict-Custom-ShuffleBytes-Custom- DE: "workflow phase invocation is missing required field"-"pipeline"-
+#19984	NEW    cov: 1880 ft: 7582 corp: 702/2125Kb lim: 65536 exec/s: 908 rss: 4326Mb L: 9/65536 MS: 4 CMP-Custom-ChangeBinInt-Custom- DE: "\001\000\000\001\000\000\000\001"-
+#20209	NEW    cov: 1880 ft: 7582 corp: 703/2125Kb lim: 65536 exec/s: 918 rss: 4376Mb L: 8/65536 MS: 10 EraseBytes-Custom-CMP-Custom-ChangeBit-Custom-ChangeBit-Custom-EraseBytes-Custom- DE: "__gc"-
+#20229	NEW    cov: 1880 ft: 7582 corp: 703/2125Kb lim: 65536 exec/s: 919 rss: 4380Mb L: 47/65536 MS: 6 CustomCrossOver-CustomCrossOver-CustomCrossOver-CustomCrossOver-CMP-Custom- DE: "\026\000\000\000\003\000\000\000"-
+#20464	RELOAD cov: 1880 ft: 7582 corp: 702/2109Kb lim: 65536 exec/s: 930 rss: 4430Mb
+#20655	NEW    cov: 1880 ft: 7586 corp: 702/2109Kb lim: 65536 exec/s: 898 rss: 4472Mb L: 16/65536 MS: 1 CustomCrossOver-
+#20673	NEW    cov: 1880 ft: 7586 corp: 702/2109Kb lim: 65536 exec/s: 898 rss: 4476Mb L: 64/65536 MS: 5 ChangeBinInt-Custom-EraseBytes-Custom-CustomCrossOver-
+#20674	NEW    cov: 1880 ft: 7586 corp: 702/2109Kb lim: 65536 exec/s: 898 rss: 4476Mb L: 32/65536 MS: 2 CopyPart-Custom-
+#20876	NEW    cov: 1880 ft: 7586 corp: 702/2109Kb lim: 65536 exec/s: 907 rss: 4519Mb L: 21/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#20922	NEW    cov: 1880 ft: 7588 corp: 703/2109Kb lim: 65536 exec/s: 909 rss: 4529Mb L: 100/65536 MS: 2 PersAutoDict-Custom- DE: "require"-
+#20974	NEW    cov: 1880 ft: 7588 corp: 703/2109Kb lim: 65536 exec/s: 911 rss: 4540Mb L: 8199/65536 MS: 3 CustomCrossOver-ManualDict-Custom- DE: "order"-
+#21005	NEW    cov: 1880 ft: 7588 corp: 704/2109Kb lim: 65536 exec/s: 913 rss: 4546Mb L: 2/65536 MS: 1 CustomCrossOver-
+#21016	NEW    cov: 1880 ft: 7588 corp: 704/2109Kb lim: 65536 exec/s: 913 rss: 4549Mb L: 49/65536 MS: 2 ChangeByte-Custom-
+#21090	NEW    cov: 1880 ft: 7589 corp: 705/2109Kb lim: 65536 exec/s: 916 rss: 4566Mb L: 526/65536 MS: 8 ChangeASCIIInt-Custom-ShuffleBytes-Custom-InsertByte-Custom-CopyPart-Custom-
+#21188	NEW    cov: 1880 ft: 7589 corp: 705/2109Kb lim: 65536 exec/s: 921 rss: 4588Mb L: 90/65536 MS: 6 CMP-Custom-InsertRepeatedBytes-Custom-ShuffleBytes-Custom- DE: "\376\377\377\377\377\377\377\177"-
+#21206	NEW    cov: 1880 ft: 7590 corp: 706/2109Kb lim: 65536 exec/s: 922 rss: 4592Mb L: 8/65536 MS: 6 EraseBytes-Custom-ShuffleBytes-Custom-CopyPart-Custom-
+#21219	NEW    cov: 1880 ft: 7590 corp: 706/2109Kb lim: 65536 exec/s: 922 rss: 4595Mb L: 48/65536 MS: 4 CustomCrossOver-CMP-Custom-CustomCrossOver- DE: "\375\377\377\377\377\377\377\177"-
+#21283	RELOAD cov: 1880 ft: 7590 corp: 706/2109Kb lim: 65536 exec/s: 925 rss: 4610Mb
+#21304	NEW    cov: 1880 ft: 7590 corp: 706/2109Kb lim: 65536 exec/s: 926 rss: 4615Mb L: 9/65536 MS: 1 CustomCrossOver-
+#21307	NEW    cov: 1880 ft: 7603 corp: 707/2109Kb lim: 65536 exec/s: 926 rss: 4615Mb L: 384/65536 MS: 6 EraseBytes-Custom-EraseBytes-Custom-EraseBytes-Custom-
+#21338	NEW    cov: 1880 ft: 7605 corp: 707/2101Kb lim: 65536 exec/s: 927 rss: 4622Mb L: 16384/65536 MS: 1 CustomCrossOver-
+#21372	NEW    cov: 1880 ft: 7605 corp: 708/2101Kb lim: 65536 exec/s: 929 rss: 4630Mb L: 50/65536 MS: 5 CustomCrossOver-CustomCrossOver-CustomCrossOver-CopyPart-Custom-
+#21961	NEW    cov: 1880 ft: 7606 corp: 709/2101Kb lim: 65536 exec/s: 915 rss: 4759Mb L: 151/65536 MS: 8 EraseBytes-Custom-EraseBytes-Custom-InsertByte-Custom-InsertRepeatedBytes-Custom-
+#22058	NEW    cov: 1880 ft: 7606 corp: 710/2101Kb lim: 65536 exec/s: 919 rss: 4779Mb L: 67/65536 MS: 4 ManualDict-Custom-ManualDict-Custom- DE: "pin_threads_to_cores"-"run_log"-
+#22087	NEW    cov: 1880 ft: 7610 corp: 711/2101Kb lim: 65536 exec/s: 920 rss: 4785Mb L: 32/65536 MS: 7 CrossOver-Custom-CustomCrossOver-ChangeBit-Custom-ChangeBit-Custom-
+#22183	RELOAD cov: 1880 ft: 7611 corp: 713/2109Kb lim: 65536 exec/s: 924 rss: 4806Mb
+#22200	NEW    cov: 1880 ft: 7612 corp: 713/2109Kb lim: 65536 exec/s: 888 rss: 4810Mb L: 5/65536 MS: 4 InsertByte-Custom-CMP-Custom- DE: "\001\000\000\342"-
+#22257	NEW    cov: 1880 ft: 7613 corp: 714/2109Kb lim: 65536 exec/s: 890 rss: 4821Mb L: 62/65536 MS: 3 ChangeBinInt-Custom-CustomCrossOver-
+#22408	NEW    cov: 1880 ft: 7613 corp: 714/2109Kb lim: 65536 exec/s: 896 rss: 4853Mb L: 5/65536 MS: 2 ShuffleBytes-Custom-
+#22463	NEW    cov: 1880 ft: 7614 corp: 715/2123Kb lim: 65536 exec/s: 898 rss: 4865Mb L: 14358/65536 MS: 10 InsertRepeatedBytes-Custom-ChangeASCIIInt-Custom-CMP-Custom-ChangeBit-Custom-ManualDict-Custom- DE: "\000\000\000\003\000\000\000\024"-"mmap"-
+#22507	NEW    cov: 1880 ft: 7614 corp: 715/2123Kb lim: 65536 exec/s: 900 rss: 4875Mb L: 3/65536 MS: 5 CustomCrossOver-CopyPart-Custom-CustomCrossOver-CustomCrossOver-
+#22512	NEW    cov: 1880 ft: 7614 corp: 715/2123Kb lim: 65536 exec/s: 900 rss: 4876Mb L: 17/65536 MS: 10 ShuffleBytes-Custom-ManualDict-Custom-InsertByte-Custom-EraseBytes-Custom-InsertRepeatedBytes-Custom- DE: "order"-
+#22537	NEW    cov: 1880 ft: 7615 corp: 716/2123Kb lim: 65536 exec/s: 901 rss: 4882Mb L: 75/65536 MS: 10 EraseBytes-Custom-InsertByte-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-CopyPart-Custom-
+#22542	NEW    cov: 1880 ft: 7616 corp: 717/2183Kb lim: 65536 exec/s: 901 rss: 4883Mb L: 61247/65536 MS: 10 EraseBytes-Custom-CopyPart-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-CopyPart-Custom-
+#22556	NEW    cov: 1880 ft: 7616 corp: 717/2183Kb lim: 65536 exec/s: 902 rss: 4886Mb L: 18/65536 MS: 7 ShuffleBytes-Custom-ChangeByte-Custom-CustomCrossOver-InsertByte-Custom-
+#22694	NEW    cov: 1880 ft: 7616 corp: 717/2183Kb lim: 65536 exec/s: 907 rss: 4915Mb L: 3/65536 MS: 4 ChangeByte-Custom-CustomCrossOver-CustomCrossOver-
+#22815	NEW    cov: 1880 ft: 7616 corp: 717/2183Kb lim: 65536 exec/s: 912 rss: 4943Mb L: 2/65536 MS: 1 CustomCrossOver-
+#22893	NEW    cov: 1880 ft: 7616 corp: 717/2183Kb lim: 65536 exec/s: 915 rss: 4958Mb L: 26/65536 MS: 6 PersAutoDict-Custom-InsertByte-Custom-PersAutoDict-Custom- DE: "~\377\377\377\377\377\377\376"-"length"-
+#22995	NEW    cov: 1880 ft: 7616 corp: 717/2183Kb lim: 65536 exec/s: 919 rss: 4977Mb L: 20/65536 MS: 4 CopyPart-Custom-EraseBytes-Custom-
+#23032	NEW    cov: 1880 ft: 7617 corp: 718/2191Kb lim: 65536 exec/s: 921 rss: 4985Mb L: 8151/65536 MS: 3 ChangeASCIIInt-Custom-CustomCrossOver-
+#23124	RELOAD cov: 1880 ft: 7617 corp: 717/2183Kb lim: 65536 exec/s: 889 rss: 5005Mb
+#23154	NEW    cov: 1880 ft: 7617 corp: 717/2183Kb lim: 65536 exec/s: 890 rss: 5012Mb L: 25/65536 MS: 10 CopyPart-Custom-ShuffleBytes-Custom-InsertByte-Custom-ManualDict-Custom-PersAutoDict-Custom- DE: "~="-"\377\377\377\377\377\377\377\020"-
+#23160	NEW    cov: 1880 ft: 7617 corp: 717/2183Kb lim: 65536 exec/s: 890 rss: 5014Mb L: 1/65536 MS: 2 CrossOver-Custom-
+#23210	NEW    cov: 1880 ft: 7617 corp: 718/2183Kb lim: 65536 exec/s: 892 rss: 5024Mb L: 17/65536 MS: 10 ShuffleBytes-Custom-CMP-Custom-InsertByte-Custom-ChangeBit-Custom-CMP-Custom- DE: "\022\000\000\000\000\000\000\000"-"sol.so"-
+#23211	NEW    cov: 1880 ft: 7617 corp: 718/2182Kb lim: 65536 exec/s: 892 rss: 5024Mb L: 16/65536 MS: 2 ManualDict-Custom- DE: "icons"-
+#23213	NEW    cov: 1880 ft: 7617 corp: 719/2182Kb lim: 65536 exec/s: 892 rss: 5025Mb L: 18/65536 MS: 4 ChangeBinInt-Custom-ChangeBinInt-Custom-
+#23242	NEW    cov: 1880 ft: 7619 corp: 720/2191Kb lim: 65536 exec/s: 893 rss: 5031Mb L: 9934/65536 MS: 8 CMP-Custom-InsertRepeatedBytes-Custom-ChangeByte-Custom-InsertByte-Custom- DE: "\377\377\377\377\377\377\377\377"-
+#23299	NEW    cov: 1880 ft: 7619 corp: 720/2191Kb lim: 65536 exec/s: 896 rss: 5043Mb L: 2/65536 MS: 4 ChangeBit-Custom-CopyPart-Custom-
+#23487	NEW    cov: 1880 ft: 7619 corp: 720/2191Kb lim: 65536 exec/s: 903 rss: 5083Mb L: 40/65536 MS: 4 CustomCrossOver-InsertByte-Custom-CustomCrossOver-
+#23511	NEW    cov: 1880 ft: 7619 corp: 720/2191Kb lim: 65536 exec/s: 904 rss: 5087Mb L: 64/65536 MS: 6 CustomCrossOver-CustomCrossOver-InsertRepeatedBytes-Custom-PersAutoDict-Custom- DE: "\376\377\377\377\377\377\377\177"-
+#23518	NEW    cov: 1880 ft: 7619 corp: 719/2180Kb lim: 65536 exec/s: 904 rss: 5088Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#23656	NEW    cov: 1880 ft: 7619 corp: 720/2180Kb lim: 65536 exec/s: 909 rss: 5118Mb L: 10/65536 MS: 4 CustomCrossOver-CustomCrossOver-PersAutoDict-Custom- DE: "\000\000\000\003\000\000\000\024"-
+#23711	NEW    cov: 1880 ft: 7620 corp: 721/2180Kb lim: 65536 exec/s: 911 rss: 5130Mb L: 11/65536 MS: 10 ManualDict-Custom-PersAutoDict-Custom-EraseBytes-Custom-ShuffleBytes-Custom-ChangeBinInt-Custom- DE: "<"-"init"-
+#23732	NEW    cov: 1880 ft: 7620 corp: 722/2180Kb lim: 65536 exec/s: 912 rss: 5135Mb L: 10/65536 MS: 1 CustomCrossOver-
+#23752	NEW    cov: 1880 ft: 7620 corp: 722/2169Kb lim: 65536 exec/s: 913 rss: 5139Mb L: 12506/65536 MS: 10 EraseBytes-Custom-ChangeASCIIInt-Custom-ChangeByte-Custom-ChangeBinInt-Custom-CrossOver-Custom-
+#23846	NEW    cov: 1880 ft: 7620 corp: 722/2169Kb lim: 65536 exec/s: 917 rss: 5157Mb L: 2/65536 MS: 6 CrossOver-Custom-CopyPart-Custom-CustomCrossOver-CustomCrossOver-
+#24006	RELOAD cov: 1880 ft: 7620 corp: 722/2154Kb lim: 65536 exec/s: 889 rss: 5192Mb
+#24027	NEW    cov: 1880 ft: 7620 corp: 723/2154Kb lim: 65536 exec/s: 889 rss: 5195Mb L: 4/65536 MS: 1 CustomCrossOver-
+#24038	NEW    cov: 1880 ft: 7620 corp: 723/2154Kb lim: 65536 exec/s: 890 rss: 5197Mb L: 9/65536 MS: 1 CustomCrossOver-
+#24061	NEW    cov: 1880 ft: 7621 corp: 724/2155Kb lim: 65536 exec/s: 891 rss: 5203Mb L: 441/65536 MS: 6 ChangeByte-Custom-InsertRepeatedBytes-Custom-CopyPart-Custom-
+#24171	NEW    cov: 1880 ft: 7621 corp: 724/2155Kb lim: 65536 exec/s: 895 rss: 5227Mb L: 2/65536 MS: 6 CustomCrossOver-CustomCrossOver-InsertRepeatedBytes-Custom-CustomCrossOver-CustomCrossOver-
+#24347	NEW    cov: 1880 ft: 7621 corp: 723/2155Kb lim: 65536 exec/s: 901 rss: 5263Mb L: 16/65536 MS: 2 ManualDict-Custom- DE: "phase"-
+#24386	NEW    cov: 1880 ft: 7621 corp: 724/2155Kb lim: 65536 exec/s: 903 rss: 5271Mb L: 2/65536 MS: 8 InsertByte-Custom-ChangeBinInt-Custom-CopyPart-Custom-ShuffleBytes-Custom-
+#24392	NEW    cov: 1880 ft: 7621 corp: 724/2155Kb lim: 65536 exec/s: 903 rss: 5272Mb L: 16/65536 MS: 2 CMP-Custom- DE: "\013\000"-
+#24522	NEW    cov: 1880 ft: 7621 corp: 724/2154Kb lim: 65536 exec/s: 908 rss: 5301Mb L: 31741/65536 MS: 10 EraseBytes-Custom-ChangeASCIIInt-Custom-ManualDict-Custom-ChangeByte-Custom-EraseBytes-Custom- DE: "do"-
+#24565	NEW    cov: 1880 ft: 7621 corp: 724/2153Kb lim: 65536 exec/s: 909 rss: 5309Mb L: 94/65536 MS: 6 ManualDict-Custom-CopyPart-Custom-ChangeByte-Custom- DE: "indicator"-
+#24696	NEW    cov: 1880 ft: 7621 corp: 724/2153Kb lim: 65536 exec/s: 882 rss: 5337Mb L: 8/65536 MS: 1 CustomCrossOver-
+#24856	RELOAD cov: 1880 ft: 7621 corp: 723/2153Kb lim: 65536 exec/s: 887 rss: 5372Mb
+#24964	NEW    cov: 1880 ft: 7621 corp: 722/2153Kb lim: 65536 exec/s: 891 rss: 5394Mb L: 6/65536 MS: 4 CustomCrossOver-CopyPart-Custom-CustomCrossOver-
+#25342	NEW    cov: 1880 ft: 7623 corp: 723/2153Kb lim: 65536 exec/s: 905 rss: 5477Mb L: 80/65536 MS: 4 CustomCrossOver-CustomCrossOver-CrossOver-Custom-
+#25530	NEW    cov: 1880 ft: 7624 corp: 724/2153Kb lim: 65536 exec/s: 880 rss: 5518Mb L: 31/65536 MS: 6 ChangeBit-Custom-EraseBytes-Custom-ManualDict-Custom- DE: "compress"-
+#25548	NEW    cov: 1880 ft: 7624 corp: 724/2153Kb lim: 65536 exec/s: 880 rss: 5522Mb L: 37/65536 MS: 6 ChangeBit-Custom-CMP-Custom-PersAutoDict-Custom- DE: "\010\000"-"\037\000\000\000\000\000\000\000"-
+#25581	NEW    cov: 1880 ft: 7624 corp: 724/2153Kb lim: 65536 exec/s: 882 rss: 5529Mb L: 14/65536 MS: 6 EraseBytes-Custom-PersAutoDict-Custom-EraseBytes-Custom- DE: "icons"-
+#25724	RELOAD cov: 1880 ft: 7624 corp: 724/2153Kb lim: 65536 exec/s: 887 rss: 5557Mb
+#25753	NEW    cov: 1880 ft: 7624 corp: 725/2154Kb lim: 65536 exec/s: 888 rss: 5562Mb L: 1368/65536 MS: 8 ShuffleBytes-Custom-InsertByte-Custom-ChangeByte-Custom-ChangeBinInt-Custom-
+#25838	NEW    cov: 1880 ft: 7624 corp: 726/2154Kb lim: 65536 exec/s: 890 rss: 5579Mb L: 65/65536 MS: 10 InsertRepeatedBytes-Custom-ChangeBinInt-Custom-PersAutoDict-Custom-CopyPart-Custom-EraseBytes-Custom- DE: "\377\377\377\377\377\377\377\177"-
+#25963	RELOAD cov: 1880 ft: 7624 corp: 727/2154Kb lim: 65536 exec/s: 603 rss: 5606Mb
+#26010	NEW    cov: 1880 ft: 7625 corp: 728/2154Kb lim: 65536 exec/s: 604 rss: 5615Mb L: 44/65536 MS: 3 CustomCrossOver-CrossOver-Custom-
+#26011	NEW    cov: 1880 ft: 7625 corp: 728/2154Kb lim: 65536 exec/s: 604 rss: 5616Mb L: 41/65536 MS: 2 ManualDict-Custom- DE: "always"-
+#26130	NEW    cov: 1880 ft: 7625 corp: 728/2145Kb lim: 65536 exec/s: 607 rss: 5642Mb L: 2966/65536 MS: 8 InsertRepeatedBytes-Custom-ManualDict-Custom-ShuffleBytes-Custom-ShuffleBytes-Custom- DE: "colors"-
+#26132	NEW    cov: 1880 ft: 7625 corp: 728/2144Kb lim: 65536 exec/s: 607 rss: 5643Mb L: 35/65536 MS: 3 CustomCrossOver-EraseBytes-Custom-
+#26138	NEW    cov: 1880 ft: 7625 corp: 726/2144Kb lim: 65536 exec/s: 607 rss: 5644Mb L: 3/65536 MS: 2 ShuffleBytes-Custom-
+#26170	NEW    cov: 1880 ft: 7626 corp: 727/2200Kb lim: 65536 exec/s: 608 rss: 5650Mb L: 56790/65536 MS: 4 PersAutoDict-Custom-EraseBytes-Custom- DE: "}"-
+#26693	NEW    cov: 1880 ft: 7626 corp: 727/2199Kb lim: 65536 exec/s: 437 rss: 5763Mb L: 2/65536 MS: 8 ChangeByte-Custom-ChangeBinInt-Custom-ShuffleBytes-Custom-EraseBytes-Custom-
+#26769	NEW    cov: 1880 ft: 7626 corp: 728/2199Kb lim: 65536 exec/s: 438 rss: 5780Mb L: 3/65536 MS: 2 EraseBytes-Custom-
+#26775	NEW    cov: 1880 ft: 7626 corp: 728/2199Kb lim: 65536 exec/s: 438 rss: 5782Mb L: 18/65536 MS: 2 ChangeByte-Custom-
+#27137	NEW    cov: 1880 ft: 7627 corp: 729/2200Kb lim: 65536 exec/s: 437 rss: 5862Mb L: 516/65536 MS: 4 ChangeBinInt-Custom-PersAutoDict-Custom- DE: "\000\000\000\003\000\000\000\024"-
+#27320	NEW    cov: 1880 ft: 7627 corp: 730/2200Kb lim: 65536 exec/s: 440 rss: 5902Mb L: 15/65536 MS: 6 EraseBytes-Custom-ShuffleBytes-Custom-CMP-Custom- DE: "not enough me"-
+#27354	NEW    cov: 1880 ft: 7627 corp: 731/2200Kb lim: 65536 exec/s: 441 rss: 5909Mb L: 4/65536 MS: 6 CustomCrossOver-InsertByte-Custom-ManualDict-Custom-CustomCrossOver- DE: "script_file"-
+#27368	NEW    cov: 1880 ft: 7628 corp: 732/2200Kb lim: 65536 exec/s: 441 rss: 5912Mb L: 21/65536 MS: 8 ChangeByte-Custom-ShuffleBytes-Custom-EraseBytes-Custom-ManualDict-Custom- DE: "fnv1a32"-
+#27488	NEW    cov: 1880 ft: 7630 corp: 733/2216Kb lim: 65536 exec/s: 443 rss: 5939Mb L: 16386/65536 MS: 2 ChangeByte-Custom-
+#27520	NEW    cov: 1880 ft: 7631 corp: 734/2232Kb lim: 65536 exec/s: 443 rss: 5946Mb L: 16087/65536 MS: 3 CustomCrossOver-EraseBytes-Custom-
+#27776	NEW    cov: 1880 ft: 7631 corp: 734/2184Kb lim: 65536 exec/s: 448 rss: 6000Mb L: 1597/65536 MS: 1 CustomCrossOver-
+#27826	NEW    cov: 1880 ft: 7631 corp: 735/2184Kb lim: 65536 exec/s: 448 rss: 6011Mb L: 45/65536 MS: 10 ChangeBit-Custom-InsertRepeatedBytes-Custom-PersAutoDict-Custom-InsertByte-Custom-EraseBytes-Custom- DE: "config"-
+#28189	NEW    cov: 1880 ft: 7631 corp: 736/2184Kb lim: 65536 exec/s: 447 rss: 6090Mb L: 5/65536 MS: 4 CustomCrossOver-CustomCrossOver-PersAutoDict-Custom- DE: "\013\000"-
+#28191	NEW    cov: 1880 ft: 7631 corp: 737/2184Kb lim: 65536 exec/s: 447 rss: 6090Mb L: 1/65536 MS: 3 CMP-Custom-CustomCrossOver- DE: "\014\000\000\000"-
+#28192	NEW    cov: 1880 ft: 7631 corp: 736/2184Kb lim: 65536 exec/s: 447 rss: 6090Mb L: 4/65536 MS: 2 InsertByte-Custom-
+#28298	NEW    cov: 1880 ft: 7631 corp: 736/2184Kb lim: 65536 exec/s: 449 rss: 6114Mb L: 2/65536 MS: 1 CustomCrossOver-
+#28384	NEW    cov: 1880 ft: 7631 corp: 737/2184Kb lim: 65536 exec/s: 450 rss: 6130Mb L: 18/65536 MS: 2 CrossOver-Custom-
+#28546	RELOAD cov: 1880 ft: 7632 corp: 733/2131Kb lim: 65536 exec/s: 453 rss: 6165Mb
+#28676	NEW    cov: 1880 ft: 7632 corp: 734/2131Kb lim: 65536 exec/s: 455 rss: 6192Mb L: 1/65536 MS: 7 CustomCrossOver-CustomCrossOver-CustomCrossOver-EraseBytes-Custom-ChangeByte-Custom-
+#28714	NEW    cov: 1880 ft: 7632 corp: 734/2131Kb lim: 65536 exec/s: 455 rss: 6199Mb L: 1/65536 MS: 6 ChangeBit-Custom-ChangeASCIIInt-Custom-EraseBytes-Custom-
+#29005	NEW    cov: 1880 ft: 7634 corp: 735/2149Kb lim: 65536 exec/s: 453 rss: 6260Mb L: 18727/65536 MS: 2 ChangeBit-Custom-
+#29070	NEW    cov: 1880 ft: 7634 corp: 735/2149Kb lim: 65536 exec/s: 454 rss: 6274Mb L: 30136/65536 MS: 10 CopyPart-Custom-InsertRepeatedBytes-Custom-CMP-Custom-ChangeBinInt-Custom-ShuffleBytes-Custom- DE: "\016\000"-
+#29072	NEW    cov: 1880 ft: 7634 corp: 735/2149Kb lim: 65536 exec/s: 454 rss: 6274Mb L: 5/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#29097	NEW    cov: 1880 ft: 7634 corp: 736/2149Kb lim: 65536 exec/s: 454 rss: 6279Mb L: 116/65536 MS: 10 ChangeBinInt-Custom-PersAutoDict-Custom-CMP-Custom-CMP-Custom-CopyPart-Custom- DE: "\377\377\377\377\377\377\377\177"-"ram"-"fs"-
+#29139	NEW    cov: 1880 ft: 7635 corp: 735/2149Kb lim: 65536 exec/s: 455 rss: 6290Mb L: 15/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#29146	NEW    cov: 1880 ft: 7635 corp: 735/2149Kb lim: 65536 exec/s: 455 rss: 6292Mb L: 33/65536 MS: 4 InsertRepeatedBytes-Custom-ChangeBinInt-Custom-
+#29203	NEW    cov: 1880 ft: 7635 corp: 734/2149Kb lim: 65536 exec/s: 456 rss: 6303Mb L: 17/65536 MS: 4 ChangeBinInt-Custom-PersAutoDict-Custom- DE: "\001\000\000\022"-
+#29213	NEW    cov: 1880 ft: 7635 corp: 734/2149Kb lim: 65536 exec/s: 456 rss: 6306Mb L: 29/65536 MS: 10 CMP-Custom-ManualDict-Custom-ManualDict-Custom-CopyPart-Custom-ChangeBinInt-Custom- DE: "\377\000"-"compress"-"HOME"-
+#29506	NEW    cov: 1880 ft: 7635 corp: 734/2149Kb lim: 65536 exec/s: 461 rss: 6369Mb L: 22/65536 MS: 6 ManualDict-Custom-EraseBytes-Custom-ChangeByte-Custom- DE: "typo_section"-
+#29660	NEW    cov: 1880 ft: 7635 corp: 733/2148Kb lim: 65536 exec/s: 463 rss: 6403Mb L: 8/65536 MS: 1 CustomCrossOver-
+#29879	NEW    cov: 1880 ft: 7636 corp: 734/2148Kb lim: 65536 exec/s: 466 rss: 6450Mb L: 2/65536 MS: 5 CustomCrossOver-CustomCrossOver-EraseBytes-Custom-CustomCrossOver-
+#29928	NEW    cov: 1880 ft: 7636 corp: 734/2148Kb lim: 65536 exec/s: 460 rss: 6461Mb L: 2/65536 MS: 6 ShuffleBytes-Custom-CustomCrossOver-ChangeByte-Custom-CustomCrossOver-
+#29952	NEW    cov: 1880 ft: 7777 corp: 735/2153Kb lim: 65536 exec/s: 460 rss: 6466Mb L: 4954/65536 MS: 8 CopyPart-Custom-CMP-Custom-ShuffleBytes-Custom-ChangeASCIIInt-Custom- DE: "@/tmp/beez_fuzz_pro"-
+#30033	NEW    cov: 1880 ft: 7778 corp: 736/2153Kb lim: 65536 exec/s: 462 rss: 6484Mb L: 24/65536 MS: 2 ChangeBinInt-Custom-
+#30455	NEW    cov: 1880 ft: 7778 corp: 736/2153Kb lim: 65536 exec/s: 468 rss: 6575Mb L: 80/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#30787	RELOAD cov: 1880 ft: 7787 corp: 738/2185Kb lim: 65536 exec/s: 473 rss: 6646Mb
+#30843	NEW    cov: 1880 ft: 7788 corp: 739/2209Kb lim: 65536 exec/s: 474 rss: 6658Mb L: 24536/65536 MS: 1 CustomCrossOver-
+#30862	NEW    cov: 1880 ft: 7789 corp: 740/2217Kb lim: 65536 exec/s: 474 rss: 6661Mb L: 8199/65536 MS: 6 ChangeByte-Custom-CustomCrossOver-CustomCrossOver-ManualDict-Custom- DE: "ranges"-
+#30896	NEW    cov: 1880 ft: 7790 corp: 741/2217Kb lim: 65536 exec/s: 475 rss: 6669Mb L: 195/65536 MS: 8 ChangeBit-Custom-InsertRepeatedBytes-Custom-InsertRepeatedBytes-Custom-EraseBytes-Custom-
+#30913	NEW    cov: 1880 ft: 7790 corp: 741/2217Kb lim: 65536 exec/s: 475 rss: 6673Mb L: 1/65536 MS: 4 CopyPart-Custom-EraseBytes-Custom-
+#30983	NEW    cov: 1880 ft: 7790 corp: 741/2217Kb lim: 65536 exec/s: 469 rss: 6688Mb L: 3/65536 MS: 8 PersAutoDict-Custom-CustomCrossOver-ManualDict-Custom-CustomCrossOver-ChangeByte-Custom- DE: "copy"-"indicator_spin_interval"-
+#31017	NEW    cov: 1880 ft: 7790 corp: 741/2204Kb lim: 65536 exec/s: 469 rss: 6695Mb L: 18841/65536 MS: 7 ChangeBit-Custom-CrossOver-Custom-CustomCrossOver-InsertRepeatedBytes-Custom-
+#31054	NEW    cov: 1880 ft: 7790 corp: 740/2204Kb lim: 65536 exec/s: 470 rss: 6703Mb L: 25/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#31101	NEW    cov: 1880 ft: 7790 corp: 740/2204Kb lim: 65536 exec/s: 471 rss: 6714Mb L: 20/65536 MS: 4 EraseBytes-Custom-ManualDict-Custom- DE: ".cache-custom"-
+#31235	NEW    cov: 1880 ft: 7790 corp: 740/2204Kb lim: 65536 exec/s: 473 rss: 6741Mb L: 18/65536 MS: 8 ShuffleBytes-Custom-InsertRepeatedBytes-Custom-EraseBytes-Custom-EraseBytes-Custom-
+#31297	NEW    cov: 1880 ft: 7793 corp: 740/2203Kb lim: 65536 exec/s: 474 rss: 6755Mb L: 89/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#31311	NEW    cov: 1880 ft: 7793 corp: 739/2203Kb lim: 65536 exec/s: 474 rss: 6758Mb L: 2/65536 MS: 6 InsertRepeatedBytes-Custom-CustomCrossOver-ChangeBit-Custom-CustomCrossOver-
+#31349	NEW    cov: 1880 ft: 7853 corp: 740/2203Kb lim: 65536 exec/s: 474 rss: 6767Mb L: 107/65536 MS: 4 CustomCrossOver-CustomCrossOver-ManualDict-Custom- DE: "create_table"-
+#31421	NEW    cov: 1880 ft: 7853 corp: 740/2203Kb lim: 65536 exec/s: 476 rss: 6782Mb L: 10/65536 MS: 4 ManualDict-Custom-ChangeByte-Custom- DE: ";"-
+#31442	NEW    cov: 1880 ft: 7853 corp: 740/2203Kb lim: 65536 exec/s: 476 rss: 6787Mb L: 2/65536 MS: 2 ChangeByte-Custom-
+#31486	NEW    cov: 1880 ft: 7868 corp: 741/2203Kb lim: 65536 exec/s: 477 rss: 6796Mb L: 34/65536 MS: 8 CopyPart-Custom-ShuffleBytes-Custom-ManualDict-Custom-CMP-Custom- DE: "blocks"-"set"-
+#31584	NEW    cov: 1880 ft: 7868 corp: 741/2203Kb lim: 65536 exec/s: 478 rss: 6818Mb L: 2/65536 MS: 6 ChangeBit-Custom-ChangeBit-Custom-ChangeBinInt-Custom-
+#31795	NEW    cov: 1880 ft: 7868 corp: 740/2203Kb lim: 65536 exec/s: 481 rss: 6863Mb L: 6/65536 MS: 2 CMP-Custom- DE: "en"-
+#31811	NEW    cov: 1880 ft: 7868 corp: 741/2204Kb lim: 65536 exec/s: 481 rss: 6867Mb L: 1026/65536 MS: 2 ChangeByte-Custom-
+#31988	RELOAD cov: 1880 ft: 7898 corp: 743/2204Kb lim: 65536 exec/s: 477 rss: 6905Mb
+#32087	NEW    cov: 1880 ft: 7898 corp: 743/2204Kb lim: 65536 exec/s: 478 rss: 6927Mb L: 18/65536 MS: 8 CopyPart-Custom-ChangeByte-Custom-PersAutoDict-Custom-CopyPart-Custom- DE: "does-not-exist"-
+#32090	NEW    cov: 1880 ft: 7898 corp: 744/2204Kb lim: 65536 exec/s: 478 rss: 6927Mb L: 20/65536 MS: 5 CustomCrossOver-PersAutoDict-Custom-ChangeByte-Custom- DE: "\377\000"-
+#32547	NEW    cov: 1880 ft: 7898 corp: 744/2204Kb lim: 65536 exec/s: 485 rss: 7024Mb L: 44/65536 MS: 4 EraseBytes-Custom-ShuffleBytes-Custom-
+#32558	NEW    cov: 1880 ft: 7899 corp: 745/2204Kb lim: 65536 exec/s: 485 rss: 7027Mb L: 115/65536 MS: 2 InsertRepeatedBytes-Custom-
+#32615	NEW    cov: 1880 ft: 7899 corp: 745/2204Kb lim: 65536 exec/s: 486 rss: 7038Mb L: 77/65536 MS: 3 CustomCrossOver-ShuffleBytes-Custom-
+#32639	NEW    cov: 1880 ft: 7899 corp: 746/2204Kb lim: 65536 exec/s: 487 rss: 7043Mb L: 2/65536 MS: 5 ChangeByte-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#32716	NEW    cov: 1880 ft: 7899 corp: 747/2204Kb lim: 65536 exec/s: 488 rss: 7060Mb L: 13/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#32768	pulse  cov: 1880 ft: 7899 corp: 747/2204Kb lim: 65536 exec/s: 489 rss: 7072Mb
+#32788	NEW    cov: 1880 ft: 7899 corp: 747/2199Kb lim: 65536 exec/s: 489 rss: 7076Mb L: 67/65536 MS: 3 CrossOver-Custom-CustomCrossOver-
+#32799	NEW    cov: 1880 ft: 7901 corp: 748/2199Kb lim: 65536 exec/s: 489 rss: 7077Mb L: 13/65536 MS: 2 CMP-Custom- DE: "sol.sol::"-
+#33179	RELOAD cov: 1880 ft: 7902 corp: 750/2232Kb lim: 65536 exec/s: 487 rss: 7163Mb
+#33190	NEW    cov: 1880 ft: 7902 corp: 750/2232Kb lim: 65536 exec/s: 488 rss: 7165Mb L: 23/65536 MS: 2 ChangeBit-Custom-
+#33239	NEW    cov: 1880 ft: 7902 corp: 750/2232Kb lim: 65536 exec/s: 488 rss: 7175Mb L: 18/65536 MS: 6 CrossOver-Custom-CustomCrossOver-CopyPart-Custom-CustomCrossOver-
+#33450	NEW    cov: 1880 ft: 7902 corp: 750/2232Kb lim: 65536 exec/s: 491 rss: 7219Mb L: 20/65536 MS: 2 ChangeBinInt-Custom-
+#33601	NEW    cov: 1880 ft: 7902 corp: 749/2232Kb lim: 65536 exec/s: 494 rss: 7250Mb L: 2/65536 MS: 2 ChangeByte-Custom-
+#33678	NEW    cov: 1880 ft: 7903 corp: 750/2232Kb lim: 65536 exec/s: 495 rss: 7266Mb L: 2/65536 MS: 3 CustomCrossOver-CrossOver-Custom-
+#33891	NEW    cov: 1880 ft: 7903 corp: 750/2232Kb lim: 65536 exec/s: 498 rss: 7313Mb L: 7/65536 MS: 5 CustomCrossOver-ShuffleBytes-Custom-CrossOver-Custom-
+#33980	NEW    cov: 1880 ft: 7903 corp: 750/2232Kb lim: 65536 exec/s: 499 rss: 7331Mb L: 23/65536 MS: 8 ShuffleBytes-Custom-PersAutoDict-Custom-InsertRepeatedBytes-Custom-CMP-Custom- DE: "\000\000\000\000\001\000\000\000"-"O\210\013\351\001\000\000\000"-
+#34013	NEW    cov: 1880 ft: 7903 corp: 751/2232Kb lim: 65536 exec/s: 500 rss: 7338Mb L: 3/65536 MS: 6 CMP-Custom-ChangeBit-Custom-EraseBytes-Custom- DE: "\000\000"-
+#34079	NEW    cov: 1880 ft: 7903 corp: 752/2232Kb lim: 65536 exec/s: 493 rss: 7350Mb L: 1/65536 MS: 1 CustomCrossOver-
+#34133	NEW    cov: 1880 ft: 7904 corp: 753/2232Kb lim: 65536 exec/s: 494 rss: 7362Mb L: 30/65536 MS: 7 CustomCrossOver-ChangeByte-Custom-CMP-Custom-PersAutoDict-Custom- DE: "\377\377\377\024"-".cache-custom"-
+#34154	NEW    cov: 1880 ft: 7904 corp: 754/2232Kb lim: 65536 exec/s: 494 rss: 7366Mb L: 2/65536 MS: 2 ChangeBit-Custom-
+#34205	NEW    cov: 1880 ft: 7904 corp: 755/2232Kb lim: 65536 exec/s: 495 rss: 7377Mb L: 2/65536 MS: 1 CustomCrossOver-
+#34206	NEW    cov: 1880 ft: 7904 corp: 756/2232Kb lim: 65536 exec/s: 495 rss: 7377Mb L: 3/65536 MS: 2 CrossOver-Custom-
+#34387	RELOAD cov: 1880 ft: 7905 corp: 757/2232Kb lim: 65536 exec/s: 498 rss: 7415Mb
+#34432	NEW    cov: 1880 ft: 7905 corp: 757/2232Kb lim: 65536 exec/s: 499 rss: 7424Mb L: 31/65536 MS: 10 CopyPart-Custom-InsertRepeatedBytes-Custom-PersAutoDict-Custom-CMP-Custom-InsertByte-Custom- DE: "blocks"-"\002\000"-
+#34451	NEW    cov: 1880 ft: 7905 corp: 757/2232Kb lim: 65536 exec/s: 499 rss: 7428Mb L: 2/65536 MS: 8 ChangeBinInt-Custom-InsertByte-Custom-ShuffleBytes-Custom-ShuffleBytes-Custom-
+#34467	NEW    cov: 1880 ft: 7905 corp: 757/2232Kb lim: 65536 exec/s: 499 rss: 7431Mb L: 24/65536 MS: 2 CMP-Custom- DE: "\002\000"-
+#34468	NEW    cov: 1880 ft: 7905 corp: 758/2232Kb lim: 65536 exec/s: 499 rss: 7431Mb L: 9/65536 MS: 2 ChangeBinInt-Custom-
+#34471	NEW    cov: 1880 ft: 7905 corp: 758/2232Kb lim: 65536 exec/s: 499 rss: 7432Mb L: 3/65536 MS: 6 ChangeByte-Custom-ChangeByte-Custom-ShuffleBytes-Custom-
+#34500	NEW    cov: 1880 ft: 7905 corp: 758/2218Kb lim: 65536 exec/s: 500 rss: 7438Mb L: 9934/65536 MS: 6 CustomCrossOver-CrossOver-Custom-ManualDict-Custom-CustomCrossOver- DE: "globby"-
+#34511	NEW    cov: 1880 ft: 7905 corp: 758/2218Kb lim: 65536 exec/s: 500 rss: 7441Mb L: 2/65536 MS: 2 ShuffleBytes-Custom-
+#34636	NEW    cov: 1880 ft: 7905 corp: 758/2204Kb lim: 65536 exec/s: 501 rss: 7468Mb L: 11/65536 MS: 10 InsertByte-Custom-CopyPart-Custom-ChangeBit-Custom-PersAutoDict-Custom-ChangeBinInt-Custom- DE: "run_log"-
+#34831	NEW    cov: 1880 ft: 7906 corp: 759/2204Kb lim: 65536 exec/s: 504 rss: 7511Mb L: 139/65536 MS: 10 InsertRepeatedBytes-Custom-ShuffleBytes-Custom-PersAutoDict-Custom-ChangeBinInt-Custom-PersAutoDict-Custom- DE: "en"-"\026\000"-
+#34912	NEW    cov: 1880 ft: 7906 corp: 759/2204Kb lim: 65536 exec/s: 505 rss: 7528Mb L: 4/65536 MS: 1 CustomCrossOver-
+#35082	NEW    cov: 1880 ft: 7906 corp: 759/2194Kb lim: 65536 exec/s: 501 rss: 7565Mb L: 8349/65536 MS: 10 InsertRepeatedBytes-Custom-ChangeByte-Custom-ChangeASCIIInt-Custom-CopyPart-Custom-InsertRepeatedBytes-Custom-
+#35108	NEW    cov: 1880 ft: 7906 corp: 760/2194Kb lim: 65536 exec/s: 501 rss: 7569Mb L: 4/65536 MS: 2 ChangeByte-Custom-
+#35129	NEW    cov: 1880 ft: 7906 corp: 760/2194Kb lim: 65536 exec/s: 501 rss: 7574Mb L: 11/65536 MS: 2 ManualDict-Custom- DE: "hash_vars"-
+#35240	NEW    cov: 1880 ft: 7906 corp: 760/2194Kb lim: 65536 exec/s: 503 rss: 7598Mb L: 17/65536 MS: 2 InsertByte-Custom-
+#35258	NEW    cov: 1880 ft: 7906 corp: 761/2194Kb lim: 65536 exec/s: 503 rss: 7601Mb L: 2/65536 MS: 5 ChangeBit-Custom-CrossOver-Custom-CustomCrossOver-
+#35339	NEW    cov: 1880 ft: 7906 corp: 762/2194Kb lim: 65536 exec/s: 504 rss: 7619Mb L: 4/65536 MS: 2 CMP-Custom- DE: "pid"-
+#35395	NEW    cov: 1880 ft: 7906 corp: 759/2194Kb lim: 65536 exec/s: 505 rss: 7631Mb L: 4/65536 MS: 1 CustomCrossOver-
+#35402	NEW    cov: 1880 ft: 7906 corp: 760/2195Kb lim: 65536 exec/s: 505 rss: 7632Mb L: 1026/65536 MS: 3 CustomCrossOver-InsertByte-Custom-
+#35405	NEW    cov: 1880 ft: 7906 corp: 760/2195Kb lim: 65536 exec/s: 505 rss: 7632Mb L: 89/65536 MS: 4 CustomCrossOver-ShuffleBytes-Custom-CustomCrossOver-
+#35413	NEW    cov: 1880 ft: 7907 corp: 761/2195Kb lim: 65536 exec/s: 505 rss: 7634Mb L: 11/65536 MS: 6 EraseBytes-Custom-CMP-Custom-EraseBytes-Custom- DE: "\001\000\000\012"-
+#35415	NEW    cov: 1880 ft: 7907 corp: 761/2195Kb lim: 65536 exec/s: 505 rss: 7634Mb L: 8/65536 MS: 3 CustomCrossOver-CrossOver-Custom-
+#35416	NEW    cov: 1880 ft: 7908 corp: 762/2195Kb lim: 65536 exec/s: 505 rss: 7635Mb L: 24/65536 MS: 1 CustomCrossOver-
+#35590	RELOAD cov: 1880 ft: 7908 corp: 762/2199Kb lim: 65536 exec/s: 508 rss: 7670Mb
+#35639	NEW    cov: 1880 ft: 7908 corp: 763/2199Kb lim: 65536 exec/s: 509 rss: 7681Mb L: 5/65536 MS: 8 ShuffleBytes-Custom-ChangeByte-Custom-CopyPart-Custom-EraseBytes-Custom-
+#35647	NEW    cov: 1880 ft: 7908 corp: 763/2199Kb lim: 65536 exec/s: 509 rss: 7683Mb L: 3/65536 MS: 6 ShuffleBytes-Custom-EraseBytes-Custom-ChangeByte-Custom-
+#35663	NEW    cov: 1880 ft: 7909 corp: 763/2199Kb lim: 65536 exec/s: 509 rss: 7686Mb L: 8165/65536 MS: 2 ManualDict-Custom- DE: "configure_step"-
+#35676	NEW    cov: 1880 ft: 7909 corp: 762/2199Kb lim: 65536 exec/s: 509 rss: 7690Mb L: 3/65536 MS: 6 CopyPart-Custom-ChangeBit-Custom-CrossOver-Custom-
+#35680	NEW    cov: 1880 ft: 7909 corp: 762/2199Kb lim: 65536 exec/s: 509 rss: 7690Mb L: 1/65536 MS: 6 CustomCrossOver-InsertRepeatedBytes-Custom-ChangeByte-Custom-CustomCrossOver-
+#35681	NEW    cov: 1880 ft: 7911 corp: 763/2199Kb lim: 65536 exec/s: 509 rss: 7691Mb L: 516/65536 MS: 2 CMP-Custom- DE: "replace"-
+#35697	NEW    cov: 1880 ft: 7912 corp: 764/2247Kb lim: 65536 exec/s: 509 rss: 7694Mb L: 49155/65536 MS: 2 ChangeASCIIInt-Custom-
+#35714	NEW    cov: 1880 ft: 7914 corp: 765/2269Kb lim: 65536 exec/s: 510 rss: 7698Mb L: 22023/65536 MS: 4 EraseBytes-Custom-ChangeBit-Custom-
+#35715	NEW    cov: 1880 ft: 7914 corp: 764/2269Kb lim: 65536 exec/s: 510 rss: 7698Mb L: 2/65536 MS: 1 CustomCrossOver-
+#35756	NEW    cov: 1880 ft: 7914 corp: 763/2269Kb lim: 65536 exec/s: 510 rss: 7707Mb L: 4/65536 MS: 2 ChangeByte-Custom-
+#35769	NEW    cov: 1880 ft: 7914 corp: 764/2269Kb lim: 65536 exec/s: 510 rss: 7710Mb L: 2/65536 MS: 3 CustomCrossOver-CustomCrossOver-CustomCrossOver-
+#35774	NEW    cov: 1880 ft: 7915 corp: 765/2269Kb lim: 65536 exec/s: 511 rss: 7712Mb L: 269/65536 MS: 10 EraseBytes-Custom-EraseBytes-Custom-ChangeBinInt-Custom-ChangeBinInt-Custom-InsertRepeatedBytes-Custom-
+#35962	NEW    cov: 1880 ft: 7915 corp: 765/2242Kb lim: 65536 exec/s: 513 rss: 7751Mb L: 4100/65536 MS: 6 ChangeASCIIInt-Custom-ChangeASCIIInt-Custom-ManualDict-Custom- DE: "select"-
+#36132	NEW    cov: 1880 ft: 7915 corp: 765/2242Kb lim: 65536 exec/s: 508 rss: 7789Mb L: 16565/65536 MS: 8 ChangeByte-Custom-CustomCrossOver-CustomCrossOver-ChangeByte-Custom-CrossOver-Custom-
+#36331	NEW    cov: 1880 ft: 7915 corp: 765/2242Kb lim: 65536 exec/s: 511 rss: 7831Mb L: 19/65536 MS: 6 InsertRepeatedBytes-Custom-CustomCrossOver-CustomCrossOver-ShuffleBytes-Custom-
+#36530	NEW    cov: 1880 ft: 7915 corp: 765/2242Kb lim: 65536 exec/s: 514 rss: 7875Mb L: 8/65536 MS: 8 CMP-Custom-PersAutoDict-Custom-EraseBytes-Custom-CopyPart-Custom- DE: "\006\000"-"\001\001"-
+#36532	NEW    cov: 1880 ft: 7919 corp: 766/2242Kb lim: 65536 exec/s: 514 rss: 7876Mb L: 15/65536 MS: 4 InsertByte-Custom-ManualDict-Custom- DE: "workers_dir"-
+#36759	RELOAD cov: 1880 ft: 7919 corp: 766/2242Kb lim: 65536 exec/s: 517 rss: 7925Mb
+#36790	NEW    cov: 1880 ft: 7920 corp: 766/2225Kb lim: 65536 exec/s: 518 rss: 7930Mb L: 12624/65536 MS: 2 CopyPart-Custom-
+#36801	NEW    cov: 1880 ft: 7920 corp: 766/2225Kb lim: 65536 exec/s: 518 rss: 7933Mb L: 61447/65536 MS: 1 CustomCrossOver-
+#37177	NEW    cov: 1880 ft: 7920 corp: 765/2225Kb lim: 65536 exec/s: 516 rss: 8012Mb L: 17/65536 MS: 2 ManualDict-Custom- DE: "create_table"-
+#37316	NEW    cov: 1880 ft: 7920 corp: 765/2225Kb lim: 65536 exec/s: 518 rss: 8040Mb L: 2/65536 MS: 5 CustomCrossOver-CustomCrossOver-PersAutoDict-Custom-CustomCrossOver- DE: "O\210\013\351\001\000\000\000"-
+#37599	NEW    cov: 1880 ft: 7922 corp: 766/2225Kb lim: 65536 exec/s: 522 rss: 8101Mb L: 4/65536 MS: 6 CopyPart-Custom-ShuffleBytes-Custom-EraseBytes-Custom-
+#37621	NEW    cov: 1880 ft: 7922 corp: 767/2225Kb lim: 65536 exec/s: 522 rss: 8106Mb L: 28/65536 MS: 4 ChangeByte-Custom-CMP-Custom- DE: "\004\000"-
+#37688	NEW    cov: 1880 ft: 7922 corp: 767/2225Kb lim: 65536 exec/s: 523 rss: 8119Mb L: 87/65536 MS: 4 ShuffleBytes-Custom-InsertRepeatedBytes-Custom-
+#37689	NEW    cov: 1880 ft: 7922 corp: 767/2224Kb lim: 65536 exec/s: 523 rss: 8119Mb L: 2/65536 MS: 2 ChangeByte-Custom-
+#37981	RELOAD cov: 1880 ft: 7922 corp: 766/2224Kb lim: 65536 exec/s: 527 rss: 8181Mb
+#38123	NEW    cov: 1880 ft: 7922 corp: 766/2224Kb lim: 65536 exec/s: 529 rss: 8210Mb L: 5/65536 MS: 4 ChangeBit-Custom-PersAutoDict-Custom- DE: "hash"-
+#38125	NEW    cov: 1880 ft: 7922 corp: 766/2224Kb lim: 65536 exec/s: 529 rss: 8211Mb L: 19/65536 MS: 3 CustomCrossOver-CrossOver-Custom-
+#38126	NEW    cov: 1880 ft: 7922 corp: 766/2224Kb lim: 65536 exec/s: 529 rss: 8211Mb L: 2/65536 MS: 2 CMP-Custom- DE: "\002\000"-
+#38138	NEW    cov: 1880 ft: 7922 corp: 766/2224Kb lim: 65536 exec/s: 529 rss: 8214Mb L: 37/65536 MS: 3 CustomCrossOver-PersAutoDict-Custom- DE: "flags"-
+#38867	NEW    cov: 1880 ft: 7923 corp: 766/2220Kb lim: 65536 exec/s: 532 rss: 8363Mb L: 263/65536 MS: 5 ManualDict-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver- DE: "errors"-
+#39131	RELOAD cov: 1880 ft: 7924 corp: 767/2276Kb lim: 65536 exec/s: 536 rss: 8419Mb
+#39212	NEW    cov: 1880 ft: 7924 corp: 767/2276Kb lim: 65536 exec/s: 537 rss: 8435Mb L: 34/65536 MS: 2 ChangeBit-Custom-
+#39376	NEW    cov: 1880 ft: 7924 corp: 767/2276Kb lim: 65536 exec/s: 532 rss: 8470Mb L: 240/65536 MS: 8 InsertRepeatedBytes-Custom-ChangeByte-Custom-InsertByte-Custom-InsertRepeatedBytes-Custom-
+#39801	NEW    cov: 1880 ft: 7924 corp: 767/2276Kb lim: 65536 exec/s: 537 rss: 8561Mb L: 1/65536 MS: 6 CustomCrossOver-CustomCrossOver-CustomCrossOver-CustomCrossOver-EraseBytes-Custom-
+#39964	NEW    cov: 1880 ft: 7924 corp: 767/2276Kb lim: 65536 exec/s: 540 rss: 8596Mb L: 13/65536 MS: 6 ChangeBit-Custom-InsertByte-Custom-CMP-Custom- DE: "\000\001"-
+#40372	NEW    cov: 1880 ft: 7924 corp: 767/2247Kb lim: 65536 exec/s: 538 rss: 8688Mb L: 4095/65536 MS: 4 CustomCrossOver-InsertRepeatedBytes-Custom-CustomCrossOver-
+#40542	NEW    cov: 1880 ft: 7926 corp: 768/2247Kb lim: 65536 exec/s: 540 rss: 8722Mb L: 29/65536 MS: 10 ManualDict-Custom-ChangeByte-Custom-ShuffleBytes-Custom-ManualDict-Custom-ShuffleBytes-Custom- DE: "colors"-"percent"-
+#40595	NEW    cov: 1880 ft: 7927 corp: 769/2247Kb lim: 65536 exec/s: 541 rss: 8733Mb L: 40/65536 MS: 6 ShuffleBytes-Custom-PersAutoDict-Custom-EraseBytes-Custom- DE: "\022\000\000\000"-
+#40904	NEW    cov: 1880 ft: 7927 corp: 770/2249Kb lim: 65536 exec/s: 545 rss: 8799Mb L: 1626/65536 MS: 8 EraseBytes-Custom-CopyPart-Custom-ChangeBinInt-Custom-CopyPart-Custom-
+#41011	NEW    cov: 1881 ft: 8114 corp: 771/2249Kb lim: 65536 exec/s: 546 rss: 8820Mb L: 6/65536 MS: 3 ChangeByte-Custom-CustomCrossOver-
+#41328	RELOAD cov: 1881 ft: 8115 corp: 772/2249Kb lim: 65536 exec/s: 543 rss: 8877Mb
+#41355	NEW    cov: 1881 ft: 8116 corp: 773/2249Kb lim: 65536 exec/s: 544 rss: 8882Mb L: 2/65536 MS: 2 CustomCrossOver-CustomCrossOver-
+#41367	NEW    cov: 1881 ft: 8116 corp: 773/2249Kb lim: 65536 exec/s: 544 rss: 8884Mb L: 2/65536 MS: 3 CustomCrossOver-ChangeBinInt-Custom-
+#41368	NEW    cov: 1881 ft: 8120 corp: 774/2249Kb lim: 65536 exec/s: 544 rss: 8884Mb L: 431/65536 MS: 2 EraseBytes-Custom-
+#41376	NEW    cov: 1881 ft: 8120 corp: 774/2249Kb lim: 65536 exec/s: 544 rss: 8884Mb L: 6/65536 MS: 6 CopyPart-Custom-ChangeBit-Custom-ChangeBit-Custom-
+#41382	NEW    cov: 1881 ft: 8163 corp: 775/2249Kb lim: 65536 exec/s: 544 rss: 8884Mb L: 15/65536 MS: 2 CopyPart-Custom-
+#41405	NEW    cov: 1881 ft: 8167 corp: 776/2285Kb lim: 65536 exec/s: 544 rss: 8884Mb L: 36662/65536 MS: 6 EraseBytes-Custom-CopyPart-Custom-ManualDict-Custom- DE: "always"-
+#41560	NEW    cov: 1881 ft: 8167 corp: 777/2285Kb lim: 65536 exec/s: 546 rss: 8884Mb L: 42/65536 MS: 10 PersAutoDict-Custom-ChangeBit-Custom-ManualDict-Custom-ManualDict-Custom-ShuffleBytes-Custom- DE: "\026\000"-"temp_directory_path"-"silent"-
+#41755	NEW    cov: 1881 ft: 8167 corp: 776/2285Kb lim: 65536 exec/s: 549 rss: 8926Mb L: 2/65536 MS: 8 CustomCrossOver-ChangeByte-Custom-ChangeBinInt-Custom-InsertByte-Custom-CustomCrossOver-
+#42211	NEW    cov: 1881 ft: 8168 corp: 777/2285Kb lim: 65536 exec/s: 555 rss: 9024Mb L: 17/65536 MS: 2 ChangeBinInt-Custom-
+#42216	NEW    cov: 1881 ft: 8168 corp: 777/2285Kb lim: 65536 exec/s: 555 rss: 9025Mb L: 18/65536 MS: 8 InsertRepeatedBytes-Custom-CustomCrossOver-CustomCrossOver-ChangeByte-Custom-EraseBytes-Custom-
+#42218	NEW    cov: 1881 ft: 8168 corp: 777/2285Kb lim: 65536 exec/s: 555 rss: 9025Mb L: 26/65536 MS: 3 ManualDict-Custom-CustomCrossOver- DE: "run"-
+#42248	NEW    cov: 1881 ft: 8168 corp: 777/2285Kb lim: 65536 exec/s: 555 rss: 9031Mb L: 2/65536 MS: 6 PersAutoDict-Custom-CustomCrossOver-CustomCrossOver-CustomCrossOver-CustomCrossOver- DE: "\000\000\000\003\000\000\000\024"-
+#42356	RELOAD cov: 1881 ft: 8168 corp: 778/2285Kb lim: 65536 exec/s: 550 rss: 9055Mb
+#42361	NEW    cov: 1881 ft: 8168 corp: 778/2237Kb lim: 65536 exec/s: 550 rss: 9056Mb L: 26/65536 MS: 10 ChangeBit-Custom-ChangeByte-Custom-PersAutoDict-Custom-CMP-Custom-PersAutoDict-Custom- DE: "\001\000\000\000\000\000\000\000"-"\377\377\377\177"-"percent"-
+#42736	NEW    cov: 1881 ft: 8168 corp: 777/2237Kb lim: 65536 exec/s: 555 rss: 9140Mb L: 73/65536 MS: 10 CopyPart-Custom-EraseBytes-Custom-ChangeBit-Custom-ManualDict-Custom-InsertRepeatedBytes-Custom- DE: "crc32"-
+#42842	NEW    cov: 1881 ft: 8168 corp: 777/2237Kb lim: 65536 exec/s: 556 rss: 9161Mb L: 2/65536 MS: 1 CustomCrossOver-
+#42876	NEW    cov: 1881 ft: 8168 corp: 778/2237Kb lim: 65536 exec/s: 556 rss: 9169Mb L: 4/65536 MS: 8 EraseBytes-Custom-InsertByte-Custom-CopyPart-Custom-InsertByte-Custom-
+#43032	NEW    cov: 1881 ft: 8168 corp: 778/2237Kb lim: 65536 exec/s: 551 rss: 9198Mb L: 1/65536 MS: 2 ShuffleBytes-Custom-
+#43348	NEW    cov: 1881 ft: 8170 corp: 779/2237Kb lim: 65536 exec/s: 555 rss: 9238Mb L: 24/65536 MS: 2 CMP-Custom- DE: "\377\000"-
+#43527	NEW    cov: 1881 ft: 8170 corp: 779/2237Kb lim: 65536 exec/s: 558 rss: 9275Mb L: 22/65536 MS: 8 CopyPart-Custom-ManualDict-Custom-ChangeBinInt-Custom-ChangeBinInt-Custom- DE: "logging"-
+#43542	NEW    cov: 1881 ft: 8170 corp: 780/2237Kb lim: 65536 exec/s: 558 rss: 9278Mb L: 3/65536 MS: 9 InsertByte-Custom-ShuffleBytes-Custom-CustomCrossOver-ShuffleBytes-Custom-ShuffleBytes-Custom-
+#43653	NEW    cov: 1881 ft: 8170 corp: 780/2237Kb lim: 65536 exec/s: 559 rss: 9303Mb L: 2/65536 MS: 1 CustomCrossOver-
+==126395== libFuzzer: run interrupted; exiting
+stat::number_of_executed_units: 44028
+stat::average_exec_per_sec:     449
+stat::new_units_added:          710
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              9379

@@ -16,8 +16,8 @@ struct BeezPluginInstallResult
 };
 
 [[nodiscard]] std::string formatBeezPluginInstallArg(const std::string& organization,
-                                                   const std::string& name,
-                                                   const std::string& version);
+                                                     const std::string& name,
+                                                     const std::string& version);
 
 [[nodiscard]] Expected<std::filesystem::path, std::string>
 resolveInstalledBeezPluginScript(const std::optional<std::string>& organization,

@@ -2,14 +2,17 @@ local M = {}
 
 M.reports_dir = "report"
 M.debug_build_tree = "build/build/Debug"
-M.coverage_stamp = M.debug_build_tree .. "/.beez-coverage-configured"
+M.coverage_build_tree = "build/build/Coverage"
+M.sanitize_build_tree = "build/build/Sanitize"
+M.tsan_build_tree = "build/build/Tsan"
+M.coverage_stamp = M.coverage_build_tree .. "/.beez-coverage-configured"
 
 M.common_inputs = {
     "src/**/*.cpp",
     "include/**/*.hpp",
 }
 
-M.test_rev = "1"
+M.test_rev = "4"
 
 M.suites = {
     unit = {
@@ -67,7 +70,7 @@ M.suites = {
         binary_rel = "tests/unit/beez_tests",
         extra_inputs = { "tests/**/*.cpp" },
         extra_input_files = { M.coverage_stamp },
-        build_tree = M.debug_build_tree,
+        build_tree = M.coverage_build_tree,
         log_prefix = "[ctest-coverage]",
         description = "Run unit tests and capture coverage data (coverage-test.sh)",
         report_outputs = function(reports_dir, build_tree)
@@ -84,7 +87,7 @@ M.suites = {
         mode = "ctest_tee",
         binary_rel = "tests/unit/beez_tests",
         extra_inputs = { "tests/**/*.cpp" },
-        build_tree = M.debug_build_tree,
+        build_tree = M.sanitize_build_tree,
         report_subdir = "sanitize",
         report_txt = "sanitize-report.txt",
         report_ok = "sanitize-report.ok",
@@ -97,7 +100,7 @@ M.suites = {
         mode = "ctest_tee",
         binary_rel = "tests/unit/beez_tests",
         extra_inputs = { "tests/**/*.cpp" },
-        build_tree = M.debug_build_tree,
+        build_tree = M.tsan_build_tree,
         report_subdir = "tsan",
         report_txt = "tsan-report.txt",
         report_ok = "tsan-report.ok",

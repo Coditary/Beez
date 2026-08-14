@@ -1,8 +1,12 @@
 local M = {}
 
 M.debug_build_tree = "build/build/Debug"
-M.fuzzer_bin = M.debug_build_tree .. "/fuzz/fuzz_lua_dsl"
-M.coverage_stamp = M.debug_build_tree .. "/.beez-coverage-configured"
+M.coverage_build_tree = "build/build/Coverage"
+M.sanitize_build_tree = "build/build/Sanitize"
+M.tsan_build_tree = "build/build/Tsan"
+M.fuzz_build_tree = "build/build/Fuzz"
+M.fuzzer_bin = M.fuzz_build_tree .. "/fuzz/fuzz_lua_dsl"
+M.coverage_stamp = M.coverage_build_tree .. "/.beez-coverage-configured"
 
 M.index_script = "plugins/coditary/clang-build/1.0.0/scripts/compdb_index.py"
 M.python_binary = "python3"
@@ -11,7 +15,21 @@ M.log_prefix_compile = "[clang-compile]"
 M.log_prefix_link = "[clang-link]"
 
 M.compile_rev = "1"
-M.link_rev = "1"
+M.link_rev = "5"
+
+local function discover_beez_tests(build_tree)
+    return "rm -f " .. build_tree .. "/tests/unit/beez_tests && " ..
+        "cmake --build " .. build_tree .. " --target beez_tests"
+end
+
+local function discover_coverage_tests(build_tree)
+    return "rm -f " .. build_tree .. "/tests/unit/beez_tests " ..
+        build_tree .. "/tests/integration/beez_integration_tests " ..
+        build_tree .. "/tests/system/beez_system_tests " ..
+        build_tree .. "/tests/performance/beez_perf_tests && " ..
+        "cmake --build " .. build_tree ..
+        " --target beez_tests beez_integration_tests beez_system_tests beez_perf_tests"
+end
 
 M.link_order = {
     "prebyte_core",
@@ -90,7 +108,7 @@ M.build_profiles = {
     coverage = {
         scope = "coverage",
         build_type = "Debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.coverage_build_tree,
         compile_inputs = {
             "conanfile.py",
             "CMakeLists.txt",
@@ -106,7 +124,13 @@ M.build_profiles = {
                 M.coverage_stamp,
             }
         end,
-        link_outputs = { M.debug_build_tree .. "/tests/unit/beez_tests" },
+        link_outputs = {
+            M.coverage_build_tree .. "/tests/unit/beez_tests",
+            M.coverage_build_tree .. "/tests/integration/beez_integration_tests",
+            M.coverage_build_tree .. "/tests/system/beez_system_tests",
+            M.coverage_build_tree .. "/tests/performance/beez_perf_tests",
+        },
+        post_link = discover_coverage_tests,
         compile_description = "Clang compile with coverage instrumentation",
         link_description = "Clang link coverage test binary",
     },
@@ -114,7 +138,7 @@ M.build_profiles = {
     sanitize = {
         scope = "sanitize",
         build_type = "Debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.sanitize_build_tree,
         compile_inputs = {
             "conanfile.py",
             "CMakeLists.txt",
@@ -130,7 +154,8 @@ M.build_profiles = {
                 build_tree .. "/.beez-clang-scripts/**",
             }
         end,
-        link_outputs = { M.debug_build_tree .. "/tests/unit/beez_tests" },
+        link_outputs = { M.sanitize_build_tree .. "/tests/unit/beez_tests" },
+        post_link = discover_beez_tests,
         compile_description = "Clang compile with ASan/UBSan",
         link_description = "Clang link sanitizer test binary",
     },
@@ -138,7 +163,7 @@ M.build_profiles = {
     tsan = {
         scope = "tsan",
         build_type = "Debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.tsan_build_tree,
         compile_inputs = {
             "conanfile.py",
             "CMakeLists.txt",
@@ -154,7 +179,8 @@ M.build_profiles = {
                 build_tree .. "/.beez-clang-scripts/**",
             }
         end,
-        link_outputs = { M.debug_build_tree .. "/tests/unit/beez_tests" },
+        link_outputs = { M.tsan_build_tree .. "/tests/unit/beez_tests" },
+        post_link = discover_beez_tests,
         compile_description = "Clang compile with ThreadSanitizer",
         link_description = "Clang link TSan test binary",
     },
@@ -162,7 +188,7 @@ M.build_profiles = {
     fuzzer = {
         scope = "fuzz",
         build_type = "Debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.fuzz_build_tree,
         compile_inputs = {
             "conanfile.py",
             "CMakeLists.txt",

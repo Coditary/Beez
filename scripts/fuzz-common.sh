@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Shared libFuzzer settings for fuzz_lua_dsl (sourced by fuzz-*.sh).
+#
+# Env:
+#   FUZZER_RSS_LIMIT_MB  Per-process RSS cap in MiB (default: 8192; 0 = unlimited)
+#
+# Fuzzing always runs as a single libFuzzer process (no -jobs / -workers).
 
 fuzz_libfuzzer_args() {
   local profile="${FUZZER_PROFILE:-smoke}"
+  local rss_limit_mb="${FUZZER_RSS_LIMIT_MB:-8192}"
   # shellcheck disable=SC2034
   FUZZER_LIBFUZZER_ARGS=(
     -dict=tests/fuzz/lua_dsl.dict
@@ -12,7 +18,7 @@ fuzz_libfuzzer_args() {
     -use_value_profile=1
     -reduce_inputs=1
     -shrink=1
-    -rss_limit_mb=0
+    -rss_limit_mb="${rss_limit_mb}"
     -artifact_prefix="${FUZZER_ARTIFACTS_DIR}/"
   )
 
@@ -22,8 +28,5 @@ fuzz_libfuzzer_args() {
       -len_control=0
       -cross_over_uniform_dist=1
     )
-    if [[ -n "${FUZZER_JOBS:-}" ]]; then
-      FUZZER_LIBFUZZER_ARGS+=(-jobs="${FUZZER_JOBS}")
-    fi
   fi
 }

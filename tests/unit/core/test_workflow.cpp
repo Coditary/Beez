@@ -67,3 +67,35 @@ TEST(WorkflowResolutionTest, RejectsUnknownStageTarget)
     EXPECT_THROW(beez::core::resolveWorkflowExecutionSteps(workflow, "missing"),
                  std::runtime_error);
 }
+
+TEST(WorkflowResolutionTest, ReturnsFlatStepsForNonStagedWorkflow)
+{
+    beez::core::Workflow workflow;
+    workflow.name = "flat";
+    workflow.steps = {
+        beez::core::WorkflowStep {
+            .invocation = beez::core::PhaseInvocation {.phase = "build", .scope = "app"}},
+    };
+
+    const auto Steps = beez::core::resolveWorkflowExecutionSteps(workflow, std::nullopt);
+    ASSERT_EQ(Steps.size(), 1U);
+    EXPECT_EQ(Steps[0].invocation.phase, "build");
+}
+
+TEST(WorkflowResolutionTest, RejectsStageTargetOnNonStagedWorkflow)
+{
+    beez::core::Workflow workflow;
+    workflow.name = "flat";
+
+    EXPECT_THROW(beez::core::resolveWorkflowExecutionSteps(workflow, "prepare"),
+                 std::runtime_error);
+}
+
+TEST(WorkflowResolutionTest, ReturnsEmptyForWorkflowWithNoStepsOrStages)
+{
+    beez::core::Workflow workflow;
+    workflow.name = "empty";
+
+    const auto Steps = beez::core::resolveWorkflowExecutionSteps(workflow, std::nullopt);
+    EXPECT_TRUE(Steps.empty());
+}

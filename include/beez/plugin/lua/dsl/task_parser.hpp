@@ -19,7 +19,6 @@ parseTaskActions(const sol::table& actionsTable, const std::shared_ptr<sol::stat
 
 [[nodiscard]] bool isPluginTaskImportTable(const sol::table& table);
 
-[[nodiscard]] std::string
-buildPluginTaskReference(const sol::table& importTable);
+[[nodiscard]] std::string buildPluginTaskReference(const sol::table& importTable);
 
 }  // namespace beez::plugin::lua

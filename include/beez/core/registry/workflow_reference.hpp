@@ -14,8 +14,8 @@ struct PluginWorkflowRef
 };
 
 [[nodiscard]] std::string formatPluginWorkflowKey(const std::string& organization,
-                                                const std::string& plugin,
-                                                const std::string& workflowName);
+                                                  const std::string& plugin,
+                                                  const std::string& workflowName);
 
 [[nodiscard]] PluginWorkflowRef parsePluginWorkflowReference(const std::string& reference);
 

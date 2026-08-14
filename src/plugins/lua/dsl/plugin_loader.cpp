@@ -152,11 +152,9 @@ void registerPluginWorkflows(const sol::table& workflowsTable,
                                      "' must be a table");
         }
 
-        core::Workflow workflow =
-            parseWorkflow(key.as<std::string>(), value.as<sol::table>());
-        registry.registerPluginWorkflow(std::move(workflow),
-                                        pluginRef.organization,
-                                        pluginRef.name);
+        core::Workflow workflow = parseWorkflow(key.as<std::string>(), value.as<sol::table>());
+        registry.registerPluginWorkflow(
+            std::move(workflow), pluginRef.organization, pluginRef.name);
     }
 }
 
@@ -235,12 +233,10 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
         registerPluginSteps(StepsObject.as<sol::table>(), registry, pluginRef, PluginState);
     };
 
-    (*PluginState)["workflows"] =
-        [&registry, &pluginRef](const sol::table& workflowsTable)
+    (*PluginState)["workflows"] = [&registry, &pluginRef](const sol::table& workflowsTable)
     { registerPluginWorkflows(workflowsTable, registry, pluginRef); };
 
-    (*PluginState)["tasks"] =
-        [&registry, &pluginRef, PluginState](const sol::table& tasksTable)
+    (*PluginState)["tasks"] = [&registry, &pluginRef, PluginState](const sol::table& tasksTable)
     { registerPluginTasks(tasksTable, registry, pluginRef, PluginState); };
 
     PluginState->script_file(scriptPath.string());

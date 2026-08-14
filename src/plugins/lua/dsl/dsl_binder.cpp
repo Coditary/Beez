@@ -3,19 +3,19 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/task_action.hpp"
 #include "beez/plugin/lua/api/beez_table.hpp"
-#include "beez/plugin/lua/dsl/plugin_loader.hpp"
 #include "beez/plugin/lua/dsl/configure_parser.hpp"
+#include "beez/plugin/lua/dsl/plugin_loader.hpp"
 #include "beez/plugin/lua/dsl/reqpack_parser.hpp"
-#include "beez/plugin/lua/dsl/workflows_parser.hpp"
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
+#include "beez/plugin/lua/dsl/workflows_parser.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
-#include "beez/core/registry/workflow_reference.hpp"
 #include "beez/core/registry/task_reference.hpp"
+#include "beez/core/registry/workflow_reference.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -35,7 +35,8 @@ namespace
 [[nodiscard]] std::pair<std::string, std::string> splitQualifiedPluginName(const std::string& name)
 {
     const auto SlashPosition = name.find('/');
-    if (SlashPosition == std::string::npos || SlashPosition == 0 || SlashPosition == name.size() - 1)
+    if (SlashPosition == std::string::npos || SlashPosition == 0 ||
+        SlashPosition == name.size() - 1)
     {
         throw std::runtime_error("configure_plugin plugin name '" + name +
                                  "' must use the form 'organization/plugin'");
@@ -50,8 +51,7 @@ class DslBinder
     DslBinder(core::Registry* registry,
               std::weak_ptr<sol::state> luaState,
               ReqpackBeezPluginCatalog* reqpackBeezPlugins)
-        : registry_(registry),
-          luaState_(std::move(luaState)),
+        : registry_(registry), luaState_(std::move(luaState)),
           reqpackBeezPlugins_(reqpackBeezPlugins)
     {
     }
@@ -123,8 +123,8 @@ class DslBinder
         if (!reqpackBeezPlugins_->find(ParsedReference.organization, ParsedReference.plugin)
                  .has_value())
         {
-            throw std::runtime_error("task references plugin '" + ParsedReference.organization + '/' +
-                                     ParsedReference.plugin +
+            throw std::runtime_error("task references plugin '" + ParsedReference.organization +
+                                     '/' + ParsedReference.plugin +
                                      "' which is not declared in reqpack.beez");
         }
     }
@@ -184,9 +184,7 @@ class DslBinder
                                      "' which is not declared in reqpack.beez");
         }
 
-        registry_->configurePlugin(Organization,
-                                   Plugin,
-                                   makeLuaStepConfig(LuaState, configTable));
+        registry_->configurePlugin(Organization, Plugin, makeLuaStepConfig(LuaState, configTable));
     }
 
     void workflow(const std::string& name, const sol::table& steps) const
@@ -203,10 +201,9 @@ class DslBinder
             if (!reqpackBeezPlugins_->find(ParsedReference.organization, ParsedReference.plugin)
                      .has_value())
             {
-                throw std::runtime_error("workflow references plugin '" +
-                                         ParsedReference.organization + '/' +
-                                         ParsedReference.plugin +
-                                         "' which is not declared in reqpack.beez");
+                throw std::runtime_error(
+                    "workflow references plugin '" + ParsedReference.organization + '/' +
+                    ParsedReference.plugin + "' which is not declared in reqpack.beez");
             }
         }
 
@@ -269,11 +266,11 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["step"] = [binder](const sol::table& options) { binder->step(options); };
 
-    (*luaState)["workflow"] = sol::overload(
-        [binder](const std::string& name, const std::string& pluginWorkflowReference)
-        { binder->workflow(name, pluginWorkflowReference); },
-        [binder](const std::string& name, const sol::table& steps)
-        { binder->workflow(name, steps); });
+    (*luaState)["workflow"] =
+        sol::overload([binder](const std::string& name, const std::string& pluginWorkflowReference)
+                      { binder->workflow(name, pluginWorkflowReference); },
+                      [binder](const std::string& name, const sol::table& steps)
+                      { binder->workflow(name, steps); });
 
     (*luaState)["workflows"] = [binder](const sol::table& workflowsTable)
     { binder->workflows(workflowsTable); };
@@ -290,8 +287,8 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 
     (*luaState)["order"] = [binder](sol::variadic_args arguments) { binder->order(arguments); };
 
-    (*luaState)["reqpack"] = [&reqpackManifest, &reqpackBeezPlugins, &registry, &context](
-                                 const sol::table& table)
+    (*luaState)["reqpack"] =
+        [&reqpackManifest, &reqpackBeezPlugins, &registry, &context](const sol::table& table)
     {
         const sol::object BeezObject = table["beez"];
         if (BeezObject.valid() && BeezObject.is<sol::table>())

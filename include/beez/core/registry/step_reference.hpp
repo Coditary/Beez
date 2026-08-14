@@ -21,10 +21,9 @@ struct PluginIdentity
     std::string plugin;
 };
 
-[[nodiscard]] std::string
-formatQualifiedStepRef(const std::string& organization,
-                       const std::string& plugin,
-                       const std::string& stepName);
+[[nodiscard]] std::string formatQualifiedStepRef(const std::string& organization,
+                                                 const std::string& plugin,
+                                                 const std::string& stepName);
 
 [[nodiscard]] std::string formatVersionedQualifiedStepRef(const std::string& organization,
                                                           const std::string& plugin,

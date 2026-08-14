@@ -30,7 +30,8 @@ PluginWorkflowRef parsePluginWorkflowReference(const std::string& reference)
     }
 
     const std::string Organization = reference.substr(0, SlashPosition);
-    const std::string Plugin = reference.substr(SlashPosition + 1U, ColonPosition - SlashPosition - 1U);
+    const std::string Plugin =
+        reference.substr(SlashPosition + 1U, ColonPosition - SlashPosition - 1U);
     const std::string WorkflowName = reference.substr(ColonPosition + 1U);
 
     if (Organization.empty() || Plugin.empty() || WorkflowName.empty())

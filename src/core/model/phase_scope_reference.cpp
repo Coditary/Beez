@@ -42,7 +42,7 @@ namespace
 }
 
 [[nodiscard]] std::vector<std::string> parseQuotedScopeList(const std::string& reference,
-                                                              std::size_t bracketPosition)
+                                                            std::size_t bracketPosition)
 {
     if (reference.back() != ']')
     {

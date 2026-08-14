@@ -23,7 +23,7 @@ namespace
     return {qualifiedName.substr(0, SlashPosition), qualifiedName.substr(SlashPosition + 1)};
 }
 
-[[nodiscard]] std::string stripPluginVersionSuffix(std::string pluginPart)
+[[nodiscard]] std::string stripPluginVersionSuffix(const std::string& pluginPart)
 {
     const auto AtPosition = pluginPart.rfind('@');
     if (AtPosition == std::string::npos || AtPosition == 0 || AtPosition == pluginPart.size() - 1)
@@ -44,9 +44,9 @@ std::string formatQualifiedStepRef(const std::string& organization,
 }
 
 std::string formatVersionedQualifiedStepRef(const std::string& organization,
-                                              const std::string& plugin,
-                                              const std::string& version,
-                                              const std::string& stepName)
+                                            const std::string& plugin,
+                                            const std::string& version,
+                                            const std::string& stepName)
 {
     return organization + '/' + plugin + '@' + version + ':' + stepName;
 }
@@ -150,7 +150,8 @@ std::optional<PluginIdentity> extractPluginIdentity(const std::string& reference
 
     if (const auto Qualified = parseQualifiedStepRef(BaseReference))
     {
-        return PluginIdentity {.organization = Qualified->organization, .plugin = Qualified->plugin};
+        return PluginIdentity {.organization = Qualified->organization,
+                               .plugin = Qualified->plugin};
     }
 
     if (const auto ShortPlugin = parseShortPluginStepRef(BaseReference))
@@ -162,8 +163,8 @@ std::optional<PluginIdentity> extractPluginIdentity(const std::string& reference
 }
 
 std::string formatPluginVersionKey(const std::string& organization,
-                                 const std::string& plugin,
-                                 const std::string& version)
+                                   const std::string& plugin,
+                                   const std::string& version)
 {
     return organization + '/' + plugin + '@' + version;
 }

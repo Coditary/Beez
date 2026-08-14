@@ -15,9 +15,9 @@ namespace
 {
 
 [[nodiscard]] bool hasTaskCycleFrom(const std::string& origin,
-                                  const std::string& current,
-                                  const core::Registry& registry,
-                                  std::unordered_set<std::string>& visited)
+                                    const std::string& current,
+                                    const core::Registry& registry,
+                                    std::unordered_set<std::string>& visited)
 {
     const auto Found = registry.findTask(current);
     if (!Found.has_value())

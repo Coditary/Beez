@@ -12,7 +12,7 @@ namespace beez::plugin::lua
 class ReqpackBeezPluginCatalog
 {
   public:
-    void set(const std::vector<BeezPluginRef>& plugins);
+    void set(const std::vector<BeezPluginRef>& pluginRefs);
     void add(BeezPluginRef plugin);
 
     [[nodiscard]] bool empty() const

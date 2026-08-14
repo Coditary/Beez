@@ -57,8 +57,7 @@ TEST(StepReferenceTest, SplitsVersionSuffix)
 
 TEST(StepReferenceTest, ParsesQualifiedReferenceWithVersionSuffix)
 {
-    const auto Parsed =
-        beez::core::parseQualifiedStepRef("coditary/clang-build:compile@1.0.0");
+    const auto Parsed = beez::core::parseQualifiedStepRef("coditary/clang-build:compile@1.0.0");
     ASSERT_TRUE(Parsed.has_value());
     EXPECT_EQ(Parsed->organization, "coditary");
     EXPECT_EQ(Parsed->plugin, "clang-build");

@@ -21,6 +21,7 @@ M.suppressions = {
     "missingIncludeSystem",
     "missingInclude",
     "unusedFunction",
+    "unusedStructMember",
 }
 M.inline_suppr = true
 M.quiet = true
@@ -38,9 +39,9 @@ M.worker_prefix_analyze = "cppcheck_"
 M.worker_prefix_security = "cppsec_"
 M.worker_prefix_check = "cppcheck_"
 
-M.analyze_rev = "1"
-M.security_rev = "1"
-M.check_rev = "1"
+M.analyze_rev = "2"
+M.security_rev = "2"
+M.check_rev = "2"
 
 M.profiles = {
     analyze = {

@@ -1,7 +1,8 @@
 -- Reusable staged workflows for Beez C++ projects.
 -- Import in build.lua via workflows({ build = "coditary/pipeline:build", ... }).
 -- Standard phases: setup, generate, quality, compile, bundle, test, package, verify, publish
--- Standard scopes: app, debug, coverage, sanitize, tsan, fuzz, test, lint, format, analyze,
+-- Standard scopes: app, debug, coverage, sanitize, tsan, fuzz, fuzz-corpus, fuzz-torture,
+--                  test, lint, format, analyze,
 --                  security, audit, docs, code, repo
 
 plugin("pipeline", {
@@ -61,14 +62,14 @@ workflows {
         { "setup", { "setup[fuzz]" } },
         { "compile", { "compile[fuzz]" } },
         { "bundle", { "bundle[fuzz]" } },
-        { "test", { "test[fuzz]" } },
+        { "test", { "test[fuzz-corpus]" } },
     },
 
     fuzzer_torture = {
         { "setup", { "setup[fuzz]" } },
         { "compile", { "compile[fuzz]" } },
         { "bundle", { "bundle[fuzz]" } },
-        { "test", { "test[fuzz]" } },
+        { "test", { "test[fuzz-torture]" } },
     },
 
     all = {

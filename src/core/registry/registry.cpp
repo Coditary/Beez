@@ -7,8 +7,8 @@
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/registry/step_order.hpp"
 #include "beez/core/registry/step_reference.hpp"
-#include "beez/core/registry/workflow_reference.hpp"
 #include "beez/core/registry/task_reference.hpp"
+#include "beez/core/registry/workflow_reference.hpp"
 #include "beez/core/util/expected.hpp"
 
 #include <algorithm>
@@ -70,7 +70,7 @@ void Registry::registerStep(Step step)
 }
 
 [[nodiscard]] bool Registry::stepBelongsToPlugin(const std::string& stepId,
-                                                   const std::string& pluginKey)
+                                                 const std::string& pluginKey)
 {
     return stepId.starts_with(pluginKey + ':') || stepId.starts_with(pluginKey + '@');
 }
@@ -94,10 +94,10 @@ void Registry::registerPluginStep(Step step,
                                   bool allowUnversionedAliases)
 {
     const std::string StepName = step.name;
-    const std::string StepId = version.has_value()
-                                   ? formatVersionedQualifiedStepRef(
-                                         organization, plugin, *version, StepName)
-                                   : formatQualifiedStepRef(organization, plugin, StepName);
+    const std::string StepId =
+        version.has_value()
+            ? formatVersionedQualifiedStepRef(organization, plugin, *version, StepName)
+            : formatQualifiedStepRef(organization, plugin, StepName);
 
     const std::string PluginKey = formatPluginKey(organization, plugin);
     const auto PluginPendingIterator = pendingPluginConfigs_.find(PluginKey);
@@ -147,9 +147,9 @@ void Registry::registerPluginStep(Step step,
     {
         const std::string& VersionValue = *version;
         registerStepAlias(formatVersionedInvocationRef(StepName, VersionValue), StepId);
-        registerStepAlias(formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName),
-                                                       VersionValue),
-                          StepId);
+        registerStepAlias(
+            formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName), VersionValue),
+            StepId);
         registerStepAlias(formatVersionedInvocationRef(
                               formatQualifiedStepRef(organization, plugin, StepName), VersionValue),
                           StepId);
@@ -160,10 +160,10 @@ void Registry::registerPluginStep(Step step,
             registerStepAlias(formatVersionedInvocationRef(
                                   formatShortPluginStepRef(plugin, ActionName), VersionValue),
                               StepId);
-            registerStepAlias(formatVersionedInvocationRef(
-                                  formatQualifiedStepRef(organization, plugin, ActionName),
-                                  VersionValue),
-                              StepId);
+            registerStepAlias(
+                formatVersionedInvocationRef(
+                    formatQualifiedStepRef(organization, plugin, ActionName), VersionValue),
+                StepId);
         }
     }
 }
@@ -184,8 +184,7 @@ void Registry::configurePlugin(const std::string& organization,
                                const StepConfigPtr& config)
 {
     const std::string PluginKey = formatPluginKey(organization, plugin);
-    pendingPluginConfigs_[PluginKey] =
-        mergeStepConfigs(pendingPluginConfigs_[PluginKey], config);
+    pendingPluginConfigs_[PluginKey] = mergeStepConfigs(pendingPluginConfigs_[PluginKey], config);
     applyPluginConfigToRegisteredSteps(PluginKey, config);
 }
 
@@ -275,10 +274,8 @@ void Registry::registerPluginTask(Task task,
 Workflow Registry::resolvePluginWorkflowReference(const std::string& reference) const
 {
     const PluginWorkflowRef ParsedReference = parsePluginWorkflowReference(reference);
-    const std::string PluginWorkflowKey =
-        formatPluginWorkflowKey(ParsedReference.organization,
-                                ParsedReference.plugin,
-                                ParsedReference.workflowName);
+    const std::string PluginWorkflowKey = formatPluginWorkflowKey(
+        ParsedReference.organization, ParsedReference.plugin, ParsedReference.workflowName);
     const auto WorkflowIterator = pluginWorkflows_.find(PluginWorkflowKey);
     if (WorkflowIterator == pluginWorkflows_.end())
     {
@@ -299,10 +296,8 @@ void Registry::registerWorkflowFromPluginReference(const std::string& localName,
 Task Registry::resolvePluginTaskReference(const std::string& reference) const
 {
     const PluginTaskRef ParsedReference = parsePluginTaskReference(reference);
-    const std::string PluginTaskKey =
-        formatPluginTaskKey(ParsedReference.organization,
-                            ParsedReference.plugin,
-                            ParsedReference.taskName);
+    const std::string PluginTaskKey = formatPluginTaskKey(
+        ParsedReference.organization, ParsedReference.plugin, ParsedReference.taskName);
     const auto TaskIterator = pluginTasks_.find(PluginTaskKey);
     if (TaskIterator == pluginTasks_.end())
     {
@@ -440,14 +435,14 @@ Registry::resolveStepRegistrationId(const std::string& reference) const
 
     if (const auto Qualified = parseQualifiedStepRef(reference))
     {
-        const auto QualifiedId =
-            Qualified->version.has_value()
-                ? formatVersionedQualifiedStepRef(Qualified->organization,
-                                                  Qualified->plugin,
-                                                  *Qualified->version,
-                                                  Qualified->stepName)
-                : formatQualifiedStepRef(
-                      Qualified->organization, Qualified->plugin, Qualified->stepName);
+        const auto QualifiedId = Qualified->version.has_value()
+                                     ? formatVersionedQualifiedStepRef(Qualified->organization,
+                                                                       Qualified->plugin,
+                                                                       *Qualified->version,
+                                                                       Qualified->stepName)
+                                     : formatQualifiedStepRef(Qualified->organization,
+                                                              Qualified->plugin,
+                                                              Qualified->stepName);
         if (steps_.contains(QualifiedId))
         {
             return QualifiedId;
@@ -456,13 +451,11 @@ Registry::resolveStepRegistrationId(const std::string& reference) const
 
     if (const auto ShortPlugin = parseShortPluginStepRef(reference))
     {
-        const auto ShortAlias = Version.has_value()
-                                    ? formatVersionedInvocationRef(
-                                          formatShortPluginStepRef(ShortPlugin->first,
-                                                                   ShortPlugin->second),
-                                          *Version)
-                                    : formatShortPluginStepRef(ShortPlugin->first,
-                                                               ShortPlugin->second);
+        const auto ShortAlias =
+            Version.has_value()
+                ? formatVersionedInvocationRef(
+                      formatShortPluginStepRef(ShortPlugin->first, ShortPlugin->second), *Version)
+                : formatShortPluginStepRef(ShortPlugin->first, ShortPlugin->second);
         const auto ShortIterator = stepAliases_.find(ShortAlias);
         if (ShortIterator != stepAliases_.end())
         {
@@ -517,8 +510,7 @@ bool Registry::hasPluginVersionLoaded(const std::string& organization,
                                       const std::string& plugin,
                                       const std::string& version) const
 {
-    const std::string Prefix =
-        formatPluginVersionKey(organization, plugin, version) + ':';
+    const std::string Prefix = formatPluginVersionKey(organization, plugin, version) + ':';
     for (const auto& [stepId, step] : steps_)
     {
         (void)step;

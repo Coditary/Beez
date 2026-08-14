@@ -46,7 +46,8 @@ TEST(RunCommandTest, MisspelledTargetPrintsDidYouMean)
 
     testing::internal::CaptureStdout();
     testing::internal::CaptureStderr();
-    const int ExitCode = beez::cli::runOrchestratorCommand(orchestrator, registry, context, options);
+    const int ExitCode =
+        beez::cli::runOrchestratorCommand(orchestrator, registry, context, options);
     const auto Stderr = testing::internal::GetCapturedStderr();
     testing::internal::GetCapturedStdout();
 

@@ -4,7 +4,7 @@ set -euo pipefail
 BUILD_DIR="${1:-build}"
 FUZZER_TIME="${FUZZER_TIME:-30}"
 REPORTS_DIR="${REPORTS_DIR:-report}"
-FUZZER_BIN="${BUILD_DIR}/build/Debug/fuzz/fuzz_lua_dsl"
+FUZZER_BIN="${BUILD_DIR}/build/Fuzz/fuzz/fuzz_lua_dsl"
 FUZZER_CORPUS_DIR="${REPORTS_DIR}/fuzz/corpus/lua_dsl"
 FUZZER_ARTIFACTS_DIR="${REPORTS_DIR}/fuzz/artifacts"
 SEED_DIR="tests/fuzz/corpus/lua_dsl"

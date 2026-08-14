@@ -2,14 +2,14 @@ local M = {}
 
 M.reports_dir = "report"
 M.build_dir = "build"
-M.debug_build_tree = "build/build/Debug"
-M.fuzzer_bin = M.debug_build_tree .. "/fuzz/fuzz_lua_dsl"
+M.fuzz_build_tree = "build/build/Fuzz"
+M.fuzzer_bin = M.fuzz_build_tree .. "/fuzz/fuzz_lua_dsl"
 
 M.corpus_glob = "tests/fuzz/corpus/lua_dsl/*.lua"
 M.dict_file = "tests/fuzz/lua_dsl.dict"
 M.fuzz_common_script = "scripts/fuzz-common.sh"
 
-M.fuzz_rev = "1"
+M.fuzz_rev = "4"
 
 M.runs = {
     smoke = {
@@ -26,7 +26,7 @@ M.runs = {
 
     corpus = {
         phase = "test",
-        scope = "fuzz",
+        scope = "fuzz-corpus",
         script = "scripts/fuzz-corpus.sh",
         report_file = "report/fuzz/fuzz-corpus-report.txt",
         fuzzer_time = "60",
@@ -47,7 +47,7 @@ M.runs = {
 
     torture = {
         phase = "test",
-        scope = "fuzz",
+        scope = "fuzz-torture",
         script = "scripts/fuzz-torture.sh",
         report_file = "report/fuzz/fuzz-torture-report.txt",
         fuzzer_time_env = "FUZZER_TORTURE_TIME",
@@ -60,7 +60,7 @@ M.runs = {
 
     seeds_generate = {
         phase = "test",
-        scope = "fuzz",
+        scope = "fuzz-seeds",
         script = "scripts/generate-fuzz-seeds.sh",
         report_file = "report/fuzz/fuzz-seeds.ok",
         mode = "direct",

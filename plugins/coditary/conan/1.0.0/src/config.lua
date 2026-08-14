@@ -135,20 +135,39 @@ function M.resolve_build(step_cfg, root, profile_name)
     local build_type = resolve_build_type(profile, cfg)
     local build_tree = resolve_build_tree(profile, build_type, cfg)
     local cmake_preset = resolve_cmake_preset(profile, build_type, cfg)
+    local conan_output_folder = cfg.conan_output_folder or defaults.conan_output_folder
+    local default_tree = "build/build/" .. build_type
+    local cmake_bootstrap_args = {}
+
+    if build_tree ~= default_tree then
+        local generators_dir = root
+            .. "/"
+            .. conan_output_folder
+            .. "/build/"
+            .. build_type
+            .. "/generators"
+        cmake_bootstrap_args = {
+            "-DCMAKE_TOOLCHAIN_FILE=" .. shell.quote(generators_dir .. "/conan_toolchain.cmake"),
+            "-DCMAKE_PREFIX_PATH=" .. shell.quote(generators_dir),
+        }
+    end
 
     local resolved = {
         profile_name = profile_name,
         scope = profile.scope,
         conanfile = cfg.conanfile or defaults.conanfile,
         conan_binary = cfg.conan_binary or defaults.conan_binary,
+        python_binary = cfg.python_binary or defaults.python_binary,
         cmake_binary = cfg.cmake_binary or defaults.cmake_binary,
         conan_output_folder = cfg.conan_output_folder or defaults.conan_output_folder,
         build_policy = cfg.build_policy or defaults.build_policy,
         profile_script = cfg.profile_script or defaults.profile_script,
         conan_profile = cfg.conan_profile or env.env_or("CONAN_PROFILE", nil),
+        conan_output_folder = cfg.conan_output_folder or defaults.conan_output_folder,
         build_type = build_type,
         build_tree = build_tree,
         cmake_preset = cmake_preset,
+        cmake_bootstrap_args = cmake_bootstrap_args,
         cmake_first_args = copy_string_array(cfg.cmake_first_args, profile.cmake_first_args or {}),
         cmake_second_args = copy_string_array(cfg.cmake_second_args, profile.cmake_second_args or {}),
         build_target = cfg.build_target or profile.build_target,

@@ -6,7 +6,9 @@
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
+#include <iterator>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -30,13 +32,13 @@ namespace
 parseTaskPhaseInvocations(const sol::table& actionTable)
 {
     const sol::object PhaseValue = actionTable["phase"];
-    if (!isPresent(PhaseValue) || !PhaseValue.is<std::string>() || PhaseValue.as<std::string>().empty())
+    if (!isPresent(PhaseValue) || !PhaseValue.is<std::string>() ||
+        PhaseValue.as<std::string>().empty())
     {
         throw std::runtime_error("task phase action is missing required field 'phase'");
     }
 
-    const core::ScopedReference Scoped =
-        core::parseScopedReference(PhaseValue.as<std::string>());
+    const core::ScopedReference Scoped = core::parseScopedReference(PhaseValue.as<std::string>());
     if (Scoped.scopes.empty())
     {
         return {core::PhaseInvocation {.phase = Scoped.name, .scope = {}}};
@@ -44,10 +46,11 @@ parseTaskPhaseInvocations(const sol::table& actionTable)
 
     std::vector<core::PhaseInvocation> invocations;
     invocations.reserve(Scoped.scopes.size());
-    for (const std::string& Scope : Scoped.scopes)
-    {
-        invocations.push_back(core::PhaseInvocation {.phase = Scoped.name, .scope = Scope});
-    }
+    std::ranges::transform(
+        Scoped.scopes,
+        std::back_inserter(invocations),
+        [&](const std::string& scope)
+        { return core::PhaseInvocation {.phase = Scoped.name, .scope = scope}; });
 
     return invocations;
 }
@@ -113,11 +116,11 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
 
             if (HasPhase)
             {
-                for (const core::PhaseInvocation& Invocation :
-                     parseTaskPhaseInvocations(ActionTable))
-                {
-                    actions.push_back(core::makePhaseAction(Invocation));
-                }
+                const auto Invocations = parseTaskPhaseInvocations(ActionTable);
+                std::ranges::transform(Invocations,
+                                       std::back_inserter(actions),
+                                       [](const core::PhaseInvocation& invocation)
+                                       { return core::makePhaseAction(invocation); });
                 return;
             }
 
@@ -202,7 +205,8 @@ bool isPluginTaskImportTable(const sol::table& table)
         return false;
     }
 
-    if (!isPresent(TaskValue) || !TaskValue.is<std::string>() || TaskValue.as<std::string>().empty())
+    if (!isPresent(TaskValue) || !TaskValue.is<std::string>() ||
+        TaskValue.as<std::string>().empty())
     {
         return false;
     }
@@ -237,7 +241,8 @@ std::string buildPluginTaskReference(const sol::table& importTable)
     const std::string TaskName = importTable.get<std::string>("task");
     if (Plugin.find('/') == std::string::npos)
     {
-        throw std::runtime_error("task import field 'plugin' must use the form 'organization/plugin'");
+        throw std::runtime_error(
+            "task import field 'plugin' must use the form 'organization/plugin'");
     }
 
     return Plugin + ':' + TaskName;

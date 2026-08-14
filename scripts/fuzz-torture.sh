@@ -4,9 +4,8 @@ set -euo pipefail
 BUILD_DIR="${1:-build}"
 FUZZER_TIME="${FUZZER_TIME:-300}"
 FUZZER_PROFILE="${FUZZER_PROFILE:-torture}"
-FUZZER_JOBS="${FUZZER_JOBS:-$(nproc 2>/dev/null || echo 4)}"
 REPORTS_DIR="${REPORTS_DIR:-report}"
-FUZZER_BIN="${BUILD_DIR}/build/Debug/fuzz/fuzz_lua_dsl"
+FUZZER_BIN="${BUILD_DIR}/build/Fuzz/fuzz/fuzz_lua_dsl"
 FUZZER_CORPUS_DIR="${REPORTS_DIR}/fuzz/corpus/lua_dsl"
 FUZZER_ARTIFACTS_DIR="${REPORTS_DIR}/fuzz/artifacts"
 SEED_DIR="tests/fuzz/corpus/lua_dsl"
@@ -24,7 +23,7 @@ rm -rf "${FUZZER_CORPUS_DIR}" "${FUZZER_ARTIFACTS_DIR}"
 mkdir -p "${FUZZER_CORPUS_DIR}" "${FUZZER_ARTIFACTS_DIR}" "${REPORTS_DIR}/fuzz"
 cp "${SEED_DIR}"/*.lua "${FUZZER_CORPUS_DIR}/"
 
-echo "=== Torture fuzz_lua_dsl for ${FUZZER_TIME}s (jobs=${FUZZER_JOBS}, profile=${FUZZER_PROFILE}) ==="
+echo "=== Torture fuzz_lua_dsl for ${FUZZER_TIME}s (profile=${FUZZER_PROFILE}, single process) ==="
 ASAN_OPTIONS=detect_leaks=0 \
   "${FUZZER_BIN}" "${FUZZER_CORPUS_DIR}" \
   "${FUZZER_LIBFUZZER_ARGS[@]}" \

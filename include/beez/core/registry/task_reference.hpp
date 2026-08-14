@@ -13,8 +13,8 @@ struct PluginTaskRef
 };
 
 [[nodiscard]] std::string formatPluginTaskKey(const std::string& organization,
-                                            const std::string& plugin,
-                                            const std::string& taskName);
+                                              const std::string& plugin,
+                                              const std::string& taskName);
 
 [[nodiscard]] PluginTaskRef parsePluginTaskReference(const std::string& reference);
 

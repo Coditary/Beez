@@ -1,11 +1,14 @@
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
+#include <algorithm>
+#include <ranges>
+
 namespace beez::plugin::lua
 {
 
-void ReqpackBeezPluginCatalog::set(const std::vector<BeezPluginRef>& plugins)
+void ReqpackBeezPluginCatalog::set(const std::vector<BeezPluginRef>& pluginRefs)
 {
-    plugins_ = plugins;
+    plugins_ = pluginRefs;
 }
 
 void ReqpackBeezPluginCatalog::add(BeezPluginRef plugin)
@@ -16,15 +19,16 @@ void ReqpackBeezPluginCatalog::add(BeezPluginRef plugin)
 std::optional<BeezPluginRef> ReqpackBeezPluginCatalog::find(const std::string& organization,
                                                             const std::string& plugin) const
 {
-    for (const auto& entry : plugins_)
+    const auto Match = std::ranges::find_if(
+        plugins_,
+        [&](const BeezPluginRef& entry)
+        { return entry.organization == organization && entry.name == plugin; });
+    if (Match == plugins_.end())
     {
-        if (entry.organization == organization && entry.name == plugin)
-        {
-            return entry;
-        }
+        return std::nullopt;
     }
 
-    return std::nullopt;
+    return *Match;
 }
 
 }  // namespace beez::plugin::lua

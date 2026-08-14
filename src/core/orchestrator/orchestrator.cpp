@@ -171,9 +171,7 @@ Expected<int, OrchestratorError> Orchestrator::run(const std::string& name)
                        orchestrator_detail::RunCacheFlushPolicy::IfEndStrategy)
                 .withoutSegment(
                     [&]
-                    {
-                        return orchestrator_detail::runWorkflow(*this, *FoundWorkflow, StageName);
-                    });
+                    { return orchestrator_detail::runWorkflow(*this, *FoundWorkflow, StageName); });
         }
     }
 

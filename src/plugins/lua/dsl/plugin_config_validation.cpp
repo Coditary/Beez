@@ -15,7 +15,8 @@ namespace
 [[nodiscard]] std::pair<std::string, std::string> splitQualifiedPluginName(const std::string& name)
 {
     const auto SlashPosition = name.find('/');
-    if (SlashPosition == std::string::npos || SlashPosition == 0 || SlashPosition == name.size() - 1)
+    if (SlashPosition == std::string::npos || SlashPosition == 0 ||
+        SlashPosition == name.size() - 1)
     {
         throw std::runtime_error("plugin name '" + name +
                                  "' must use the form 'organization/plugin'");

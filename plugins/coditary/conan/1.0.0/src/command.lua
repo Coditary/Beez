@@ -29,6 +29,17 @@ local function cmake_args_line(config, args)
         config.cmake_preset,
     }
 
+    if config.build_tree ~= nil and config.build_tree ~= "" then
+        parts[#parts + 1] = "-B"
+        parts[#parts + 1] = shell.quote(config.build_tree)
+    end
+
+    if config.cmake_bootstrap_args ~= nil then
+        for _, argument in ipairs(config.cmake_bootstrap_args) do
+            parts[#parts + 1] = argument
+        end
+    end
+
     for _, argument in ipairs(args) do
         parts[#parts + 1] = argument
     end
@@ -52,11 +63,33 @@ function M.cmake_configure(config)
     return table.concat(parts, " ")
 end
 
+function M.codegen(config, root)
+    local completion_dir = root .. "/" .. config.build_tree .. "/src/cli"
+    local completion_cpp = completion_dir .. "/completion_embedded.cpp"
+    local script = root .. "/scripts/generate-completion-embedded.py"
+    local completions = root .. "/scripts/completions"
+
+    return "mkdir -p "
+        .. shell.quote(completion_dir)
+        .. " && "
+        .. shell.quote(config.python_binary or "python3")
+        .. " "
+        .. shell.quote(script)
+        .. " "
+        .. shell.quote(completions)
+        .. " "
+        .. shell.quote(completion_cpp)
+        .. " && clang-format -i "
+        .. shell.quote(completion_cpp)
+end
+
 function M.configure(config, root)
     local parts = {
         M.install(config, root),
         "&&",
         M.cmake_configure(config),
+        "&&",
+        M.codegen(config, root),
     }
 
     return table.concat(parts, " ")
@@ -66,8 +99,7 @@ function M.build(config)
     local parts = {
         config.cmake_binary,
         "--build",
-        "--preset",
-        config.cmake_preset,
+        shell.quote(config.build_tree),
     }
 
     if config.build_target ~= nil and config.build_target ~= "" then

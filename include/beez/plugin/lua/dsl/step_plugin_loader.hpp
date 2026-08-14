@@ -16,8 +16,6 @@ struct StepPluginEnsureResult
 };
 
 [[nodiscard]] StepPluginEnsureResult ensureInstalledPluginForStepReference(
-    const std::string& reference,
-    core::Registry& registry,
-    const core::Context& context);
+    const std::string& reference, core::Registry& registry, const core::Context& context);
 
 }  // namespace beez::plugin::lua

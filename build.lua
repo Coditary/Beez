@@ -35,16 +35,16 @@ configure({
     { "coditary/clang-tidy", { compdb = BUILD_TREE, check_rev = "2", lint_rev = "4", analyze_rev = "3", security_rev = "3",
 		steps = { check = { profiles = { "lint", "analyze", "security" } } } } },
 
-    { "coditary/cppcheck", { check_rev = "1", analyze_rev = "1", security_rev = "1",
+    { "coditary/cppcheck", { check_rev = "2", analyze_rev = "2", security_rev = "2",
 		steps = { cppcheck_check = { profiles = { "analyze", "security" } } } } },
 
     { "coditary/conan", { reports_dir = REPORTS_DIR, lock_rev = "1", sbom_rev = "1" } },
     { "coditary/cyclonedx", { check_rev = "1", merge_rev = "1", merge_inputs = { REPORTS_DIR .. "/sbom/cyclonedx.json" } } },
     { "coditary/osv-audit", { audit_rev = "1" } },
-    { "coditary/ctest", { reports_dir = REPORTS_DIR, test_rev = "1" } },
+    { "coditary/ctest", { reports_dir = REPORTS_DIR, test_rev = "4" } },
     { "coditary/coverage", { report_rev = "1" } },
-    { "coditary/fuzzer", { fuzz_rev = "1" } },
-    { "coditary/clang-build", { compile_rev = "1", link_rev = "1" } },
+    { "coditary/fuzzer", { fuzz_rev = "4" } },
+    { "coditary/clang-build", { compile_rev = "1", link_rev = "5" } },
 })
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────

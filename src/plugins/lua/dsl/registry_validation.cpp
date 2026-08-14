@@ -25,8 +25,7 @@ void validateLoadedRegistry(core::Registry& registry,
             if (const auto* phaseAction = std::get_if<core::TaskPhaseAction>(&action))
             {
                 const auto& invocation = phaseAction->invocation;
-                const std::string Scope =
-                    invocation.scope.empty() ? "*" : invocation.scope;
+                const std::string Scope = invocation.scope.empty() ? "*" : invocation.scope;
                 const auto Matched = registry.stepsForPhase(invocation.phase, Scope);
                 if (!Matched.hasValue())
                 {
@@ -55,7 +54,8 @@ void validateLoadedRegistry(core::Registry& registry,
                 {
                     if (Resolved.error().error == core::StepResolutionError::Ambiguous)
                     {
-                        throw std::runtime_error("task '" + taskName + "' references ambiguous step '" +
+                        throw std::runtime_error("task '" + taskName +
+                                                 "' references ambiguous step '" +
                                                  stepAction->stepName + "'");
                     }
 
@@ -75,8 +75,7 @@ void validateLoadedRegistry(core::Registry& registry,
         for (const auto& workflowStep : ExecutionSteps)
         {
             const auto& invocation = workflowStep.invocation;
-            const std::string Scope =
-                invocation.scope.empty() ? "*" : invocation.scope;
+            const std::string Scope = invocation.scope.empty() ? "*" : invocation.scope;
             const auto Matched = registry.stepsForPhase(invocation.phase, Scope);
             if (!Matched.hasValue())
             {

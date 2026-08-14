@@ -1,7 +1,7 @@
 #pragma once
 
-#include "beez/core/model/workflow_step.hpp"
 #include "beez/core/model/workflow_stage.hpp"
+#include "beez/core/model/workflow_step.hpp"
 
 #include <string>
 #include <vector>

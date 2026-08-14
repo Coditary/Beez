@@ -26,11 +26,10 @@ namespace beez::core::orchestrator_detail
 namespace
 {
 
-[[nodiscard]] Expected<int, OrchestratorError>
-runTaskImpl(Orchestrator& orchestrator,
-            const Task& task,
-            ProgressState& progress,
-            std::vector<std::string>& callStack)
+[[nodiscard]] Expected<int, OrchestratorError> runTaskImpl(Orchestrator& orchestrator,
+                                                           const Task& task,
+                                                           ProgressState& progress,
+                                                           std::vector<std::string>& callStack)
 {
     if (std::ranges::find(callStack, task.name) != callStack.end())
     {
@@ -79,8 +78,7 @@ runTaskImpl(Orchestrator& orchestrator,
 
         if (const auto* phaseAction = std::get_if<TaskPhaseAction>(&action))
         {
-            const auto Result =
-                runPhaseInvocation(orchestrator, phaseAction->invocation, progress);
+            const auto Result = runPhaseInvocation(orchestrator, phaseAction->invocation, progress);
             if (!Result)
             {
                 callStack.pop_back();

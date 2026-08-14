@@ -18,8 +18,12 @@ M.converter_script = "plugins/coditary/conan/1.0.0/scripts/conan-graph-to-cyclon
 M.profile_script = "scripts/ci-conan-profile.sh"
 
 M.debug_build_tree = "build/build/Debug"
-M.coverage_stamp = M.debug_build_tree .. "/.beez-coverage-configured"
-M.fuzzer_bin = M.debug_build_tree .. "/fuzz/fuzz_lua_dsl"
+M.coverage_build_tree = "build/build/Coverage"
+M.sanitize_build_tree = "build/build/Sanitize"
+M.tsan_build_tree = "build/build/Tsan"
+M.fuzz_build_tree = "build/build/Fuzz"
+M.coverage_stamp = M.coverage_build_tree .. "/.beez-coverage-configured"
+M.fuzzer_bin = M.fuzz_build_tree .. "/fuzz/fuzz_lua_dsl"
 
 M.log_prefix_graph = "[conan-graph]"
 M.log_prefix_lock = "[conan-lock]"
@@ -145,7 +149,7 @@ M.build_profiles = {
         scope = "coverage",
         build_type = "Debug",
         cmake_preset = "conan-debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.coverage_build_tree,
         cmake_first_args = {
             "-DBUILD_TESTING=ON",
             "-DBUILD_CACHE=ON",
@@ -156,7 +160,7 @@ M.build_profiles = {
         },
         post_configure = function(root)
             return "grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' " ..
-                root .. "/" .. M.debug_build_tree .. "/CMakeCache.txt " ..
+                root .. "/" .. M.coverage_build_tree .. "/CMakeCache.txt " ..
                 "&& touch " .. root .. "/" .. M.coverage_stamp
         end,
         configure_inputs = {
@@ -167,18 +171,18 @@ M.build_profiles = {
             "tests/**/CMakeLists.txt",
         },
         configure_outputs = {
-            M.debug_build_tree .. "/compile_commands.json",
-            M.debug_build_tree .. "/build.ninja",
+            M.coverage_build_tree .. "/compile_commands.json",
+            M.coverage_build_tree .. "/build.ninja",
             M.coverage_stamp,
         },
         build_inputs = {
             "src/**/*.cpp",
             "include/**/*.hpp",
             "tests/**/*.cpp",
-            M.debug_build_tree .. "/build.ninja",
+            M.coverage_build_tree .. "/build.ninja",
             M.coverage_stamp,
         },
-        build_outputs = { M.debug_build_tree .. "/tests/unit/beez_tests" },
+        build_outputs = { M.coverage_build_tree .. "/tests/unit/beez_tests" },
         configure_description = "CMake configure with coverage instrumentation",
         build_description = "Build Debug with coverage flags",
     },
@@ -187,7 +191,7 @@ M.build_profiles = {
         scope = "sanitize",
         build_type = "Debug",
         cmake_preset = "conan-debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.sanitize_build_tree,
         cmake_first_args = {
             "-DBUILD_TESTING=ON",
             "-DBUILD_CACHE=ON",
@@ -199,18 +203,15 @@ M.build_profiles = {
             "-DENABLE_ASAN=ON",
             "-DENABLE_UBSAN=ON",
         },
-        post_configure = function(root)
-            return "rm -f " .. root .. "/" .. M.coverage_stamp
-        end,
         configure_inputs = M.configure_input_full,
         configure_outputs = debug_outputs(),
         build_inputs = {
             "src/**/*.cpp",
             "include/**/*.hpp",
             "tests/**/*.cpp",
-            M.debug_build_tree .. "/build.ninja",
+            M.sanitize_build_tree .. "/build.ninja",
         },
-        build_outputs = { M.debug_build_tree .. "/tests/unit/beez_tests" },
+        build_outputs = { M.sanitize_build_tree .. "/tests/unit/beez_tests" },
         configure_description = "CMake configure with ASan/UBSan",
         build_description = "Build Debug with sanitizers",
     },
@@ -219,7 +220,7 @@ M.build_profiles = {
         scope = "tsan",
         build_type = "Debug",
         cmake_preset = "conan-debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.tsan_build_tree,
         cmake_first_args = {
             "-DBUILD_TESTING=ON",
             "-DBUILD_CACHE=ON",
@@ -232,18 +233,15 @@ M.build_profiles = {
             "-DENABLE_UBSAN=OFF",
             "-DENABLE_TSAN=ON",
         },
-        post_configure = function(root)
-            return "rm -f " .. root .. "/" .. M.coverage_stamp
-        end,
         configure_inputs = M.configure_input_full,
         configure_outputs = debug_outputs(),
         build_inputs = {
             "src/**/*.cpp",
             "include/**/*.hpp",
             "tests/**/*.cpp",
-            M.debug_build_tree .. "/build.ninja",
+            M.tsan_build_tree .. "/build.ninja",
         },
-        build_outputs = { M.debug_build_tree .. "/tests/unit/beez_tests" },
+        build_outputs = { M.tsan_build_tree .. "/tests/unit/beez_tests" },
         configure_description = "CMake configure with ThreadSanitizer",
         build_description = "Build Debug with ThreadSanitizer",
     },
@@ -252,7 +250,7 @@ M.build_profiles = {
         scope = "fuzz",
         build_type = "Debug",
         cmake_preset = "conan-debug",
-        build_tree = M.debug_build_tree,
+        build_tree = M.fuzz_build_tree,
         cmake_first_args = {
             "-DBUILD_TESTING=OFF",
             "-DBUILD_CACHE=ON",
@@ -265,10 +263,10 @@ M.build_profiles = {
             "-DENABLE_UBSAN=OFF",
         },
         configure_inputs = M.configure_input_fuzzer,
-        configure_outputs = { M.debug_build_tree .. "/build.ninja" },
+        configure_outputs = { M.fuzz_build_tree .. "/build.ninja" },
         build_inputs = {
             "tests/fuzz/**",
-            M.debug_build_tree .. "/build.ninja",
+            M.fuzz_build_tree .. "/build.ninja",
         },
         build_outputs = { M.fuzzer_bin },
         build_target = "fuzz_lua_dsl",

@@ -3,6 +3,8 @@
 #include "beez/core/model/phase_scope_reference.hpp"
 #include "beez/core/registry/step_reference.hpp"
 
+#include <iterator>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -20,7 +22,8 @@ namespace
 [[nodiscard]] std::pair<std::string, std::string> splitQualifiedPluginName(const std::string& name)
 {
     const auto SlashPosition = name.find('/');
-    if (SlashPosition == std::string::npos || SlashPosition == 0 || SlashPosition == name.size() - 1)
+    if (SlashPosition == std::string::npos || SlashPosition == 0 ||
+        SlashPosition == name.size() - 1)
     {
         throw std::runtime_error("task plugin field '" + name +
                                  "' must use the form 'organization/plugin'");
@@ -100,8 +103,8 @@ void rejectDeprecatedTaskFields(const sol::table& stepTable)
     const sol::object VersionValue = stepTable["version"];
     if (VersionValue.valid() && VersionValue.get_type() != sol::type::lua_nil)
     {
-        throw std::runtime_error(
-            "task action field 'version' is not supported; declare plugin versions in reqpack.beez");
+        throw std::runtime_error("task action field 'version' is not supported; declare plugin "
+                                 "versions in reqpack.beez");
     }
 
     const sol::object ScopeValue = stepTable["scope"];
@@ -118,8 +121,8 @@ std::vector<std::string> parseTaskStepReferences(const sol::table& stepTable)
     rejectDeprecatedTaskFields(stepTable);
 
     const sol::object PluginValue = stepTable["plugin"];
-    const std::vector<std::string> StepNames =
-        buildStepNamesFromScopedReference(core::parseScopedReference(readStepFieldValue(stepTable)));
+    const std::vector<std::string> StepNames = buildStepNamesFromScopedReference(
+        core::parseScopedReference(readStepFieldValue(stepTable)));
 
     std::vector<std::string> references;
     references.reserve(StepNames.size());
@@ -132,10 +135,11 @@ std::vector<std::string> parseTaskStepReferences(const sol::table& stepTable)
         }
 
         const auto [Organization, Plugin] = splitQualifiedPluginName(PluginValue.as<std::string>());
-        for (const std::string& StepName : StepNames)
-        {
-            references.push_back(beez::core::formatQualifiedStepRef(Organization, Plugin, StepName));
-        }
+        std::ranges::transform(
+            StepNames,
+            std::back_inserter(references),
+            [&](const std::string& stepName)
+            { return beez::core::formatQualifiedStepRef(Organization, Plugin, stepName); });
 
         return references;
     }
@@ -144,8 +148,8 @@ std::vector<std::string> parseTaskStepReferences(const sol::table& stepTable)
     {
         if (StepName.find('/') != std::string::npos)
         {
-            throw std::runtime_error(
-                "task plugin steps require field 'plugin'; local steps must not use qualified names");
+            throw std::runtime_error("task plugin steps require field 'plugin'; local steps must "
+                                     "not use qualified names");
         }
 
         references.push_back(StepName);

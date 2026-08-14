@@ -11,8 +11,8 @@
 #include <gtest/gtest.h>
 
 #include <cstdlib>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 namespace
@@ -1443,7 +1443,15 @@ reqpack {
     ASSERT_EQ(Workflow.stages.size(), 9U);
 
     const std::vector<std::string> ExpectedStages = {
-        "setup", "generate", "quality", "compile", "bundle", "test", "package", "verify", "publish",
+        "setup",
+        "generate",
+        "quality",
+        "compile",
+        "bundle",
+        "test",
+        "package",
+        "verify",
+        "publish",
     };
     for (std::size_t index = 0; index < ExpectedStages.size(); ++index)
     {

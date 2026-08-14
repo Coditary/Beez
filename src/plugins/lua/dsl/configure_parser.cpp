@@ -148,13 +148,12 @@ void parseConfigureEntry(const sol::object& key,
 
 }  // namespace
 
-void parseConfigureTable(
-    const sol::table& entriesTable,
-    const std::shared_ptr<sol::state>& luaState,
-    const std::function<void(const std::string& qualifiedPluginName, const sol::table& pluginConfig)>&
-        onPluginConfig,
-    const std::function<void(const std::string& stepName, const sol::table& stepConfig)>&
-        onStepConfig)
+void parseConfigureTable(const sol::table& entriesTable,
+                         const std::shared_ptr<sol::state>& luaState,
+                         const std::function<void(const std::string& qualifiedPluginName,
+                                                  const sol::table& pluginConfig)>& onPluginConfig,
+                         const std::function<void(const std::string& stepName,
+                                                  const sol::table& stepConfig)>& onStepConfig)
 {
     if (entriesTable.empty())
     {
@@ -172,11 +171,7 @@ void parseConfigureTable(
             }
 
             hasListEntry = true;
-            parseConfigureEntry(key,
-                                value,
-                                luaState,
-                                onPluginConfig,
-                                onStepConfig);
+            parseConfigureEntry(key, value, luaState, onPluginConfig, onStepConfig);
         });
 
     if (!hasListEntry)

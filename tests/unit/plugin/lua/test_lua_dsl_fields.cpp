@@ -86,9 +86,7 @@ const DslLoadCase TaskFieldCases[] = {
     {"task.single_shell_action", R"(task("hello", { "echo hi" }))", true},
     {"task.empty_action_table", R"(task("empty", {}))", false},
     {"task.invalid_action_type", R"(task("broken", { 42 }))", false},
-    {"task.phase_without_registered_steps",
-     R"(task("broken", { { phase = "p[sc]" } }))",
-     false},
+    {"task.phase_without_registered_steps", R"(task("broken", { { phase = "p[sc]" } }))", false},
     {"task.valid_phase_scope",
      R"(step({ name = "s", phase = "p", scope = "sc", run = "true" })
 task("run", { { phase = "p[sc]" } }))",

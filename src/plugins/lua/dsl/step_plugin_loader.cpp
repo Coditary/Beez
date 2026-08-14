@@ -29,8 +29,8 @@ StepPluginEnsureResult ensureInstalledPluginForStepReference(const std::string& 
     std::optional<std::string> organization = PluginIdentity->organization;
     if (!organization.has_value())
     {
-        organization = core::resolveInstalledBeezPluginOrganization(PluginIdentity->plugin,
-                                                                    *Version);
+        organization =
+            core::resolveInstalledBeezPluginOrganization(PluginIdentity->plugin, *Version);
     }
 
     if (!organization.has_value())
@@ -50,8 +50,8 @@ StepPluginEnsureResult ensureInstalledPluginForStepReference(const std::string& 
     if (!core::resolveInstalledBeezPluginScript(organization, PluginIdentity->plugin, *Version)
              .hasValue())
     {
-        const auto InstallResult = core::ensureBeezPluginInstalled(
-            organization, PluginIdentity->plugin, *Version);
+        const auto InstallResult =
+            core::ensureBeezPluginInstalled(organization, PluginIdentity->plugin, *Version);
         if (!InstallResult.message.empty())
         {
             return {.success = false, .message = InstallResult.message};
