@@ -37,6 +37,6 @@ struct ReqPackInstallResult
     const ReqPackManifest& manifest,
     const Context& context,
     const ReqPackInstallOptions& options = {},
-    const std::function<RqpCommandResult(const std::string& command)>& execute = executeRqpCommand);
+    const std::function<RqpCommandResult(const std::string& command)>& execute = {});
 
 }  // namespace beez::core

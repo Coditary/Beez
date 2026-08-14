@@ -65,6 +65,12 @@ manifestFromUncached(const std::map<std::string, std::vector<ReqPackPackage>>& u
     return stream.str();
 }
 
+[[nodiscard]] bool looksLikeJsonObject(std::string_view output)
+{
+    const auto Start = output.find_first_not_of(" \t\n\r");
+    return Start != std::string_view::npos && output[Start] == '{';
+}
+
 }  // namespace
 
 bool isRqpAvailable()
@@ -121,6 +127,13 @@ ReqPackInstallResult installReqPackDependencies(
         return {.skipped = true, .success = true};
     }
 
+    const bool usingBuiltinExecute = !static_cast<bool>(execute);
+    std::function<RqpCommandResult(const std::string& command)> runCommand = execute;
+    if (usingBuiltinExecute)
+    {
+        runCommand = executeRqpCommand;
+    }
+
     std::map<std::string, std::vector<ReqPackPackage>> toInstall;
     if (options.forceInstall)
     {
@@ -136,7 +149,7 @@ ReqPackInstallResult installReqPackDependencies(
         return {.skipped = true, .success = true, .message = "reqpack dependencies are up to date"};
     }
 
-    if (!isRqpAvailable())
+    if (!options.dryRun && usingBuiltinExecute && !isRqpAvailable())
     {
         return {.skipped = false, .success = false, .message = std::string(ReqPackInstallHint)};
     }
@@ -154,13 +167,13 @@ ReqPackInstallResult installReqPackDependencies(
         return {.skipped = false, .success = true, .message = Command};
     }
 
-    const auto CommandResult = execute(Command);
+    const auto CommandResult = runCommand(Command);
 
     ReqPackInstallResponse response;
     bool parsedResponse = false;
     try
     {
-        if (!CommandResult.output.empty())
+        if (!CommandResult.output.empty() && looksLikeJsonObject(CommandResult.output))
         {
             response = parseRqpJsonResponse(CommandResult.output);
             parsedResponse = true;
@@ -188,7 +201,12 @@ ReqPackInstallResult installReqPackDependencies(
                     .message = buildExitCodeMessage(CommandResult.exitCode, CommandResult.output)};
         }
 
-        return {.skipped = false, .success = false, .message = "failed to parse rqp json output"};
+        for (const auto& [plugin, packages] : toInstall)
+        {
+            updatePluginCache(plugin, packages, context.projectRoot());
+        }
+
+        return {.skipped = false, .success = true};
     }
 
     if (CommandResult.exitCode != 0)
