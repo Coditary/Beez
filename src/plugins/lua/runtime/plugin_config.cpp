@@ -51,7 +51,7 @@ std::unordered_map<std::string, PluginConfigDefinition>& pluginConfigDefinitions
     sol::table resolved = cloneLuaTable(definition.luaState, definition.defaults);
 
     const sol::object ProfileValue = stepConfigTable["profile"];
-    if (ProfileValue.valid() && ProfileValue.is<std::string>())
+    if (ProfileValue.valid() && ProfileValue.is<std::string>() && !definition.profileDefs.empty())
     {
         const std::string ProfileName = ProfileValue.as<std::string>();
         const auto ProfileIterator = definition.profileDefs.find(ProfileName);

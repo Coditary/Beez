@@ -698,6 +698,62 @@ configure_step("check", {
     EXPECT_NE(Fingerprint.find("override=yes"), std::string::npos) << Fingerprint;
 }
 
+TEST(LuaDslPluginTest, PluginConfigPassesThroughSemanticProfileWithoutProfileDefs)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    config = {
+        defaults = {
+            binary = "conan",
+        },
+    },
+    steps = {
+        install = {
+            phase = "setup",
+            scope = "app",
+            config = { profile = "code" },
+            run = function(ctx)
+                local cfg = ctx.get_config()
+                if cfg.profile ~= "code" then
+                    return 1
+                end
+                if cfg.binary ~= "conan" then
+                    return 2
+                end
+                return 0
+            end,
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("install");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_TRUE(Found->hasConfig());
+    ASSERT_NE(Found->config, nullptr);
+    const std::string Fingerprint = Found->config->cacheFingerprint();
+    EXPECT_NE(Fingerprint.find("profile=code"), std::string::npos) << Fingerprint;
+    EXPECT_NE(Fingerprint.find("binary=conan"), std::string::npos) << Fingerprint;
+}
+
 TEST(LuaDslPluginTest, ConfigureMergesPluginAndStepConfigs)
 {
     const beez::test::TempProject Project;
