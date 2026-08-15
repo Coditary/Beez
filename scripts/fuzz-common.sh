@@ -6,6 +6,23 @@
 #
 # Fuzzing always runs as a single libFuzzer process (no -jobs / -workers).
 
+resolve_fuzzer_bin() {
+    local build_dir="${1:-build}"
+    local candidate
+    for candidate in \
+        "${build_dir}/build/Debug/fuzz/fuzz_lua_dsl" \
+        "${build_dir}/build/Fuzz/fuzz/fuzz_lua_dsl"
+    do
+        if [[ -x "${candidate}" ]]; then
+            echo "${candidate}"
+            return 0
+        fi
+    done
+
+    echo "ERROR: fuzz_lua_dsl not found under ${build_dir}/build/{Debug/fuzz,Fuzz/fuzz}/" >&2
+    return 1
+}
+
 fuzz_libfuzzer_args() {
   local profile="${FUZZER_PROFILE:-smoke}"
   local rss_limit_mb="${FUZZER_RSS_LIMIT_MB:-8192}"

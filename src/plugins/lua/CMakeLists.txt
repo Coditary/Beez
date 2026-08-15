@@ -134,10 +134,7 @@ add_library(
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-target_compile_definitions(
-    beez_plugin_lua
-    PRIVATE BEEZ_LUA_API_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/api"
-)
+target_compile_definitions(beez_plugin_lua PRIVATE BEEZ_LUA_API_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/api")
 
 target_link_libraries(
     beez_plugin_lua
