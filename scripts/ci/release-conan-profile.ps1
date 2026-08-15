@@ -21,6 +21,7 @@ if ($Platform -ne "windows") {
 }
 
 $MsvcVersion = if ($env:MSVC_VERSION) { $env:MSVC_VERSION } else { "194" }
+$VsVersion = if ($env:VS_VERSION) { $env:VS_VERSION } else { "18" }
 
 @"
 [settings]
@@ -34,6 +35,7 @@ os=Windows
 
 [conf]
 tools.cmake.cmaketoolchain:generator=Ninja
+tools.microsoft.msbuild:vs_version=$VsVersion
 "@ | Set-Content -Path $ProfilePath -Encoding ascii -NoNewline
 Add-Content -Path $ProfilePath -Value ""
 

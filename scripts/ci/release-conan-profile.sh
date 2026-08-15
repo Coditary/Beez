@@ -58,6 +58,7 @@ EOF
         ;;
     windows)
         MSVC_VERSION="${MSVC_VERSION:-194}"
+        VS_VERSION="${VS_VERSION:-18}"
         cat > "${PROFILE_PATH}" <<EOF
 [settings]
 arch=${CONAN_ARCH}
@@ -70,6 +71,7 @@ os=Windows
 
 [conf]
 tools.cmake.cmaketoolchain:generator=Ninja
+tools.microsoft.msbuild:vs_version=${VS_VERSION}
 EOF
         ;;
     *)
