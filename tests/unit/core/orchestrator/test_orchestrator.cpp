@@ -490,6 +490,62 @@ TEST(OrchestratorTest, RunStepCallbackReceivesContextWithConfig)
     ASSERT_TRUE(Result.hasValue());
 }
 
+TEST(OrchestratorTest, RunStepCallbackRoutesLogFailureToLogger)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "lint";
+    step.phase = "qa";
+    step.scope = "code";
+    step.callback = [](const beez::core::Context& ctx) -> int
+    {
+        ctx.logFailure("tidy warning\n");
+        return 0;
+    };
+    registry.registerStep(std::move(step));
+
+    beez::logging::RecordingLogger logger;
+    const beez::core::RunOptions Options {.logger = &logger};
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.runStep("lint");
+    ASSERT_TRUE(Result.hasValue());
+
+    const auto HasFailure = std::ranges::any_of(
+        logger.lines(),
+        [](const beez::logging::RecordedLine& line)
+        {
+            return line.kind == beez::logging::RecordedLine::Kind::FailureOutput &&
+                   line.text == "tidy warning\n";
+        });
+    EXPECT_TRUE(HasFailure);
+}
+
+TEST(OrchestratorTest, VerboseModeRunsStepCallbackWithoutOutputDiscard)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "noop";
+    step.phase = "qa";
+    step.scope = "code";
+    step.callback = [](const beez::core::Context&) -> int { return 0; };
+    registry.registerStep(std::move(step));
+
+    beez::logging::RecordingLogger logger;
+    const beez::core::RunOptions Options {.outputMode = beez::logging::OutputMode::Verbose,
+                                          .logger = &logger};
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.runStep("noop");
+    ASSERT_TRUE(Result.hasValue());
+}
+
 TEST(OrchestratorTest, RunPhaseExecutesAllScopesWhenNoneSpecified)
 {
     beez::core::Context context;

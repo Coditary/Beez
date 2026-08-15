@@ -57,3 +57,72 @@ TEST(ContextTest, LogFailureInvokesCallback)
 
     EXPECT_EQ(captured, "lint issue");
 }
+
+TEST(ContextTest, LogFailureNoOpWithoutCallback)
+{
+    const beez::core::Context Ctx;
+    Ctx.logFailure("ignored");
+}
+
+TEST(ContextTest, BuildScriptPathHonorsCustomFileName)
+{
+    const std::filesystem::path ProjectRoot = "/tmp/my-project";
+    beez::core::Context context(ProjectRoot);
+    context.setBuildScriptFileName("custom.lua");
+
+    EXPECT_EQ(context.buildScriptPath(), ProjectRoot / "custom.lua");
+}
+
+TEST(ContextTest, EnvFilePathDefaultsToDotEnvUnderProjectRoot)
+{
+    const std::filesystem::path ProjectRoot = "/tmp/my-project";
+    const beez::core::Context Ctx(ProjectRoot);
+
+    EXPECT_EQ(Ctx.envFilePath(), ProjectRoot / ".env");
+}
+
+TEST(ContextTest, EnvFilePathResolvesRelativePathUnderProjectRoot)
+{
+    const std::filesystem::path ProjectRoot = "/tmp/my-project";
+    beez::core::Context context(ProjectRoot);
+    context.setEnvFilePath("config/local.env");
+
+    EXPECT_EQ(context.envFilePath(), ProjectRoot / "config/local.env");
+}
+
+TEST(ContextTest, EnvFilePathKeepsAbsolutePath)
+{
+    const std::filesystem::path ProjectRoot = "/tmp/my-project";
+    const std::filesystem::path Absolute = "/etc/beez.env";
+    beez::core::Context context(ProjectRoot);
+    context.setEnvFilePath(Absolute);
+
+    EXPECT_EQ(context.envFilePath(), Absolute);
+}
+
+TEST(ContextTest, RecordCacheUnitInvokesRecorder)
+{
+    beez::core::Context context;
+    bool recorded = false;
+    context.setCacheStatsRecorder(
+        [&recorded](const bool Hit, const double SavedSeconds)
+        {
+            recorded = true;
+            EXPECT_TRUE(Hit);
+            EXPECT_DOUBLE_EQ(SavedSeconds, 1.5);
+        });
+    context.recordCacheUnit(true, 1.5);
+    EXPECT_TRUE(recorded);
+
+    context.clearCacheStatsRecorder();
+    context.recordCacheUnit(false);
+}
+
+TEST(ContextTest, ConsumePendingWorkerDurationReturnsStoredValueOnce)
+{
+    const beez::core::Context Ctx;
+    EXPECT_DOUBLE_EQ(Ctx.consumePendingWorkerDuration(), 0.0);
+    Ctx.setPendingWorkerDuration(2.5);
+    EXPECT_DOUBLE_EQ(Ctx.consumePendingWorkerDuration(), 2.5);
+    EXPECT_DOUBLE_EQ(Ctx.consumePendingWorkerDuration(), 0.0);
+}
