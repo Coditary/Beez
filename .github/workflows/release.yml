@@ -48,18 +48,6 @@ jobs:
             arch: aarch64
             python_cmd: python3
             binary_path: build/build/Release/bin/beez
-          - name: windows-x86_64
-            runner: windows-2025
-            platform: windows
-            arch: x86_64
-            python_cmd: python
-            binary_path: build/build/Release/bin/beez.exe
-          - name: windows-aarch64
-            runner: windows-11-arm
-            platform: windows
-            arch: aarch64
-            python_cmd: python
-            binary_path: build/build/Release/bin/beez.exe
 
     steps:
       - name: Checkout repository
@@ -93,22 +81,7 @@ jobs:
           pipx install conan
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Install Windows prerequisites
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install conan
-          choco install ninja -y
-
-      - name: Set up MSVC (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.arch == 'aarch64' && 'arm64' || 'x64' }}
-
-      - name: Build release binary (Unix)
-        if: runner.os != 'Windows'
+      - name: Build release binary
         env:
           RELEASE_PLATFORM: ${{ matrix.platform }}
           RELEASE_ARCH: ${{ matrix.arch }}
@@ -117,16 +90,7 @@ jobs:
           chmod +x scripts/ci/release-build.sh scripts/ci/release-conan-profile.sh
           ./scripts/ci/release-build.sh
 
-      - name: Build release binary (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          RELEASE_PLATFORM: ${{ matrix.platform }}
-          RELEASE_ARCH: ${{ matrix.arch }}
-        run: ./scripts/ci/release-build.ps1
-
-      - name: Package release artifact (Unix)
-        if: runner.os != 'Windows'
+      - name: Package release artifact
         run: |
           set -euo pipefail
           ${{ matrix.python_cmd }} scripts/ci/package_binary.py \
@@ -136,8 +100,7 @@ jobs:
             --binary "${{ matrix.binary_path }}" \
             --output-dir dist
 
-      - name: Package ReqPack artifact (Unix)
-        if: runner.os != 'Windows'
+      - name: Package ReqPack artifact
         run: |
           set -euo pipefail
           ${{ matrix.python_cmd }} scripts/ci/package_reqpack.py \
@@ -147,24 +110,12 @@ jobs:
             --binary "${{ matrix.binary_path }}" \
             --output-dir dist
 
-      - name: Package release artifact (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          & ${{ matrix.python_cmd }} scripts/ci/package_binary.py `
-            --version $env:GITHUB_REF_NAME `
-            --platform '${{ matrix.platform }}' `
-            --arch '${{ matrix.arch }}' `
-            --binary '${{ matrix.binary_path }}' `
-            --output-dir dist
-
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             dist/*.tar.gz
-            dist/*.zip
             dist/*.rqp
           if-no-files-found: error
 
@@ -201,7 +152,7 @@ jobs:
           Automated release for Beez ${VERSION}.
 
           ## Assets
-          - Platform binaries (\`.tar.gz\` / \`.zip\`)
+          - Platform binaries (\`.tar.gz\`) for Linux and macOS
           - ReqPack packages (\`.rqp\`) for Linux and macOS
           - ReqPack repository index (\`index.json\`)
           - Container image: \`ghcr.io/coditary/beez:${VERSION}\`
@@ -211,7 +162,7 @@ jobs:
           fi
           gh release edit "$GITHUB_REF_NAME" --repo "$GH_REPO" --draft=false --latest --title "Beez ${VERSION}" --notes-file "${NOTES_FILE}"
           shopt -s nullglob
-          assets=(dist/*.tar.gz dist/*.zip dist/*.rqp dist/index.json)
+          assets=(dist/*.tar.gz dist/*.rqp dist/index.json)
           if ((${#assets[@]} == 0)); then
             echo "No release assets found in dist/." >&2
             exit 1

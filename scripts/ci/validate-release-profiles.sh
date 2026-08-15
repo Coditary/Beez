@@ -25,8 +25,6 @@ validate_profile linux x86_64
 validate_profile linux aarch64
 validate_profile macos x86_64
 validate_profile macos aarch64
-validate_profile windows x86_64
-validate_profile windows aarch64
 
 if [[ "${1:-}" == "--build" ]]; then
     echo "=== Local release build (host platform) ==="
