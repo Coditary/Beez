@@ -50,7 +50,7 @@ TEST(SystemListEntitiesTest, ListTasksIsEmptyForWorkflowOnlyFixture)
         beez::test::runBeez(Project.path(), {"--list", "tasks"});
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_TRUE(beez::test::outputContains(Result, "tasks:"));
-    EXPECT_FALSE(beez::test::outputContains(Result, "build"));
+    EXPECT_FALSE(beez::test::outputContainsTaskName(Result, "build"));
 }
 
 TEST(SystemListEntitiesTest, ListTasksPrintsFlagMatrixTasks)

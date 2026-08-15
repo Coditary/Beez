@@ -6,6 +6,6 @@ step({
 })
 task("full_build", {
     "echo start",
-    { name = "cpp:compile", config = { optimize = "-O3" } },
+    { step = "cpp:compile", config = { optimize = "-O3" } },
     "echo done",
 })

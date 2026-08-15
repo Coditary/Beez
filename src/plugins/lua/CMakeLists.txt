@@ -2,7 +2,12 @@ add_library(
     beez_plugin_lua STATIC
     lua_dsl.cpp
     api/beez_table.cpp
+    api/char/char_table.cpp
+    api/char/quote.cpp
     api/env/env.cpp
+    api/increment/increment_table.cpp
+    api/shell/run.cpp
+    api/shell/shell_table.cpp
     api/fs/fs_table.cpp
     api/fs/glob.cpp
     api/fs/exists.cpp
@@ -105,19 +110,31 @@ add_library(
     api/text/template_string.cpp
     api/text/detail/prebyte_backend.cpp
     api/text/diff.cpp
+    dsl/configure_parser.cpp
+    dsl/workflows_parser.cpp
     dsl/task_parser.cpp
+    dsl/task_cycle_validation.cpp
+    dsl/task_step_reference.cpp
+    dsl/plugin_config_validation.cpp
     dsl/step_parser.cpp
     dsl/workflow_parser.cpp
     dsl/registry_validation.cpp
+    dsl/reqpack_beez_plugin_catalog.cpp
     dsl/dsl_binder.cpp
     dsl/reqpack_parser.cpp
+    dsl/plugin_loader.cpp
+    dsl/step_plugin_loader.cpp
     settings/lua_settings.cpp
     settings/settings_overlay.cpp
     runtime/step_config.cpp
+    runtime/plugin_config.cpp
+    runtime/lua_table_util.cpp
     runtime/worker_parser.cpp
 )
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+target_compile_definitions(beez_plugin_lua PRIVATE BEEZ_LUA_API_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/api")
 
 target_link_libraries(
     beez_plugin_lua

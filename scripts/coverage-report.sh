@@ -4,27 +4,27 @@ set -euo pipefail
 BUILD_DIR="${1:-build}"
 REPORTS_DIR="${2:-report}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEBUG_BUILD_TREE="${ROOT_DIR}/${BUILD_DIR}/build/Debug"
+COVERAGE_BUILD_TREE="${ROOT_DIR}/${BUILD_DIR}/build/Coverage"
 REPORT_HTML="${ROOT_DIR}/${REPORTS_DIR}/coverage/index.html"
 JSON_SUMMARY="${ROOT_DIR}/${REPORTS_DIR}/coverage/coverage-summary.json"
 BADGE_JSON="${ROOT_DIR}/${REPORTS_DIR}/coverage/coverage-badge.json"
 MIN_LINE_COVERAGE="${MIN_LINE_COVERAGE:-85}"
 
-if [[ ! -d "${DEBUG_BUILD_TREE}" ]]; then
-    echo "coverage test tree not found: ${DEBUG_BUILD_TREE}" >&2
+if [[ ! -d "${COVERAGE_BUILD_TREE}" ]]; then
+    echo "coverage test tree not found: ${COVERAGE_BUILD_TREE}" >&2
     echo "Run make setup-coverage (or beez configure:coverage) first." >&2
     exit 2
 fi
 
 mkdir -p "${ROOT_DIR}/${REPORTS_DIR}/coverage"
 
-if ! find "${DEBUG_BUILD_TREE}" -name '*.gcda' -print -quit | grep -q .; then
-    echo "error: no .gcda files in ${DEBUG_BUILD_TREE}" >&2
+if ! find "${COVERAGE_BUILD_TREE}" -name '*.gcda' -print -quit | grep -q .; then
+    echo "error: no .gcda files in ${COVERAGE_BUILD_TREE}" >&2
     echo "Run coverage tests first (beez test:coverage, or beez test:coverage --no-cache if the step was cached)." >&2
     exit 2
 fi
 
-cd "${DEBUG_BUILD_TREE}"
+cd "${COVERAGE_BUILD_TREE}"
 
 echo "=== Coverage summary (src/, minimum line coverage: ${MIN_LINE_COVERAGE}%) ==="
 set +e

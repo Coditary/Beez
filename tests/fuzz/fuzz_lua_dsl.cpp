@@ -267,6 +267,7 @@ void touchRegistryOnSuccess(const beez::core::Registry& registry,
     {
         static_cast<void>(name);
         static_cast<void>(workflow.steps.size());
+        static_cast<void>(workflow.stages.size());
     }
 }
 
@@ -338,7 +339,7 @@ std::vector<uint8_t> assembleScript(const FuzzSections& sections)
     return script;
 }
 
-constexpr std::array<const char*, 48> DslFragments = {
+constexpr std::array<const char*, 49> DslFragments = {
     "task(",
     "workflow(",
     "step({",
@@ -346,6 +347,7 @@ constexpr std::array<const char*, 48> DslFragments = {
     "configure_step(",
     "order(",
     "beez.env(",
+    "beez.env_or(",
     "name = ",
     "phase = ",
     "scope = ",

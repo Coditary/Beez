@@ -7,6 +7,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SBOM_DIR="${ROOT_DIR}/${REPORTS_DIR}/sbom"
 GRAPH_JSON="${SBOM_DIR}/conan-graph.json"
 SBOM_JSON="${SBOM_DIR}/cyclonedx.json"
+CONVERTER="${ROOT_DIR}/plugins/coditary/conan/1.0.0/scripts/conan-graph-to-cyclonedx.py"
 
 if [ -z "${CONAN_PROFILE:-}" ]; then
     CONAN_PROFILE="$("${ROOT_DIR}/scripts/ci-conan-profile.sh")"
@@ -21,6 +22,6 @@ conan graph info . \
     --format=json \
     --out-file "${GRAPH_JSON}"
 
-python3 "${ROOT_DIR}/scripts/conan-graph-to-cyclonedx.py" "${GRAPH_JSON}" "${SBOM_JSON}"
+python3 "${CONVERTER}" "${GRAPH_JSON}" "${SBOM_JSON}"
 
 echo "SBOM written to ${SBOM_JSON}"

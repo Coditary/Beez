@@ -3,9 +3,12 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 REPORTS_DIR="${REPORTS_DIR:-report}"
-FUZZER_BIN="${BUILD_DIR}/build/Debug/fuzz/fuzz_lua_dsl"
 SEED_DIR="tests/fuzz/corpus/lua_dsl"
 REPORT="${REPORTS_DIR}/fuzz/fuzz-seed-verify-report.txt"
+
+# shellcheck source=scripts/fuzz-common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/fuzz-common.sh"
+FUZZER_BIN="$(resolve_fuzzer_bin "${BUILD_DIR}")"
 
 if ! compgen -G "${SEED_DIR}/*.lua" > /dev/null; then
   echo "ERROR: No fuzz seeds in ${SEED_DIR}/*.lua" >&2

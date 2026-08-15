@@ -5,11 +5,14 @@
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
+#include "beez/plugin/lua/dsl/step_plugin_loader.hpp"
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace beez::cli
 {
@@ -42,6 +45,22 @@ void printTargetNotFoundHint(const core::Registry& registry,
     }
 }
 
+void printAmbiguousStepHint(const std::string& reference,
+                            const std::vector<std::string>& candidates,
+                            logging::OutputMode outputMode)
+{
+    if (!logging::writesCliErrorsToConsole(outputMode))
+    {
+        return;
+    }
+
+    std::cerr << "Error: step '" << reference << "' is ambiguous. Qualify it with one of:\n";
+    for (const auto& candidate : candidates)
+    {
+        std::cerr << "  " << candidate << '\n';
+    }
+}
+
 [[nodiscard]] int finishRunResult(const Expected<int, core::OrchestratorError>& result,
                                   logging::OutputMode outputMode)
 {
@@ -57,12 +76,31 @@ void printTargetNotFoundHint(const core::Registry& registry,
 }  // namespace
 
 int runOrchestratorCommand(core::Orchestrator& orchestrator,
-                           const core::Registry& registry,
+                           core::Registry& registry,
+                           const core::Context& context,
                            const ParsedOptions& options,
                            logging::OutputMode outputMode)
 {
     if (options.stepName.has_value())
     {
+        const auto EnsureResult = plugin::lua::ensureInstalledPluginForStepReference(
+            *options.stepName, registry, context);
+        if (!EnsureResult.success)
+        {
+            if (logging::writesCliErrorsToConsole(outputMode))
+            {
+                std::cerr << "Error: " << EnsureResult.message << '\n';
+            }
+            return 1;
+        }
+
+        const auto Resolved = registry.resolveStep(*options.stepName);
+        if (!Resolved.hasValue() && Resolved.error().error == core::StepResolutionError::Ambiguous)
+        {
+            printAmbiguousStepHint(*options.stepName, Resolved.error().candidates, outputMode);
+            return 1;
+        }
+
         return finishRunResult(orchestrator.runStep(*options.stepName), outputMode);
     }
 

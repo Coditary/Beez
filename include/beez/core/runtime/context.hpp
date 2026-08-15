@@ -7,6 +7,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace beez::core
 {
@@ -81,6 +82,19 @@ class Context
     void setPendingWorkerDuration(double durationSeconds) const;
     [[nodiscard]] double consumePendingWorkerDuration() const;
 
+    void setVerboseOutput(bool verbose);
+    [[nodiscard]] bool verboseOutput() const
+    {
+        return verboseOutput_;
+    }
+
+    using FailureLogCallback = std::function<void(std::string_view)>;
+
+    void setFailureLogCallback(FailureLogCallback callback);
+    void clearFailureLogCallback();
+
+    void logFailure(std::string_view message) const;
+
   private:
     std::filesystem::path projectRoot_;
     std::optional<std::string> buildScriptFileName_;
@@ -92,6 +106,8 @@ class Context
     GlobMetadataCache* globMetadataCache_ = nullptr;
     CacheStatsRecorder cacheStatsRecorder_;
     mutable std::optional<double> pendingWorkerDuration_;
+    bool verboseOutput_ = false;
+    FailureLogCallback failureLogCallback_;
 };
 
 }  // namespace beez::core

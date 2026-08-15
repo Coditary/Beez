@@ -1,12 +1,15 @@
 #include "beez/plugin/lua/api/beez_table.hpp"
 
 #include "beez/plugin/lua/api/archive/archive_table.hpp"
+#include "beez/plugin/lua/api/char/char_table.hpp"
 #include "beez/plugin/lua/api/crypto/crypto_table.hpp"
 #include "beez/plugin/lua/api/data/data_table.hpp"
 #include "beez/plugin/lua/api/date/date_table.hpp"
 #include "beez/plugin/lua/api/env/env.hpp"
 #include "beez/plugin/lua/api/fs/fs_table.hpp"
+#include "beez/plugin/lua/api/increment/increment_table.hpp"
 #include "beez/plugin/lua/api/net/net_table.hpp"
+#include "beez/plugin/lua/api/shell/shell_table.hpp"
 #include "beez/plugin/lua/api/sys/sys_table.hpp"
 #include "beez/plugin/lua/api/text/text_table.hpp"
 #include "beez/plugin/lua/api/time/time_table.hpp"
@@ -26,6 +29,9 @@ void registerBeezApi(const std::shared_ptr<sol::state>& luaState,
 {
     sol::table beezTable = luaState->create_table();
     bindEnvToTable(beezTable, context);
+    bindChar(luaState, beezTable);
+    bindShell(luaState, beezTable);
+    bindIncrement(luaState, beezTable);
     beezTable["config"] = [&buildSettings, &context](const sol::object& options)
     {
         if (!options.is<sol::table>())

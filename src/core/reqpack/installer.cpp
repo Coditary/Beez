@@ -68,7 +68,7 @@ manifestFromUncached(const std::map<std::string, std::vector<ReqPackPackage>>& u
 [[nodiscard]] bool looksLikeJsonObject(std::string_view output)
 {
     const auto Start = output.find_first_not_of(" \t\n\r");
-    return Start != std::string_view::npos && output[Start] == '{';
+    return Start != std::string_view::npos && output.at(Start) == '{';
 }
 
 }  // namespace
@@ -127,9 +127,9 @@ ReqPackInstallResult installReqPackDependencies(
         return {.skipped = true, .success = true};
     }
 
-    const bool usingBuiltinExecute = !static_cast<bool>(execute);
+    const bool UsingBuiltinExecute = !static_cast<bool>(execute);
     std::function<RqpCommandResult(const std::string& command)> runCommand = execute;
-    if (usingBuiltinExecute)
+    if (UsingBuiltinExecute)
     {
         runCommand = executeRqpCommand;
     }
@@ -149,7 +149,7 @@ ReqPackInstallResult installReqPackDependencies(
         return {.skipped = true, .success = true, .message = "reqpack dependencies are up to date"};
     }
 
-    if (!options.dryRun && usingBuiltinExecute && !isRqpAvailable())
+    if (!options.dryRun && UsingBuiltinExecute && !isRqpAvailable())
     {
         return {.skipped = false, .success = false, .message = std::string(ReqPackInstallHint)};
     }

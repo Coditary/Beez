@@ -3,7 +3,10 @@
 BUILD_DIR ?= build
 BUILD_TYPE ?= Release
 CONAN_PROFILE ?= clang-release
-COVERAGE_STAMP := $(BUILD_DIR)/build/Debug/.beez-coverage-configured
+COVERAGE_BUILD_DIR := $(BUILD_DIR)/build/Coverage
+COVERAGE_STAMP := $(COVERAGE_BUILD_DIR)/.beez-coverage-configured
+COVERAGE_TOOLCHAIN := $(BUILD_DIR)/build/Debug/generators/conan_toolchain.cmake
+COVERAGE_PREFIX_PATH := $(BUILD_DIR)/build/Debug/generators
 REPORTS_DIR ?= report
 ARGS ?=
 BEEZ_BIN := $(BUILD_DIR)/build/$(BUILD_TYPE)/bin/beez
@@ -34,8 +37,17 @@ setup-debug: ## Conan + CMake configure (Debug)
 	$(MAKE) setup BUILD_TYPE=Debug
 
 setup-coverage: setup-debug ## CMake configure für Coverage
-	cmake --preset conan-debug -DBUILD_TESTING=ON -DBUILD_COVERAGE=ON -DBUILD_FUZZER=OFF -DENABLE_ASAN=OFF -DENABLE_UBSAN=OFF
-	@grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' $(BUILD_DIR)/build/Debug/CMakeCache.txt
+	cmake -S . -B $(COVERAGE_BUILD_DIR) \
+		-DCMAKE_BUILD_TYPE=Debug \
+		-DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/$(COVERAGE_TOOLCHAIN) \
+		-DCMAKE_PREFIX_PATH=$(CURDIR)/$(COVERAGE_PREFIX_PATH) \
+		-DBUILD_TESTING=ON \
+		-DBUILD_COVERAGE=ON \
+		-DBUILD_FUZZER=OFF \
+		-DENABLE_ASAN=OFF \
+		-DENABLE_UBSAN=OFF \
+		-DBUILD_CACHE=ON
+	@grep -qE 'BUILD_COVERAGE:(BOOL|UNINITIALIZED)=ON' $(COVERAGE_BUILD_DIR)/CMakeCache.txt
 	touch $(COVERAGE_STAMP)
 
 setup-sanitize: setup-debug ## CMake configure für Sanitizer-Build
@@ -132,7 +144,7 @@ clean-reports: ## QA-Reports löschen
 	rm -rf $(REPORTS_DIR)
 
 coverage: setup-coverage ## Code-Coverage-Report (bricht ab unter $(MIN_LINE_COVERAGE)% auf src/)
-	cmake --build --preset conan-debug
+	cmake --build $(COVERAGE_BUILD_DIR) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 	./scripts/coverage-test.sh $(BUILD_DIR) $(REPORTS_DIR)
 	./scripts/coverage-report.sh $(BUILD_DIR) $(REPORTS_DIR)
 

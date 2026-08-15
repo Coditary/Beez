@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <initializer_list>
+#include <sstream>
 #include <string>
 
 namespace beez::test
@@ -26,6 +27,46 @@ struct ProcessResult
 [[nodiscard]] inline bool outputContains(const ProcessResult& result, const std::string& needle)
 {
     return result.output.find(needle) != std::string::npos;
+}
+
+[[nodiscard]] inline std::string stripProfilingLines(const std::string& output)
+{
+    std::ostringstream filtered;
+    std::istringstream stream(output);
+    std::string line;
+    while (std::getline(stream, line))
+    {
+        if (!line.starts_with("profiling:"))
+        {
+            filtered << line << '\n';
+        }
+    }
+
+    return filtered.str();
+}
+
+[[nodiscard]] inline bool outputContainsTaskName(const ProcessResult& result,
+                                                 const std::string& taskName)
+{
+    const std::string Filtered = stripProfilingLines(result.output);
+    std::istringstream stream(Filtered);
+    std::string line;
+    bool afterSeparator = false;
+    while (std::getline(stream, line))
+    {
+        if (line == "----")
+        {
+            afterSeparator = true;
+            continue;
+        }
+
+        if (afterSeparator && line == taskName)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 }  // namespace beez::test

@@ -7,6 +7,7 @@
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_order.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 
 #include "helpers/test_helpers.hpp"
 #include "helpers/test_step_config.hpp"
@@ -379,4 +380,107 @@ TEST(RegistryTest, RegisterStepOrderResolvesMutateConflict)
     ASSERT_EQ(Ordered.value().size(), 2U);
     EXPECT_EQ(Ordered.value()[0].name, "cpp:lint");
     EXPECT_EQ(Ordered.value()[1].name, "cpp:format");
+}
+
+TEST(RegistryTest, PluginStepsAllowDuplicateShortNamesWhenQualified)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step tidyStep;
+    tidyStep.name = "check";
+    tidyStep.phase = "qa";
+    tidyStep.scope = "code";
+    tidyStep.shellRun = "echo tidy";
+    registry.registerPluginStep(std::move(tidyStep), "coditary", "clang-tidy");
+
+    beez::core::Step cppcheckStep;
+    cppcheckStep.name = "check";
+    cppcheckStep.phase = "qa";
+    cppcheckStep.scope = "code";
+    cppcheckStep.shellRun = "echo cppcheck";
+    registry.registerPluginStep(std::move(cppcheckStep), "coditary", "cppcheck");
+
+    const auto Tidy = registry.resolveStep("coditary/clang-tidy:check");
+    ASSERT_TRUE(Tidy.hasValue());
+    ASSERT_TRUE(Tidy.value().hasShellRun());
+    EXPECT_EQ(Tidy.value().shellRun.value_or(""), "echo tidy");
+
+    const auto Cppcheck = registry.resolveStep("cppcheck:check");
+    ASSERT_TRUE(Cppcheck.hasValue());
+    ASSERT_TRUE(Cppcheck.value().hasShellRun());
+    EXPECT_EQ(Cppcheck.value().shellRun.value_or(""), "echo cppcheck");
+
+    const auto Ambiguous = registry.resolveStep("check");
+    ASSERT_FALSE(Ambiguous.hasValue());
+    EXPECT_EQ(Ambiguous.error().error, beez::core::StepResolutionError::Ambiguous);
+    ASSERT_EQ(Ambiguous.error().candidates.size(), 2U);
+}
+
+TEST(RegistryTest, ResolvesVersionedPluginStepReference)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile:code";
+    compileStep.phase = "build";
+    compileStep.scope = "code";
+    compileStep.shellRun = "echo versioned";
+    registry.registerPluginStep(
+        std::move(compileStep), "coditary", "clang-build", std::string {"1.0.0"});
+
+    const auto Resolved = registry.resolveStep("clang-build:compile@1.0.0");
+    ASSERT_TRUE(Resolved.hasValue());
+    EXPECT_EQ(Resolved.value().shellRun.value_or(""), "echo versioned");
+
+    const auto Qualified = registry.resolveStep("coditary/clang-build:compile@1.0.0");
+    ASSERT_TRUE(Qualified.hasValue());
+    EXPECT_EQ(Qualified.value().shellRun.value_or(""), "echo versioned");
+
+    const auto Unversioned = registry.resolveStep("clang-build:compile");
+    ASSERT_TRUE(Unversioned.hasValue());
+    EXPECT_EQ(Unversioned.value().shellRun.value_or(""), "echo versioned");
+}
+
+TEST(RegistryTest, InstalledPluginVersionKeepsVersionedAliasesOnly)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile:code";
+    compileStep.phase = "build";
+    compileStep.scope = "code";
+    compileStep.shellRun = "echo versioned";
+    registry.registerPluginStep(
+        std::move(compileStep), "coditary", "clang-build", std::string {"1.0.0"}, false);
+
+    const auto Versioned = registry.resolveStep("clang-build:compile@1.0.0");
+    ASSERT_TRUE(Versioned.hasValue());
+
+    const auto Unversioned = registry.resolveStep("clang-build:compile");
+    EXPECT_FALSE(Unversioned.hasValue());
+}
+
+TEST(RegistryTest, UniquePluginStepKeepsShortNameAlias)
+{
+    beez::core::Registry registry;
+
+    beez::core::Step compileStep;
+    compileStep.name = "compile:code";
+    compileStep.phase = "build";
+    compileStep.scope = "code";
+    compileStep.shellRun = "echo compile";
+    registry.registerPluginStep(std::move(compileStep), "coditary", "clang-build");
+
+    const auto Resolved = registry.resolveStep("compile:code");
+    ASSERT_TRUE(Resolved.hasValue());
+    ASSERT_TRUE(Resolved.value().hasShellRun());
+    EXPECT_EQ(Resolved.value().shellRun.value_or(""), "echo compile");
+
+    const auto PluginAction = registry.resolveStep("clang-build:compile");
+    ASSERT_TRUE(PluginAction.hasValue());
+    EXPECT_EQ(PluginAction.value().shellRun.value_or(""), "echo compile");
+
+    const auto QualifiedAction = registry.resolveStep("coditary/clang-build:compile");
+    ASSERT_TRUE(QualifiedAction.hasValue());
+    EXPECT_EQ(QualifiedAction.value().shellRun.value_or(""), "echo compile");
 }

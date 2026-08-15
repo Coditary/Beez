@@ -5,5 +5,5 @@ step({
     run = "echo minimal-valid > out.txt",
 })
 
-task("run", { { name = "hello" } })
+task("run", { { step = "hello" } })
 workflow("default", { { phase = "demo", scope = "default" } })

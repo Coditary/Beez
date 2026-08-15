@@ -17,12 +17,15 @@ add_executable(
     cli/presentation/test_entity_table.cpp
     cli/presentation/test_name_suggestion.cpp
     cli/commands/test_run.cpp
+    core/registry/test_step_reference.cpp
     core/registry/test_registry.cpp
+    core/registry/test_task_reference.cpp
     core/config/cache/test_cache_options.cpp
     core/cache/fingerprint/test_content_hash.cpp
     core/cache/fingerprint/test_include_fingerprint.cpp
     core/cache/storage/test_cache_write_coordinator.cpp
     core/config/paths/test_config_paths.cpp
+    core/plugin/test_plugin_paths.cpp
     core/test_temp_directory.cpp
     core/test_text_table.cpp
     core/cache/storage/test_cache_compress.cpp
@@ -37,6 +40,7 @@ add_executable(
     core/glob/test_pattern.cpp
     core/registry/test_step_order.cpp
     core/test_workflow.cpp
+    core/test_phase_scope_reference.cpp
     core/runtime/test_context.cpp
     core/config/settings/test_settings.cpp
     core/reqpack/test_reqpack_format.cpp
@@ -51,8 +55,10 @@ add_executable(
     core/config/schema/test_config_schema.cpp
     plugin/host/test_plugin_host.cpp
     plugin/lua/test_lua_dsl.cpp
+    plugin/lua/test_lua_dsl_plugins.cpp
     plugin/lua/test_lua_dsl_fields.cpp
     plugin/lua/test_reqpack_dsl.cpp
+    plugin/lua/test_reqpack_beez_plugin_catalog.cpp
     plugin/lua/test_lua_settings.cpp
     plugin/lua/api/test_fs.cpp
     plugin/lua/api/test_crypto.cpp
@@ -63,22 +69,14 @@ add_executable(
     plugin/lua/api/data/test_data.cpp
     plugin/lua/api/net/test_net.cpp
     plugin/lua/api/archive/test_archive.cpp
+    plugin/lua/api/char/test_char.cpp
     plugin/lua/api/text/test_text.cpp
     plugin/shell/test_shell_executor.cpp
 )
 
-target_link_libraries(
-    beez_tests
-    PRIVATE GTest::gtest
-            GTest::gtest_main
-            beez_core
-            beez_plugins
-            beez_cli
-            beez_logging
-            CLI11::CLI11
-)
+target_link_libraries(beez_tests PRIVATE GTest::gtest GTest::gtest_main beez_plugins beez_cli beez_logging CLI11::CLI11)
 
 target_include_directories(beez_tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(GoogleTest)
-gtest_discover_tests(beez_tests)
+gtest_discover_tests(beez_tests PROPERTIES LABELS "unit")

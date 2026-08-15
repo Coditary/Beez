@@ -1,0 +1,92 @@
+#include "beez/core/plugin/paths.hpp"
+
+#include <cstdlib>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <system_error>
+
+namespace beez::core
+{
+
+std::filesystem::path beezCacheDirectory()
+{
+    // NOLINTBEGIN(concurrency-mt-unsafe) -- cache path lookup at startup
+    if (const char* cacheHome = std::getenv("XDG_CACHE_HOME"); cacheHome != nullptr)
+    {
+        return std::filesystem::path(cacheHome) / "beez";
+    }
+
+    if (const char* home = std::getenv("HOME"); home != nullptr)
+    {
+        return std::filesystem::path(home) / ".cache" / "beez";
+    }
+    // NOLINTEND(concurrency-mt-unsafe)
+
+    return {};
+}
+
+std::filesystem::path beezPluginRoot()
+{
+    const auto CacheDirectory = beezCacheDirectory();
+    if (CacheDirectory.empty())
+    {
+        return {};
+    }
+
+    return CacheDirectory / "plugins";
+}
+
+std::optional<std::filesystem::path> findPluginScript(const std::string& name,
+                                                      const std::string& version)
+{
+    const auto PluginRoot = beezPluginRoot();
+    if (PluginRoot.empty())
+    {
+        return std::nullopt;
+    }
+
+    std::error_code errorCode;
+    if (!std::filesystem::exists(PluginRoot, errorCode))
+    {
+        return std::nullopt;
+    }
+
+    for (const auto& organizationEntry : std::filesystem::directory_iterator(PluginRoot, errorCode))
+    {
+        if (errorCode || !organizationEntry.is_directory())
+        {
+            continue;
+        }
+
+        auto scriptPath = organizationEntry.path() / name / version / "beez_plugin.lua";
+        if (std::filesystem::is_regular_file(scriptPath, errorCode) && !errorCode)
+        {
+            return scriptPath;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::filesystem::path> findPluginScript(const std::string& organization,
+                                                      const std::string& name,
+                                                      const std::string& version)
+{
+    const auto PluginRoot = beezPluginRoot();
+    if (PluginRoot.empty())
+    {
+        return std::nullopt;
+    }
+
+    auto scriptPath = PluginRoot / organization / name / version / "beez_plugin.lua";
+    std::error_code errorCode;
+    if (std::filesystem::is_regular_file(scriptPath, errorCode) && !errorCode)
+    {
+        return scriptPath;
+    }
+
+    return std::nullopt;
+}
+
+}  // namespace beez::core

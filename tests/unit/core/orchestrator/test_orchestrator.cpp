@@ -5,6 +5,7 @@
 #include "beez/core/model/task.hpp"
 #include "beez/core/model/task_action.hpp"
 #include "beez/core/model/workflow.hpp"
+#include "beez/core/model/workflow_stage.hpp"
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/errors.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
@@ -201,6 +202,73 @@ TEST(OrchestratorTest, RunWorkflowExecutesPhaseStepsInOrder)
     ASSERT_EQ(State->commands.size(), 2U);
     EXPECT_EQ(State->commands[0], "echo generate");
     EXPECT_EQ(State->commands[1], "echo compile");
+}
+
+TEST(OrchestratorTest, RunStagedWorkflowTargetExecutesCumulativeStages)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step cleanStep;
+    cleanStep.name = "clean-artifacts";
+    cleanStep.phase = "clean";
+    cleanStep.scope = "artifacts";
+    cleanStep.shellRun = "echo clean";
+    registry.registerStep(std::move(cleanStep));
+
+    beez::core::Step depsStep;
+    depsStep.name = "deps-install";
+    depsStep.phase = "deps";
+    depsStep.scope = "install";
+    depsStep.shellRun = "echo deps";
+    registry.registerStep(std::move(depsStep));
+
+    beez::core::Step buildStep;
+    buildStep.name = "build-backend";
+    buildStep.phase = "build";
+    buildStep.scope = "backend";
+    buildStep.shellRun = "echo build";
+    registry.registerStep(std::move(buildStep));
+
+    beez::core::Workflow workflow;
+    workflow.name = "release";
+    workflow.stages = {
+        beez::core::WorkflowStage {
+            .name = "prepare",
+            .invocations =
+                {
+                    beez::core::PhaseInvocation {.phase = "clean", .scope = "artifacts"},
+                    beez::core::PhaseInvocation {.phase = "deps", .scope = "install"},
+                },
+        },
+        beez::core::WorkflowStage {
+            .name = "compile",
+            .invocations =
+                {
+                    beez::core::PhaseInvocation {.phase = "build", .scope = "backend"},
+                },
+        },
+    };
+    registry.registerWorkflow(std::move(workflow));
+
+    const auto State = std::make_shared<ExecutorState>();
+    beez::plugin::PluginHost pluginHost;
+    pluginHost.setExecutor(std::make_unique<RecordingExecutor>(State));
+
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const auto PrepareResult = orchestrator.run("release:prepare");
+    ASSERT_TRUE(PrepareResult.hasValue());
+    ASSERT_EQ(State->commands.size(), 2U);
+    EXPECT_EQ(State->commands[0], "echo clean");
+    EXPECT_EQ(State->commands[1], "echo deps");
+
+    State->commands.clear();
+
+    const auto CompileResult = orchestrator.run("release:compile");
+    ASSERT_TRUE(CompileResult.hasValue());
+    ASSERT_EQ(State->commands.size(), 3U);
+    EXPECT_EQ(State->commands[2], "echo build");
 }
 
 TEST(OrchestratorTest, RunTaskWithoutExecutorReturnsNotAvailable)
@@ -419,6 +487,62 @@ TEST(OrchestratorTest, RunStepCallbackReceivesContextWithConfig)
     beez::core::Orchestrator orchestrator(registry, context, pluginHost);
 
     const auto Result = orchestrator.runStep("shader");
+    ASSERT_TRUE(Result.hasValue());
+}
+
+TEST(OrchestratorTest, RunStepCallbackRoutesLogFailureToLogger)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "lint";
+    step.phase = "qa";
+    step.scope = "code";
+    step.callback = [](const beez::core::Context& ctx) -> int
+    {
+        ctx.logFailure("tidy warning\n");
+        return 0;
+    };
+    registry.registerStep(std::move(step));
+
+    beez::logging::RecordingLogger logger;
+    const beez::core::RunOptions Options {.logger = &logger};
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.runStep("lint");
+    ASSERT_TRUE(Result.hasValue());
+
+    const auto HasFailure = std::ranges::any_of(
+        logger.lines(),
+        [](const beez::logging::RecordedLine& line)
+        {
+            return line.kind == beez::logging::RecordedLine::Kind::FailureOutput &&
+                   line.text == "tidy warning\n";
+        });
+    EXPECT_TRUE(HasFailure);
+}
+
+TEST(OrchestratorTest, VerboseModeRunsStepCallbackWithoutOutputDiscard)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step step;
+    step.name = "noop";
+    step.phase = "qa";
+    step.scope = "code";
+    step.callback = [](const beez::core::Context&) -> int { return 0; };
+    registry.registerStep(std::move(step));
+
+    beez::logging::RecordingLogger logger;
+    const beez::core::RunOptions Options {.outputMode = beez::logging::OutputMode::Verbose,
+                                          .logger = &logger};
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost, Options);
+
+    const auto Result = orchestrator.runStep("noop");
     ASSERT_TRUE(Result.hasValue());
 }
 

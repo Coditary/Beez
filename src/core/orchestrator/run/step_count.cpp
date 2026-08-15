@@ -4,6 +4,7 @@
 #include "beez/core/model/phase_invocation.hpp"
 #include "beez/core/model/phase_request.hpp"
 #include "beez/core/model/workflow.hpp"
+#include "beez/core/model/workflow_resolution.hpp"
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
 #include "beez/core/registry/registry.hpp"
@@ -49,14 +50,20 @@ std::size_t countPhaseRequestSteps(const Orchestrator& orchestrator, const Phase
                            });
 }
 
-std::size_t countWorkflowSteps(const Orchestrator& orchestrator, const Workflow& workflow)
+std::size_t countWorkflowSteps(const Orchestrator& orchestrator,
+                               const std::vector<WorkflowStep>& steps)
 {
     return std::accumulate(
-        workflow.steps.begin(),
-        workflow.steps.end(),
+        steps.begin(),
+        steps.end(),
         std::size_t {0},
         [&orchestrator](std::size_t total, const WorkflowStep& step)
         { return total + countPhaseInvocationSteps(orchestrator, step.invocation); });
+}
+
+std::size_t countWorkflowSteps(const Orchestrator& orchestrator, const Workflow& workflow)
+{
+    return countWorkflowSteps(orchestrator, resolveWorkflowExecutionSteps(workflow));
 }
 
 }  // namespace beez::core::orchestrator_detail

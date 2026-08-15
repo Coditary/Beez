@@ -20,6 +20,8 @@ add_library(
     config/cache/cache_options.cpp
     config/env/env_settings.cpp
     config/paths/config_paths.cpp
+    plugin/paths.cpp
+    plugin/installer.cpp
     config/performance/performance_options.cpp
     config/report/cache_rows.cpp
     config/report/detail/report_helpers.cpp
@@ -40,6 +42,9 @@ add_library(
     glob/metadata_cache.cpp
     glob/pattern.cpp
     registry/registry.cpp
+    registry/step_reference.cpp
+    registry/workflow_reference.cpp
+    registry/task_reference.cpp
     registry/step_order.cpp
     orchestrator/orchestrator.cpp
     orchestrator/errors.cpp
@@ -67,6 +72,8 @@ add_library(
     execution/concurrency/worker_pool.cpp
     execution/process/stream_capture.cpp
     model/step_config.cpp
+    model/phase_scope_reference.cpp
+    model/workflow_resolution.cpp
     util/text_table.cpp
     util/temp_directory.cpp
 )

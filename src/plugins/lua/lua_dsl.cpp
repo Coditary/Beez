@@ -1,10 +1,13 @@
 #include "beez/plugin/lua/lua_dsl.hpp"
 
+#include "beez/plugin/lua/runtime/plugin_config.hpp"
+
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 #include "beez/plugin/host/plugin_host.hpp"
 #include "beez/plugin/lua/dsl/dsl_binder.hpp"
 #include "beez/plugin/lua/dsl/registry_validation.hpp"
+#include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
 #include <iostream>
 #include <memory>
@@ -21,6 +24,7 @@ struct LuaDslLoader::Impl
     std::shared_ptr<sol::state> luaState;
     core::BeezSettings buildSettings;
     core::ReqPackManifest reqpackManifest;
+    ReqpackBeezPluginCatalog reqpackBeezPlugins;
 };
 
 LuaDslLoader::LuaDslLoader() : impl_(std::make_unique<Impl>()) {}
@@ -30,20 +34,26 @@ LuaDslLoader::~LuaDslLoader() = default;
 bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 {
     registry.clear();
+    clearPluginConfigRegistry();
     try
     {
         impl_->buildSettings = {};
         impl_->reqpackManifest = {};
+        impl_->reqpackBeezPlugins = {};
         impl_->luaState = nullptr;
         impl_->luaState = std::make_shared<sol::state>();
         impl_->luaState->open_libraries(sol::lib::base, sol::lib::package);
 
-        registerDsl(
-            impl_->luaState, registry, context, impl_->buildSettings, impl_->reqpackManifest);
+        registerDsl(impl_->luaState,
+                    registry,
+                    context,
+                    impl_->buildSettings,
+                    impl_->reqpackManifest,
+                    impl_->reqpackBeezPlugins);
 
         const auto ScriptPath = context.buildScriptPath().string();
         impl_->luaState->script_file(ScriptPath);
-        validateLoadedRegistry(registry);
+        validateLoadedRegistry(registry, impl_->reqpackBeezPlugins);
         return true;
     }
     catch (const sol::error& error)

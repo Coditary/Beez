@@ -4,13 +4,13 @@ set -euo pipefail
 BUILD_DIR="${1:-build}"
 FUZZER_TIME="${FUZZER_TIME:-60}"
 REPORTS_DIR="${REPORTS_DIR:-report}"
-FUZZER_BIN="${BUILD_DIR}/build/Debug/fuzz/fuzz_lua_dsl"
 FUZZER_CORPUS_DIR="${REPORTS_DIR}/fuzz/corpus/lua_dsl"
 FUZZER_ARTIFACTS_DIR="${REPORTS_DIR}/fuzz/artifacts"
 SEED_DIR="tests/fuzz/corpus/lua_dsl"
 
 # shellcheck source=scripts/fuzz-common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/fuzz-common.sh"
+FUZZER_BIN="$(resolve_fuzzer_bin "${BUILD_DIR}")"
 fuzz_libfuzzer_args
 
 if ! compgen -G "${SEED_DIR}/*.lua" > /dev/null; then

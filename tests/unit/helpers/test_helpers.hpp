@@ -112,6 +112,62 @@ inline void expectStepInvocation(const std::optional<core::Task>& task,
     expectStepInvocation(*task, index, expectedName, expectsConfig);
 }
 
+inline const core::TaskInvocationAction* taskInvocationAt(const core::Task& task, std::size_t index)
+{
+    if (index >= task.actions.size())
+    {
+        ADD_FAILURE() << "task action index out of range: " << index;
+        return nullptr;
+    }
+
+    return std::get_if<core::TaskInvocationAction>(task.actions.data() + index);
+}
+
+inline void
+expectTaskInvocation(const core::Task& task, std::size_t index, const std::string& expectedTaskName)
+{
+    const auto* invocation = taskInvocationAt(task, index);
+    ASSERT_NE(invocation, nullptr);
+    if (invocation == nullptr)
+    {
+        return;
+    }
+    EXPECT_EQ(invocation->taskName, expectedTaskName);
+}
+
+inline void expectTaskInvocation(const std::optional<core::Task>& task,
+                                 std::size_t index,
+                                 const std::string& expectedTaskName)
+{
+    ASSERT_TRUE(task.has_value());
+    if (!task.has_value())
+    {
+        return;
+    }
+    expectTaskInvocation(*task, index, expectedTaskName);
+}
+
+inline void expectPhaseInvocation(const core::Task& task,
+                                  std::size_t index,
+                                  const std::string& expectedPhase,
+                                  const std::string& expectedScope)
+{
+    if (index >= task.actions.size())
+    {
+        ADD_FAILURE() << "task action index out of range: " << index;
+        return;
+    }
+
+    const auto* phaseAction = std::get_if<core::TaskPhaseAction>(task.actions.data() + index);
+    ASSERT_NE(phaseAction, nullptr);
+    if (phaseAction == nullptr)
+    {
+        return;
+    }
+    EXPECT_EQ(phaseAction->invocation.phase, expectedPhase);
+    EXPECT_EQ(phaseAction->invocation.scope, expectedScope);
+}
+
 inline void expectMixedTaskWithStepInvocation(const core::Task& task)
 {
     ASSERT_EQ(task.actions.size(), 3U);

@@ -86,14 +86,16 @@ const DslLoadCase TaskFieldCases[] = {
     {"task.single_shell_action", R"(task("hello", { "echo hi" }))", true},
     {"task.empty_action_table", R"(task("empty", {}))", false},
     {"task.invalid_action_type", R"(task("broken", { 42 }))", false},
-    {"task.phase_shorthand_table",
-     R"(task("broken", { phase = "p", scope = "sc", run = "true" }))",
-     false},
-    {"task.step_ref_missing_name", R"(task("broken", { { config = { x = 1 } } }))", false},
-    {"task.step_ref_unknown_step_loads", R"(task("run", { { name = "does-not-exist" } }))", false},
+    {"task.phase_without_registered_steps", R"(task("broken", { { phase = "p[sc]" } }))", false},
+    {"task.valid_phase_scope",
+     R"(step({ name = "s", phase = "p", scope = "sc", run = "true" })
+task("run", { { phase = "p[sc]" } }))",
+     true},
+    {"task.step_ref_missing_step", R"(task("broken", { { config = { x = 1 } } }))", false},
+    {"task.step_ref_unknown_step_loads", R"(task("run", { { step = "does-not-exist" } }))", false},
     {"task.step_ref_with_config",
      R"(step({ name = "s", phase = "p", scope = "sc", run = "true" })
-task("run", { { name = "s", config = { flag = true } } }))",
+task("run", { { step = "s", config = { flag = true } } }))",
      true},
 };
 
@@ -115,6 +117,24 @@ workflow("run", { { phase = "p", scope = "sc" } }))",
     {"workflow.empty_parallel_rejected", R"(workflow("run", { { parallel = {} } }))", false},
     {"workflow.rejects_string_entries", R"(workflow("run", { "ignored-task-name" }))", false},
     {"workflow.rejects_numeric_entries", R"(workflow("run", { 42 }))", false},
+    {"workflow.staged_valid",
+     R"lua(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
+workflow("release", {
+    { "prepare", { "clean[artifacts]" } },
+}))lua",
+     true},
+    {"workflow.staged_valid_unscoped",
+     R"lua(step({ name = "s", phase = "setup", scope = "default", run = "true" })
+workflow("standard", {
+    { "setup", { "setup" } },
+}))lua",
+     true},
+    {"workflow.staged_invalid_reference",
+     R"lua(step({ name = "s", phase = "clean", scope = "artifacts", run = "true" })
+workflow("release", {
+    { "prepare", { "[artifacts]" } },
+}))lua",
+     false},
 };
 
 const DslLoadCase ConfigFieldCases[] = {
@@ -189,7 +209,7 @@ TEST(LuaDslFieldsTest, TaskStepReferenceToMissingStepFailsToLoad)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
-task("run", { { name = "missing-step" } })
+task("run", { { step = "missing-step" } })
 )");
 
     beez::core::Registry registry;

@@ -1,3 +1,3 @@
 task("build", {
-    { name = "does-not-exist" },
+    { step = "does-not-exist" },
 })

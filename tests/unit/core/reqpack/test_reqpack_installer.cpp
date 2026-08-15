@@ -54,7 +54,8 @@ TEST(ReqPackInstallerTest, DryRunReturnsInstallCommand)
         sampleManifest(), Context, {.dryRun = true, .forceInstall = true});
     ASSERT_FALSE(Result.skipped);
     EXPECT_TRUE(Result.success);
-    EXPECT_NE(Result.message.find("rqp install npm:eslint@3.2.1 --dry-run --json"), std::string::npos);
+    EXPECT_NE(Result.message.find("rqp install npm:eslint@3.2.1 --dry-run --json"),
+              std::string::npos);
 }
 
 TEST(ReqPackInstallerTest, UsesExecuteCallbackAndParsesRqpJson)

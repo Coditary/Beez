@@ -8,6 +8,9 @@ class Registry;
 namespace beez::plugin::lua
 {
 
-void validateLoadedRegistry(core::Registry& registry);
+class ReqpackBeezPluginCatalog;
+
+void validateLoadedRegistry(core::Registry& registry,
+                            const ReqpackBeezPluginCatalog& reqpackBeezPlugins);
 
 }  // namespace beez::plugin::lua

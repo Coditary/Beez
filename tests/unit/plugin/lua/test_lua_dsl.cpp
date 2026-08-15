@@ -7,6 +7,8 @@
 
 #include <gtest/gtest.h>
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access,readability-function-cognitive-complexity)
+
 #include <optional>
 #include <string>
 
@@ -239,7 +241,7 @@ step({
 })
 task("full_build", {
     "echo start",
-    { name = "cpp:compile" },
+    { step = "cpp:compile" },
     "echo done",
 })
 )");
@@ -267,7 +269,7 @@ step({
     run = "echo compile",
 })
 task("full_build", {
-    { name = "cpp:compile", config = { optimize = "-O3" } },
+    { step = "cpp:compile", config = { optimize = "-O3" } },
 })
 )");
 
@@ -282,6 +284,28 @@ task("full_build", {
     }
     ASSERT_EQ(Found->actions.size(), 1U);
     beez::test::expectStepInvocation(Found, 0, "cpp:compile", true);
+}
+
+TEST(LuaDslTest, LoadsTaskWithPhaseInvocation)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "gen", phase = "generate", scope = "code", run = "true" })
+step({ name = "compile", phase = "compile", scope = "code", run = "true" })
+task("full_build", {
+    { phase = "generate[code]" },
+    { phase = "compile[code]" },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "full_build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 2U);
+    beez::test::expectPhaseInvocation(*Found, 0, "generate", "code");
+    beez::test::expectPhaseInvocation(*Found, 1, "compile", "code");
 }
 
 TEST(LuaDslTest, ReturnsFalseWhenTaskStepInvocationMissingName)
@@ -303,7 +327,7 @@ TEST(LuaDslTest, ReturnsFalseWhenTaskStepInvocationConfigIsNotTable)
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
 task("broken", {
-    { name = "cpp:compile", config = "not-a-table" },
+    { step = "cpp:compile", config = "not-a-table" },
 })
 )");
 
@@ -336,6 +360,87 @@ workflow("build", {
     ASSERT_EQ(Found->steps.size(), 2U);
     beez::test::expectWorkflowStep(Found->steps[0], "generate", "code");
     beez::test::expectWorkflowStep(Found->steps[1], "compile", "code");
+}
+
+TEST(LuaDslTest, LoadsStagedWorkflow)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "clean-artifacts", phase = "clean", scope = "artifacts", run = "true" })
+step({ name = "deps-install", phase = "deps", scope = "install", run = "true" })
+step({ name = "build-backend", phase = "build", scope = "backend", run = "true" })
+workflow("release", {
+    { "prepare", { "clean[artifacts]", "deps[install]" } },
+    { "compile", { "build[backend]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireWorkflow(registry, "release");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Found->isStaged());
+    ASSERT_EQ(Found->stages.size(), 2U);
+    EXPECT_EQ(Found->stages[0].name, "prepare");
+    ASSERT_EQ(Found->stages[0].invocations.size(), 2U);
+    EXPECT_EQ(Found->stages[0].invocations[0].phase, "clean");
+    EXPECT_EQ(Found->stages[0].invocations[0].scope, "artifacts");
+    EXPECT_EQ(Found->stages[1].name, "compile");
+}
+
+TEST(LuaDslTest, LoadsStagedWorkflowWithUnscopedReferences)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "setup-default", phase = "setup", scope = "default", run = "true" })
+step({ name = "setup-extra", phase = "setup", scope = "extra", run = "true" })
+step({ name = "compile-default", phase = "compile", scope = "default", run = "true" })
+workflow("standard", {
+    { "setup", { "setup" } },
+    { "compile", { "compile" } },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireWorkflow(registry, "standard");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Found->isStaged());
+    ASSERT_EQ(Found->stages.size(), 2U);
+    EXPECT_EQ(Found->stages[0].name, "setup");
+    ASSERT_EQ(Found->stages[0].invocations.size(), 1U);
+    EXPECT_EQ(Found->stages[0].invocations[0].phase, "setup");
+    EXPECT_TRUE(Found->stages[0].invocations[0].scope.empty());
+    EXPECT_EQ(Found->stages[1].name, "compile");
+    EXPECT_EQ(Found->stages[1].invocations[0].phase, "compile");
+    EXPECT_TRUE(Found->stages[1].invocations[0].scope.empty());
+}
+
+TEST(LuaDslTest, RejectsMixedStagedAndLegacyWorkflowEntries)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "gen", phase = "generate", scope = "code", run = "true" })
+workflow("release", {
+    { "prepare", { "generate[code]" } },
+    { phase = "generate", scope = "code" },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
 }
 
 TEST(LuaDslTest, RejectsWorkflowWithParallelStep)
@@ -479,6 +584,53 @@ step({
     EXPECT_EQ(Ordered.value()[1].name, "cpp:format");
 }
 
+TEST(LuaDslTest, LoadsMultiStepOrderDeclaration)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+order("alpha", "beta", "gamma", "delta")
+step({
+    name = "delta",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo delta",
+})
+step({
+    name = "gamma",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo gamma",
+})
+step({
+    name = "beta",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo beta",
+})
+step({
+    name = "alpha",
+    phase = "compile",
+    scope = "cpp",
+    mutate = { "src/**/*.cpp" },
+    run = "echo alpha",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Ordered = registry.stepsForPhase("compile", "cpp");
+    ASSERT_TRUE(Ordered.hasValue());
+    ASSERT_EQ(Ordered.value().size(), 4U);
+    EXPECT_EQ(Ordered.value()[0].name, "alpha");
+    EXPECT_EQ(Ordered.value()[1].name, "beta");
+    EXPECT_EQ(Ordered.value()[2].name, "gamma");
+    EXPECT_EQ(Ordered.value()[3].name, "delta");
+}
+
 TEST(LuaDslTest, ReturnsFalseWhenArtifactFieldIsNotTable)
 {
     const beez::test::TempProject Project;
@@ -546,6 +698,79 @@ step({
     beez::core::Registry registry;
     ASSERT_TRUE(loadScript(Project, registry));
     ASSERT_TRUE(registry.findStep("check-env").has_value());
+}
+
+TEST(LuaDslTest, BeezEnvTriesKeysInOrder)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("SECOND_KEY=second-value\n");
+    Project.writeBuildLua(R"(
+task("chain-env", "echo " .. beez.env("FIRST_KEY", "SECOND_KEY"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "chain-env");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo second-value");
+}
+
+TEST(LuaDslTest, BeezEnvOrUsesDefaultWhenNoKeyMatches)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("fallback-env", "echo " .. beez.env_or("FIRST_KEY", "SECOND_KEY", "klaus"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "fallback-env");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo klaus");
+}
+
+TEST(LuaDslTest, BeezEnvOrUsesFirstMatchingKey)
+{
+    const beez::test::TempProject Project;
+    Project.writeDotEnv("BETA=beta-value\n");
+    Project.writeBuildLua(R"(
+task("prefer-alpha", "echo " .. beez.env_or("ALPHA", "BETA", "klaus"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "prefer-alpha");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo beta-value");
+}
+
+TEST(LuaDslTest, BeezEnvOrRejectsTooFewArguments)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("bad-env-or", "echo " .. beez.env_or("only"))
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslTest, BeezCharQuoteEscapesSingleQuotes)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("quote-path", "echo " .. beez.char.quote("it's fine"))
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "quote-path");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo 'it'\\''s fine'");
 }
 
 TEST(LuaDslTest, BeezEnvDoesNotReadDotEnvUntilCalled)
@@ -653,3 +878,5 @@ step({
     EXPECT_FALSE(loadScript(Project, registry));
     EXPECT_FALSE(registry.findStep("gen-docs").has_value());
 }
+
+// NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity)
