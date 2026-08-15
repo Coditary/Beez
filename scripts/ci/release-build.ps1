@@ -34,6 +34,7 @@ Invoke-Checked {
         --output-folder=$BuildDir `
         --build=missing `
         --lockfile-partial `
+        -o "&:build_testing=False" `
         -s "build_type=$BuildType" `
         -pr $env:CONAN_PROFILE `
         -pr:b $env:CONAN_PROFILE

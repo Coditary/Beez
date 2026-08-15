@@ -57,7 +57,7 @@ os=Macos
 EOF
         ;;
     windows)
-        MSVC_VERSION="${MSVC_VERSION:-194}"
+        MSVC_VERSION="${MSVC_VERSION:-193}"
         cat > "${PROFILE_PATH}" <<EOF
 [settings]
 arch=${CONAN_ARCH}

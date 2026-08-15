@@ -6,12 +6,14 @@ import os
 
 class BeezConan(ConanFile):
     name = "beez"
-    version = "0.1.0"
+    version = "1.0.0"
     package_type = "application"
     license = "Apache-2.0"
     url = "https://github.com/Leodoras/Beez"
 
     settings = "os", "compiler", "build_type", "arch"
+    options = {"build_testing": [True, False]}
+    default_options = {"build_testing": True}
 
     exports_sources = "CMakeLists.txt", "src/*", "include/*", "tests/*", "build.lua"
 
@@ -21,7 +23,8 @@ class BeezConan(ConanFile):
         self.options["hwloc"].shared = True
 
     def requirements(self):
-        self.requires("gtest/1.14.0")
+        if self.options.build_testing:
+            self.requires("gtest/1.14.0")
         self.requires("lua/5.4.6")
         self.requires("cli11/2.6.2")
         self.requires("spdlog/1.15.3")

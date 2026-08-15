@@ -20,7 +20,7 @@ if ($Platform -ne "windows") {
     throw "release-conan-profile.ps1 supports RELEASE_PLATFORM=windows only"
 }
 
-$MsvcVersion = if ($env:MSVC_VERSION) { $env:MSVC_VERSION } else { "194" }
+$MsvcVersion = if ($env:MSVC_VERSION) { $env:MSVC_VERSION } else { "193" }
 
 @"
 [settings]

@@ -21,6 +21,7 @@ conan install . \
     --output-folder="${BUILD_DIR}" \
     --build=missing \
     --lockfile-partial \
+    -o "&:build_testing=False" \
     -s "build_type=${BUILD_TYPE}" \
     -pr "${CONAN_PROFILE}" \
     -pr:b "${CONAN_PROFILE}"
