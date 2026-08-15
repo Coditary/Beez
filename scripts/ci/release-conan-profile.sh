@@ -57,7 +57,7 @@ os=Macos
 EOF
         ;;
     windows)
-        MSVC_VERSION="${MSVC_VERSION:-193}"
+        MSVC_VERSION="${MSVC_VERSION:-194}"
         cat > "${PROFILE_PATH}" <<EOF
 [settings]
 arch=${CONAN_ARCH}
@@ -67,6 +67,9 @@ compiler.version=${MSVC_VERSION}
 compiler.cppstd=20
 compiler.runtime=dynamic
 os=Windows
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
 EOF
         ;;
     *)

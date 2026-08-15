@@ -20,7 +20,7 @@ if ($Platform -ne "windows") {
     throw "release-conan-profile.ps1 supports RELEASE_PLATFORM=windows only"
 }
 
-$MsvcVersion = if ($env:MSVC_VERSION) { $env:MSVC_VERSION } else { "193" }
+$MsvcVersion = if ($env:MSVC_VERSION) { $env:MSVC_VERSION } else { "194" }
 
 @"
 [settings]
@@ -31,6 +31,9 @@ compiler.version=$MsvcVersion
 compiler.cppstd=20
 compiler.runtime=dynamic
 os=Windows
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
 "@ | Set-Content -Path $ProfilePath -Encoding ascii -NoNewline
 Add-Content -Path $ProfilePath -Value ""
 
