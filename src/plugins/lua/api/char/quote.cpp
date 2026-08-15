@@ -8,15 +8,15 @@ namespace beez::plugin::lua
 std::string shellQuote(const std::string& value)
 {
     std::string quoted = "'";
-    for (const char character : value)
+    for (const char Character : value)
     {
-        if (character == '\'')
+        if (Character == '\'')
         {
             quoted += "'\\''";
             continue;
         }
 
-        quoted += character;
+        quoted += Character;
     }
 
     quoted += "'";

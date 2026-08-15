@@ -837,6 +837,53 @@ reqpack {
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
+TEST(LuaDslPluginTest, PluginConfigRegistersSchema)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    config = {
+        defaults = {
+            mode = "safe",
+        },
+        schema = {
+            mode = { type = "string" },
+        },
+    },
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            run = function(ctx)
+                local cfg = ctx.get_config()
+                return cfg.mode == "safe" and 0 or 1
+            end,
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+}
+
 TEST(LuaDslPluginTest, ConfigureMergesPluginAndStepConfigs)
 {
     const beez::test::TempProject Project;
