@@ -36,7 +36,7 @@ struct ProcessResult
     std::string line;
     while (std::getline(stream, line))
     {
-        if (line.rfind("profiling:", 0) != 0)
+        if (!line.starts_with("profiling:"))
         {
             filtered << line << '\n';
         }
@@ -48,8 +48,8 @@ struct ProcessResult
 [[nodiscard]] inline bool outputContainsTaskName(const ProcessResult& result,
                                                  const std::string& taskName)
 {
-    const std::string filtered = stripProfilingLines(result.output);
-    std::istringstream stream(filtered);
+    const std::string Filtered = stripProfilingLines(result.output);
+    std::istringstream stream(Filtered);
     std::string line;
     bool afterSeparator = false;
     while (std::getline(stream, line))

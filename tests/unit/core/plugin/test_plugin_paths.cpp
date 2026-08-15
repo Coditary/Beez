@@ -7,7 +7,8 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <utility>
+
+// NOLINTBEGIN(bugprone-unchecked-optional-access,modernize-pass-by-value)
 
 namespace
 {
@@ -166,3 +167,5 @@ TEST(PluginPathsTest, FindsPluginScriptForQualifiedOrganization)
     ASSERT_TRUE(Found.has_value());
     EXPECT_EQ(*Found, PluginPath);
 }
+
+// NOLINTEND(bugprone-unchecked-optional-access,modernize-pass-by-value)

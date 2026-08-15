@@ -4,6 +4,7 @@
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
 #include <string>
+#include <vector>
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <sol/forward.hpp>

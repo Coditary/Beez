@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access,misc-include-cleaner,readability-identifier-naming)
+
 TEST(ReqpackBeezPluginCatalogTest, StoresFindsAndAddsPlugins)
 {
     beez::plugin::lua::ReqpackBeezPluginCatalog catalog;
@@ -28,3 +30,5 @@ TEST(ReqpackBeezPluginCatalogTest, StoresFindsAndAddsPlugins)
                  .version = std::string {"1.0.0"}});
     EXPECT_TRUE(catalog.find("coditary", "other").has_value());
 }
+
+// NOLINTEND(bugprone-unchecked-optional-access,misc-include-cleaner,readability-identifier-naming)

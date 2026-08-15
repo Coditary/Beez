@@ -1,4 +1,5 @@
 #include "beez/cli/commands/run.hpp"
+#include "beez/core/model/task_action.hpp"
 
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/core/model/phase_request.hpp"
@@ -14,6 +15,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -92,9 +94,9 @@ TEST(RunCommandTest, MissingTargetReturnsFailure)
     beez::plugin::PluginHost pluginHost;
     beez::core::Orchestrator orchestrator(registry, context, pluginHost);
 
-    beez::cli::ParsedOptions options;
+    const beez::cli::ParsedOptions Options;
     const int ExitCode =
-        beez::cli::runOrchestratorCommand(orchestrator, registry, context, options);
+        beez::cli::runOrchestratorCommand(orchestrator, registry, context, Options);
 
     EXPECT_EQ(ExitCode, 1);
 }

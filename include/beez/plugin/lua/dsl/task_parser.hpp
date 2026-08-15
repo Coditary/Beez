@@ -7,6 +7,7 @@
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <sol/forward.hpp>
+#include <string>
 // NOLINTEND(misc-include-cleaner)
 
 namespace beez::plugin::lua

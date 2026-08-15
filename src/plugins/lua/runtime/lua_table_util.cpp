@@ -18,6 +18,7 @@ void deepMergeLuaTables(sol::table& target, const sol::table& source)
     data_detail::deepMerge(target, source);
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 sol::table deepMergeLuaTablesCopy(const std::shared_ptr<sol::state>& luaState,
                                   const sol::table& base,
                                   const sol::table& overlay)
@@ -26,6 +27,7 @@ sol::table deepMergeLuaTablesCopy(const std::shared_ptr<sol::state>& luaState,
     deepMergeLuaTables(merged, overlay);
     return merged;
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
 }  // namespace beez::plugin::lua
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

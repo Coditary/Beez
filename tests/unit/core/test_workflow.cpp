@@ -6,6 +6,9 @@
 
 #include <gtest/gtest.h>
 
+#include <optional>
+#include <stdexcept>
+
 TEST(WorkflowStepTest, HoldsPhaseInvocation)
 {
     const beez::core::WorkflowStep Step {

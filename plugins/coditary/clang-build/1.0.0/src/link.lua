@@ -36,6 +36,61 @@ local function find_target_for_output(links, output_path)
     return nil
 end
 
+local function link_entry_score(link_entry)
+    local preferences = {
+        { pattern = "/src/core/", score = 10 },
+        { pattern = "/src/logging/", score = 20 },
+        { pattern = "/src/cli/", score = 30 },
+        { pattern = "/src/plugins/host/", score = 40 },
+        { pattern = "/src/plugins/lua/", score = 50 },
+        { pattern = "/src/plugins/shell/", score = 60 },
+        { pattern = "/src/plugins/", score = 70 },
+        { pattern = "/src/app/", score = 80 },
+        { pattern = "/tests/unit/", score = 90 },
+        { pattern = "/tests/integration/", score = 91 },
+        { pattern = "/tests/system/", score = 92 },
+        { pattern = "/tests/performance/", score = 93 },
+        { pattern = "/fuzz/", score = 94 },
+        { pattern = "/src/modules/", score = 200 },
+        { pattern = "/modules/", score = 210 },
+        { pattern = "/libs/", score = 220 },
+        { pattern = "/src/", score = 150 },
+    }
+
+    local paths = {
+        link_entry.link_txt or "",
+        link_entry.work_dir or "",
+        link_entry.output or "",
+    }
+
+    local best_score = 999
+    for _, path in ipairs(paths) do
+        for _, preference in ipairs(preferences) do
+            if path:find(preference.pattern, 1, true) and preference.score < best_score then
+                best_score = preference.score
+            end
+        end
+    end
+
+    return best_score
+end
+
+local function best_link_entry(entries)
+    local best = entries[1]
+    local best_score = link_entry_score(best)
+
+    for index = 2, #entries do
+        local candidate = entries[index]
+        local score = link_entry_score(candidate)
+        if score < best_score then
+            best = candidate
+            best_score = score
+        end
+    end
+
+    return best
+end
+
 local function filter_links(config, profile, links, root)
     local outputs = profile.link_outputs
     if type(outputs) == "function" then
@@ -59,15 +114,20 @@ local function filter_links(config, profile, links, root)
 
     local by_target = {}
     for _, link_entry in ipairs(links) do
-        by_target[link_entry.target] = link_entry
+        local entries = by_target[link_entry.target]
+        if entries == nil then
+            entries = {}
+            by_target[link_entry.target] = entries
+        end
+        entries[#entries + 1] = link_entry
     end
 
     local ordered = {}
     for _, target_name in ipairs(defaults.link_order) do
         if link_rank(target_name) <= max_rank then
-            local link_entry = by_target[target_name]
-            if link_entry ~= nil then
-                ordered[#ordered + 1] = link_entry
+            local entries = by_target[target_name]
+            if entries ~= nil then
+                ordered[#ordered + 1] = best_link_entry(entries)
             end
         end
     end

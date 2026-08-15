@@ -7,6 +7,7 @@
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/execution/concurrency/worker_pool.hpp"
+#include "beez/core/execution/process/stream_capture.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
@@ -33,11 +34,11 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
     const auto& runOptions = orchestrator_detail::Access::runOptions(orchestrator);
     context.setVerboseOutput(runOptions.outputMode == logging::OutputMode::Verbose);
     context.setFailureLogCallback(
-        [&runOptions](const std::string_view message)
+        [&runOptions](const std::string_view Message)
         {
             if (runOptions.logger != nullptr)
             {
-                runOptions.logger->logFailureOutput(message);
+                runOptions.logger->logFailureOutput(Message);
             }
         });
 
@@ -118,7 +119,14 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
         return workerPool.drainAll();
     };
 
-    exitCode = RunCallbackWithWorkers();
+    if (runOptions.outputMode == logging::OutputMode::Verbose)
+    {
+        exitCode = RunCallbackWithWorkers();
+    }
+    else
+    {
+        exitCode = discardProcessOutput(RunCallbackWithWorkers);
+    }
     if (exitCode != 0 && runOptions.outputMode != logging::OutputMode::Verbose &&
         runOptions.logger != nullptr)
     {

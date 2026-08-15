@@ -1,6 +1,8 @@
 #include "beez/core/registry/step_reference.hpp"
 
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
 

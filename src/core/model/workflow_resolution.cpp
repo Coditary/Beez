@@ -1,11 +1,14 @@
 #include "beez/core/model/workflow_resolution.hpp"
+#include "beez/core/model/phase_invocation.hpp"
+#include "beez/core/model/workflow.hpp"
+#include "beez/core/model/workflow_stage.hpp"
+#include "beez/core/model/workflow_step.hpp"
 
 #include <algorithm>
 #include <iterator>
-#include <ranges>
+#include <optional>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace beez::core

@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <string>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -26,6 +25,7 @@ namespace beez::core::orchestrator_detail
 namespace
 {
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity,misc-no-recursion)
 [[nodiscard]] Expected<int, OrchestratorError> runTaskImpl(Orchestrator& orchestrator,
                                                            const Task& task,
                                                            ProgressState& progress,

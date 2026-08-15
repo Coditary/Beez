@@ -3,7 +3,6 @@
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
 
-#include <optional>
 #include <string>
 
 namespace beez::plugin::lua

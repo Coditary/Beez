@@ -7,6 +7,8 @@
 
 #include <gtest/gtest.h>
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access,readability-function-cognitive-complexity)
+
 #include <optional>
 #include <string>
 
@@ -876,3 +878,5 @@ step({
     EXPECT_FALSE(loadScript(Project, registry));
     EXPECT_FALSE(registry.findStep("gen-docs").has_value());
 }
+
+// NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity)

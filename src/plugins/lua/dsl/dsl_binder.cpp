@@ -29,6 +29,8 @@
 namespace beez::plugin::lua
 {
 
+// NOLINTBEGIN(readability-identifier-naming)
+
 namespace
 {
 
@@ -312,4 +314,5 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(readability-identifier-naming)
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

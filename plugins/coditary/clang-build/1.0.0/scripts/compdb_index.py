@@ -74,12 +74,19 @@ def write_script(path: Path, work_dir: Path, command: str) -> None:
     cc = os.environ.get("CC", "clang")
     command = replace_compiler(command, cxx, cc)
     path.parent.mkdir(parents=True, exist_ok=True)
+
+    preamble: list[str] = []
+    archive_match = re.search(r"\b(?:llvm-)?ar\s+qc\s+([^\s]+)", command)
+    if archive_match:
+        preamble.append(f"rm -f {json.dumps(archive_match.group(1))}")
+
     path.write_text(
         "\n".join(
             [
                 "#!/usr/bin/env bash",
                 "set -euo pipefail",
                 f"cd {json.dumps(str(work_dir))}",
+                *preamble,
                 command,
                 "",
             ]

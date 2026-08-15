@@ -25,7 +25,7 @@ local OSV_SCANNER = beez.env_or("OSV_SCANNER", beez.env_or("HOME", "") .. "/.loc
 -- ── Plugin + step configuration ──────────────────────────────────────────────
 
 configure({
-    { "coditary/clang-tidy", { compdb = BUILD_TREE, check_rev = "2", lint_rev = "6", analyze_rev = "3", security_rev = "3",
+    { "coditary/clang-tidy", { compdb = BUILD_TREE, check_rev = "2", lint_rev = "7", analyze_rev = "4", security_rev = "3",
 		steps = { check = { profiles = { "lint", "analyze", "security" } } } } },
 
     { "coditary/cppcheck", { check_rev = "2", analyze_rev = "3", security_rev = "3",
@@ -37,7 +37,7 @@ configure({
     { "coditary/ctest", { reports_dir = REPORTS_DIR, test_rev = "4" } },
     { "coditary/coverage", { report_rev = "1" } },
     { "coditary/fuzzer", { fuzz_rev = "4" } },
-    { "coditary/clang-build", { compile_rev = "1", link_rev = "5" } },
+    { "coditary/clang-build", { compile_rev = "4", link_rev = "10" } },
 })
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────

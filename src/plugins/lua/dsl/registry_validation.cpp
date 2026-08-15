@@ -10,11 +10,14 @@
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
 
 #include <stdexcept>
+#include <string>
 #include <variant>
 
 namespace beez::plugin::lua
 {
 
+// NOLINTBEGIN(performance-inefficient-string-concatenation)
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void validateLoadedRegistry(core::Registry& registry,
                             const ReqpackBeezPluginCatalog& reqpackBeezPlugins)
 {
@@ -95,5 +98,6 @@ void validateLoadedRegistry(core::Registry& registry,
 
     registry.validateConsistent();
 }
+// NOLINTEND(performance-inefficient-string-concatenation)
 
 }  // namespace beez::plugin::lua

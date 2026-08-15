@@ -2,7 +2,6 @@
 
 #include <stdexcept>
 #include <string>
-#include <utility>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
@@ -89,6 +88,7 @@ void parsePluginSteps(const std::string& qualifiedPluginName,
     return reference.substr(1);
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void parseConfigureEntry(const sol::object& key,
                          const sol::object& value,
                          const std::shared_ptr<sol::state>& luaState,
@@ -145,6 +145,7 @@ void parseConfigureEntry(const sol::object& key,
 
     parsePluginSteps(Target, StepsValue.as<sol::table>(), onStepConfig);
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
 }  // namespace
 

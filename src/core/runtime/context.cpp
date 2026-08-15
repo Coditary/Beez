@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace beez::core
@@ -139,9 +140,9 @@ double Context::consumePendingWorkerDuration() const
     return Duration;
 }
 
-void Context::setVerboseOutput(const bool verbose)
+void Context::setVerboseOutput(const bool Verbose)
 {
-    verboseOutput_ = verbose;
+    verboseOutput_ = Verbose;
 }
 
 void Context::setFailureLogCallback(FailureLogCallback callback)
@@ -154,11 +155,11 @@ void Context::clearFailureLogCallback()
     failureLogCallback_ = nullptr;
 }
 
-void Context::logFailure(const std::string_view message) const
+void Context::logFailure(const std::string_view Message) const
 {
     if (failureLogCallback_ != nullptr)
     {
-        failureLogCallback_(message);
+        failureLogCallback_(Message);
     }
 }
 

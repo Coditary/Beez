@@ -1,10 +1,15 @@
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
 #include <algorithm>
-#include <ranges>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace beez::plugin::lua
 {
+
+// NOLINTBEGIN(misc-include-cleaner)
 
 void ReqpackBeezPluginCatalog::set(const std::vector<BeezPluginRef>& pluginRefs)
 {
@@ -30,5 +35,7 @@ std::optional<BeezPluginRef> ReqpackBeezPluginCatalog::find(const std::string& o
 
     return *Match;
 }
+
+// NOLINTEND(misc-include-cleaner)
 
 }  // namespace beez::plugin::lua

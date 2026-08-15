@@ -103,15 +103,15 @@ core::WorkflowStage parseWorkflowStage(const std::string& workflowName,
 
 void ensureWorkflowFormat(const std::string& workflowName,
                           std::optional<bool>& stagedFormat,
-                          const bool entryIsStaged)
+                          const bool EntryIsStaged)
 {
     if (!stagedFormat.has_value())
     {
-        stagedFormat = entryIsStaged;
+        stagedFormat = EntryIsStaged;
         return;
     }
 
-    if (*stagedFormat != entryIsStaged)
+    if (*stagedFormat != EntryIsStaged)
     {
         throw std::runtime_error("workflow '" + workflowName +
                                  "' cannot mix staged and legacy entries");

@@ -78,7 +78,6 @@ target_link_libraries(
     beez_tests
     PRIVATE GTest::gtest
             GTest::gtest_main
-            beez_core
             beez_plugins
             beez_cli
             beez_logging

@@ -1,8 +1,14 @@
 #include "beez/plugin/lua/dsl/step_plugin_loader.hpp"
 
 #include "beez/core/plugin/installer.hpp"
+#include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_reference.hpp"
+#include "beez/core/runtime/context.hpp"
 #include "beez/plugin/lua/dsl/plugin_loader.hpp"
+
+#include <exception>
+#include <optional>
+#include <string>
 
 namespace beez::plugin::lua
 {

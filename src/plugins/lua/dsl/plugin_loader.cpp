@@ -19,6 +19,8 @@
 namespace beez::plugin::lua
 {
 
+// NOLINTBEGIN(readability-identifier-naming)
+
 namespace
 {
 
@@ -333,4 +335,5 @@ void loadInstalledBeezPlugin(const std::string& organization,
 }
 
 }  // namespace beez::plugin::lua
+// NOLINTEND(readability-identifier-naming)
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

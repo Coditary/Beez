@@ -6,9 +6,9 @@
 #include "beez/plugin/lua/dsl/task_step_reference.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
+#include <algorithm>
 #include <iterator>
 #include <memory>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -57,6 +57,7 @@ parseTaskPhaseInvocations(const sol::table& actionTable)
 
 }  // namespace
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
                                                const std::shared_ptr<sol::state>& luaState)
 {
@@ -138,10 +139,10 @@ std::vector<core::TaskAction> parseTaskActions(const sol::table& actionsTable,
                 sharedConfig = makeLuaStepConfig(luaState, ConfigValue.as<sol::table>());
             }
 
-            for (const std::string& StepReference : StepReferences)
+            for (const std::string& stepReference : StepReferences)
             {
                 core::TaskStepAction stepAction;
-                stepAction.stepName = StepReference;
+                stepAction.stepName = stepReference;
                 stepAction.config = sharedConfig;
                 actions.emplace_back(std::move(stepAction));
             }

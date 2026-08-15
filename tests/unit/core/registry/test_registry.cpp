@@ -7,6 +7,7 @@
 #include "beez/core/model/workflow_step.hpp"
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/registry/step_order.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 
 #include "helpers/test_helpers.hpp"
 #include "helpers/test_step_config.hpp"

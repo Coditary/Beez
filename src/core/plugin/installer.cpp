@@ -2,9 +2,13 @@
 
 #include "beez/core/plugin/paths.hpp"
 #include "beez/core/reqpack/installer.hpp"
+#include "beez/core/util/expected.hpp"
 
+#include <filesystem>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <system_error>
 
 namespace beez::core
 {

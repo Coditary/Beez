@@ -20,7 +20,7 @@ add_executable(
 
 add_dependencies(beez_integration_tests beez)
 
-target_link_libraries(beez_integration_tests PRIVATE GTest::gtest GTest::gtest_main beez_core beez_plugins)
+target_link_libraries(beez_integration_tests PRIVATE GTest::gtest GTest::gtest_main beez_plugins)
 
 target_include_directories(beez_integration_tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 

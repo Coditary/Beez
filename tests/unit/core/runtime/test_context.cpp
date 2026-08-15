@@ -50,7 +50,8 @@ TEST(ContextTest, LogFailureInvokesCallback)
 {
     beez::core::Context context;
     std::string captured;
-    context.setFailureLogCallback([&captured](const std::string_view message) { captured = message; });
+    context.setFailureLogCallback([&captured](const std::string_view Message)
+                                  { captured = Message; });
 
     context.logFailure("lint issue");
 

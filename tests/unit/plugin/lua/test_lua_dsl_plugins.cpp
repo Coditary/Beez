@@ -10,6 +10,8 @@
 
 #include <gtest/gtest.h>
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)
+
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -1873,3 +1875,5 @@ task("formater", {
     EXPECT_EQ(Found->name, "formater");
     ASSERT_EQ(Found->actions.size(), 1U);
 }
+
+// NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)

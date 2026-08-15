@@ -2,7 +2,9 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <system_error>
 
 namespace beez::core
 {
@@ -57,10 +59,10 @@ std::optional<std::filesystem::path> findPluginScript(const std::string& name,
             continue;
         }
 
-        const auto ScriptPath = organizationEntry.path() / name / version / "beez_plugin.lua";
-        if (std::filesystem::is_regular_file(ScriptPath, errorCode) && !errorCode)
+        auto scriptPath = organizationEntry.path() / name / version / "beez_plugin.lua";
+        if (std::filesystem::is_regular_file(scriptPath, errorCode) && !errorCode)
         {
-            return ScriptPath;
+            return scriptPath;
         }
     }
 
@@ -77,11 +79,11 @@ std::optional<std::filesystem::path> findPluginScript(const std::string& organiz
         return std::nullopt;
     }
 
-    const auto ScriptPath = PluginRoot / organization / name / version / "beez_plugin.lua";
+    auto scriptPath = PluginRoot / organization / name / version / "beez_plugin.lua";
     std::error_code errorCode;
-    if (std::filesystem::is_regular_file(ScriptPath, errorCode) && !errorCode)
+    if (std::filesystem::is_regular_file(scriptPath, errorCode) && !errorCode)
     {
-        return ScriptPath;
+        return scriptPath;
     }
 
     return std::nullopt;

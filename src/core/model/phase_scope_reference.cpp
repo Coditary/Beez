@@ -192,13 +192,13 @@ ScopedReference parseScopedReference(const std::string& reference)
 
     if (Inner.front() == '"')
     {
-        std::vector<std::string> Scopes = parseQuotedScopeList(reference, BracketPosition);
-        if (Scopes.empty())
+        std::vector<std::string> scopes = parseQuotedScopeList(reference, BracketPosition);
+        if (scopes.empty())
         {
             throw std::runtime_error("scoped reference '" + reference + "' must include a scope");
         }
 
-        return ScopedReference {.name = Name, .scopes = std::move(Scopes)};
+        return ScopedReference {.name = Name, .scopes = std::move(scopes)};
     }
 
     return ScopedReference {.name = Name, .scopes = {Inner}};

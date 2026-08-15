@@ -11,9 +11,11 @@ namespace beez::core
 
 struct Workflow
 {
+    // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     std::string name;
     std::vector<WorkflowStep> steps;
     std::vector<WorkflowStage> stages;
+    // NOLINTEND(misc-non-private-member-variables-in-classes)
 
     [[nodiscard]] bool isStaged() const
     {

@@ -4,6 +4,8 @@
 
 #include <string>
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 TEST(StepReferenceTest, FormatsQualifiedReference)
 {
     EXPECT_EQ(beez::core::formatQualifiedStepRef("coditary", "clang-build", "compile:code"),
@@ -72,3 +74,5 @@ TEST(StepReferenceTest, ExtractsActionNameWithoutScopeSuffix)
     EXPECT_EQ(beez::core::stepActionName("link:debug"), "link");
     EXPECT_EQ(beez::core::stepActionName("check"), "check");
 }
+
+// NOLINTEND(bugprone-unchecked-optional-access)

@@ -3,8 +3,8 @@
 #include "beez/core/model/phase_scope_reference.hpp"
 #include "beez/core/registry/step_reference.hpp"
 
+#include <algorithm>
 #include <iterator>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -18,6 +18,8 @@ namespace beez::plugin::lua
 
 namespace
 {
+
+// NOLINTBEGIN(readability-identifier-naming)
 
 [[nodiscard]] std::pair<std::string, std::string> splitQualifiedPluginName(const std::string& name)
 {
@@ -70,7 +72,7 @@ buildStepNamesFromScopedReference(const core::ScopedReference& scoped)
 
     std::vector<std::string> stepNames;
     stepNames.reserve(scoped.scopes.size());
-    for (const std::string& Scope : scoped.scopes)
+    for (const std::string& scope : scoped.scopes)
     {
         if (scoped.name.find(':') != std::string::npos)
         {
@@ -78,7 +80,7 @@ buildStepNamesFromScopedReference(const core::ScopedReference& scoped)
                 "task action field 'step' cannot combine bracket scopes with a scoped step name");
         }
 
-        stepNames.push_back(scoped.name + ':' + Scope);
+        stepNames.push_back(scoped.name + ':' + scope);
     }
 
     return stepNames;
@@ -196,6 +198,8 @@ void validateTaskPluginStepReference(const std::string& taskName,
     throw std::runtime_error("task '" + taskName + "' plugin step '" + stepReference +
                              "' requires fields 'plugin' and 'step'");
 }
+
+// NOLINTEND(readability-identifier-naming)
 
 }  // namespace beez::plugin::lua
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

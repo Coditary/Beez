@@ -68,19 +68,20 @@ class BeezEnvApi
 
         for (std::size_t index = 0; index < args.size() - 1; ++index)
         {
-            if (!args[index].is<std::string>())
+            const auto& argument = args[static_cast<std::ptrdiff_t>(index)];
+            if (!argument.is<std::string>())
             {
                 throw std::runtime_error("beez.env_or keys must be strings");
             }
 
-            const auto Value = lookupValue(args[index].as<std::string>());
+            const auto Value = lookupValue(argument.as<std::string>());
             if (Value.has_value())
             {
                 return sol::make_object(lua, *Value);
             }
         }
 
-        const sol::stack_proxy& defaultValue = args[args.size() - 1];
+        const sol::stack_proxy& defaultValue = args[static_cast<std::ptrdiff_t>(args.size() - 1)];
         if (!defaultValue.is<std::string>())
         {
             throw std::runtime_error("beez.env_or default must be a string");

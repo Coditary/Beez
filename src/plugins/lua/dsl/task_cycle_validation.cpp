@@ -14,6 +14,7 @@ namespace beez::plugin::lua
 namespace
 {
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters,misc-no-recursion)
 [[nodiscard]] bool hasTaskCycleFrom(const std::string& origin,
                                     const std::string& current,
                                     const core::Registry& registry,

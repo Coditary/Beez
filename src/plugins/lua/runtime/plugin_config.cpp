@@ -63,8 +63,8 @@ requireTableField(const sol::table& table, const char* fieldName, const std::str
         deepMergeLuaTables(resolved, ProfileIterator->second);
     }
 
-    sol::table stepOverlay = cloneLuaTable(definition.luaState, stepConfigTable);
-    deepMergeLuaTables(resolved, stepOverlay);
+    const sol::table StepOverlay = cloneLuaTable(definition.luaState, stepConfigTable);
+    deepMergeLuaTables(resolved, StepOverlay);
     return resolved;
 }
 

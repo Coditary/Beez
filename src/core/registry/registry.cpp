@@ -7,6 +7,7 @@
 #include "beez/core/model/workflow.hpp"
 #include "beez/core/registry/step_order.hpp"
 #include "beez/core/registry/step_reference.hpp"
+#include "beez/core/registry/step_resolution.hpp"
 #include "beez/core/registry/task_reference.hpp"
 #include "beez/core/registry/workflow_reference.hpp"
 #include "beez/core/util/expected.hpp"
@@ -145,29 +146,30 @@ void Registry::registerPluginStep(Step step,
 
     if (version.has_value())
     {
-        const std::string& VersionValue = *version;
-        registerStepAlias(formatVersionedInvocationRef(StepName, VersionValue), StepId);
+        const std::string& versionValue = *version;
+        registerStepAlias(formatVersionedInvocationRef(StepName, versionValue), StepId);
         registerStepAlias(
-            formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName), VersionValue),
+            formatVersionedInvocationRef(formatShortPluginStepRef(plugin, StepName), versionValue),
             StepId);
         registerStepAlias(formatVersionedInvocationRef(
-                              formatQualifiedStepRef(organization, plugin, StepName), VersionValue),
+                              formatQualifiedStepRef(organization, plugin, StepName), versionValue),
                           StepId);
 
         if (isDefaultScopedStepName(StepName))
         {
             const std::string ActionName = stepActionName(StepName);
             registerStepAlias(formatVersionedInvocationRef(
-                                  formatShortPluginStepRef(plugin, ActionName), VersionValue),
+                                  formatShortPluginStepRef(plugin, ActionName), versionValue),
                               StepId);
             registerStepAlias(
                 formatVersionedInvocationRef(
-                    formatQualifiedStepRef(organization, plugin, ActionName), VersionValue),
+                    formatQualifiedStepRef(organization, plugin, ActionName), versionValue),
                 StepId);
         }
     }
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Registry::registerStepAlias(const std::string& alias, const std::string& stepId)
 {
     auto& targets = stepAliases_[alias];
@@ -191,16 +193,8 @@ void Registry::configurePlugin(const std::string& organization,
 bool Registry::hasPluginSteps(const std::string& organization, const std::string& plugin) const
 {
     const std::string PluginKey = formatPluginKey(organization, plugin);
-    for (const auto& [stepId, step] : steps_)
-    {
-        (void)step;
-        if (stepBelongsToPlugin(stepId, PluginKey))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of(
+        steps_, [&](const auto& entry) { return stepBelongsToPlugin(entry.first, PluginKey); });
 }
 
 void Registry::applyStepConfig(const std::string& name, const StepConfigPtr& config)
@@ -285,6 +279,7 @@ Workflow Registry::resolvePluginWorkflowReference(const std::string& reference) 
     return WorkflowIterator->second;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Registry::registerWorkflowFromPluginReference(const std::string& localName,
                                                    const std::string& pluginWorkflowReference)
 {
@@ -307,6 +302,7 @@ Task Registry::resolvePluginTaskReference(const std::string& reference) const
     return TaskIterator->second;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Registry::registerTaskFromPluginReference(const std::string& localName,
                                                const std::string& pluginTaskReference)
 {
@@ -406,6 +402,7 @@ std::optional<Step> Registry::findStep(const std::string& name) const
 }
 
 Expected<std::string, StepResolutionFailure>
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 Registry::resolveStepRegistrationId(const std::string& reference) const
 {
     if (steps_.contains(reference))
@@ -511,16 +508,8 @@ bool Registry::hasPluginVersionLoaded(const std::string& organization,
                                       const std::string& version) const
 {
     const std::string Prefix = formatPluginVersionKey(organization, plugin, version) + ':';
-    for (const auto& [stepId, step] : steps_)
-    {
-        (void)step;
-        if (stepId.starts_with(Prefix))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of(steps_,
+                               [&](const auto& entry) { return entry.first.starts_with(Prefix); });
 }
 
 std::vector<std::string> Registry::stepInvocationNames() const
@@ -535,7 +524,8 @@ std::vector<std::string> Registry::stepInvocationNames() const
     }
 
     std::ranges::sort(names);
-    names.erase(std::unique(names.begin(), names.end()), names.end());
+    const auto UniqueEnd = std::ranges::unique(names);
+    names.erase(UniqueEnd.begin(), UniqueEnd.end());
     return names;
 }
 

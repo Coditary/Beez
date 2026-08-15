@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <stdexcept>
-#include <string>
 
 // NOLINTBEGIN(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 #include <sol/sol.hpp>
@@ -19,13 +18,13 @@ void bindIncrement(const std::shared_ptr<sol::state>& luaState, sol::table& beez
         throw std::runtime_error("beez increment runtime missing: " + IncrementScript.string());
     }
 
-    sol::object loaded = luaState->script_file(IncrementScript.string());
-    if (!loaded.is<sol::table>())
+    const sol::object Loaded = luaState->script_file(IncrementScript.string());
+    if (!Loaded.is<sol::table>())
     {
         throw std::runtime_error("beez increment runtime must return a table");
     }
 
-    beezTable["increment"] = loaded.as<sol::table>();
+    beezTable["increment"] = Loaded.as<sol::table>();
 }
 
 }  // namespace beez::plugin::lua
