@@ -20,6 +20,7 @@ cat "${CONAN_PROFILE}"
 conan install . \
     --output-folder="${BUILD_DIR}" \
     --build=missing \
+    --lockfile-partial \
     -s "build_type=${BUILD_TYPE}" \
     -pr "${CONAN_PROFILE}" \
     -pr:b "${CONAN_PROFILE}"
