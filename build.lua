@@ -25,10 +25,10 @@ local OSV_SCANNER = beez.env_or("OSV_SCANNER", beez.env_or("HOME", "") .. "/.loc
 -- ── Plugin + step configuration ──────────────────────────────────────────────
 
 configure({
-    { "coditary/clang-tidy", { compdb = BUILD_TREE, check_rev = "2", lint_rev = "4", analyze_rev = "3", security_rev = "3",
+    { "coditary/clang-tidy", { compdb = BUILD_TREE, check_rev = "2", lint_rev = "6", analyze_rev = "3", security_rev = "3",
 		steps = { check = { profiles = { "lint", "analyze", "security" } } } } },
 
-    { "coditary/cppcheck", { check_rev = "2", analyze_rev = "2", security_rev = "2",
+    { "coditary/cppcheck", { check_rev = "2", analyze_rev = "3", security_rev = "3",
 		steps = { cppcheck_check = { profiles = { "analyze", "security" } } } } },
 
     { "coditary/conan", { reports_dir = REPORTS_DIR, lock_rev = "1", sbom_rev = "1" } },

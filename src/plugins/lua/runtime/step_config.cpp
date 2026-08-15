@@ -277,6 +277,10 @@ sol::table bindStepContext(const std::shared_ptr<sol::state>& luaState,
     sol::table stepContext = luaState->create_table();
     stepContext["project_root"] = context.projectRoot().string();
     stepContext["verbose"] = [&context]() -> bool { return context.verboseOutput(); };
+    stepContext.set_function(
+        "log_failure",
+        [&context](const sol::table& /*self*/, const std::string& message)
+        { context.logFailure(message); });
     stepContext["get_config"] = [&context]() -> sol::object
     {
         const core::StepConfigPtr StepConfig = context.getConfig();

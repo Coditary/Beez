@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <string>
+#include <string_view>
 #include <utility>
 
 TEST(ContextTest, BuildScriptPathIsUnderProjectRoot)
@@ -42,4 +44,15 @@ TEST(ContextTest, GetConfigReturnsValueFromAccessor)
     const auto* typed = dynamic_cast<const beez::test::TestStepConfig*>(Resolved.get());
     ASSERT_NE(typed, nullptr);
     EXPECT_EQ(typed->tag(), "lazy");
+}
+
+TEST(ContextTest, LogFailureInvokesCallback)
+{
+    beez::core::Context context;
+    std::string captured;
+    context.setFailureLogCallback([&captured](const std::string_view message) { captured = message; });
+
+    context.logFailure("lint issue");
+
+    EXPECT_EQ(captured, "lint issue");
 }

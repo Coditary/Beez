@@ -7,7 +7,6 @@
 #include "beez/core/cache/step/step_cache.hpp"
 #include "beez/core/cache/success/success_cache.hpp"
 #include "beez/core/execution/concurrency/worker_pool.hpp"
-#include "beez/core/execution/process/stream_capture.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
@@ -20,6 +19,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -32,6 +32,14 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
     auto& context = orchestrator_detail::Access::context(orchestrator);
     const auto& runOptions = orchestrator_detail::Access::runOptions(orchestrator);
     context.setVerboseOutput(runOptions.outputMode == logging::OutputMode::Verbose);
+    context.setFailureLogCallback(
+        [&runOptions](const std::string_view message)
+        {
+            if (runOptions.logger != nullptr)
+            {
+                runOptions.logger->logFailureOutput(message);
+            }
+        });
 
     context.setStepConfigAccessor([config = step.config]() -> StepConfigPtr { return config; });
     const StepIdentity Identity {.name = step.name, .phase = step.phase, .scope = step.scope};
@@ -110,22 +118,16 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
         return workerPool.drainAll();
     };
 
-    if (runOptions.outputMode == logging::OutputMode::Verbose)
+    exitCode = RunCallbackWithWorkers();
+    if (exitCode != 0 && runOptions.outputMode != logging::OutputMode::Verbose &&
+        runOptions.logger != nullptr)
     {
-        exitCode = RunCallbackWithWorkers();
-    }
-    else
-    {
-        exitCode = discardProcessOutput(RunCallbackWithWorkers);
-        if (exitCode != 0 && runOptions.logger != nullptr)
+        for (const auto& failure : workerFailureOutputs)
         {
-            for (const auto& failure : workerFailureOutputs)
-            {
-                const logging::LogChannelId Channel =
-                    runOptions.logger->openChannel(failure.workerName);
-                runOptions.logger->logFailureOutput(failure.output, Channel);
-                runOptions.logger->closeChannel(Channel);
-            }
+            const logging::LogChannelId Channel =
+                runOptions.logger->openChannel(failure.workerName);
+            runOptions.logger->logFailureOutput(failure.output, Channel);
+            runOptions.logger->closeChannel(Channel);
         }
     }
 
@@ -147,6 +149,7 @@ Expected<int, OrchestratorError> run(Orchestrator& orchestrator, const Step& ste
     context.clearStepConfigAccessor();
     context.clearStepIdentity();
     context.clearSuccessCacheSession();
+    context.clearFailureLogCallback();
 
     if (successCacheSession.has_value())
     {

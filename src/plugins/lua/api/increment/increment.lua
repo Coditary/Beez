@@ -53,35 +53,83 @@ local function job_failed(config, tool_output, exit_code)
     return false
 end
 
-local function print_job_output(config, verbose, source_path, tool_output, exit_code, failed)
+local function failure_summary(config, source_path, exit_code, tool_output)
+    local output = config.output
+    if output ~= nil and output.describe_failure ~= nil then
+        return output.describe_failure(source_path, exit_code, tool_output)
+    end
+
+    if exit_code ~= nil and exit_code ~= 0 then
+        return config.log_prefix .. " failed: " .. source_path .. " (exit " .. tostring(exit_code) .. ")"
+    end
+
+    return config.log_prefix .. " issues while checking " .. source_path
+end
+
+local function status_log(verbose, message)
+    if verbose then
+        print(message)
+    end
+end
+
+local function log_failure(ctx, message)
+    if message == nil or message == "" then
+        return
+    end
+
+    if type(ctx.log_failure) == "function" then
+        if message:sub(-1) ~= "\n" then
+            message = message .. "\n"
+        end
+        ctx:log_failure(message)
+        return
+    end
+
+    print(message)
+end
+
+local function failure_output(config, tool_output, exit_code)
+    local output = config.output
+    if output == nil then
+        return tool_output
+    end
+
+    if output.filter_issues ~= nil then
+        local issue_output = output.filter_issues(tool_output)
+        if issue_output ~= "" then
+            return issue_output
+        end
+    end
+
+    if output.filter_failure ~= nil then
+        local filtered = output.filter_failure(tool_output)
+        if filtered ~= "" then
+            return filtered
+        end
+    end
+
+    if tool_output == "" then
+        return ""
+    end
+
+    if output.filter_verbose ~= nil then
+        return output.filter_verbose(tool_output)
+    end
+
+    return tool_output
+end
+
+local function print_job_output(config, ctx, verbose, source_path, tool_output, exit_code, failed)
     local output = config.output
 
     if failed then
-        print(config.log_prefix .. " failed: " .. source_path .. " (exit " .. tostring(exit_code) .. ")")
-
-        if output ~= nil and output.filter_issues ~= nil then
-            local issue_output = output.filter_issues(tool_output)
-            if issue_output ~= "" then
-                print(issue_output)
-                return
-            end
+        local parts = { failure_summary(config, source_path, exit_code, tool_output) }
+        local details = failure_output(config, tool_output, exit_code)
+        if details ~= "" then
+            parts[#parts + 1] = details
         end
 
-        if output ~= nil and output.filter_failure ~= nil then
-            local failure_output = output.filter_failure(tool_output)
-            if failure_output ~= "" then
-                print(failure_output)
-                return
-            end
-        end
-
-        if tool_output ~= "" then
-            if output ~= nil and output.filter_verbose ~= nil then
-                print(output.filter_verbose(tool_output))
-            else
-                print(tool_output)
-            end
-        end
+        log_failure(ctx, table.concat(parts, "\n"))
         return
     end
 
@@ -107,7 +155,7 @@ local function process_batch(ctx, config, verbose, batch_paths, failed_paths)
     local label = action_label(config)
 
     for _, source_path in ipairs(batch_paths) do
-        print(config.log_prefix .. " " .. label .. ": " .. source_path)
+        status_log(verbose, config.log_prefix .. " " .. label .. ": " .. source_path)
         jobs[#jobs + 1] = {
             path = source_path,
             handle = ctx:spawn({
@@ -133,7 +181,7 @@ local function process_batch(ctx, config, verbose, batch_paths, failed_paths)
         local exit_code = result.exitCode or 0
         local failed_job = job_failed(config, tool_output, exit_code)
 
-        print_job_output(config, verbose, source_path, tool_output, exit_code, failed_job)
+        print_job_output(config, ctx, verbose, source_path, tool_output, exit_code, failed_job)
 
         if failed_job then
             record_miss(ctx, config, source_path)
@@ -161,15 +209,15 @@ function M.run(ctx, config)
 
     local files = ctx.glob(config.patterns)
     if #files == 0 then
-        print(config.log_prefix .. " no files matched")
+        status_log(ctx.verbose == true, config.log_prefix .. " no files matched")
         return 0
     end
 
     local misses = ctx.get_cache_misses()
     if #misses > 0 then
-        print(config.log_prefix .. " re-checking from previous failures:")
+        status_log(ctx.verbose == true, config.log_prefix .. " re-checking from previous failures:")
         for _, entry in ipairs(misses) do
-            print("  - " .. entry)
+            status_log(ctx.verbose == true, "  - " .. entry)
         end
     end
 
@@ -188,7 +236,7 @@ function M.run(ctx, config)
 
     for _, source_path in ipairs(files) do
         if is_cached(ctx, config, source_path) then
-            print(config.log_prefix .. " skip (cached): " .. source_path)
+            status_log(verbose, config.log_prefix .. " skip (cached): " .. source_path)
             skipped = skipped + 1
         else
             checked = checked + 1
@@ -205,14 +253,16 @@ function M.run(ctx, config)
         failed = failed + process_batch(ctx, config, verbose, batch_paths, failed_paths)
     end
 
-    print(config.log_prefix .. " summary: checked=" .. checked .. " skipped=" .. skipped ..
-        " failed=" .. failed)
-
-    if #failed_paths > 0 then
-        print(config.log_prefix .. " failures:")
+    local summary = config.log_prefix .. " summary: checked=" .. checked .. " skipped=" .. skipped ..
+        " failed=" .. failed
+    if failed > 0 then
+        local parts = { summary, config.log_prefix .. " failures:" }
         for _, path in ipairs(failed_paths) do
-            print("  - " .. path)
+            parts[#parts + 1] = "  - " .. path
         end
+        log_failure(ctx, table.concat(parts, "\n"))
+    elseif verbose then
+        print(summary)
     end
 
     if failed > 0 then

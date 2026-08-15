@@ -7,6 +7,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace beez::core
 {
@@ -87,6 +88,13 @@ class Context
         return verboseOutput_;
     }
 
+    using FailureLogCallback = std::function<void(std::string_view)>;
+
+    void setFailureLogCallback(FailureLogCallback callback);
+    void clearFailureLogCallback();
+
+    void logFailure(std::string_view message) const;
+
   private:
     std::filesystem::path projectRoot_;
     std::optional<std::string> buildScriptFileName_;
@@ -99,6 +107,7 @@ class Context
     CacheStatsRecorder cacheStatsRecorder_;
     mutable std::optional<double> pendingWorkerDuration_;
     bool verboseOutput_ = false;
+    FailureLogCallback failureLogCallback_;
 };
 
 }  // namespace beez::core

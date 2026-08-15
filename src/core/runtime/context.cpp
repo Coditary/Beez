@@ -144,4 +144,22 @@ void Context::setVerboseOutput(const bool verbose)
     verboseOutput_ = verbose;
 }
 
+void Context::setFailureLogCallback(FailureLogCallback callback)
+{
+    failureLogCallback_ = std::move(callback);
+}
+
+void Context::clearFailureLogCallback()
+{
+    failureLogCallback_ = nullptr;
+}
+
+void Context::logFailure(const std::string_view message) const
+{
+    if (failureLogCallback_ != nullptr)
+    {
+        failureLogCallback_(message);
+    }
+}
+
 }  // namespace beez::core
