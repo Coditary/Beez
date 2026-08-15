@@ -54,7 +54,7 @@ TEST(ReqPackInstallerTest, DryRunReturnsInstallCommand)
         sampleManifest(), Context, {.dryRun = true, .forceInstall = true});
     ASSERT_FALSE(Result.skipped);
     EXPECT_TRUE(Result.success);
-    EXPECT_NE(Result.message.find("rqp --json install npm:eslint@3.2.1"), std::string::npos);
+    EXPECT_NE(Result.message.find("rqp install npm:eslint@3.2.1 --dry-run --json"), std::string::npos);
 }
 
 TEST(ReqPackInstallerTest, UsesExecuteCallbackAndParsesRqpJson)
@@ -71,7 +71,7 @@ TEST(ReqPackInstallerTest, UsesExecuteCallbackAndParsesRqpJson)
             return {.exitCode = 0, .output = SuccessRqpJson};
         });
     EXPECT_TRUE(Result.success);
-    EXPECT_EQ(capturedCommand, "rqp --json install npm:eslint@3.2.1");
+    EXPECT_EQ(capturedCommand, "rqp install npm:eslint@3.2.1 --json");
     ASSERT_TRUE(Result.response.plugins.contains("npm"));
     EXPECT_EQ(Result.response.plugins.at("npm").at(0).name, "eslint");
 }
@@ -102,7 +102,7 @@ TEST(ReqPackInstallerTest, PropagatesExecuteFailureWithoutJson)
     EXPECT_NE(Result.message.find("exit code 17"), std::string::npos);
 }
 
-TEST(ReqPackInstallerTest, RejectsInvalidRqpJsonOutput)
+TEST(ReqPackInstallerTest, SucceedsWhenRqpReturnsPlainText)
 {
     const beez::core::Context Context(std::filesystem::current_path());
     const auto Result = beez::core::installReqPackDependencies(
@@ -110,7 +110,6 @@ TEST(ReqPackInstallerTest, RejectsInvalidRqpJsonOutput)
         Context,
         {.forceInstall = true},
         [](const std::string& /*command*/) -> beez::core::RqpCommandResult
-        { return {.exitCode = 0, .output = "not-json"}; });
-    EXPECT_FALSE(Result.success);
-    EXPECT_NE(Result.message.find("failed to parse rqp json output"), std::string::npos);
+        { return {.exitCode = 0, .output = "installed eslint"}; });
+    EXPECT_TRUE(Result.success);
 }

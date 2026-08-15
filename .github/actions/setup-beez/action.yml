@@ -70,9 +70,14 @@ runs:
       run: ./scripts/ci-install-cppcheck.sh
 
     - name: Add local tools to PATH
-      if: inputs.install-cppcheck == 'true' || inputs.install-osv-scanner == 'true'
+      if: inputs.install-cppcheck == 'true' || inputs.install-osv-scanner == 'true' || inputs.install-conan == 'true'
       shell: bash
       run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: Install ReqPack
+      if: inputs.install-conan == 'true'
+      shell: bash
+      run: ./scripts/ci-install-reqpack.sh
 
     - name: Install Python tools
       shell: bash
