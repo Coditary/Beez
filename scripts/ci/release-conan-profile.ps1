@@ -14,14 +14,47 @@ $ConanArch = switch ($Arch) {
     default { throw "unsupported RELEASE_ARCH=$Arch" }
 }
 
+function Resolve-ConanVsVersion {
+    if ($env:VS_VERSION) {
+        return $env:VS_VERSION
+    }
+
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+    if (-not (Test-Path $vswhere)) {
+        throw "vswhere not found; set VS_VERSION explicitly for the Conan profile"
+    }
+
+    $productLine = (& $vswhere -latest -property catalog_productLineVersion).Trim()
+    switch ($productLine) {
+        "2022" { return "17" }
+        "18" { return "18" }
+        "2026" { return "18" }
+        default {
+            $installationVersion = (& $vswhere -latest -property installationVersion).Trim()
+            $major = $installationVersion.Split(".")[0]
+            if ($major -eq "17") { return "17" }
+            if ([int]$major -ge 18) { return "18" }
+            throw "unsupported Visual Studio product line '$productLine' (installationVersion=$installationVersion)"
+        }
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $CiDir | Out-Null
 
 if ($Platform -ne "windows") {
     throw "release-conan-profile.ps1 supports RELEASE_PLATFORM=windows only"
 }
 
-$MsvcVersion = if ($env:MSVC_VERSION) { $env:MSVC_VERSION } else { "194" }
-$VsVersion = if ($env:VS_VERSION) { $env:VS_VERSION } else { "18" }
+$VsVersion = Resolve-ConanVsVersion
+$MsvcVersion = if ($env:MSVC_VERSION) {
+    $env:MSVC_VERSION
+} elseif ($VsVersion -eq "17") {
+    "193"
+} else {
+    "194"
+}
+
+Write-Host "Using Conan VS version $VsVersion (MSVC $MsvcVersion, arch $ConanArch)"
 
 @"
 [settings]
