@@ -74,15 +74,7 @@ add_executable(
     plugin/shell/test_shell_executor.cpp
 )
 
-target_link_libraries(
-    beez_tests
-    PRIVATE GTest::gtest
-            GTest::gtest_main
-            beez_plugins
-            beez_cli
-            beez_logging
-            CLI11::CLI11
-)
+target_link_libraries(beez_tests PRIVATE GTest::gtest GTest::gtest_main beez_plugins beez_cli beez_logging CLI11::CLI11)
 
 target_include_directories(beez_tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 
