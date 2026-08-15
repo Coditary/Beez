@@ -6,7 +6,7 @@ import os
 
 class BeezConan(ConanFile):
     name = "beez"
-    version = "1.0.0"
+    version = "1.0.1"
     package_type = "application"
     license = "Apache-2.0"
     url = "https://github.com/Leodoras/Beez"
