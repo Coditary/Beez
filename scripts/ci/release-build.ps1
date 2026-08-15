@@ -10,7 +10,7 @@ $BuildTesting = if ($env:BUILD_TESTING) { $env:BUILD_TESTING } else { "OFF" }
 if (-not $env:RELEASE_PLATFORM) { $env:RELEASE_PLATFORM = "windows" }
 if (-not $env:RELEASE_ARCH) { $env:RELEASE_ARCH = "x86_64" }
 
-$ProfilePath = & bash ./scripts/ci/release-conan-profile.sh
+$ProfilePath = & (Join-Path $PSScriptRoot "release-conan-profile.ps1")
 $env:CONAN_PROFILE = $ProfilePath.Trim()
 
 Write-Host "Using Conan profile at $env:CONAN_PROFILE"
