@@ -14,7 +14,7 @@ function M.compile(ctx, step_name)
 
     local step_cfg = ctx.get_config()
     if step_cfg == nil then
-        error("clang-build compile step config is missing")
+        error("clang compile step config is missing")
     end
 
     local cfg = config.resolve(step_cfg, profile_name, ctx.project_root)
@@ -38,7 +38,7 @@ function M.link(ctx, step_name)
 
     local step_cfg = ctx.get_config()
     if step_cfg == nil then
-        error("clang-build link step config is missing")
+        error("clang link step config is missing")
     end
 
     local cfg = config.resolve(step_cfg, profile_name, ctx.project_root)

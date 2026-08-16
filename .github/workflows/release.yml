@@ -1,0 +1,234 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  LLVM_VERSION: "22"
+
+jobs:
+  build-release:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            runner: ubuntu-24.04
+            platform: linux
+            arch: x86_64
+            python_cmd: python3
+            binary_path: build/build/Release/bin/beez
+          - name: linux-aarch64
+            runner: ubuntu-24.04-arm
+            platform: linux
+            arch: aarch64
+            python_cmd: python3
+            binary_path: build/build/Release/bin/beez
+          - name: macos-x86_64
+            runner: macos-15-intel
+            platform: macos
+            arch: x86_64
+            python_cmd: python3
+            binary_path: build/build/Release/bin/beez
+          - name: macos-aarch64
+            runner: macos-15
+            platform: macos
+            arch: aarch64
+            python_cmd: python3
+            binary_path: build/build/Release/bin/beez
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Beez toolchain (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/setup-beez
+        with:
+          install-cppcheck: "false"
+          install-cmakelang: "false"
+
+      - name: Install Linux packaging prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends zstd
+
+      - name: Install macOS prerequisites
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_UPGRADE: 1
+        run: |
+          set -euo pipefail
+          missing=()
+          command -v ninja >/dev/null || missing+=(ninja)
+          command -v zstd >/dev/null || missing+=(zstd)
+          command -v cmake >/dev/null || missing+=(cmake)
+          if ((${#missing[@]} > 0)); then
+            brew install "${missing[@]}"
+          fi
+          pipx install conan
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build release binary
+        env:
+          RELEASE_PLATFORM: ${{ matrix.platform }}
+          RELEASE_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/ci/release-build.sh scripts/ci/release-conan-profile.sh
+          ./scripts/ci/release-build.sh
+
+      - name: Package release artifact
+        run: |
+          set -euo pipefail
+          ${{ matrix.python_cmd }} scripts/ci/package_binary.py \
+            --version "$GITHUB_REF_NAME" \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}" \
+            --binary "${{ matrix.binary_path }}" \
+            --output-dir dist
+
+      - name: Package ReqPack artifact
+        run: |
+          set -euo pipefail
+          ${{ matrix.python_cmd }} scripts/ci/package_reqpack.py \
+            --version "$GITHUB_REF_NAME" \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}" \
+            --binary "${{ matrix.binary_path }}" \
+            --output-dir dist
+
+      - name: Package Beez plugins
+        run: |
+          set -euo pipefail
+          lua scripts/ci/package_all_plugins.lua \
+            --version "$GITHUB_REF_NAME" \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}" \
+            --output-dir dist/plugins
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/*.tar.gz
+            dist/*.rqp
+            dist/plugins/*.rqp
+          if-no-files-found: error
+
+  release:
+    needs: build-release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: Build ReqPack repository index
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/build_reqpack_index.py --dist-dir dist --output dist/index.json
+          lua scripts/ci/build_plugin_index.lua --dist-dir dist/plugins --output dist/plugins/index.json
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="$(mktemp)"
+          cat > "${NOTES_FILE}" <<EOF
+          Automated release for Beez ${VERSION}.
+
+          ## Assets
+          - Platform binaries (\`.tar.gz\`) for Linux and macOS
+          - ReqPack CLI packages (\`beez-cli-*.rqp\`) for Linux and macOS
+          - ReqPack plugin packages (\`coditary-*.rqp\`) and plugin index (\`plugins/index.json\`)
+          - ReqPack repository index (\`index.json\`)
+          - Container image: \`ghcr.io/coditary/beez:${VERSION}\`
+          EOF
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GH_REPO" --title "Beez ${VERSION}" --notes-file "${NOTES_FILE}"
+          fi
+          gh release edit "$GITHUB_REF_NAME" --repo "$GH_REPO" --draft=false --latest --title "Beez ${VERSION}" --notes-file "${NOTES_FILE}"
+          shopt -s nullglob
+          assets=(dist/*.tar.gz dist/*.rqp dist/index.json dist/plugins/*.rqp dist/plugins/index.json)
+          if ((${#assets[@]} == 0)); then
+            echo "No release assets found in dist/." >&2
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --repo "$GH_REPO" --clobber
+
+  docker:
+    needs: build-release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          IMAGE_NAME=$(printf '%s' "ghcr.io/coditary/beez" | tr '[:upper:]' '[:lower:]')
+          VERSION="${GITHUB_REF_NAME#v}"
+          CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "created=${CREATED}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Enable QEMU
+        run: |
+          set -euo pipefail
+          docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64
+
+      - name: Create buildx builder
+        run: |
+          set -euo pipefail
+          docker buildx create --name beez-builder --use
+          docker buildx inspect --bootstrap
+
+      - name: Build and push Docker image
+        run: |
+          set -euo pipefail
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg BEEZ_VERSION="${{ steps.meta.outputs.version }}" \
+            --build-arg BUILD_DATE="${{ steps.meta.outputs.created }}" \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            -t "${{ steps.meta.outputs.image_name }}:${{ steps.meta.outputs.version }}" \
+            -t "${{ steps.meta.outputs.image_name }}:${GITHUB_REF_NAME}" \
+            -t "${{ steps.meta.outputs.image_name }}:latest" \
+            --push .

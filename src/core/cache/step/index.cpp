@@ -221,7 +221,7 @@ void writeCacheIndex(const std::filesystem::path& indexPath,
     for (const auto& stamp : entry.inputs)
     {
         stream << "input=" << stamp.path << '\t' << stamp.size << '\t'
-               << stamp.modified.time_since_epoch().count() << '\n';
+               << static_cast<std::int64_t>(stamp.modified.time_since_epoch().count()) << '\n';
     }
     for (const auto& output : entry.outputs)
     {

@@ -8,8 +8,8 @@
 
 TEST(StepReferenceTest, FormatsQualifiedReference)
 {
-    EXPECT_EQ(beez::core::formatQualifiedStepRef("coditary", "clang-build", "compile:code"),
-              "coditary/clang-build:compile:code");
+    EXPECT_EQ(beez::core::formatQualifiedStepRef("coditary", "clang", "compile:code"),
+              "coditary/clang:compile:code");
 }
 
 TEST(StepReferenceTest, FormatsShortPluginReference)
@@ -19,10 +19,10 @@ TEST(StepReferenceTest, FormatsShortPluginReference)
 
 TEST(StepReferenceTest, ParsesQualifiedReferenceWithColonInStepName)
 {
-    const auto Parsed = beez::core::parseQualifiedStepRef("coditary/clang-build:compile:code");
+    const auto Parsed = beez::core::parseQualifiedStepRef("coditary/clang:compile:code");
     ASSERT_TRUE(Parsed.has_value());
     EXPECT_EQ(Parsed->organization, "coditary");
-    EXPECT_EQ(Parsed->plugin, "clang-build");
+    EXPECT_EQ(Parsed->plugin, "clang");
     EXPECT_EQ(Parsed->stepName, "compile:code");
 }
 
@@ -51,18 +51,18 @@ TEST(StepReferenceTest, ParsesShortPluginReference)
 
 TEST(StepReferenceTest, SplitsVersionSuffix)
 {
-    const auto [Base, Version] = beez::core::splitStepReferenceVersion("clang-build:compile@1.0.0");
-    EXPECT_EQ(Base, "clang-build:compile");
+    const auto [Base, Version] = beez::core::splitStepReferenceVersion("clang:compile@1.0.0");
+    EXPECT_EQ(Base, "clang:compile");
     ASSERT_TRUE(Version.has_value());
     EXPECT_EQ(*Version, "1.0.0");
 }
 
 TEST(StepReferenceTest, ParsesQualifiedReferenceWithVersionSuffix)
 {
-    const auto Parsed = beez::core::parseQualifiedStepRef("coditary/clang-build:compile@1.0.0");
+    const auto Parsed = beez::core::parseQualifiedStepRef("coditary/clang:compile@1.0.0");
     ASSERT_TRUE(Parsed.has_value());
     EXPECT_EQ(Parsed->organization, "coditary");
-    EXPECT_EQ(Parsed->plugin, "clang-build");
+    EXPECT_EQ(Parsed->plugin, "clang");
     EXPECT_EQ(Parsed->stepName, "compile");
     ASSERT_TRUE(Parsed->version.has_value());
     EXPECT_EQ(*Parsed->version, "1.0.0");

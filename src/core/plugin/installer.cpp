@@ -3,6 +3,7 @@
 #include "beez/core/plugin/paths.hpp"
 #include "beez/core/reqpack/installer.hpp"
 #include "beez/core/util/expected.hpp"
+#include "beez/plugin/lua/dsl/plugin_loader.hpp"
 
 #include <filesystem>
 #include <optional>
@@ -13,10 +14,35 @@
 namespace beez::core
 {
 
+namespace
+{
+
+[[nodiscard]] std::string shellQuote(const std::string& value)
+{
+    std::string quoted = "'";
+    for (const char character : value)
+    {
+        if (character == '\'')
+        {
+            quoted += "'\\''";
+        }
+        else
+        {
+            quoted += character;
+        }
+    }
+    quoted += '\'';
+    return quoted;
+}
+
+}  // namespace
+
 std::string formatBeezPluginInstallArg(const std::string& organization,
                                        const std::string& name,
-                                       const std::string& version)
+                                       const std::string& version,
+                                       const std::optional<std::string>& source)
 {
+    static_cast<void>(source);
     return "beez:" + organization + '/' + name + '@' + version;
 }
 
@@ -78,7 +104,8 @@ std::optional<std::string> resolveInstalledBeezPluginOrganization(const std::str
 
 BeezPluginInstallResult ensureBeezPluginInstalled(const std::optional<std::string>& organization,
                                                   const std::string& name,
-                                                  const std::string& version)
+                                                  const std::string& version,
+                                                  const std::optional<std::string>& source)
 {
     if (resolveInstalledBeezPluginScript(organization, name, version).hasValue())
     {
@@ -91,6 +118,11 @@ BeezPluginInstallResult ensureBeezPluginInstalled(const std::optional<std::strin
                 .message = "beez plugin version pin requires organization/plugin reference"};
     }
 
+    if (version.empty())
+    {
+        return {.installed = false, .message = "beez plugin install requires a version pin"};
+    }
+
     if (!isRqpAvailable())
     {
         return {.installed = false,
@@ -99,8 +131,14 @@ BeezPluginInstallResult ensureBeezPluginInstalled(const std::optional<std::strin
                            "install.sh | sh\n"};
     }
 
-    const auto InstallArg = formatBeezPluginInstallArg(*organization, name, version);
-    const auto CommandResult = executeRqpCommand("rqp --json install " + InstallArg);
+    std::ostringstream command;
+    if (source.has_value() && !source->empty())
+    {
+        command << "BEEZ_PLUGIN_SOURCE=" << shellQuote(*source) << ' ';
+    }
+    command << "rqp --json install " << formatBeezPluginInstallArg(*organization, name, version);
+
+    const auto CommandResult = executeRqpCommand(command.str());
     if (CommandResult.exitCode != 0)
     {
         std::ostringstream stream;
@@ -118,6 +156,40 @@ BeezPluginInstallResult ensureBeezPluginInstalled(const std::optional<std::strin
         return {.installed = false,
                 .message = "beez plugin '" + *organization + '/' + name + '@' + version +
                            "' is not available after install"};
+    }
+
+    return {.installed = true, .message = {}};
+}
+
+BeezPluginInstallResult ensureReqpackBeezPluginsInstalled(
+    const std::vector<plugin::lua::BeezPluginRef>& plugins)
+{
+    for (const auto& pluginRef : plugins)
+    {
+        if (pluginRef.isLocal())
+        {
+            continue;
+        }
+
+        if (!pluginRef.version.has_value() || pluginRef.version->empty())
+        {
+            return {.installed = false,
+                    .message = "remote reqpack.beez plugin '" + pluginRef.organization + '/' +
+                               pluginRef.name + "' requires a version pin"};
+        }
+
+        const auto Result = ensureBeezPluginInstalled(pluginRef.organization,
+                                                      pluginRef.name,
+                                                      *pluginRef.version,
+                                                      pluginRef.source);
+        if (!Result.message.empty() &&
+            (Result.message.find("failed to install") != std::string::npos ||
+             Result.message.find("is not available after install") != std::string::npos ||
+             Result.message.find("requires a version pin") != std::string::npos ||
+             Result.message.find("ReqPack (rqp) is required") != std::string::npos))
+        {
+            return Result;
+        }
     }
 
     return {.installed = true, .message = {}};

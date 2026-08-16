@@ -82,6 +82,11 @@ const core::ReqPackManifest& LuaDslLoader::reqpackManifest() const
     return impl_->reqpackManifest;
 }
 
+const ReqpackBeezPluginCatalog& LuaDslLoader::reqpackBeezPlugins() const
+{
+    return impl_->reqpackBeezPlugins;
+}
+
 void LuaDslLoader::setGcThroughputMode(bool enable)
 {
     if (impl_->luaState == nullptr)

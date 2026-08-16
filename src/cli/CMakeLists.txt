@@ -9,11 +9,18 @@ find_package(
 set(COMPLETION_EMBEDDED_CPP "${CMAKE_CURRENT_BINARY_DIR}/completion_embedded.cpp")
 set(COMPLETION_SOURCE_DIR "${CMAKE_SOURCE_DIR}/scripts/completions")
 
+find_program(BEEZ_CLANG_FORMAT NAMES clang-format clang-format.exe)
+if(BEEZ_CLANG_FORMAT)
+    set(BEEZ_COMPLETION_POST_GEN COMMAND ${BEEZ_CLANG_FORMAT} -i "${COMPLETION_EMBEDDED_CPP}")
+else()
+    set(BEEZ_COMPLETION_POST_GEN COMMAND ${CMAKE_COMMAND} -E true)
+endif()
+
 add_custom_command(
     OUTPUT "${COMPLETION_EMBEDDED_CPP}"
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/generate-completion-embedded.py"
             "${COMPLETION_SOURCE_DIR}" "${COMPLETION_EMBEDDED_CPP}"
-    COMMAND clang-format -i "${COMPLETION_EMBEDDED_CPP}"
+    ${BEEZ_COMPLETION_POST_GEN}
     DEPENDS "${CMAKE_SOURCE_DIR}/scripts/generate-completion-embedded.py" "${COMPLETION_SOURCE_DIR}/beez.bash"
             "${COMPLETION_SOURCE_DIR}/beez.zsh" "${COMPLETION_SOURCE_DIR}/activate.bash"
             "${COMPLETION_SOURCE_DIR}/activate.zsh" "${COMPLETION_SOURCE_DIR}/install-lib.sh"

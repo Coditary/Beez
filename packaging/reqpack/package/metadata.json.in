@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "name": "beez-cli",
+  "version": @VERSION@,
+  "release": 1,
+  "revision": 0,
+  "summary": "Beez build and task orchestrator",
+  "description": "Build and task orchestrator with Lua DSL, caching, parallel execution, and bundled Beez plugin manager.",
+  "license": "Apache-2.0",
+  "architecture": @ARCHITECTURE@,
+  "system": [@SYSTEM@],
+  "vendor": "Coditary",
+  "maintainerEmail": "Matographo@gmail.com",
+  "url": @URL@,
+  "homepage": "https://github.com/Coditary/Beez",
+  "sourceUrl": "https://github.com/Coditary/Beez",
+  "buildDate": @BUILD_DATE@,
+  "tags": ["cli", "build", "orchestrator", "beez"],
+  "binaries": ["beez"],
+  "payload": {
+    "path": "payload/payload.tar.zst",
+    "archive": "tar",
+    "compression": "zstd",
+    "hashAlgorithm": "sha256",
+    "hashFile": "hashes/payload.sha256",
+    "sizeCompressed": @SIZE_COMPRESSED@,
+    "sizeInstalledExpected": @SIZE_INSTALLED_EXPECTED@
+  }
+}

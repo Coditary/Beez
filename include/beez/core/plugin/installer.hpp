@@ -1,10 +1,12 @@
 #pragma once
 
 #include "beez/core/util/expected.hpp"
+#include "beez/plugin/lua/dsl/plugin_loader.hpp"
 
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace beez::core
 {
@@ -17,7 +19,8 @@ struct BeezPluginInstallResult
 
 [[nodiscard]] std::string formatBeezPluginInstallArg(const std::string& organization,
                                                      const std::string& name,
-                                                     const std::string& version);
+                                                     const std::string& version,
+                                                     const std::optional<std::string>& source = std::nullopt);
 
 [[nodiscard]] Expected<std::filesystem::path, std::string>
 resolveInstalledBeezPluginScript(const std::optional<std::string>& organization,
@@ -30,6 +33,10 @@ resolveInstalledBeezPluginOrganization(const std::string& name, const std::strin
 [[nodiscard]] BeezPluginInstallResult
 ensureBeezPluginInstalled(const std::optional<std::string>& organization,
                           const std::string& name,
-                          const std::string& version);
+                          const std::string& version,
+                          const std::optional<std::string>& source = std::nullopt);
+
+[[nodiscard]] BeezPluginInstallResult ensureReqpackBeezPluginsInstalled(
+    const std::vector<plugin::lua::BeezPluginRef>& plugins);
 
 }  // namespace beez::core

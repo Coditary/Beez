@@ -3,8 +3,10 @@
 #include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 
 #include <charconv>
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -41,6 +43,25 @@ namespace
     return false;
 }
 
+[[nodiscard]] bool parseDouble(const std::string& text, double& output)
+{
+#if defined(__APPLE__)
+    errno = 0;
+    char* end = nullptr;
+    const double value = std::strtod(text.c_str(), &end);
+    if (errno == ERANGE || end == text.c_str() ||
+        static_cast<std::size_t>(end - text.c_str()) != text.size())
+    {
+        return false;
+    }
+    output = value;
+    return true;
+#else
+    const auto result = std::from_chars(text.data(), text.data() + text.size(), output);
+    return result.ec == std::errc();
+#endif
+}
+
 [[nodiscard]] bool
 parseNumber(const ryml::csubstr Value, sol::state_view luaState, sol::object& output)
 {
@@ -49,13 +70,12 @@ parseNumber(const ryml::csubstr Value, sol::state_view luaState, sol::object& ou
         Text.find('E') != std::string::npos)
     {
         double number = 0.0;
-        const auto Result = std::from_chars(Text.data(), Text.data() + Text.size(), number);
-        if (Result.ec == std::errc())
+        if (!parseDouble(Text, number))
         {
-            output = sol::make_object(luaState, number);
-            return true;
+            return false;
         }
-        return false;
+        output = sol::make_object(luaState, number);
+        return true;
     }
 
     std::int64_t integer = 0;

@@ -426,17 +426,17 @@ TEST(RegistryTest, ResolvesVersionedPluginStepReference)
     compileStep.scope = "code";
     compileStep.shellRun = "echo versioned";
     registry.registerPluginStep(
-        std::move(compileStep), "coditary", "clang-build", std::string {"1.0.0"});
+        std::move(compileStep), "coditary", "clang", std::string {"1.0.0"});
 
-    const auto Resolved = registry.resolveStep("clang-build:compile@1.0.0");
+    const auto Resolved = registry.resolveStep("clang:compile@1.0.0");
     ASSERT_TRUE(Resolved.hasValue());
     EXPECT_EQ(Resolved.value().shellRun.value_or(""), "echo versioned");
 
-    const auto Qualified = registry.resolveStep("coditary/clang-build:compile@1.0.0");
+    const auto Qualified = registry.resolveStep("coditary/clang:compile@1.0.0");
     ASSERT_TRUE(Qualified.hasValue());
     EXPECT_EQ(Qualified.value().shellRun.value_or(""), "echo versioned");
 
-    const auto Unversioned = registry.resolveStep("clang-build:compile");
+    const auto Unversioned = registry.resolveStep("clang:compile");
     ASSERT_TRUE(Unversioned.hasValue());
     EXPECT_EQ(Unversioned.value().shellRun.value_or(""), "echo versioned");
 }
@@ -451,12 +451,12 @@ TEST(RegistryTest, InstalledPluginVersionKeepsVersionedAliasesOnly)
     compileStep.scope = "code";
     compileStep.shellRun = "echo versioned";
     registry.registerPluginStep(
-        std::move(compileStep), "coditary", "clang-build", std::string {"1.0.0"}, false);
+        std::move(compileStep), "coditary", "clang", std::string {"1.0.0"}, false);
 
-    const auto Versioned = registry.resolveStep("clang-build:compile@1.0.0");
+    const auto Versioned = registry.resolveStep("clang:compile@1.0.0");
     ASSERT_TRUE(Versioned.hasValue());
 
-    const auto Unversioned = registry.resolveStep("clang-build:compile");
+    const auto Unversioned = registry.resolveStep("clang:compile");
     EXPECT_FALSE(Unversioned.hasValue());
 }
 
@@ -469,18 +469,18 @@ TEST(RegistryTest, UniquePluginStepKeepsShortNameAlias)
     compileStep.phase = "build";
     compileStep.scope = "code";
     compileStep.shellRun = "echo compile";
-    registry.registerPluginStep(std::move(compileStep), "coditary", "clang-build");
+    registry.registerPluginStep(std::move(compileStep), "coditary", "clang");
 
     const auto Resolved = registry.resolveStep("compile:code");
     ASSERT_TRUE(Resolved.hasValue());
     ASSERT_TRUE(Resolved.value().hasShellRun());
     EXPECT_EQ(Resolved.value().shellRun.value_or(""), "echo compile");
 
-    const auto PluginAction = registry.resolveStep("clang-build:compile");
+    const auto PluginAction = registry.resolveStep("clang:compile");
     ASSERT_TRUE(PluginAction.hasValue());
     EXPECT_EQ(PluginAction.value().shellRun.value_or(""), "echo compile");
 
-    const auto QualifiedAction = registry.resolveStep("coditary/clang-build:compile");
+    const auto QualifiedAction = registry.resolveStep("coditary/clang:compile");
     ASSERT_TRUE(QualifiedAction.hasValue());
     EXPECT_EQ(QualifiedAction.value().shellRun.value_or(""), "echo compile");
 }

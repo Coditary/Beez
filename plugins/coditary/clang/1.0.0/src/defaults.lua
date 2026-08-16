@@ -8,7 +8,7 @@ M.fuzz_build_tree = "build/build/Fuzz"
 M.fuzzer_bin = M.fuzz_build_tree .. "/fuzz/fuzz_lua_dsl"
 M.coverage_stamp = M.coverage_build_tree .. "/.beez-coverage-configured"
 
-M.index_script = "plugins/coditary/clang-build/1.0.0/scripts/compdb_index.py"
+M.index_script = "plugins/coditary/clang/1.0.0/scripts/compdb_index.py"
 M.python_binary = "python3"
 
 M.log_prefix_compile = "[clang-compile]"
