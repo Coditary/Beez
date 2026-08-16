@@ -2,8 +2,8 @@
 
 #include "beez/core/registry/registry.hpp"
 #include "beez/core/runtime/context.hpp"
+#include "beez/plugin/lua/beez_plugin_ref.hpp"
 
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -13,26 +13,6 @@
 
 namespace beez::plugin::lua
 {
-
-struct BeezPluginRef
-{
-    std::string organization;
-    std::string name;
-    std::optional<std::string> path;
-    std::optional<std::string> version;
-    std::optional<std::string> source;
-    bool fromInstalledCache = false;
-
-    [[nodiscard]] bool isLocal() const
-    {
-        return path.has_value() && !path->empty();
-    }
-
-    [[nodiscard]] bool isRemote() const
-    {
-        return !isLocal();
-    }
-};
 
 [[nodiscard]] std::vector<BeezPluginRef> parseBeezPluginTable(const sol::table& table);
 

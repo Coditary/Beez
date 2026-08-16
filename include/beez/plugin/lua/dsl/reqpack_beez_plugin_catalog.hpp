@@ -1,6 +1,6 @@
 #pragma once
 
-#include "beez/plugin/lua/dsl/plugin_loader.hpp"
+#include "beez/plugin/lua/beez_plugin_ref.hpp"
 
 #include <optional>
 #include <string>

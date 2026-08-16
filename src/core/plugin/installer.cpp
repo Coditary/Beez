@@ -3,7 +3,7 @@
 #include "beez/core/plugin/paths.hpp"
 #include "beez/core/reqpack/installer.hpp"
 #include "beez/core/util/expected.hpp"
-#include "beez/plugin/lua/dsl/plugin_loader.hpp"
+#include "beez/plugin/lua/beez_plugin_ref.hpp"
 
 #include <filesystem>
 #include <optional>
