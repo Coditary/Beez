@@ -10,7 +10,7 @@ reqpack {
         { name = "coditary/ctest",        path = "./plugins/coditary/ctest",        version = "1.0.0" },
         { name = "coditary/coverage",     path = "./plugins/coditary/coverage",     version = "1.0.0" },
         { name = "coditary/fuzzer",       path = "./plugins/coditary/fuzzer",       version = "1.0.0" },
-        { name = "coditary/clang-build",  path = "./plugins/coditary/clang-build",  version = "1.0.0" },
+        { name = "coditary/clang",  path = "./plugins/coditary/clang",  version = "1.0.0" },
         { name = "coditary/pipeline",     path = "./plugins/coditary/pipeline",     version = "1.0.0" },
     },
 }
@@ -37,21 +37,21 @@ configure({
     { "coditary/ctest", { reports_dir = REPORTS_DIR, test_rev = "4" } },
     { "coditary/coverage", { report_rev = "1" } },
     { "coditary/fuzzer", { fuzz_rev = "4" } },
-    { "coditary/clang-build", { compile_rev = "4", link_rev = "10" } },
+    { "coditary/clang", { compile_rev = "4", link_rev = "10" } },
 })
 
 -- ── Tasks ────────────────────────────────────────────────────────────────────
 
 task("debug", {
     { plugin = "coditary/conan", step = "configure[debug]" },
-    { plugin = "coditary/clang-build", step = "compile[debug]" },
-    { plugin = "coditary/clang-build", step = "link[debug]" },
+    { plugin = "coditary/clang", step = "compile[debug]" },
+    { plugin = "coditary/clang", step = "link[debug]" },
 })
 
 task("fuzzer", {
     { plugin = "coditary/conan", step = "configure[fuzzer]" },
-    { plugin = "coditary/clang-build", step = "compile[fuzzer]" },
-    { plugin = "coditary/clang-build", step = "link[fuzzer]" },
+    { plugin = "coditary/clang", step = "compile[fuzzer]" },
+    { plugin = "coditary/clang", step = "link[fuzzer]" },
 })
 
 task("clean_reports", "rm -rf " .. REPORTS_DIR)

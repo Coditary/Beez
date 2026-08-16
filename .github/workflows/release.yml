@@ -110,6 +110,15 @@ jobs:
             --binary "${{ matrix.binary_path }}" \
             --output-dir dist
 
+      - name: Package Beez plugins
+        run: |
+          set -euo pipefail
+          lua scripts/ci/package_all_plugins.lua \
+            --version "$GITHUB_REF_NAME" \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}" \
+            --output-dir dist/plugins
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
@@ -117,6 +126,7 @@ jobs:
           path: |
             dist/*.tar.gz
             dist/*.rqp
+            dist/plugins/*.rqp
           if-no-files-found: error
 
   release:
@@ -139,6 +149,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/ci/build_reqpack_index.py --dist-dir dist --output dist/index.json
+          lua scripts/ci/build_plugin_index.lua --dist-dir dist/plugins --output dist/plugins/index.json
 
       - name: Publish GitHub release
         env:
@@ -153,7 +164,8 @@ jobs:
 
           ## Assets
           - Platform binaries (\`.tar.gz\`) for Linux and macOS
-          - ReqPack packages (\`.rqp\`) for Linux and macOS
+          - ReqPack CLI packages (\`beez-cli-*.rqp\`) for Linux and macOS
+          - ReqPack plugin packages (\`coditary-*.rqp\`) and plugin index (\`plugins/index.json\`)
           - ReqPack repository index (\`index.json\`)
           - Container image: \`ghcr.io/coditary/beez:${VERSION}\`
           EOF
@@ -162,7 +174,7 @@ jobs:
           fi
           gh release edit "$GITHUB_REF_NAME" --repo "$GH_REPO" --draft=false --latest --title "Beez ${VERSION}" --notes-file "${NOTES_FILE}"
           shopt -s nullglob
-          assets=(dist/*.tar.gz dist/*.rqp dist/index.json)
+          assets=(dist/*.tar.gz dist/*.rqp dist/index.json dist/plugins/*.rqp dist/plugins/index.json)
           if ((${#assets[@]} == 0)); then
             echo "No release assets found in dist/." >&2
             exit 1

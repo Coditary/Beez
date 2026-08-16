@@ -2,6 +2,7 @@
 
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/cli/session.hpp"
+#include "beez/core/plugin/installer.hpp"
 #include "beez/core/reqpack/installer.hpp"
 #include "beez/plugin/lua/lua_dsl.hpp"
 
@@ -47,6 +48,21 @@ namespace
 std::optional<int> runReqPackInstallCommand(const LoadedProject& project,
                                             const ParsedOptions& options)
 {
+    const auto BeezPluginResult = core::ensureReqpackBeezPluginsInstalled(
+        project.luaLoader->reqpackBeezPlugins().plugins());
+    if (!BeezPluginResult.message.empty() &&
+        (BeezPluginResult.message.find("failed to install") != std::string::npos ||
+         BeezPluginResult.message.find("is not available after install") != std::string::npos ||
+         BeezPluginResult.message.find("requires a version pin") != std::string::npos ||
+         BeezPluginResult.message.find("ReqPack (rqp) is required") != std::string::npos))
+    {
+        if (!options.silent)
+        {
+            std::cerr << BeezPluginResult.message << '\n';
+        }
+        return 1;
+    }
+
     const auto Result = core::installReqPackDependencies(
         project.luaLoader->reqpackManifest(), project.context, makeInstallOptions(options));
     if (const auto ExitCode = handleInstallResult(Result, options.silent))

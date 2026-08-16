@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 
-PACKAGE_NAME = "beez"
+PACKAGE_NAME = "beez-cli"
 RUNTIME_PATTERNS = {
     "linux": ["*.so", "*.so.*"],
     "macos": ["*.dylib"],
@@ -28,6 +28,16 @@ SYSTEM_BY_PLATFORM = {
 VENDOR = "Coditary"
 MAINTAINER_EMAIL = "Matographo@gmail.com"
 HOMEPAGE = "https://github.com/Coditary/Beez"
+DEFAULT_PLUGIN_REGISTRY_URL = "https://raw.githubusercontent.com/Coditary/beez-registry/main/plugins.json"
+
+PLUGIN_RUNTIME_FILES = (
+    "metadata.json",
+    "reqpack.lua",
+    "run.lua",
+    "default-plugin-repositories.json",
+    "scripts/install.lua",
+    "scripts/remove.lua",
+)
 
 
 def normalized_version(raw: str) -> str:
@@ -84,6 +94,31 @@ def render_template(template_path: Path, output_path: Path, replacements: dict[s
     output_path.write_text(content, encoding="utf-8")
 
 
+def copy_plugin_runtime(plugin_root: Path, payload_plugin_dir: Path) -> None:
+    for relative_path in PLUGIN_RUNTIME_FILES:
+        source_path = plugin_root / relative_path
+        if not source_path.is_file():
+            raise FileNotFoundError(f"plugin runtime file not found: {source_path}")
+        target_path = payload_plugin_dir / relative_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path)
+
+
+def write_packaged_default_plugin_repositories(target_path: Path) -> None:
+    payload = {
+        "schemaVersion": 1,
+        "repositories": [
+            {
+                "id": "beez-default",
+                "url": DEFAULT_PLUGIN_REGISTRY_URL,
+                "priority": 0,
+                "enabled": True,
+            }
+        ],
+    }
+    target_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def copy_template_tree(template_root: Path, control_root: Path) -> None:
     for source_path in sorted(template_root.rglob("*")):
         relative_path = source_path.relative_to(template_root)
@@ -133,7 +168,7 @@ def build_metadata(version: str, platform: str, arch: str, archive_name: str, si
         "release": 1,
         "revision": 0,
         "summary": "Beez build and task orchestrator",
-        "description": "Build and task orchestrator with Lua DSL, caching, and parallel execution.",
+        "description": "Build and task orchestrator with Lua DSL, caching, parallel execution, and bundled Beez plugin manager.",
         "license": "Apache-2.0",
         "architecture": arch,
         "system": [SYSTEM_BY_PLATFORM[platform]],
@@ -238,6 +273,7 @@ def main() -> int:
 
     repo_root = Path(__file__).resolve().parents[2]
     template_root = repo_root / "packaging" / "reqpack" / "package"
+    plugin_root = repo_root
     output_dir = (repo_root / args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -258,7 +294,8 @@ def main() -> int:
         temp_root = Path(temp_dir)
         payload_root = temp_root / "payload-tree"
         payload_bin_dir = payload_root / "bin"
-        payload_doc_dir = payload_root / "share" / "doc" / PACKAGE_NAME
+        payload_doc_dir = payload_root / "share" / "doc" / "beez"
+        payload_plugin_dir = payload_root / "share" / "reqpack" / "plugins" / "beez"
         control_root = temp_root / "control"
         control_scripts_dir = control_root / "scripts"
         control_hashes_dir = control_root / "hashes"
@@ -266,15 +303,18 @@ def main() -> int:
 
         payload_bin_dir.mkdir(parents=True, exist_ok=True)
         payload_doc_dir.mkdir(parents=True, exist_ok=True)
+        payload_plugin_dir.mkdir(parents=True, exist_ok=True)
         control_hashes_dir.mkdir(parents=True, exist_ok=True)
         control_payload_dir.mkdir(parents=True, exist_ok=True)
         copy_template_tree(template_root, control_root)
 
-        binary_target = payload_bin_dir / PACKAGE_NAME
+        binary_target = payload_bin_dir / "beez"
         shutil.copy2(binary_path, binary_target)
         import_runtime_libs_from_binary_package(binary_path, payload_bin_dir, args.platform)
         for doc_name in ("README.md", "LICENSE"):
             shutil.copy2(repo_root / doc_name, payload_doc_dir / doc_name)
+        copy_plugin_runtime(plugin_root, payload_plugin_dir)
+        write_packaged_default_plugin_repositories(payload_plugin_dir / "default-plugin-repositories.json")
 
         write_payload_manifest(payload_root, control_scripts_dir / "payload_files.lua")
 

@@ -47,7 +47,7 @@ namespace
     if (!entry.is<sol::table>())
     {
         throw std::runtime_error(
-            "reqpack.beez entries must be tables with name, path, and optional version");
+            "reqpack.beez entries must be tables with name and either path or version");
     }
 
     const sol::table PluginTable = entry.as<sol::table>();
@@ -57,17 +57,20 @@ namespace
         throw std::runtime_error("reqpack.beez plugin entry requires string name");
     }
 
-    const sol::object PathObject = PluginTable["path"];
-    if (!PathObject.is<std::string>() || PathObject.as<std::string>().empty())
-    {
-        throw std::runtime_error("reqpack.beez plugin entry requires string path");
-    }
-
     BeezPluginRef pluginRef;
     const auto [Organization, PluginName] = splitPluginName(NameObject.as<std::string>());
     pluginRef.organization = Organization;
     pluginRef.name = PluginName;
-    pluginRef.path = PathObject.as<std::string>();
+
+    const sol::object PathObject = PluginTable["path"];
+    if (PathObject.valid() && PathObject.get_type() != sol::type::lua_nil)
+    {
+        if (!PathObject.is<std::string>())
+        {
+            throw std::runtime_error("reqpack.beez plugin path must be a string");
+        }
+        pluginRef.path = PathObject.as<std::string>();
+    }
 
     const sol::object VersionObject = PluginTable["version"];
     if (VersionObject.valid() && VersionObject.get_type() != sol::type::lua_nil)
@@ -77,6 +80,22 @@ namespace
             throw std::runtime_error("reqpack.beez plugin version must be a string");
         }
         pluginRef.version = VersionObject.as<std::string>();
+    }
+
+    const sol::object SourceObject = PluginTable["source"];
+    if (SourceObject.valid() && SourceObject.get_type() != sol::type::lua_nil)
+    {
+        if (!SourceObject.is<std::string>())
+        {
+            throw std::runtime_error("reqpack.beez plugin source must be a string");
+        }
+        pluginRef.source = SourceObject.as<std::string>();
+    }
+
+    if (!pluginRef.isLocal() && !pluginRef.version.has_value())
+    {
+        throw std::runtime_error("remote reqpack.beez plugin '" + pluginRef.organization + '/' +
+                                 pluginRef.name + "' requires a version pin");
     }
 
     return pluginRef;
@@ -265,7 +284,13 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
 [[nodiscard]] std::filesystem::path resolvePluginScript(const BeezPluginRef& pluginRef,
                                                         const core::Context& context)
 {
-    std::filesystem::path PluginDirectory = context.projectRoot() / pluginRef.path;
+    if (!pluginRef.path.has_value())
+    {
+        throw std::runtime_error("beez plugin '" + pluginRef.organization + '/' + pluginRef.name +
+                                 "' does not have a local path");
+    }
+
+    std::filesystem::path PluginDirectory = context.projectRoot() / *pluginRef.path;
     if (pluginRef.version.has_value())
     {
         PluginDirectory /= pluginRef.version.value();
@@ -304,6 +329,11 @@ void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
 {
     for (const auto& pluginRef : plugins)
     {
+        if (!pluginRef.isLocal())
+        {
+            continue;
+        }
+
         const auto ScriptPath = resolvePluginScript(pluginRef, context);
         loadPluginScript(ScriptPath, pluginRef, registry, context);
     }

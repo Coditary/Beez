@@ -18,9 +18,20 @@ struct BeezPluginRef
 {
     std::string organization;
     std::string name;
-    std::string path;
+    std::optional<std::string> path;
     std::optional<std::string> version;
+    std::optional<std::string> source;
     bool fromInstalledCache = false;
+
+    [[nodiscard]] bool isLocal() const
+    {
+        return path.has_value() && !path->empty();
+    }
+
+    [[nodiscard]] bool isRemote() const
+    {
+        return !isLocal();
+    }
 };
 
 [[nodiscard]] std::vector<BeezPluginRef> parseBeezPluginTable(const sol::table& table);

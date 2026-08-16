@@ -23,7 +23,7 @@ function M.resolve(step_cfg, profile_name, root)
     local cfg = step_cfg or {}
     local profile = defaults.build_profiles[profile_name]
     if profile == nil then
-        error("unknown clang-build profile: " .. tostring(profile_name))
+        error("unknown clang profile: " .. tostring(profile_name))
     end
 
     local build_tree = M.resolve_build_tree(profile, cfg)

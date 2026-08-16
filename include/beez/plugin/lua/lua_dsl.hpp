@@ -4,6 +4,7 @@
 #include "beez/core/reqpack/types.hpp"
 #include "beez/plugin/contract/dsl_loader.hpp"
 #include "beez/plugin/contract/plugin.hpp"
+#include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
 
 #include <memory>
 #include <string>
@@ -29,6 +30,8 @@ class LuaDslLoader : public IDslLoader
     [[nodiscard]] const core::BeezSettings& buildSettings() const;
 
     [[nodiscard]] const core::ReqPackManifest& reqpackManifest() const;
+
+    [[nodiscard]] const ReqpackBeezPluginCatalog& reqpackBeezPlugins() const;
 
   private:
     struct Impl;

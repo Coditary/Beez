@@ -220,7 +220,7 @@ reqpack {
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
-TEST(LuaDslPluginTest, RejectsCacheOnlyPluginEntry)
+TEST(LuaDslPluginTest, AcceptsRemoteOnlyPluginEntry)
 {
     const beez::test::TempProject Project;
     Project.writeBuildLua(R"(
@@ -232,7 +232,7 @@ reqpack {
 )");
 
     beez::core::Registry registry;
-    EXPECT_FALSE(loadScript(Project, registry));
+    EXPECT_TRUE(loadScript(Project, registry));
 }
 
 TEST(LuaDslPluginTest, RejectsUnqualifiedPluginName)

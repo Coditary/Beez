@@ -82,7 +82,7 @@ for step_name, profile_name in pairs(defaults.link_step_profiles) do
     plugin_steps[step_name] = link_step_def(step_name, profile_name)
 end
 
-plugin("clang-build", {
+plugin("clang", {
     version = "1.0.0",
     description = "Clang compile and link steps from compile_commands.json",
     organization = "coditary",
