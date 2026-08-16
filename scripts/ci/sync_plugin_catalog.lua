@@ -7,7 +7,7 @@ local repo_root = util_boot.join_path(script_dir, "..", "..")
 local util = dofile(util_boot.join_path(repo_root, "packaging/reqpack/plugin/lib/util.lua"))
 
 local DEFAULT_REGISTRY_DIR = util.join_path(repo_root, "..", "beez-registry")
-local DEFAULT_INDEX_URL = "https://github.com/Coditary/Beez/releases/latest/download/plugins/index.json"
+local DEFAULT_INDEX_URL = "https://github.com/Coditary/Beez/releases/latest/download/plugins-index.json"
 local CLANG_MONOREPO_URL = "github:Coditary/beez-clang"
 local CLANG_MONOREPO_PLUGINS = {
   ["clang"] = true,

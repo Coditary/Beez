@@ -174,7 +174,7 @@ jobs:
           ## Assets
           - Platform binaries (\`.tar.gz\`) for Linux and macOS
           - ReqPack CLI packages (\`beez-cli-*.rqp\`) for Linux and macOS
-          - ReqPack plugin packages (\`coditary-*.rqp\`) and plugin index (\`plugins/index.json\`)
+          - ReqPack plugin packages (\`coditary-*.rqp\`) and plugin index (\`plugins-index.json\`)
           - ReqPack repository index (\`index.json\`)
           - Container image: \`ghcr.io/coditary/beez:${VERSION}\`
           EOF
@@ -182,13 +182,16 @@ jobs:
             gh release create "$GITHUB_REF_NAME" --repo "$GH_REPO" --title "Beez ${VERSION}" --notes-file "${NOTES_FILE}"
           fi
           gh release edit "$GITHUB_REF_NAME" --repo "$GH_REPO" --draft=false --latest --title "Beez ${VERSION}" --notes-file "${NOTES_FILE}"
+          cp -f dist/plugins/index.json dist/plugins-index.json
           shopt -s nullglob
-          assets=(dist/*.tar.gz dist/*.rqp dist/index.json dist/plugins/*.rqp dist/plugins/index.json)
+          assets=(dist/*.tar.gz dist/*.rqp dist/index.json dist/plugins/*.rqp dist/plugins-index.json)
           if ((${#assets[@]} == 0)); then
             echo "No release assets found in dist/." >&2
             exit 1
           fi
-          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --repo "$GH_REPO" --clobber
+          for asset in "${assets[@]}"; do
+            gh release upload "$GITHUB_REF_NAME" "$asset" --repo "$GH_REPO" --clobber
+          done
 
   docker:
     needs: build-release

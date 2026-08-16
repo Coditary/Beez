@@ -44,6 +44,7 @@ RUN pipx install conan
 WORKDIR /src
 COPY . .
 
+ARG TARGETARCH
 ENV RELEASE_PLATFORM=linux
 RUN case "${TARGETARCH}" in \
         amd64) export RELEASE_ARCH=x86_64 ;; \

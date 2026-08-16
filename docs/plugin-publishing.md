@@ -10,7 +10,7 @@ The plugin catalog lives in a separate repository:
 - GitHub: [Coditary/beez-registry](https://github.com/Coditary/beez-registry)
 - Catalog file: `plugins.json`
 
-The `beez` PM fetches `plugins.json` from that repo. Each entry points at the Beez release asset `plugins/index.json`, which lists platform-specific `.rqp` downloads.
+The `beez` PM fetches `plugins.json` from that repo. Each entry points at the Beez release asset `plugins-index.json`, which lists platform-specific `.rqp` downloads.
 
 Refresh the catalog after adding or changing plugins under `plugins/coditary/`:
 
