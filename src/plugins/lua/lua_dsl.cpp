@@ -33,6 +33,11 @@ LuaDslLoader::~LuaDslLoader() = default;
 
 bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 {
+    return load(context, registry, true);
+}
+
+bool LuaDslLoader::load(const core::Context& context, core::Registry& registry, bool validateRegistry)
+{
     registry.clear();
     clearPluginConfigRegistry();
     try
@@ -53,7 +58,11 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
 
         const auto ScriptPath = context.buildScriptPath().string();
         impl_->luaState->script_file(ScriptPath);
-        validateLoadedRegistry(registry, impl_->reqpackBeezPlugins);
+        registry.resolvePendingWorkflowReferences();
+        if (validateRegistry)
+        {
+            validateLoadedRegistry(registry, impl_->reqpackBeezPlugins);
+        }
         return true;
     }
     catch (const sol::error& error)

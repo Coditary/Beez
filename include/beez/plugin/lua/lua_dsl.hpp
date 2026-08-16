@@ -24,6 +24,7 @@ class LuaDslLoader : public IDslLoader
     LuaDslLoader& operator=(LuaDslLoader&&) = delete;
 
     bool load(const core::Context& context, core::Registry& registry) override;
+    bool load(const core::Context& context, core::Registry& registry, bool validateRegistry);
     void setGcThroughputMode(bool enable) override;
     void releaseState();
 

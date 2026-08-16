@@ -31,7 +31,9 @@ struct LoadedProject
 
 void loadGlobalSettings(LoadedProject& project);
 
-[[nodiscard]] std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun);
+[[nodiscard]] std::optional<int> loadBuildScript(LoadedProject& project,
+                                                 bool silentRun,
+                                                 bool validateRegistry = true);
 
 void mergeProjectSettings(LoadedProject& project, const ParsedOptions& options);
 

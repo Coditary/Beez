@@ -297,6 +297,17 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
         {
             const auto Plugins = parseBeezPluginTable(BeezObject.as<sol::table>());
             reqpackBeezPlugins.set(Plugins);
+            for (const auto& pluginRef : Plugins)
+            {
+                if (pluginRef.version.has_value())
+                {
+                    (void)tryLoadInstalledBeezPlugin(pluginRef.organization,
+                                                     pluginRef.name,
+                                                     *pluginRef.version,
+                                                     registry,
+                                                     context);
+                }
+            }
             loadBeezPlugins(Plugins, registry, context);
         }
 

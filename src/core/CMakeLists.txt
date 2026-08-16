@@ -85,4 +85,7 @@ target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/s
 
 target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB yyjson::yyjson)
 
+find_package(sol2 REQUIRED CONFIG)
+target_link_libraries(beez_core PRIVATE sol2::sol2)
+
 target_compile_features(beez_core PUBLIC cxx_std_20)

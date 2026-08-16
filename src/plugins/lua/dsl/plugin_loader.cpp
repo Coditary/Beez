@@ -345,15 +345,28 @@ void loadInstalledBeezPlugin(const std::string& organization,
                              core::Registry& registry,
                              const core::Context& context)
 {
+    if (!tryLoadInstalledBeezPlugin(organization, name, version, registry, context))
+    {
+        throw std::runtime_error("installed beez plugin '" + organization + '/' + name + '@' +
+                                 version + "' was not found");
+    }
+}
+
+bool tryLoadInstalledBeezPlugin(const std::string& organization,
+                                const std::string& name,
+                                const std::string& version,
+                                core::Registry& registry,
+                                const core::Context& context)
+{
     if (registry.hasPluginVersionLoaded(organization, name, version))
     {
-        return;
+        return true;
     }
 
     const auto ScriptResult = core::resolveInstalledBeezPluginScript(organization, name, version);
     if (!ScriptResult.hasValue())
     {
-        throw std::runtime_error(ScriptResult.error());
+        return false;
     }
 
     BeezPluginRef pluginRef;
@@ -362,6 +375,7 @@ void loadInstalledBeezPlugin(const std::string& organization,
     pluginRef.version = version;
     pluginRef.fromInstalledCache = true;
     loadPluginScript(ScriptResult.value(), pluginRef, registry, context);
+    return true;
 }
 
 }  // namespace beez::plugin::lua

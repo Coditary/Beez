@@ -115,7 +115,8 @@ int run(int argc, const char* argv[])
             return 0;
         }
 
-        if (const auto LoadError = loadBuildScript(project, silentRun))
+        if (const auto LoadError =
+                loadBuildScript(project, silentRun, !Parsed.options.installDependencies))
         {
             return *LoadError;
         }

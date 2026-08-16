@@ -267,25 +267,69 @@ void Registry::registerPluginTask(Task task,
 
 Workflow Registry::resolvePluginWorkflowReference(const std::string& reference) const
 {
+    if (const auto workflow = tryResolvePluginWorkflowReference(reference))
+    {
+        return *workflow;
+    }
+
+    throw std::runtime_error("plugin workflow reference '" + reference + "' is not defined");
+}
+
+std::optional<Workflow> Registry::tryResolvePluginWorkflowReference(const std::string& reference) const
+{
     const PluginWorkflowRef ParsedReference = parsePluginWorkflowReference(reference);
     const std::string PluginWorkflowKey = formatPluginWorkflowKey(
         ParsedReference.organization, ParsedReference.plugin, ParsedReference.workflowName);
     const auto WorkflowIterator = pluginWorkflows_.find(PluginWorkflowKey);
     if (WorkflowIterator == pluginWorkflows_.end())
     {
-        throw std::runtime_error("plugin workflow reference '" + reference + "' is not defined");
+        return std::nullopt;
     }
 
     return WorkflowIterator->second;
+}
+
+void Registry::resolvePendingWorkflowReferences()
+{
+    for (auto iterator = pendingWorkflowReferences_.begin();
+         iterator != pendingWorkflowReferences_.end();)
+    {
+        if (const auto workflow = tryResolvePluginWorkflowReference(iterator->second))
+        {
+            Workflow resolved = *workflow;
+            resolved.name = iterator->first;
+            registerWorkflow(std::move(resolved));
+            iterator = pendingWorkflowReferences_.erase(iterator);
+            continue;
+        }
+
+        ++iterator;
+    }
+}
+
+bool Registry::hasPendingWorkflowReferences() const
+{
+    return !pendingWorkflowReferences_.empty();
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void Registry::registerWorkflowFromPluginReference(const std::string& localName,
                                                    const std::string& pluginWorkflowReference)
 {
-    Workflow workflow = resolvePluginWorkflowReference(pluginWorkflowReference);
-    workflow.name = localName;
-    registerWorkflow(std::move(workflow));
+    if (const auto workflow = tryResolvePluginWorkflowReference(pluginWorkflowReference))
+    {
+        Workflow resolved = *workflow;
+        resolved.name = localName;
+        registerWorkflow(std::move(resolved));
+        return;
+    }
+
+    if (pendingWorkflowReferences_.contains(localName))
+    {
+        throw std::runtime_error("duplicate workflow name '" + localName + "'");
+    }
+
+    pendingWorkflowReferences_.emplace(localName, pluginWorkflowReference);
 }
 
 Task Registry::resolvePluginTaskReference(const std::string& reference) const
@@ -367,6 +411,7 @@ void Registry::clear()
     workflows_.clear();
     pluginWorkflows_.clear();
     pluginTasks_.clear();
+    pendingWorkflowReferences_.clear();
     stepOrderHints_.clear();
 }
 

@@ -55,7 +55,9 @@ void loadGlobalSettings(LoadedProject& project)
     project.settings.applyEnvironment(project.context);
 }
 
-std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun)
+std::optional<int> loadBuildScript(LoadedProject& project,
+                                   bool silentRun,
+                                   bool validateRegistry)
 {
     project.pluginHost.addPlugin(std::make_unique<plugin::lua::LuaDslPlugin>());
     project.pluginHost.addPlugin(std::make_unique<plugin::shell::ShellPlugin>());
@@ -80,7 +82,7 @@ std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun)
         return 1;
     }
 
-    if (!project.luaLoader->load(project.context, project.registry))
+    if (!project.luaLoader->load(project.context, project.registry, validateRegistry))
     {
         writeErrorUnlessSilent(silentRun,
                                [&project]()

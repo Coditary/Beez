@@ -36,6 +36,10 @@ class Registry
                                 const std::string& plugin);
     void registerPluginTask(Task task, const std::string& organization, const std::string& plugin);
     [[nodiscard]] Workflow resolvePluginWorkflowReference(const std::string& reference) const;
+    [[nodiscard]] std::optional<Workflow>
+    tryResolvePluginWorkflowReference(const std::string& reference) const;
+    void resolvePendingWorkflowReferences();
+    [[nodiscard]] bool hasPendingWorkflowReferences() const;
     [[nodiscard]] Task resolvePluginTaskReference(const std::string& reference) const;
     void registerWorkflowFromPluginReference(const std::string& localName,
                                              const std::string& pluginWorkflowReference);
@@ -117,6 +121,7 @@ class Registry
     std::unordered_map<std::string, Workflow> workflows_;
     std::unordered_map<std::string, Workflow> pluginWorkflows_;
     std::unordered_map<std::string, Task> pluginTasks_;
+    std::unordered_map<std::string, std::string> pendingWorkflowReferences_;
     std::vector<StepOrderHint> stepOrderHints_;
 };
 

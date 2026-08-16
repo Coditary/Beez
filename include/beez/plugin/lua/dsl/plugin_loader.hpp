@@ -46,4 +46,10 @@ void loadInstalledBeezPlugin(const std::string& organization,
                              core::Registry& registry,
                              const core::Context& context);
 
+bool tryLoadInstalledBeezPlugin(const std::string& organization,
+                                const std::string& name,
+                                const std::string& version,
+                                core::Registry& registry,
+                                const core::Context& context);
+
 }  // namespace beez::plugin::lua

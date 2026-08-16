@@ -1,5 +1,19 @@
+set(BEEZ_INCREMENT_LUA_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/api/increment/increment.lua")
+set(BEEZ_INCREMENT_RUNTIME_HEADER "${CMAKE_CURRENT_BINARY_DIR}/beez_increment_runtime.hpp")
+
+add_custom_command(
+    OUTPUT "${BEEZ_INCREMENT_RUNTIME_HEADER}"
+    COMMAND
+        ${CMAKE_COMMAND} "-DBEEZ_INCREMENT_LUA=${BEEZ_INCREMENT_LUA_SOURCE}"
+        "-DBEEZ_INCREMENT_HEADER=${BEEZ_INCREMENT_RUNTIME_HEADER}" -P
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_increment_lua.cmake"
+    DEPENDS "${BEEZ_INCREMENT_LUA_SOURCE}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_increment_lua.cmake"
+    VERBATIM
+)
+
 add_library(
     beez_plugin_lua STATIC
+    "${BEEZ_INCREMENT_RUNTIME_HEADER}"
     lua_dsl.cpp
     api/beez_table.cpp
     api/char/char_table.cpp
@@ -133,8 +147,7 @@ add_library(
 )
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)
-
-target_compile_definitions(beez_plugin_lua PRIVATE BEEZ_LUA_API_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/api")
+target_include_directories(beez_plugin_lua PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(
     beez_plugin_lua

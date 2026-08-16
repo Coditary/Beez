@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(
     Beez
-    VERSION 1.0.3
+    VERSION 1.0.4
     DESCRIPTION "Beez - A modern C++ project"
     HOMEPAGE_URL "https://github.com/Leodoras/Beez"
     LANGUAGES CXX
