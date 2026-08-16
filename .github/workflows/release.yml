@@ -113,6 +113,8 @@ jobs:
       - name: Package Beez plugins
         run: |
           set -euo pipefail
+          # shellcheck disable=SC1091
+          source build/build/Release/generators/conanrun.sh
           lua scripts/ci/package_all_plugins.lua \
             --version "$GITHUB_REF_NAME" \
             --platform "${{ matrix.platform }}" \
@@ -145,11 +147,14 @@ jobs:
           merge-multiple: true
           path: dist
 
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends lua5.4
+
       - name: Build ReqPack repository index
         run: |
           set -euo pipefail
           python3 scripts/ci/build_reqpack_index.py --dist-dir dist --output dist/index.json
-          lua scripts/ci/build_plugin_index.lua --dist-dir dist/plugins --output dist/plugins/index.json
+          lua5.4 scripts/ci/build_plugin_index.lua --dist-dir dist/plugins --output dist/plugins/index.json
 
       - name: Publish GitHub release
         env:
