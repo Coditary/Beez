@@ -62,7 +62,7 @@ jobs:
 
       - name: Install Linux packaging prerequisites
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y --no-install-recommends zstd
+        run: sudo apt-get install -y --no-install-recommends zstd lua5.4
 
       - name: Install macOS prerequisites
         if: runner.os == 'macOS'
@@ -75,6 +75,7 @@ jobs:
           command -v ninja >/dev/null || missing+=(ninja)
           command -v zstd >/dev/null || missing+=(zstd)
           command -v cmake >/dev/null || missing+=(cmake)
+          command -v lua >/dev/null || missing+=(lua)
           if ((${#missing[@]} > 0)); then
             brew install "${missing[@]}"
           fi
@@ -113,9 +114,12 @@ jobs:
       - name: Package Beez plugins
         run: |
           set -euo pipefail
-          # shellcheck disable=SC1091
-          source build/build/Release/generators/conanrun.sh
-          lua scripts/ci/package_all_plugins.lua \
+          LUA="$(command -v lua || command -v lua5.4 || true)"
+          if [ -z "${LUA}" ]; then
+            echo "lua interpreter not found" >&2
+            exit 1
+          fi
+          "${LUA}" scripts/ci/package_all_plugins.lua \
             --version "$GITHUB_REF_NAME" \
             --platform "${{ matrix.platform }}" \
             --arch "${{ matrix.arch }}" \
