@@ -76,7 +76,7 @@ std::vector<std::string> parseStringArrayField(const sol::table& options,
     {
         return ReturnValue.as<int>();
     }
-    if (ReturnValue == sol::nil)
+    if (ReturnValue.get_type() == sol::type::lua_nil)
     {
         return 0;
     }
