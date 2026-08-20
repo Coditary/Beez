@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <mutex>
 #include <string>
 #include <utility>
 
@@ -14,6 +15,7 @@ namespace beez::core
 
 void RunStatsTracker::reset()
 {
+    const std::scoped_lock Lock(mutex_);
     cacheHitsSkipped_ = 0;
     runTotalSteps_ = 0;
     peakWorkers_ = 0;
@@ -24,9 +26,10 @@ void RunStatsTracker::reset()
 
 void RunStatsTracker::beginSegment(std::string label)
 {
+    const std::scoped_lock Lock(mutex_);
     if (activeRunSegment_.has_value())
     {
-        endSegment(true);
+        endSegmentLocked(true);
     }
 
     activeRunSegment_ = ActiveRunSegment {
@@ -36,6 +39,12 @@ void RunStatsTracker::beginSegment(std::string label)
 }
 
 void RunStatsTracker::endSegment(bool success)
+{
+    const std::scoped_lock Lock(mutex_);
+    endSegmentLocked(success);
+}
+
+void RunStatsTracker::endSegmentLocked(bool success)
 {
     if (!activeRunSegment_.has_value())
     {
@@ -57,6 +66,7 @@ void RunStatsTracker::endSegment(bool success)
 // NOLINTNEXTLINE(readability-identifier-naming)
 void RunStatsTracker::recordCacheUnit(const bool hit, const double savedSeconds)
 {
+    const std::scoped_lock Lock(mutex_);
     ++runTotalSteps_;
     if (hit)
     {
@@ -85,6 +95,7 @@ void RunStatsTracker::recordCacheBulk(const std::size_t totalUnits,
                                       // NOLINTNEXTLINE(readability-identifier-naming)
                                       const double savedSeconds)
 {
+    const std::scoped_lock Lock(mutex_);
     runTotalSteps_ += totalUnits;
     cacheHitsSkipped_ += hits;
     if (savedSeconds > 0.0)
@@ -101,6 +112,7 @@ void RunStatsTracker::recordCacheBulk(const std::size_t totalUnits,
 
 void RunStatsTracker::recordPeakWorkers(std::size_t workerCount)
 {
+    const std::scoped_lock Lock(mutex_);
     peakWorkers_ = std::max(peakWorkers_, workerCount);
 }
 
@@ -108,6 +120,7 @@ void RunStatsTracker::recordPeakWorkers(std::size_t workerCount)
 logging::RunSummary RunStatsTracker::buildSummary(double durationSeconds,
                                                   std::size_t workerThreads) const
 {
+    const std::scoped_lock Lock(mutex_);
     const std::size_t ExecutedSteps =
         runTotalSteps_ > cacheHitsSkipped_ ? runTotalSteps_ - cacheHitsSkipped_ : 0U;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <optional>
 #include <string>
@@ -21,9 +22,10 @@ struct ReqPackManifest
 {
     std::map<std::string, std::vector<ReqPackPackage>> plugins;
 
+    // A manifest with only empty package lists (e.g. `reqpack { npm = {} }`) is empty.
     [[nodiscard]] bool empty() const
     {
-        return plugins.empty();
+        return std::ranges::all_of(plugins, [](const auto& entry) { return entry.second.empty(); });
     }
 
     [[nodiscard]] bool operator==(const ReqPackManifest& other) const = default;

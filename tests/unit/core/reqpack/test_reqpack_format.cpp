@@ -65,13 +65,13 @@ TEST(ReqPackFormatTest, BuildsInstallArgsAcrossPlugins)
 TEST(ReqPackFormatTest, BuildsInstallCommand)
 {
     const auto Command = beez::core::buildInstallCommand({"npm:eslint@3.2.1", "sys:make"});
-    EXPECT_EQ(Command, "rqp install npm:eslint@3.2.1 sys:make --json");
+    EXPECT_EQ(Command, "rqp install 'npm:eslint@3.2.1' 'sys:make' --json");
 }
 
 TEST(ReqPackFormatTest, BuildsDryRunInstallCommand)
 {
     const auto Command = beez::core::buildInstallCommand({"npm:eslint@3.2.1"}, true);
-    EXPECT_EQ(Command, "rqp install npm:eslint@3.2.1 --dry-run --json");
+    EXPECT_EQ(Command, "rqp install 'npm:eslint@3.2.1' --dry-run --json");
 }
 
 TEST(ReqPackFormatTest, ParsesLegacyRqpJsonResponse)

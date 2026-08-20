@@ -181,6 +181,15 @@ void validateTaskPluginStepReference(const std::string& taskName,
                                      "' which is not declared in reqpack.beez");
         }
 
+        if (!registry.hasPluginSteps(Qualified->organization, Qualified->plugin))
+        {
+            throw std::runtime_error("task '" + taskName + "' references plugin '" +
+                                     Qualified->organization + '/' + Qualified->plugin +
+                                     "' which is declared in reqpack.beez but has no registered "
+                                     "steps; the plugin is not installed or failed to load "
+                                     "(try 'beez --install')");
+        }
+
         return;
     }
 

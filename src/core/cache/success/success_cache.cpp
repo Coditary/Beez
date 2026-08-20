@@ -51,14 +51,33 @@ struct ManifestFields
     std::unordered_map<std::string, std::string> values_;
 };
 
-[[nodiscard]] std::string sanitizePathComponent(std::string value)
+[[nodiscard]] std::string sanitizePathComponent(std::string_view value)
 {
-    std::ranges::replace_if(
-        value,
-        [](const char Character)
-        { return Character == '/' || Character == ':' || Character == '\\'; },
-        '_');
-    return value;
+    // Escape-encoding keeps distinct names distinct (e.g. "a/b" vs "a_b" vs "a:b").
+    std::string result;
+    result.reserve(value.size());
+    for (const char character : value)
+    {
+        switch (character)
+        {
+        case '_':
+            result += "__";
+            break;
+        case '/':
+            result += "_s";
+            break;
+        case ':':
+            result += "_c";
+            break;
+        case '\\':
+            result += "_b";
+            break;
+        default:
+            result += character;
+            break;
+        }
+    }
+    return result;
 }
 
 [[nodiscard]] std::string configFingerprint(const StepConfigPtr& config)

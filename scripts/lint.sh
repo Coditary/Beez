@@ -3,7 +3,7 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
-HEADER_FILTER='(src|include|tests)/.*'
+HEADER_FILTER="^${PWD}/(src|include|tests)/.*"
 FAILED=0
 
 echo "=== Running clang-tidy ==="

@@ -19,6 +19,13 @@ class StepConfig
 
     [[nodiscard]] virtual bool empty() const = 0;
 
+    // True when materializing/fingerprinting touches shared runtime state (e.g. a Lua
+    // state) that is not thread-safe; the scheduler must not run such steps in parallel.
+    [[nodiscard]] virtual bool requiresSerializedAccess() const
+    {
+        return false;
+    }
+
     [[nodiscard]] virtual std::string cacheFingerprint() const = 0;
 
     [[nodiscard]] virtual std::shared_ptr<const StepConfig>

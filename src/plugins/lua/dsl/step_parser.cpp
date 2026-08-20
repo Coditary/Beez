@@ -53,6 +53,48 @@ std::vector<std::string> parseStringArrayField(const sol::table& options,
     return values;
 }
 
+[[nodiscard]] int evaluateStepCallbackResult(const sol::protected_function_result& result)
+{
+    if (!result.valid())
+    {
+        const sol::error LuaError = result;
+        std::cerr << "Lua step error: " << LuaError.what() << '\n';
+        return 1;
+    }
+
+    if (result.return_count() == 0)
+    {
+        return 0;
+    }
+
+    const sol::object ReturnValue = result.get<sol::object>(0);
+    if (ReturnValue.is<bool>())
+    {
+        return ReturnValue.as<bool>() ? 0 : 1;
+    }
+    if (ReturnValue.is<int>())
+    {
+        return ReturnValue.as<int>();
+    }
+    if (ReturnValue == sol::nil)
+    {
+        return 0;
+    }
+
+    std::cerr << "Lua step error: step callback must return an integer exit code or a boolean\n";
+    return 1;
+}
+
+[[nodiscard]] core::StepCallback makeLuaStepCallback(const std::shared_ptr<sol::state>& luaState,
+                                                     const sol::protected_function& luaFunction)
+{
+    return [luaState, luaFunction](const core::Context& context) mutable -> int
+    {
+        const sol::table StepContext = bindStepContext(luaState, context);
+        return evaluateStepCallbackResult(luaFunction(StepContext));
+    };
+}
+
 core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::state>& luaState)
 {
     core::Step step;
@@ -118,31 +160,7 @@ core::Step parseStepTable(const sol::table& options, const std::shared_ptr<sol::
 
     if (RunValue.is<sol::protected_function>())
     {
-        const sol::protected_function LuaFunction = RunValue.as<sol::protected_function>();
-        step.callback = [luaState, LuaFunction](const core::Context& context) mutable -> int
-        {
-            const sol::table StepContext = bindStepContext(luaState, context);
-            const sol::protected_function_result Result = LuaFunction(StepContext);
-            if (!Result.valid())
-            {
-                const sol::error LuaError = Result;
-                std::cerr << "Lua step error: " << LuaError.what() << '\n';
-                return 1;
-            }
-
-            if (Result.return_count() == 0)
-            {
-                return 0;
-            }
-
-            const sol::object ReturnValue = Result.get<sol::object>(0);
-            if (ReturnValue.is<int>())
-            {
-                return ReturnValue.as<int>();
-            }
-
-            return 0;
-        };
+        step.callback = makeLuaStepCallback(luaState, RunValue.as<sol::protected_function>());
         return step;
     }
 

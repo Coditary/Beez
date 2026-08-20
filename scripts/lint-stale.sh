@@ -11,7 +11,7 @@ REPORTS_ROOT="${REPORTS_DIR:-report}"
 CACHE_DIR="${REPORTS_ROOT}/lint/stale"
 MANIFEST="${CACHE_DIR}/manifest.tsv"
 CONTEXT_FILE="${CACHE_DIR}/context"
-HEADER_FILTER='(src|include|tests)/.*'
+HEADER_FILTER="^${PWD}/(src|include|tests)/.*"
 
 CMAKE_FILES=(
     CMakeLists.txt

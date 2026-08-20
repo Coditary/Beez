@@ -91,11 +91,17 @@ core::WorkerSpec parseWorkerSpec(const sol::table& options)
         CommandValue.as<sol::table>().for_each(
             [&spec](const sol::object& /*key*/, const sol::object& value)
             {
-                if (value.is<std::string>())
+                if (!value.is<std::string>())
                 {
-                    spec.commands.push_back(value.as<std::string>());
+                    throw std::runtime_error("worker spawn field 'cmd' entries must be strings");
                 }
+                spec.commands.push_back(value.as<std::string>());
             });
+
+        if (spec.commands.empty())
+        {
+            throw std::runtime_error("worker spawn field 'cmd' must not be an empty table");
+        }
     }
     else
     {

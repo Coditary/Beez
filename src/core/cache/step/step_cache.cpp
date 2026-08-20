@@ -81,7 +81,8 @@ CacheLookupResult StepCache::lookup(const Step& step,
         return result;
     }
 
-    result.skip = step_cache_detail::outputsExist(Entry->outputs, projectRoot);
+    result.skip = step_cache_detail::outputsMatch(
+        Entry->outputs, Entry->outputHashes, projectRoot, *makeContentHasher(cacheOptions_.hash));
     if (result.skip && !indexRoot_.empty())
     {
         const auto IndexPath = step_cache_detail::indexPathForStep(indexRoot_, step);
@@ -109,6 +110,8 @@ void StepCache::store(const Step& step,
     entry.key = keyStrategy_->computeKey(step, projectRoot, config, matcher_);
     entry.stepName = step.name;
     entry.outputs = outputs;
+    entry.outputHashes = step_cache_detail::computeOutputHashes(
+        outputs, projectRoot, *makeContentHasher(cacheOptions_.hash));
     store_->store(entry);
 
     if (!indexRoot_.empty())
@@ -143,7 +146,10 @@ std::optional<CacheLookupResult> StepCache::lookupViaIndex(const Step& step,
         return std::nullopt;
     }
 
-    if (!step_cache_detail::outputsExist(IndexEntry->outputs, projectRoot))
+    if (!step_cache_detail::outputsMatch(IndexEntry->outputs,
+                                         IndexEntry->outputHashes,
+                                         projectRoot,
+                                         *makeContentHasher(cacheOptions_.hash)))
     {
         return std::nullopt;
     }
@@ -172,6 +178,8 @@ void StepCache::writeIndex(const Step& step,
     indexEntry.inputs =
         step_cache_detail::collectInputStamps(step, projectRoot, matcher_, globMetadataCache_);
     indexEntry.outputs = outputs;
+    indexEntry.outputHashes = step_cache_detail::computeOutputHashes(
+        outputs, projectRoot, *makeContentHasher(cacheOptions_.hash));
     step_cache_detail::writeCacheIndex(
         step_cache_detail::indexPathForStep(indexRoot_, step), indexEntry, cacheOptions_);
 }

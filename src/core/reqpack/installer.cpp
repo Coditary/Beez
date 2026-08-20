@@ -149,16 +149,17 @@ ReqPackInstallResult installReqPackDependencies(
         return {.skipped = true, .success = true, .message = "reqpack dependencies are up to date"};
     }
 
-    if (!options.dryRun && UsingBuiltinExecute && !isRqpAvailable())
-    {
-        return {.skipped = false, .success = false, .message = std::string(ReqPackInstallHint)};
-    }
-
     const auto InstallManifest = manifestFromUncached(toInstall);
     const auto Args = buildInstallArgs(InstallManifest);
     if (Args.empty())
     {
+        // Empty package lists must not require rqp or fail the install.
         return {.skipped = true, .success = true};
+    }
+
+    if (!options.dryRun && UsingBuiltinExecute && !isRqpAvailable())
+    {
+        return {.skipped = false, .success = false, .message = std::string(ReqPackInstallHint)};
     }
 
     const auto Command = buildInstallCommand(Args, options.dryRun);

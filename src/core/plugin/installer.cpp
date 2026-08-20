@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <system_error>
+#include <vector>
 
 namespace beez::core
 {
@@ -161,8 +162,8 @@ BeezPluginInstallResult ensureBeezPluginInstalled(const std::optional<std::strin
     return {.installed = true, .message = {}};
 }
 
-BeezPluginInstallResult ensureReqpackBeezPluginsInstalled(
-    const std::vector<plugin::lua::BeezPluginRef>& plugins)
+BeezPluginInstallResult
+ensureReqpackBeezPluginsInstalled(const std::vector<plugin::lua::BeezPluginRef>& plugins)
 {
     for (const auto& pluginRef : plugins)
     {
@@ -178,15 +179,11 @@ BeezPluginInstallResult ensureReqpackBeezPluginsInstalled(
                                pluginRef.name + "' requires a version pin"};
         }
 
-        const auto Result = ensureBeezPluginInstalled(pluginRef.organization,
-                                                      pluginRef.name,
-                                                      *pluginRef.version,
-                                                      pluginRef.source);
-        if (!Result.message.empty() &&
-            (Result.message.find("failed to install") != std::string::npos ||
-             Result.message.find("is not available after install") != std::string::npos ||
-             Result.message.find("requires a version pin") != std::string::npos ||
-             Result.message.find("ReqPack (rqp) is required") != std::string::npos))
+        const auto Result = ensureBeezPluginInstalled(
+            pluginRef.organization, pluginRef.name, *pluginRef.version, pluginRef.source);
+        // A non-empty message always reports a failure; an already-installed
+        // plugin returns an empty message with installed=false.
+        if (!Result.message.empty())
         {
             return Result;
         }

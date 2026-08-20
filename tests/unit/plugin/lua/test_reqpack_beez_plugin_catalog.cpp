@@ -31,4 +31,27 @@ TEST(ReqpackBeezPluginCatalogTest, StoresFindsAndAddsPlugins)
     EXPECT_TRUE(catalog.find("coditary", "other").has_value());
 }
 
+TEST(ReqpackBeezPluginCatalogTest, MergeAddsNewAndReplacesExisting)
+{
+    beez::plugin::lua::ReqpackBeezPluginCatalog catalog;
+    catalog.set({{.organization = "coditary",
+                  .name = "demo",
+                  .path = std::string {"./plugins/coditary/demo"},
+                  .version = std::string {"1.0.0"}}});
+
+    catalog.merge(
+        {{.organization = "coditary",
+          .name = "demo",
+          .path = std::string {"./plugins/coditary/demo"},
+          .version = std::string {"2.0.0"}},
+         {.organization = "coditary", .name = "other", .version = std::string {"1.0.0"}}});
+
+    EXPECT_EQ(catalog.plugins().size(), 2U);
+    const auto Updated = catalog.find("coditary", "demo");
+    ASSERT_TRUE(Updated.has_value());
+    ASSERT_TRUE(Updated->version.has_value());
+    EXPECT_EQ(*Updated->version, "2.0.0");
+    EXPECT_TRUE(catalog.find("coditary", "other").has_value());
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,misc-include-cleaner,readability-identifier-naming)
