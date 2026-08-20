@@ -1876,4 +1876,117 @@ task("formater", {
     ASSERT_EQ(Found->actions.size(), 1U);
 }
 
+TEST(LuaDslPluginTest, LocalPluginTakesPrecedenceOverInstalledCacheCopy)
+{
+    const beez::test::TempProject Project;
+    const auto HomeRoot = beez::core::systemTempDirectory() / "beez_local_precedence_test";
+    std::error_code errorCode;
+    std::filesystem::remove_all(HomeRoot, errorCode);
+    std::filesystem::create_directories(HomeRoot);
+    const ScopedEnv Home("HOME", HomeRoot.c_str());
+    const ScopedEnv XdgUnset("XDG_CACHE_HOME", "");
+
+    Project.writePluginAt("plugins/acme/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        greet = {
+            phase = "build",
+            scope = "repo",
+            run = "echo local",
+        },
+    },
+})
+)");
+
+    const auto CachedPath =
+        HomeRoot / ".cache" / "beez" / "plugins" / "acme" / "demo" / "1.0.0" / "beez_plugin.lua";
+    std::filesystem::create_directories(CachedPath.parent_path());
+    std::ofstream(CachedPath) << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        greet = {
+            phase = "build",
+            scope = "repo",
+            run = "echo cached",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "acme/demo",
+            path = "./plugins/acme/demo",
+            version = "1.0.0",
+        },
+    },
+}
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.resolveStep("acme/demo:greet");
+    ASSERT_TRUE(Found.hasValue());
+    ASSERT_TRUE(Found.value().hasShellRun());
+    EXPECT_EQ(Found.value().shellRun.value_or(""), "echo local");
+
+    std::filesystem::remove_all(HomeRoot, errorCode);
+}
+
+TEST(LuaDslPluginTest, DeclaredButNotInstalledPluginStepFailsWithInstallHint)
+{
+    const beez::test::TempProject Project;
+    const auto HomeRoot = beez::core::systemTempDirectory() / "beez_missing_plugin_test";
+    std::error_code errorCode;
+    std::filesystem::remove_all(HomeRoot, errorCode);
+    std::filesystem::create_directories(HomeRoot);
+    const ScopedEnv Home("HOME", HomeRoot.c_str());
+    const ScopedEnv XdgUnset("XDG_CACHE_HOME", "");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        { name = "acme/missing", version = "1.0.0" },
+    },
+}
+
+task("demo", {
+    { plugin = "acme/missing", step = "greet" },
+})
+)");
+
+    beez::core::Registry registry;
+    testing::internal::CaptureStderr();
+    const bool Loaded = loadScript(Project, registry);
+    const std::string Output = testing::internal::GetCapturedStderr();
+    EXPECT_FALSE(Loaded);
+    EXPECT_NE(Output.find("not installed"), std::string::npos);
+    EXPECT_NE(Output.find("beez --install"), std::string::npos);
+
+    std::filesystem::remove_all(HomeRoot, errorCode);
+}
+
+TEST(LuaDslPluginTest, UnresolvedPluginWorkflowReferenceFails)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflows({
+    ci = "acme/missing:ci",
+})
+)");
+
+    beez::core::Registry registry;
+    testing::internal::CaptureStderr();
+    const bool Loaded = loadScript(Project, registry);
+    const std::string Output = testing::internal::GetCapturedStderr();
+    EXPECT_FALSE(Loaded);
+    EXPECT_NE(Output.find("beez --install"), std::string::npos);
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)

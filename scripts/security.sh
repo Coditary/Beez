@@ -4,7 +4,7 @@ set -euo pipefail
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
 COMPDB="${COMPDB_DIR}/compile_commands.json"
-HEADER_FILTER='(src|include|tests)/.*'
+HEADER_FILTER="^${PWD}/(src|include|tests)/.*"
 FAILED=0
 
 if [[ ! -f "${COMPDB}" ]]; then

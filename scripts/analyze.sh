@@ -3,7 +3,7 @@ set -euo pipefail
 
 BUILD_DIR="${1:-build}"
 COMPDB_DIR="${BUILD_DIR}/build/Release"
-HEADER_FILTER='(src|include|tests)/.*'
+HEADER_FILTER="^${PWD}/(src|include|tests)/.*"
 TIDY_CHECKS='-*,clang-analyzer-*,bugprone-*,cppcoreguidelines-*,performance-*'
 FAILED=0
 

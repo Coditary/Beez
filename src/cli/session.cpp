@@ -55,9 +55,7 @@ void loadGlobalSettings(LoadedProject& project)
     project.settings.applyEnvironment(project.context);
 }
 
-std::optional<int> loadBuildScript(LoadedProject& project,
-                                   bool silentRun,
-                                   bool validateRegistry)
+std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun, bool validateRegistry)
 {
     project.pluginHost.addPlugin(std::make_unique<plugin::lua::LuaDslPlugin>());
     project.pluginHost.addPlugin(std::make_unique<plugin::shell::ShellPlugin>());

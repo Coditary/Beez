@@ -218,8 +218,10 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
     PluginState->open_libraries(
         sol::lib::base, sol::lib::package, sol::lib::string, sol::lib::table, sol::lib::math);
 
-    core::BeezSettings pluginSettings;
-    registerBeezApi(PluginState, context, pluginSettings);
+    auto pluginSettings = std::make_shared<core::BeezSettings>();
+    registerBeezApi(PluginState, context, *pluginSettings);
+    // beez.config captures the settings by reference; pin them to the state lifetime.
+    PluginState->registry()["__beez_plugin_settings_keepalive"] = std::move(pluginSettings);
 
     const auto PluginDirectory = scriptPath.parent_path();
     const std::string PluginPathPrefix =
@@ -330,6 +332,13 @@ void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
     for (const auto& pluginRef : plugins)
     {
         if (!pluginRef.isLocal())
+        {
+            continue;
+        }
+
+        if (pluginRef.version.has_value() && registry.hasPluginVersionLoaded(pluginRef.organization,
+                                                                             pluginRef.name,
+                                                                             *pluginRef.version))
         {
             continue;
         }

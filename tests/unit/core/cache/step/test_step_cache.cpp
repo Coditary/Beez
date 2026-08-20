@@ -10,7 +10,9 @@
 
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -98,6 +100,81 @@ TEST_F(StepCacheTest, HitWhenEntryAndOutputsExist)
     const auto Outputs = std::vector<std::string> {"build/main.o"};
     cache->store(Step, root, nullptr, Outputs);
 
+    const auto Result = cache->lookup(Step, root, nullptr);
+    EXPECT_TRUE(Result.skip);
+}
+
+TEST_F(StepCacheTest, MissWhenOutputContentChanged)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    cache->store(Step, root, nullptr, {"build/main.o"});
+    EXPECT_TRUE(cache->lookup(Step, root, nullptr).skip);
+
+    // A tampered or regenerated output with different content must not be a cache hit.
+    writeFile(root / "build" / "main.o", "tampered-object\n");
+
+    const auto Result = cache->lookup(Step, root, nullptr);
+    EXPECT_FALSE(Result.skip);
+}
+
+TEST_F(StepCacheTest, LegacyManifestWithoutOutputHashesIsStale)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    cache->store(Step, root, nullptr, {"build/main.o"});
+    EXPECT_TRUE(cache->lookup(Step, root, nullptr).skip);
+
+    // Simulate a cache written before output hash verification existed.
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(cacheDir))
+    {
+        if (entry.path().extension() != ".manifest" && entry.path().extension() != ".index")
+        {
+            continue;
+        }
+
+        std::ifstream input(entry.path());
+        std::ostringstream kept;
+        std::string line;
+        while (std::getline(input, line))
+        {
+            if (!line.starts_with("outputhash="))
+            {
+                kept << line << '\n';
+            }
+        }
+        input.close();
+        std::ofstream output(entry.path(), std::ios::trunc);
+        output << kept.str();
+    }
+
+    const auto Result = cache->lookup(Step, root, nullptr);
+    EXPECT_FALSE(Result.skip);
+}
+
+TEST_F(StepCacheTest, CorruptIndexFileFallsBackToContentKeyLookup)
+{
+    writeFile(root / "src" / "main.cpp", "int main() {}\n");
+    writeFile(root / "build" / "main.o", "object\n");
+
+    const auto Step = makeCompileStep();
+    cache->store(Step, root, nullptr, {"build/main.o"});
+    EXPECT_TRUE(cache->lookup(Step, root, nullptr).skip);
+
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(cacheDir))
+    {
+        if (entry.path().extension() == ".index")
+        {
+            std::ofstream stream(entry.path(), std::ios::trunc);
+            stream << "key=corrupt\ninput=src/main.cpp\tnotanumber\talsonotanumber\n";
+        }
+    }
+
+    // A corrupt index must not abort the lookup; the content-key store still hits.
     const auto Result = cache->lookup(Step, root, nullptr);
     EXPECT_TRUE(Result.skip);
 }

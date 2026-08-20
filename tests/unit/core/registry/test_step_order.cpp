@@ -184,14 +184,19 @@ TEST_F(StepOrderTest, IsolatesMultipleCallbackStepsIntoSeparateLevels)
     EXPECT_EQ(Isolated.at(2).front().name, "callback-b");
 }
 
-TEST_F(StepOrderTest, KeepsSingleCallbackWithShellStepsInSameLevel)
+TEST_F(StepOrderTest, SeparatesSingleCallbackFromShellSteps)
 {
+    // Even a single callback step must not share a level: shell steps with a Lua-backed
+    // config touch the same non-thread-safe Lua state during cache key computation.
     const std::vector<std::vector<beez::core::Step>> Levels = {{
         makeShellStep("shell-a", "qa", "code"),
         makeCallbackStep("callback-a", "qa", "code"),
     }};
 
     const auto Isolated = beez::core::isolateCallbackStepsInLevels(Levels);
-    ASSERT_EQ(Isolated.size(), 1U);
-    ASSERT_EQ(Isolated.front().size(), 2U);
+    ASSERT_EQ(Isolated.size(), 2U);
+    ASSERT_EQ(Isolated.at(0).size(), 1U);
+    EXPECT_EQ(Isolated.at(0).front().name, "shell-a");
+    ASSERT_EQ(Isolated.at(1).size(), 1U);
+    EXPECT_EQ(Isolated.at(1).front().name, "callback-a");
 }

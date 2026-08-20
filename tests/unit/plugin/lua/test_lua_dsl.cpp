@@ -879,4 +879,93 @@ step({
     EXPECT_FALSE(registry.findStep("gen-docs").has_value());
 }
 
+TEST(LuaDslTest, StepCallbackReturningFalseFails)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "fail-step",
+    phase = "test",
+    scope = "code",
+    run = function() return false end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("fail-step");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_TRUE(Found->hasCallback());
+    const beez::core::Context Ctx(Project.path());
+    EXPECT_EQ(Found->callback(Ctx), 1);
+}
+
+TEST(LuaDslTest, StepCallbackReturningTrueSucceeds)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "ok-step",
+    phase = "test",
+    scope = "code",
+    run = function() return true end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("ok-step");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_TRUE(Found->hasCallback());
+    const beez::core::Context Ctx(Project.path());
+    EXPECT_EQ(Found->callback(Ctx), 0);
+}
+
+TEST(LuaDslTest, StepCallbackReturningStringFails)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "string-step",
+    phase = "test",
+    scope = "code",
+    run = function() return "oops" end,
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("string-step");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_TRUE(Found->hasCallback());
+    const beez::core::Context Ctx(Project.path());
+    testing::internal::CaptureStderr();
+    const int ExitCode = Found->callback(Ctx);
+    const std::string Output = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(ExitCode, 1);
+    EXPECT_NE(Output.find("integer exit code or a boolean"), std::string::npos);
+}
+
+TEST(LuaDslTest, WorkflowRejectsBooleanEntry)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "build",
+    phase = "build",
+    scope = "code",
+    run = "echo build",
+})
+workflows({
+    ci = { true },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity)

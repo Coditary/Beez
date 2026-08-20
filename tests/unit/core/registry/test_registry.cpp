@@ -425,8 +425,7 @@ TEST(RegistryTest, ResolvesVersionedPluginStepReference)
     compileStep.phase = "build";
     compileStep.scope = "code";
     compileStep.shellRun = "echo versioned";
-    registry.registerPluginStep(
-        std::move(compileStep), "coditary", "clang", std::string {"1.0.0"});
+    registry.registerPluginStep(std::move(compileStep), "coditary", "clang", std::string {"1.0.0"});
 
     const auto Resolved = registry.resolveStep("clang:compile@1.0.0");
     ASSERT_TRUE(Resolved.hasValue());

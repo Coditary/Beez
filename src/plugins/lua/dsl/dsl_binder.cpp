@@ -296,10 +296,10 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
         if (BeezObject.valid() && BeezObject.is<sol::table>())
         {
             const auto Plugins = parseBeezPluginTable(BeezObject.as<sol::table>());
-            reqpackBeezPlugins.set(Plugins);
+            reqpackBeezPlugins.merge(Plugins);
             for (const auto& pluginRef : Plugins)
             {
-                if (pluginRef.version.has_value())
+                if (pluginRef.version.has_value() && !pluginRef.isLocal())
                 {
                     (void)tryLoadInstalledBeezPlugin(pluginRef.organization,
                                                      pluginRef.name,
@@ -311,7 +311,12 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
             loadBeezPlugins(Plugins, registry, context);
         }
 
-        reqpackManifest = parseReqPackTable(table);
+        const auto ParsedManifest = parseReqPackTable(table);
+        for (const auto& [plugin, packages] : ParsedManifest.plugins)
+        {
+            auto& target = reqpackManifest.plugins[plugin];
+            target.insert(target.end(), packages.begin(), packages.end());
+        }
     };
 
     const auto ProjectRoot = context.buildScriptPath().parent_path();

@@ -2,8 +2,10 @@
 
 #include "beez/plugin/lua/api/data/detail/lua_convert.hpp"
 
-#include <charconv>
+#ifdef __APPLE__
 #include <cerrno>
+#endif
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -45,7 +47,7 @@ namespace
 
 [[nodiscard]] bool parseDouble(const std::string& text, double& output)
 {
-#if defined(__APPLE__)
+#ifdef __APPLE__
     errno = 0;
     char* end = nullptr;
     const double value = std::strtod(text.c_str(), &end);

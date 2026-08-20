@@ -26,6 +26,24 @@ namespace
     return key == "ok" || key == "dryRun";
 }
 
+[[nodiscard]] std::string shellQuoteArg(std::string_view value)
+{
+    std::string quoted = "'";
+    for (const char character : value)
+    {
+        if (character == '\'')
+        {
+            quoted += "'\\''";
+        }
+        else
+        {
+            quoted += character;
+        }
+    }
+    quoted += '\'';
+    return quoted;
+}
+
 [[nodiscard]] std::optional<std::string> optionalStringField(yyjson_val* object, const char* field)
 {
     const char* value = yyjson_get_str(yyjson_obj_get(object, field));
@@ -104,7 +122,7 @@ std::string buildInstallCommand(const std::vector<std::string>& args, bool dryRu
     stream << "rqp install";
     for (const auto& arg : args)
     {
-        stream << ' ' << arg;
+        stream << ' ' << shellQuoteArg(arg);
     }
     if (dryRun)
     {

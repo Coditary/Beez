@@ -202,6 +202,11 @@ class LuaStepConfig final : public core::StepConfig
         return !lazyBuilder_;
     }
 
+    [[nodiscard]] bool requiresSerializedAccess() const override
+    {
+        return true;
+    }
+
     [[nodiscard]] std::string cacheFingerprint() const override
     {
         if (!lazyBuilder_)

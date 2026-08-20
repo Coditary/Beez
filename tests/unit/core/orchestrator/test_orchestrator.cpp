@@ -185,6 +185,40 @@ TEST(OrchestratorTest, RunUnknownNameReturnsNotFound)
     EXPECT_EQ(Result.error(), beez::core::OrchestratorError::NotFound);
 }
 
+TEST(OrchestratorTest, RunPhaseReturnsNotFoundForUnknownPhase)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const beez::core::PhaseRequest Request {.phase = "missing"};
+    const auto Result = orchestrator.runPhase(Request);
+    ASSERT_FALSE(Result.hasValue());
+    EXPECT_EQ(Result.error(), beez::core::OrchestratorError::NotFound);
+}
+
+TEST(OrchestratorTest, RunPhaseReturnsNotFoundForUnknownScope)
+{
+    beez::core::Context context;
+    beez::core::Registry registry;
+
+    beez::core::Step codeStep;
+    codeStep.name = "code";
+    codeStep.phase = "generate";
+    codeStep.scope = "code";
+    codeStep.shellRun = "echo code";
+    registry.registerStep(std::move(codeStep));
+
+    beez::plugin::PluginHost pluginHost;
+    beez::core::Orchestrator orchestrator(registry, context, pluginHost);
+
+    const beez::core::PhaseRequest Request {.phase = "generate", .scopes = {"typo"}};
+    const auto Result = orchestrator.runPhase(Request);
+    ASSERT_FALSE(Result.hasValue());
+    EXPECT_EQ(Result.error(), beez::core::OrchestratorError::NotFound);
+}
+
 TEST(OrchestratorTest, RunWorkflowExecutesPhaseStepsInOrder)
 {
     beez::core::Context context;

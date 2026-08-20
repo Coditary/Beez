@@ -171,7 +171,8 @@ class ContentHasher final : public IContentHasher
         std::ifstream stream(path, std::ios::binary);
         if (!stream.is_open())
         {
-            return hashBytes("");
+            // A missing/unreadable file must not hash like an empty file.
+            return hashBytes("\x01missing\x01" + path.generic_string());
         }
 
         return hashBytes(

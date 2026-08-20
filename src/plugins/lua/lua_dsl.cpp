@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/lua_dsl.hpp"
 
+#include "beez/plugin/lua/api/net/detail/http_client.hpp"
 #include "beez/plugin/lua/runtime/plugin_config.hpp"
 
 #include "beez/core/registry/registry.hpp"
@@ -36,10 +37,13 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry)
     return load(context, registry, true);
 }
 
-bool LuaDslLoader::load(const core::Context& context, core::Registry& registry, bool validateRegistry)
+bool LuaDslLoader::load(const core::Context& context,
+                        core::Registry& registry,
+                        bool validateRegistry)
 {
     registry.clear();
     clearPluginConfigRegistry();
+    net_detail::HttpClient::instance().clearProxy();
     try
     {
         impl_->buildSettings = {};
@@ -61,6 +65,23 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry, 
         registry.resolvePendingWorkflowReferences();
         if (validateRegistry)
         {
+            if (registry.hasPendingWorkflowReferences())
+            {
+                std::string message =
+                    "workflow references could not be resolved; the providing plugins are not "
+                    "installed (run 'beez --install'): ";
+                const auto PendingNames = registry.pendingWorkflowReferenceNames();
+                for (std::size_t index = 0; index < PendingNames.size(); ++index)
+                {
+                    if (index > 0)
+                    {
+                        message += ", ";
+                    }
+                    message += '\'' + PendingNames.at(index) + '\'';
+                }
+                throw std::runtime_error(message);
+            }
+
             validateLoadedRegistry(registry, impl_->reqpackBeezPlugins);
         }
         return true;
@@ -70,6 +91,7 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry, 
         std::cerr << "Lua error: " << error.what() << '\n';
         impl_->luaState = nullptr;
         registry.clear();
+        clearPluginConfigRegistry();
         return false;
     }
     catch (const std::exception& error)
@@ -77,6 +99,7 @@ bool LuaDslLoader::load(const core::Context& context, core::Registry& registry, 
         std::cerr << "DSL error: " << error.what() << '\n';
         impl_->luaState = nullptr;
         registry.clear();
+        clearPluginConfigRegistry();
         return false;
     }
 }

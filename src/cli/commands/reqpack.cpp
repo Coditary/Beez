@@ -48,13 +48,10 @@ namespace
 std::optional<int> runReqPackInstallCommand(const LoadedProject& project,
                                             const ParsedOptions& options)
 {
-    const auto BeezPluginResult = core::ensureReqpackBeezPluginsInstalled(
-        project.luaLoader->reqpackBeezPlugins().plugins());
-    if (!BeezPluginResult.message.empty() &&
-        (BeezPluginResult.message.find("failed to install") != std::string::npos ||
-         BeezPluginResult.message.find("is not available after install") != std::string::npos ||
-         BeezPluginResult.message.find("requires a version pin") != std::string::npos ||
-         BeezPluginResult.message.find("ReqPack (rqp) is required") != std::string::npos))
+    const auto BeezPluginResult =
+        core::ensureReqpackBeezPluginsInstalled(project.luaLoader->reqpackBeezPlugins().plugins());
+    // A non-empty message always reports a failure (see ensureReqpackBeezPluginsInstalled).
+    if (!BeezPluginResult.message.empty())
     {
         if (!options.silent)
         {

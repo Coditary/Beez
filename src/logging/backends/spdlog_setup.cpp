@@ -5,6 +5,7 @@
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 #include <filesystem>
 #include <memory>
@@ -34,6 +35,8 @@ namespace
 
 std::shared_ptr<spdlog::logger> makeConsoleLogger(const core::UiSettings& uiSettings)
 {
+    // Drop first: spdlog throws if a logger with this name is already registered.
+    spdlog::drop("beez");
     auto logger = spdlog::stdout_color_mt("beez");
     logger->set_pattern("%v");
     logger->set_level(toSpdlogLevel(uiSettings.logLevel));
@@ -46,6 +49,7 @@ std::shared_ptr<spdlog::logger> makeFileLogger(const std::filesystem::path& logF
     std::error_code errorCode;
     std::filesystem::create_directories(logFile.parent_path(), errorCode);
 
+    spdlog::drop("beez_file");
     auto logger = spdlog::basic_logger_mt("beez_file", logFile.string(), true);
     logger->set_pattern("%v");
     logger->set_level(toSpdlogLevel(uiSettings.logLevel));

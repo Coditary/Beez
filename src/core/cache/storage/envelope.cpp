@@ -5,8 +5,10 @@
 #include "beez/core/config/cache/cache_options.hpp"
 #include "storage_detail.hpp"
 
+#include <atomic>
 #include <charconv>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -181,13 +183,48 @@ std::string readBinaryFile(const std::filesystem::path& path)
 void writeBinaryFile(const std::filesystem::path& path, const std::string& content)
 {
     std::filesystem::create_directories(path.parent_path());
-    std::ofstream stream(path, std::ios::binary | std::ios::trunc);
-    if (!stream.is_open())
+
+    // Write via a temporary file and rename atomically, so a crash mid-write or a
+    // concurrent reader never observes a truncated cache file.
+    static std::atomic<std::uint64_t> tempCounter {0};
+    const std::filesystem::path TempPath =
+        path.parent_path() /
+        (path.filename().string() + ".tmp." + std::to_string(tempCounter.fetch_add(1)));
     {
-        throw std::runtime_error("failed to write cache file: " + path.string());
+        std::ofstream stream(TempPath, std::ios::binary | std::ios::trunc);
+        if (!stream.is_open())
+        {
+            throw std::runtime_error("failed to write cache file: " + path.string());
+        }
+
+        stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+        stream.flush();
+        if (!stream.good())
+        {
+            stream.close();
+            std::error_code cleanupError;
+            std::filesystem::remove(TempPath, cleanupError);
+            throw std::runtime_error("failed to write cache file: " + path.string());
+        }
     }
 
-    stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+    std::error_code errorCode;
+    std::filesystem::rename(TempPath, path, errorCode);
+    if (errorCode)
+    {
+        // Platforms without rename-over-existing support need a remove first.
+        std::error_code removeError;
+        std::filesystem::remove(path, removeError);
+        errorCode.clear();
+        std::filesystem::rename(TempPath, path, errorCode);
+        if (errorCode)
+        {
+            std::error_code cleanupError;
+            std::filesystem::remove(TempPath, cleanupError);
+            throw std::runtime_error("failed to write cache file: " + path.string() + " (" +
+                                     errorCode.message() + ")");
+        }
+    }
 }
 
 std::string buildCachePayload(const std::string& content, const CacheCompressionSettings& settings)
