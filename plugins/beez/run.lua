@@ -134,52 +134,19 @@ local function decode_json(text)
 
   local parse_value
 
-  local escape_map = {
-    ['"'] = '"',
-    ['\\'] = '\\',
-    ['/'] = '/',
-    b = '\b',
-    f = '\f',
-    n = '\n',
-    r = '\r',
-    t = '\t',
-  }
-
   local function parse_string()
     index = index + 1
-    local parts = {}
+    local start_index = index
     while index <= length do
       local char = text:sub(index, index)
       if char == '"' then
+        local value = text:sub(start_index, index - 1)
         index = index + 1
-        return table.concat(parts)
+        return value
       end
       if char == "\\" then
-        local escape = text:sub(index + 1, index + 1)
-        local decoded = escape_map[escape]
-        if decoded ~= nil then
-          index = index + 2
-        elseif escape == "u" then
-          local codepoint = tonumber(text:sub(index + 2, index + 5), 16)
-          if codepoint == nil then
-            error("invalid unicode escape in json string")
-          end
-          if codepoint < 0x80 then
-            decoded = string.char(codepoint)
-          elseif codepoint < 0x800 then
-            decoded = string.char(0xC0 + math.floor(codepoint / 0x40), 0x80 + codepoint % 0x40)
-          else
-            decoded = string.char(0xE0 + math.floor(codepoint / 0x1000),
-                                  0x80 + math.floor(codepoint / 0x40) % 0x40,
-                                  0x80 + codepoint % 0x40)
-          end
-          index = index + 6
-        else
-          error("invalid escape sequence in json string")
-        end
-        parts[#parts + 1] = decoded
+        index = index + 2
       else
-        parts[#parts + 1] = char
         index = index + 1
       end
     end

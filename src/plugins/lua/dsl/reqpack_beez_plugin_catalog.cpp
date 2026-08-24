@@ -21,6 +21,26 @@ void ReqpackBeezPluginCatalog::add(BeezPluginRef plugin)
     plugins_.push_back(std::move(plugin));
 }
 
+void ReqpackBeezPluginCatalog::merge(const std::vector<BeezPluginRef>& pluginRefs)
+{
+    for (const auto& pluginRef : pluginRefs)
+    {
+        const auto Existing = std::ranges::find_if(
+            plugins_,
+            [&](const BeezPluginRef& entry)
+            {
+                return entry.organization == pluginRef.organization && entry.name == pluginRef.name;
+            });
+        if (Existing != plugins_.end())
+        {
+            *Existing = pluginRef;
+            continue;
+        }
+
+        plugins_.push_back(pluginRef);
+    }
+}
+
 std::optional<BeezPluginRef> ReqpackBeezPluginCatalog::find(const std::string& organization,
                                                             const std::string& plugin) const
 {

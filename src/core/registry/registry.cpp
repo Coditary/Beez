@@ -275,7 +275,8 @@ Workflow Registry::resolvePluginWorkflowReference(const std::string& reference) 
     throw std::runtime_error("plugin workflow reference '" + reference + "' is not defined");
 }
 
-std::optional<Workflow> Registry::tryResolvePluginWorkflowReference(const std::string& reference) const
+std::optional<Workflow>
+Registry::tryResolvePluginWorkflowReference(const std::string& reference) const
 {
     const PluginWorkflowRef ParsedReference = parsePluginWorkflowReference(reference);
     const std::string PluginWorkflowKey = formatPluginWorkflowKey(
@@ -310,6 +311,21 @@ void Registry::resolvePendingWorkflowReferences()
 bool Registry::hasPendingWorkflowReferences() const
 {
     return !pendingWorkflowReferences_.empty();
+}
+
+std::vector<std::string> Registry::pendingWorkflowReferenceNames() const
+{
+    std::vector<std::string> names;
+    names.reserve(pendingWorkflowReferences_.size());
+    for (const auto& [name, reference] : pendingWorkflowReferences_)
+    {
+        std::string entry = name;
+        entry += "' (plugin reference '";
+        entry += reference;
+        entry += ")";
+        names.push_back(std::move(entry));
+    }
+    return names;
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -553,8 +569,21 @@ bool Registry::hasPluginVersionLoaded(const std::string& organization,
                                       const std::string& version) const
 {
     const std::string Prefix = formatPluginVersionKey(organization, plugin, version) + ':';
-    return std::ranges::any_of(steps_,
-                               [&](const auto& entry) { return entry.first.starts_with(Prefix); });
+    if (std::ranges::any_of(steps_,
+                            [&](const auto& entry) { return entry.first.starts_with(Prefix); }))
+    {
+        return true;
+    }
+
+    // Plugins that only register workflows or tasks use unversioned keys; only one
+    // version of such a plugin can be loaded, so treat any registration as loaded.
+    const std::string PluginPrefix = formatPluginKey(organization, plugin) + ':';
+    return std::ranges::any_of(pluginWorkflows_,
+                               [&](const auto& entry)
+                               { return entry.first.starts_with(PluginPrefix); }) ||
+           std::ranges::any_of(pluginTasks_,
+                               [&](const auto& entry)
+                               { return entry.first.starts_with(PluginPrefix); });
 }
 
 std::vector<std::string> Registry::stepInvocationNames() const

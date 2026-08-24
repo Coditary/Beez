@@ -17,10 +17,11 @@ struct BeezPluginInstallResult
     std::string message;
 };
 
-[[nodiscard]] std::string formatBeezPluginInstallArg(const std::string& organization,
-                                                     const std::string& name,
-                                                     const std::string& version,
-                                                     const std::optional<std::string>& source = std::nullopt);
+[[nodiscard]] std::string
+formatBeezPluginInstallArg(const std::string& organization,
+                           const std::string& name,
+                           const std::string& version,
+                           const std::optional<std::string>& source = std::nullopt);
 
 [[nodiscard]] Expected<std::filesystem::path, std::string>
 resolveInstalledBeezPluginScript(const std::optional<std::string>& organization,
@@ -36,7 +37,7 @@ ensureBeezPluginInstalled(const std::optional<std::string>& organization,
                           const std::string& version,
                           const std::optional<std::string>& source = std::nullopt);
 
-[[nodiscard]] BeezPluginInstallResult ensureReqpackBeezPluginsInstalled(
-    const std::vector<plugin::lua::BeezPluginRef>& plugins);
+[[nodiscard]] BeezPluginInstallResult
+ensureReqpackBeezPluginsInstalled(const std::vector<plugin::lua::BeezPluginRef>& plugins);
 
 }  // namespace beez::core

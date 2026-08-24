@@ -162,7 +162,8 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
                                              "' entry must be a phase table, not a number");
                 }
 
-                return;
+                throw std::runtime_error("workflow '" + name +
+                                         "' entry must be a phase table or string reference");
             }
 
             const sol::table EntryTable = value.as<sol::table>();

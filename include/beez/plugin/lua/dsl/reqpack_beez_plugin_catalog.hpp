@@ -14,6 +14,7 @@ class ReqpackBeezPluginCatalog
   public:
     void set(const std::vector<BeezPluginRef>& pluginRefs);
     void add(BeezPluginRef plugin);
+    void merge(const std::vector<BeezPluginRef>& pluginRefs);
 
     [[nodiscard]] bool empty() const
     {

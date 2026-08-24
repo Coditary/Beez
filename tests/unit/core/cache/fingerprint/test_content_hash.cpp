@@ -127,3 +127,19 @@ TEST(ContentHashTest, HashFileReturnsDigestForMissingFile)
         Hasher->hashFile(std::filesystem::temp_directory_path() / "beez_missing_hash_file.bin");
     EXPECT_EQ(Digest.size(), 16U);
 }
+
+TEST(ContentHashTest, HashFileDistinguishesMissingFromEmptyFile)
+{
+    const auto Directory = std::filesystem::temp_directory_path() / "beez_hash_empty_test";
+    std::filesystem::remove_all(Directory);
+    std::filesystem::create_directories(Directory);
+    const auto EmptyPath = Directory / "empty.bin";
+    writeFile(EmptyPath, "");
+
+    const auto Hasher = beez::core::makeSha256Hasher();
+    const std::string EmptyDigest = Hasher->hashFile(EmptyPath);
+    const std::string MissingDigest = Hasher->hashFile(Directory / "missing.bin");
+    EXPECT_NE(EmptyDigest, MissingDigest);
+
+    std::filesystem::remove_all(Directory);
+}

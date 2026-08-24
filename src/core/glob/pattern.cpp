@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <regex>
 #include <string>
 #include <unordered_map>
@@ -156,10 +157,13 @@ class CachedGlobMatcher final : public IGlobMatcher
         }
 
         const auto CacheKey = overlapCacheKey(leftPattern, rightPattern);
-        const auto Cached = overlapCache_.find(CacheKey);
-        if (Cached != overlapCache_.end())
         {
-            return Cached->second;
+            const std::scoped_lock Lock(overlapMutex_);
+            const auto Cached = overlapCache_.find(CacheKey);
+            if (Cached != overlapCache_.end())
+            {
+                return Cached->second;
+            }
         }
 
         const std::regex& leftRegex = compiledRegex(leftPattern);
@@ -168,13 +172,18 @@ class CachedGlobMatcher final : public IGlobMatcher
         const std::string& rightSample = concreteSampleCached(rightPattern);
         const bool Overlaps =
             std::regex_match(leftSample, rightRegex) || std::regex_match(rightSample, leftRegex);
-        overlapCache_.emplace(CacheKey, Overlaps);
+        {
+            const std::scoped_lock Lock(overlapMutex_);
+            overlapCache_.emplace(CacheKey, Overlaps);
+        }
         return Overlaps;
     }
 
   private:
     [[nodiscard]] const std::regex& compiledRegex(const std::string& pattern) const
     {
+        // Entries are never erased, so references stay valid after the lock is released.
+        const std::scoped_lock Lock(regexMutex_);
         const auto Found = regexCache_.find(pattern);
         if (Found != regexCache_.end())
         {
@@ -188,6 +197,8 @@ class CachedGlobMatcher final : public IGlobMatcher
 
     [[nodiscard]] const std::string& concreteSampleCached(const std::string& pattern) const
     {
+        // Entries are never erased, so references stay valid after the lock is released.
+        const std::scoped_lock Lock(sampleMutex_);
         const auto Found = sampleCache_.find(pattern);
         if (Found != sampleCache_.end())
         {
@@ -198,6 +209,9 @@ class CachedGlobMatcher final : public IGlobMatcher
         return Inserted.first->second;
     }
 
+    mutable std::mutex regexMutex_;
+    mutable std::mutex sampleMutex_;
+    mutable std::mutex overlapMutex_;
     mutable std::unordered_map<std::string, std::shared_ptr<std::regex>> regexCache_;
     mutable std::unordered_map<std::string, std::string> sampleCache_;
     mutable std::unordered_map<PatternPairKey, bool> overlapCache_;

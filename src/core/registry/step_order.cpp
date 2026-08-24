@@ -567,6 +567,14 @@ orderStepsInLevels(const std::vector<Step>& steps,
 
 std::vector<std::vector<Step>> isolateCallbackStepsInLevels(std::vector<std::vector<Step>> levels)
 {
+    // Steps whose callback or config touches a shared non-thread-safe runtime (e.g. a Lua
+    // state) must not run in parallel with each other or with other steps on that runtime.
+    const auto NeedsIsolation = [](const Step& step)
+    {
+        return step.hasCallback() ||
+               (step.config != nullptr && step.config->requiresSerializedAccess());
+    };
+
     std::vector<std::vector<Step>> isolated;
     isolated.reserve(levels.size());
 
@@ -578,40 +586,37 @@ std::vector<std::vector<Step>> isolateCallbackStepsInLevels(std::vector<std::vec
             continue;
         }
 
-        const std::size_t CallbackCount =
-            std::ranges::count_if(level, [](const Step& step) { return step.hasCallback(); });
-        if (CallbackCount <= 1U)
+        const std::size_t IsolatedCount = std::ranges::count_if(level, NeedsIsolation);
+        if (IsolatedCount == 0U)
         {
             isolated.push_back(std::move(level));
             continue;
         }
 
-        std::vector<Step> shellSteps;
-        std::vector<Step> callbackSteps;
-        shellSteps.reserve(level.size());
-        callbackSteps.reserve(level.size());
+        std::vector<Step> parallelSteps;
+        parallelSteps.reserve(level.size());
 
         for (auto& step : level)
         {
-            if (step.hasCallback())
+            if (NeedsIsolation(step))
             {
-                callbackSteps.push_back(std::move(step));
+                if (!parallelSteps.empty())
+                {
+                    isolated.push_back(std::move(parallelSteps));
+                    parallelSteps.clear();
+                }
+                isolated.push_back(std::vector<Step> {std::move(step)});
             }
             else
             {
-                shellSteps.push_back(std::move(step));
+                parallelSteps.push_back(std::move(step));
             }
         }
 
-        if (!shellSteps.empty())
+        if (!parallelSteps.empty())
         {
-            isolated.push_back(std::move(shellSteps));
+            isolated.push_back(std::move(parallelSteps));
         }
-
-        std::ranges::transform(callbackSteps,
-                               std::back_inserter(isolated),
-                               [](Step callbackStep) -> std::vector<Step>
-                               { return std::vector<Step> {std::move(callbackStep)}; });
     }
 
     return isolated;

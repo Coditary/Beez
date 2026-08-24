@@ -6,6 +6,7 @@
 #include "beez/core/model/step.hpp"
 #include "beez/core/model/step_config.hpp"
 
+#include <atomic>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -119,8 +120,8 @@ class WorkerPool
     mutable std::mutex timingMutex_;
     double totalWorkerExecutionSeconds_ = 0.0;
     double totalWorkerSavedSeconds_ = 0.0;
-    std::size_t cacheHitCount_ = 0;
-    std::size_t cacheMissCount_ = 0;
+    std::atomic<std::size_t> cacheHitCount_ = 0;
+    std::atomic<std::size_t> cacheMissCount_ = 0;
 };
 
 }  // namespace beez::core

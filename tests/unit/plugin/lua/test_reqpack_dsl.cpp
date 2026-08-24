@@ -70,3 +70,28 @@ reqpack {
     beez::plugin::lua::LuaDslLoader loader;
     EXPECT_FALSE(loadScript(Project, registry, loader));
 }
+
+TEST(ReqPackDslTest, MergesRepeatedReqpackBlocks)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+reqpack {
+    sys = { "make" },
+}
+
+reqpack {
+    npm = { "eslint" },
+}
+)");
+
+    beez::core::Registry registry;
+    beez::plugin::lua::LuaDslLoader loader;
+    ASSERT_TRUE(loadScript(Project, registry, loader));
+
+    const auto& manifest = loader.reqpackManifest();
+    ASSERT_EQ(manifest.plugins.size(), 2U);
+    ASSERT_TRUE(manifest.plugins.contains("sys"));
+    ASSERT_TRUE(manifest.plugins.contains("npm"));
+    EXPECT_EQ(manifest.plugins.at("sys").at(0).name, "make");
+    EXPECT_EQ(manifest.plugins.at("npm").at(0).name, "eslint");
+}

@@ -4,6 +4,7 @@
 #include "beez/logging/contract/run_types.hpp"
 
 #include <cstddef>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -25,6 +26,9 @@ class RunStatsTracker
                                                    std::size_t workerThreads) const;
 
   private:
+    void endSegmentLocked(bool success);
+
+    mutable std::mutex mutex_;
     std::size_t cacheHitsSkipped_ = 0;
     std::size_t runTotalSteps_ = 0;
     std::size_t peakWorkers_ = 0;

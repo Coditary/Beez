@@ -59,6 +59,10 @@ class FileSystemCacheStore final : public ICacheStore
             {
                 entry.outputs.push_back(Value);
             }
+            else if (Field == "outputhash")
+            {
+                entry.outputHashes.push_back(Value);
+            }
         }
 
         if (entry.stepName.empty())
@@ -77,6 +81,10 @@ class FileSystemCacheStore final : public ICacheStore
         for (const auto& output : entry.outputs)
         {
             stream << "output=" << output << '\n';
+        }
+        for (const auto& hash : entry.outputHashes)
+        {
+            stream << "outputhash=" << hash << '\n';
         }
         writeCacheFile(ManifestPath, stream.str(), options_);
     }

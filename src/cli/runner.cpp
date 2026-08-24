@@ -125,6 +125,18 @@ int run(int argc, const char* argv[])
 
         if (Parsed.options.installDependencies)
         {
+            if (shouldExecuteTarget(Parsed.options))
+            {
+                writeErrorUnlessSilent(silentRun,
+                                       []()
+                                       {
+                                           std::cerr
+                                               << "Error: --install cannot be combined with a "
+                                                  "task, workflow, phase, step, or --list\n";
+                                       });
+                return 1;
+            }
+
             return runReqPackInstallCommand(project, Parsed.options).value_or(0);
         }
 

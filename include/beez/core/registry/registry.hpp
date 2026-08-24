@@ -40,6 +40,7 @@ class Registry
     tryResolvePluginWorkflowReference(const std::string& reference) const;
     void resolvePendingWorkflowReferences();
     [[nodiscard]] bool hasPendingWorkflowReferences() const;
+    [[nodiscard]] std::vector<std::string> pendingWorkflowReferenceNames() const;
     [[nodiscard]] Task resolvePluginTaskReference(const std::string& reference) const;
     void registerWorkflowFromPluginReference(const std::string& localName,
                                              const std::string& pluginWorkflowReference);

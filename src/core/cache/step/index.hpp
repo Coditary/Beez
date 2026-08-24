@@ -1,5 +1,6 @@
 #pragma once
 
+#include "beez/core/cache/fingerprint/content_hash.hpp"
 #include "beez/core/config/cache/cache_options.hpp"
 #include "beez/core/glob/pattern.hpp"
 #include "beez/core/model/step.hpp"
@@ -22,6 +23,15 @@ namespace beez::core::step_cache_detail
 [[nodiscard]] bool outputsExist(const std::vector<std::string>& outputs,
                                 const std::filesystem::path& projectRoot);
 
+[[nodiscard]] std::vector<std::string> computeOutputHashes(const std::vector<std::string>& outputs,
+                                                           const std::filesystem::path& projectRoot,
+                                                           const IContentHasher& hasher);
+
+[[nodiscard]] bool outputsMatch(const std::vector<std::string>& outputs,
+                                const std::vector<std::string>& expectedHashes,
+                                const std::filesystem::path& projectRoot,
+                                const IContentHasher& hasher);
+
 [[nodiscard]] bool stepHasArtifacts(const Step& step);
 
 void addDirectoryFromPattern(const std::string& pattern,
@@ -43,6 +53,8 @@ struct CacheIndexEntry
     double durationSeconds = 0.0;
     std::vector<InputStamp> inputs;
     std::vector<std::string> outputs;
+    // Content hashes parallel to outputs.
+    std::vector<std::string> outputHashes;
 };
 
 [[nodiscard]] std::filesystem::path indexPathForStep(const std::filesystem::path& indexRoot,

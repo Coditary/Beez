@@ -12,12 +12,13 @@ namespace beez::core
 std::filesystem::path beezCacheDirectory()
 {
     // NOLINTBEGIN(concurrency-mt-unsafe) -- cache path lookup at startup
-    if (const char* cacheHome = std::getenv("XDG_CACHE_HOME"); cacheHome != nullptr)
+    if (const char* cacheHome = std::getenv("XDG_CACHE_HOME");
+        cacheHome != nullptr && cacheHome[0] != '\0')
     {
         return std::filesystem::path(cacheHome) / "beez";
     }
 
-    if (const char* home = std::getenv("HOME"); home != nullptr)
+    if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0')
     {
         return std::filesystem::path(home) / ".cache" / "beez";
     }

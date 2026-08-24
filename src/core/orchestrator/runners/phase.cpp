@@ -13,6 +13,7 @@
 #include "beez/core/util/expected.hpp"
 #include "beez/logging/console/output_mode.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <iostream>
@@ -112,16 +113,25 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     orchestrator_detail::ScopedLoggedRun loggedRun(
         *this, "Phase", request.phase, orchestrator_detail::RunCacheFlushPolicy::Never);
 
+    const std::vector<std::string> KnownScopes = registry_.scopesForPhase(request.phase);
+    if (KnownScopes.empty())
+    {
+        return OrchestratorError::NotFound;
+    }
+
     std::vector<std::string> scopes = request.scopes;
     if (scopes.empty())
     {
-        scopes = registry_.scopesForPhase(request.phase);
+        scopes = KnownScopes;
     }
-
-    if (scopes.empty())
+    else if (std::ranges::any_of(scopes,
+                                 [&](const std::string& scope)
+                                 {
+                                     return std::ranges::find(KnownScopes, scope) ==
+                                            KnownScopes.end();
+                                 }))
     {
-        loggedRun.finish(true);
-        return 0;
+        return OrchestratorError::NotFound;
     }
 
     ProgressState progress {.total = orchestrator_detail::countPhaseRequestSteps(*this, request)};
