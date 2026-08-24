@@ -90,6 +90,10 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     std::string linkPath;
     auto* linkOption = app.add_option("--link", linkPath, "Link current directory build.lua to bridge (optional: custom build.lua path)");
     linkOption->expected(0, 1);
+    bool fromBridge = false;
+    bool fromGlobal = false;
+    app.add_flag("-l", fromBridge, "Run the target using the linked bridge build.lua");
+    app.add_flag("-g", fromGlobal, "Run the target using the global ~/.config/beez/global/build.lua");
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -181,6 +185,13 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
         options.linkPath = linkPath.empty() ? std::filesystem::path{}
                                             : std::filesystem::path(linkPath);
     }
+
+    if (fromBridge && fromGlobal)
+    {
+        return {.reason = CliExitReason::Error, .exitCode = 1};
+    }
+    options.fromBridge = fromBridge;
+    options.fromGlobal = fromGlobal;
 
     options.noLogFile = noLogFile;
     if (!logFile.empty())

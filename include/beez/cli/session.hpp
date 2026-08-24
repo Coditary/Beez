@@ -17,6 +17,13 @@ class LuaDslLoader;
 namespace beez::cli
 {
 
+enum class ScriptSource
+{
+    Auto,
+    Bridge,
+    Global,
+};
+
 struct LoadedProject
 {
     core::Context context;
@@ -31,8 +38,10 @@ struct LoadedProject
 
 void loadGlobalSettings(LoadedProject& project);
 
-[[nodiscard]] std::optional<int>
-loadBuildScript(LoadedProject& project, bool silentRun, bool validateRegistry = true);
+[[nodiscard]] std::optional<int> loadBuildScript(LoadedProject& project,
+                                                 bool silentRun,
+                                                 bool validateRegistry = true,
+                                                 ScriptSource source = ScriptSource::Auto);
 
 void mergeProjectSettings(LoadedProject& project, const ParsedOptions& options);
 

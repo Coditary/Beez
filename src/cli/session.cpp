@@ -56,7 +56,10 @@ void loadGlobalSettings(LoadedProject& project)
     project.settings.applyEnvironment(project.context);
 }
 
-std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun, bool validateRegistry)
+std::optional<int> loadBuildScript(LoadedProject& project,
+                                   bool silentRun,
+                                   bool validateRegistry,
+                                   ScriptSource source)
 {
     project.pluginHost.addPlugin(std::make_unique<plugin::lua::LuaDslPlugin>());
     project.pluginHost.addPlugin(std::make_unique<plugin::shell::ShellPlugin>());
@@ -70,7 +73,39 @@ std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun, bool 
         return 1;
     }
 
-    if (!std::filesystem::exists(project.context.buildScriptPath()))
+    if (source == ScriptSource::Bridge)
+    {
+        const auto BridgePath = core::resolveBridge(project.context.projectRoot());
+        if (!BridgePath.has_value())
+        {
+            writeErrorUnlessSilent(
+                silentRun,
+                [&project]()
+                {
+                    std::cerr << "Error: no bridge linked for project: "
+                              << project.context.projectRoot() << '\n';
+                });
+            return 1;
+        }
+        project.context.setBuildScriptFileName(BridgePath->string());
+    }
+    else if (source == ScriptSource::Global)
+    {
+        const auto GlobalScript = core::globalBuildScriptPath();
+        if (GlobalScript.empty() || !std::filesystem::exists(GlobalScript))
+        {
+            writeErrorUnlessSilent(silentRun,
+                                   []()
+                                   {
+                                       std::cerr
+                                           << "Error: global build script not found: "
+                                           << core::globalBuildScriptPath().string() << '\n';
+                                   });
+            return 1;
+        }
+        project.context.setBuildScriptFileName(GlobalScript.string());
+    }
+    else if (!std::filesystem::exists(project.context.buildScriptPath()))
     {
         // Check bridge index for a linked build script
         const auto BridgePath = core::resolveBridge(project.context.projectRoot());

@@ -25,6 +25,8 @@ struct ParsedOptions
     std::optional<std::filesystem::path> logFile;
     std::optional<std::filesystem::path> linkPath;
     std::optional<core::PhaseRequest> phaseRequest;
+    bool fromBridge = false;
+    bool fromGlobal = false;
     bool verbose = false;
     bool silent = false;
     bool errorsOnly = false;

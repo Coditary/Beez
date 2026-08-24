@@ -401,6 +401,56 @@ TEST(CliParserTest, LinkFlagWithTargetCombined)
     EXPECT_EQ(Result.options.target.value(), "mytask");
 }
 
+TEST(CliParserTest, ParsesBridgeFlagShortLBeforeTarget)
+{
+    const std::vector<std::string> Args = {"beez", "-l", "hello"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.fromBridge);
+    EXPECT_FALSE(Result.options.fromGlobal);
+    ASSERT_TRUE(Result.options.target.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    EXPECT_EQ(Result.options.target.value(), "hello");
+}
+
+TEST(CliParserTest, ParsesGlobalFlagShortGBeforeTarget)
+{
+    const std::vector<std::string> Args = {"beez", "-g", "hello"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.fromGlobal);
+    EXPECT_FALSE(Result.options.fromBridge);
+    ASSERT_TRUE(Result.options.target.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    EXPECT_EQ(Result.options.target.value(), "hello");
+}
+
+TEST(CliParserTest, SourceFlagsAcceptedAfterTarget)
+{
+    const std::vector<std::string> ArgsL = {"beez", "hello", "-l"};
+    const auto ArgvL = toArgv(ArgsL);
+    const auto ResultL = beez::cli::CliParser::parse(static_cast<int>(ArgvL.size()), ArgvL.data());
+    ASSERT_EQ(ResultL.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(ResultL.options.fromBridge);
+
+    const std::vector<std::string> ArgsG = {"beez", "hello", "-g"};
+    const auto ArgvG = toArgv(ArgsG);
+    const auto ResultG = beez::cli::CliParser::parse(static_cast<int>(ArgvG.size()), ArgvG.data());
+    ASSERT_EQ(ResultG.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(ResultG.options.fromGlobal);
+}
+
+TEST(CliParserTest, BridgeAndGlobalFlagsRejectedTogether)
+{
+    const std::vector<std::string> Args = {"beez", "-l", "-g", "hello"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
+    EXPECT_NE(Result.exitCode, 0);
+}
+
 TEST(InstallCompletionTest, DumpsEmbeddedBashAndZshScripts)
 {
     const auto BashScript = beez::cli::dumpCompletionScript("bash");

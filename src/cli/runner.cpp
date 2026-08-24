@@ -142,8 +142,13 @@ int run(int argc, const char* argv[])
             return 0;
         }
 
-        if (const auto LoadError =
-                loadBuildScript(project, silentRun, !Parsed.options.installDependencies))
+        if (const auto LoadError = loadBuildScript(project,
+                                                   silentRun,
+                                                   !Parsed.options.installDependencies,
+                                                   Parsed.options.fromBridge ? ScriptSource::Bridge
+                                                   : Parsed.options.fromGlobal
+                                                       ? ScriptSource::Global
+                                                       : ScriptSource::Auto))
         {
             return *LoadError;
         }
