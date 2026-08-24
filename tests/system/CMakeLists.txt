@@ -8,6 +8,7 @@ add_executable(
     scenarios/test_workflows.cpp
     scenarios/test_errors.cpp
     scenarios/test_cli_flags.cpp
+    scenarios/test_cli_link.cpp
     scenarios/test_config_build_lua.cpp
     scenarios/test_cache_usecases.cpp
     scenarios/test_cache_adversarial.cpp

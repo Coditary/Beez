@@ -358,6 +358,49 @@ TEST(CliParserTest, ParsesPhaseFlag)
     EXPECT_EQ(Result.options.phaseRequest->scopes[0], "code");
 }
 
+TEST(CliParserTest, ParsesLinkFlagWithoutPath)
+{
+    const std::vector<std::string> Args = {"beez", "--link"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_TRUE(Result.options.linkPath.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_TRUE(Result.options.linkPath->empty());
+}
+
+TEST(CliParserTest, ParsesLinkFlagWithPath)
+{
+    const std::vector<std::string> Args = {"beez", "--link", "/my/custom/build.lua"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.linkPath.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.linkPath.value(), std::filesystem::path("/my/custom/build.lua"));
+}
+
+TEST(CliParserTest, LinkFlagSatisfiesRunTarget)
+{
+    const std::vector<std::string> Args = {"beez", "--link"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    // --link alone should not show help (it's a valid run target)
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+}
+
+TEST(CliParserTest, LinkFlagWithTargetCombined)
+{
+    const std::vector<std::string> Args = {"beez", "--link", "/path/to/build.lua", "mytask"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.linkPath.has_value());
+    ASSERT_TRUE(Result.options.target.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    EXPECT_EQ(Result.options.target.value(), "mytask");
+}
+
 TEST(InstallCompletionTest, DumpsEmbeddedBashAndZshScripts)
 {
     const auto BashScript = beez::cli::dumpCompletionScript("bash");

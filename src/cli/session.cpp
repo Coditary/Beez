@@ -2,6 +2,7 @@
 
 #include "beez/cli/commands/run.hpp"
 #include "beez/cli/parsing/parsed_options.hpp"
+#include "beez/core/config/paths/bridge_paths.hpp"
 #include "beez/core/config/paths/config_paths.hpp"
 #include "beez/core/config/settings/run_options.hpp"
 #include "beez/core/orchestrator/orchestrator.hpp"
@@ -71,13 +72,22 @@ std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun, bool 
 
     if (!std::filesystem::exists(project.context.buildScriptPath()))
     {
-        writeErrorUnlessSilent(silentRun,
-                               [&project]()
-                               {
-                                   std::cerr << "Error: build script not found: "
-                                             << project.context.buildScriptPath() << '\n';
-                               });
-        return 1;
+        // Check bridge index for a linked build script
+        const auto BridgePath = core::resolveBridge(project.context.projectRoot());
+        if (BridgePath.has_value())
+        {
+            project.context.setBuildScriptFileName(BridgePath->string());
+        }
+        else
+        {
+            writeErrorUnlessSilent(silentRun,
+                                   [&project]()
+                                   {
+                                       std::cerr << "Error: build script not found: "
+                                                 << project.context.buildScriptPath() << '\n';
+                                   });
+            return 1;
+        }
     }
 
     if (!project.luaLoader->load(project.context, project.registry, validateRegistry))

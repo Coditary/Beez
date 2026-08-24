@@ -10,6 +10,7 @@
 #include "beez/cli/parsing/parsed_options.hpp"
 #include "beez/cli/session.hpp"
 #include "beez/cli/tempify_dispatch.hpp"
+#include "beez/core/config/paths/bridge_paths.hpp"
 #include "beez/core/config/report/settings_report.hpp"
 
 #include <exception>
@@ -105,6 +106,32 @@ int run(int argc, const char* argv[])
         if (const auto EarlyExit = runEarlyConfigCommands(Parsed.options))
         {
             return *EarlyExit;
+        }
+
+        if (Parsed.options.linkPath.has_value())
+        {
+            const auto Cwd = std::filesystem::current_path();
+            const auto BuildScriptSource = Parsed.options.linkPath.has_value() && !Parsed.options.linkPath->empty()
+                                              ? *Parsed.options.linkPath
+                                              : Cwd / "build.lua";
+
+            if (!std::filesystem::exists(BuildScriptSource))
+            {
+                std::cerr << "Error: build script not found: " << BuildScriptSource << '\n';
+                return 1;
+            }
+
+            const auto Result = core::createBridgeLink(BuildScriptSource, Cwd);
+            if (Result.alreadyExisted)
+            {
+                std::cout << "Warning: bridge already exists for " << Cwd << '\n';
+            }
+            else
+            {
+                std::cout << "Linked " << BuildScriptSource << " -> " << Result.bridgeDir << '\n';
+            }
+            std::cout << "Bridge: " << Result.bridgeDir / "build.lua" << '\n';
+            return 0;
         }
 
         LoadedProject project;

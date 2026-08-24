@@ -25,6 +25,7 @@ add_executable(
     core/cache/fingerprint/test_include_fingerprint.cpp
     core/cache/storage/test_cache_write_coordinator.cpp
     core/config/paths/test_config_paths.cpp
+    core/config/paths/test_bridge_paths.cpp
     core/plugin/test_plugin_paths.cpp
     core/test_temp_directory.cpp
     core/test_text_table.cpp

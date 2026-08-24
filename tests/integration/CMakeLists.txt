@@ -12,6 +12,7 @@ add_executable(
     app/test_cli.cpp
     app/test_cli_init.cpp
     app/test_cli_flags.cpp
+    app/test_cli_link.cpp
     app/test_config_runtime.cpp
     app/test_completion.cpp
     app/test_install_completion.cpp

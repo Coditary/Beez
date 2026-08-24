@@ -87,6 +87,9 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     std::size_t threadCount = 0;
     app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
         ->check(CLI::Range(1, MaxThreadCount));
+    std::string linkPath;
+    auto* linkOption = app.add_option("--link", linkPath, "Link current directory build.lua to bridge (optional: custom build.lua path)");
+    linkOption->expected(0, 1);
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -148,7 +151,8 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
                               cleanCache || updateCache || installCompletion || showConfig ||
                               app.count("--config-options") > 0 ||
                               app.count("--complete-config-options") > 0 ||
-                              app.count("--dump-completion") > 0 || installDependencies;
+                              app.count("--dump-completion") > 0 || installDependencies ||
+                              app.count("--link") > 0;
 
     if (!HasRunTarget)
     {
@@ -170,6 +174,12 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     if (threadCount > 0)
     {
         options.maxThreads = threadCount;
+    }
+
+    if (app.count("--link") > 0)
+    {
+        options.linkPath = linkPath.empty() ? std::filesystem::path{}
+                                            : std::filesystem::path(linkPath);
     }
 
     options.noLogFile = noLogFile;

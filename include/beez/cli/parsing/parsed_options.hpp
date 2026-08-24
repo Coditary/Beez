@@ -23,6 +23,7 @@ struct ParsedOptions
     std::optional<std::string> stepName;
     std::optional<std::string> listKind;
     std::optional<std::filesystem::path> logFile;
+    std::optional<std::filesystem::path> linkPath;
     std::optional<core::PhaseRequest> phaseRequest;
     bool verbose = false;
     bool silent = false;
