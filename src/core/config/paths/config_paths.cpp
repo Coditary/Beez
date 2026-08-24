@@ -34,4 +34,15 @@ std::filesystem::path globalBeezConfigPath()
     return ConfigDirectory / "config.lua";
 }
 
+std::filesystem::path globalBuildScriptPath()
+{
+    const auto ConfigDirectory = beezConfigDirectory();
+    if (ConfigDirectory.empty())
+    {
+        return {};
+    }
+
+    return ConfigDirectory / "global" / "build.lua";
+}
+
 }  // namespace beez::core

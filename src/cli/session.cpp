@@ -80,13 +80,22 @@ std::optional<int> loadBuildScript(LoadedProject& project, bool silentRun, bool 
         }
         else
         {
-            writeErrorUnlessSilent(silentRun,
-                                   [&project]()
-                                   {
-                                       std::cerr << "Error: build script not found: "
-                                                 << project.context.buildScriptPath() << '\n';
-                                   });
-            return 1;
+            // Last resort: global build script shipped in the beez config directory
+            const auto GlobalScript = core::globalBuildScriptPath();
+            if (!GlobalScript.empty() && std::filesystem::exists(GlobalScript))
+            {
+                project.context.setBuildScriptFileName(GlobalScript.string());
+            }
+            else
+            {
+                writeErrorUnlessSilent(silentRun,
+                                       [&project]()
+                                       {
+                                           std::cerr << "Error: build script not found: "
+                                                     << project.context.buildScriptPath() << '\n';
+                                       });
+                return 1;
+            }
         }
     }
 

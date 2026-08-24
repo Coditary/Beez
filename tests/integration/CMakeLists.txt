@@ -13,6 +13,7 @@ add_executable(
     app/test_cli_init.cpp
     app/test_cli_flags.cpp
     app/test_cli_link.cpp
+    app/test_session_fallback.cpp
     app/test_config_runtime.cpp
     app/test_completion.cpp
     app/test_install_completion.cpp
@@ -21,7 +22,7 @@ add_executable(
 
 add_dependencies(beez_integration_tests beez)
 
-target_link_libraries(beez_integration_tests PRIVATE GTest::gtest GTest::gtest_main beez_plugins)
+target_link_libraries(beez_integration_tests PRIVATE GTest::gtest GTest::gtest_main beez_plugins beez_cli beez_logging)
 
 target_include_directories(beez_integration_tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 

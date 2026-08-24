@@ -118,6 +118,36 @@ TEST(ConfigPathsTest, FallsBackToHomeDotConfigWhenXdgUnset)
     EXPECT_EQ(beez::core::globalBeezConfigPath(), HomeRoot / ".config" / "beez" / "config.lua");
 }
 
+TEST(ConfigPathsTest, GlobalBuildScriptPathRespectsXdg)
+{
+    const auto XdgRoot = beez::core::systemTempDirectory() / "beez_config_paths_global_test";
+    const ScopedTempTree Cleanup(XdgRoot);
+    std::filesystem::create_directories(XdgRoot);
+    const ScopedEnv Xdg("XDG_CONFIG_HOME", XdgRoot.c_str());
+
+    EXPECT_EQ(beez::core::globalBuildScriptPath(), XdgRoot / "beez" / "global" / "build.lua");
+}
+
+TEST(ConfigPathsTest, GlobalBuildScriptPathFallsBackToHomeDotConfig)
+{
+    const auto HomeRoot = beez::core::systemTempDirectory() / "beez_config_paths_global_home_test";
+    const ScopedTempTree Cleanup(HomeRoot);
+    std::filesystem::create_directories(HomeRoot);
+    const ScopedEnv Home("HOME", HomeRoot.c_str());
+    const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");
+
+    EXPECT_EQ(beez::core::globalBuildScriptPath(),
+              HomeRoot / ".config" / "beez" / "global" / "build.lua");
+}
+
+TEST(ConfigPathsTest, GlobalBuildScriptPathEmptyWhenHomeUnset)
+{
+    const ScopedEnv HomeUnset("HOME", "");
+    const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");
+
+    EXPECT_TRUE(beez::core::globalBuildScriptPath().empty());
+}
+
 TEST(ConfigPathsTest, ReturnsEmptyWhenHomeUnset)
 {
     const ScopedEnv HomeUnset("HOME", "");
