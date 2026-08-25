@@ -337,3 +337,109 @@ task("debug", {
     EXPECT_TRUE(beez::test::outputContains(Result, "not found"));
     EXPECT_FALSE(Project.hasFile("debug.out"));
 }
+
+TEST(SystemProfileTest, LocalStepWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check > check.out",
+    profile = "dev",
+})
+
+task("run-check", {
+    { step = "custom-check" },
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "dev", "run-check"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(Project.hasFile("check.out"));
+}
+
+TEST(SystemProfileTest, LocalStepWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check > check.out",
+    profile = "dev",
+})
+
+task("run-check", {
+    { step = "custom-check" },
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "test", "run-check"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_FALSE(Project.hasFile("check.out"));
+}
+
+TEST(SystemProfileTest, LocalStepWithNoneProfileAppliedWhenNoActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check > check.out",
+    profile = "NONE",
+})
+
+task("run-check", {
+    { step = "custom-check" },
+})
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"run-check"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(Project.hasFile("check.out"));
+}
+
+TEST(SystemProfileTest, LocalStepWithNoneProfileSkippedWhenActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check > check.out",
+    profile = "NONE",
+})
+
+task("run-check", {
+    { step = "custom-check" },
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "dev", "run-check"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_FALSE(Project.hasFile("check.out"));
+}

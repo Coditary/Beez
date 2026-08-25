@@ -2672,4 +2672,134 @@ task("build", {
     EXPECT_FALSE(Found.has_value());
 }
 
+TEST(LuaDslPluginTest, StepWithProfileAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "dev",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("custom-check");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(Found->phase, "test");
+    EXPECT_EQ(Found->scope, "code");
+    ASSERT_TRUE(Found->hasShellRun());
+    EXPECT_EQ(Found->shellRun.value_or(""), "echo check");
+}
+
+TEST(LuaDslPluginTest, StepWithProfileSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "dev",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("custom-check");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(LuaDslPluginTest, StepWithProfileSkippedWhenNoActiveProfile)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "dev",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("custom-check");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(LuaDslPluginTest, StepWithoutProfileAlwaysApplied)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("custom-check");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(Found->phase, "test");
+    EXPECT_EQ(Found->scope, "code");
+}
+
+TEST(LuaDslPluginTest, StepWithNoneProfileAppliedWhenNoActive)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "NONE",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("custom-check");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(Found->phase, "test");
+}
+
+TEST(LuaDslPluginTest, StepWithNoneProfileSkippedWhenActive)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "NONE",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("custom-check");
+    EXPECT_FALSE(Found.has_value());
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)

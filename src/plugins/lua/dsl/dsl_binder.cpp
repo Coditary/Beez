@@ -155,6 +155,27 @@ class DslBinder
 
     void step(const sol::table& options) const
     {
+        const sol::object ProfileValue = options["profile"];
+        if (ProfileValue.valid() && ProfileValue.is<std::string>())
+        {
+            const std::string RequestedProfile = ProfileValue.as<std::string>();
+            if (RequestedProfile == "NONE")
+            {
+                if (registry_->profile().has_value())
+                {
+                    return;
+                }
+            }
+            else
+            {
+                const auto& currentProfile = registry_->profile();
+                if (!currentProfile.has_value() || *currentProfile != RequestedProfile)
+                {
+                    return;
+                }
+            }
+        }
+
         const auto LuaState = luaState_.lock();
         if (!LuaState)
         {

@@ -885,3 +885,130 @@ task("debug", {
     const auto Found = project.registry.findTask("debug");
     EXPECT_FALSE(Found.has_value());
 }
+
+TEST(ProfileIntegrationTest, LocalStepWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "dev",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("custom-check");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(Found->phase, "test");
+    EXPECT_EQ(Found->scope, "code");
+}
+
+TEST(ProfileIntegrationTest, LocalStepWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "dev",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "test").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("custom-check");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, LocalStepWithoutProfileAlwaysApplied)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("custom-check");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(Found->phase, "test");
+}
+
+TEST(ProfileIntegrationTest, LocalStepWithNoneProfileAppliedWhenNoActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "NONE",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project).has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("custom-check");
+    ASSERT_TRUE(Found.has_value());
+    EXPECT_EQ(Found->phase, "test");
+}
+
+TEST(ProfileIntegrationTest, LocalStepWithNoneProfileSkippedWhenActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({
+    name = "custom-check",
+    phase = "test",
+    scope = "code",
+    run = "echo check",
+    profile = "NONE",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("custom-check");
+    EXPECT_FALSE(Found.has_value());
+}
