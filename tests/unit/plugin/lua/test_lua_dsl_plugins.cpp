@@ -2478,4 +2478,198 @@ step({
     EXPECT_EQ(Found->config->cacheFingerprint().find("force=true"), std::string::npos);
 }
 
+TEST(LuaDslPluginTest, TaskWithProfileAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "dev",
+    "echo debug",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "debug");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo debug");
+}
+
+TEST(LuaDslPluginTest, TaskWithProfileSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "dev",
+    "echo debug",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findTask("debug");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(LuaDslPluginTest, TaskWithProfileSkippedWhenNoActiveProfile)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "dev",
+    "echo debug",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findTask("debug");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(LuaDslPluginTest, TaskWithoutProfileAlwaysApplied)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    "echo debug",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "debug");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo debug");
+}
+
+TEST(LuaDslPluginTest, TaskWithNoneProfileAppliedWhenNoActive)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "NONE",
+    "echo debug",
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "debug");
+    ASSERT_TRUE(Found.has_value());
+    beez::test::expectShellCommand(Found, 0, "echo debug");
+}
+
+TEST(LuaDslPluginTest, TaskWithNoneProfileSkippedWhenActive)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "NONE",
+    "echo debug",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findTask("debug");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(LuaDslPluginTest, TaskWithProfileAndPluginStepsAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        compile = {
+            phase = "compile",
+            scope = "code",
+            run = "echo compile",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    profile = "dev",
+    { plugin = "coditary/demo", step = "compile" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = beez::test::requireTask(registry, "build");
+    ASSERT_TRUE(Found.has_value());
+    ASSERT_EQ(Found->actions.size(), 1U);
+    beez::test::expectStepInvocation(Found, 0, "coditary/demo:compile", false);
+}
+
+TEST(LuaDslPluginTest, TaskWithProfileAndPluginStepsSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        compile = {
+            phase = "compile",
+            scope = "code",
+            run = "echo compile",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+task("build", {
+    profile = "dev",
+    { plugin = "coditary/demo", step = "compile" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findTask("build");
+    EXPECT_FALSE(Found.has_value());
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)

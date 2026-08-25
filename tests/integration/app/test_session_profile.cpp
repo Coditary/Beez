@@ -777,3 +777,111 @@ step({
 
     EXPECT_EQ(Found->config->cacheFingerprint().find("force=true"), std::string::npos);
 }
+
+TEST(ProfileIntegrationTest, TaskWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "dev",
+    "echo debug",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findTask("debug");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, TaskWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "dev",
+    "echo debug",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "test").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findTask("debug");
+    EXPECT_FALSE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, TaskWithoutProfileAlwaysApplied)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    "echo debug",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findTask("debug");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, TaskWithNoneProfileAppliedWhenNoActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "NONE",
+    "echo debug",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project).has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findTask("debug");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, TaskWithNoneProfileSkippedWhenActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+task("debug", {
+    profile = "NONE",
+    "echo debug",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findTask("debug");
+    EXPECT_FALSE(Found.has_value());
+}

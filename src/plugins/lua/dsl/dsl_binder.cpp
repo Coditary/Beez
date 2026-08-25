@@ -70,6 +70,27 @@ class DslBinder
 
     void task(const std::string& name, const sol::table& actions) const
     {
+        const sol::object ProfileValue = actions["profile"];
+        if (ProfileValue.valid() && ProfileValue.is<std::string>())
+        {
+            const std::string RequestedProfile = ProfileValue.as<std::string>();
+            if (RequestedProfile == "NONE")
+            {
+                if (registry_->profile().has_value())
+                {
+                    return;
+                }
+            }
+            else
+            {
+                const auto& currentProfile = registry_->profile();
+                if (!currentProfile.has_value() || *currentProfile != RequestedProfile)
+                {
+                    return;
+                }
+            }
+        }
+
         if (isPluginTaskImportTable(actions))
         {
             registerTaskFromPluginReference(name, buildPluginTaskReference(actions));

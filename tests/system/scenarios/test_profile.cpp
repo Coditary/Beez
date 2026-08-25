@@ -257,3 +257,83 @@ return {
     EXPECT_EQ(ProdResult.exitCode, 0);
     EXPECT_TRUE(beez::test::outputContains(ProdResult, "8"));
 }
+
+TEST(SystemProfileTest, TaskWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+task("debug", {
+    profile = "dev",
+    "echo debug > debug.out",
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "dev", "debug"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(Project.hasFile("debug.out"));
+}
+
+TEST(SystemProfileTest, TaskWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+task("debug", {
+    profile = "dev",
+    "echo debug > debug.out",
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "test", "debug"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_TRUE(beez::test::outputContains(Result, "not found"));
+    EXPECT_FALSE(Project.hasFile("debug.out"));
+}
+
+TEST(SystemProfileTest, TaskWithNoneProfileAppliedWhenNoActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+task("debug", {
+    profile = "NONE",
+    "echo debug > debug.out",
+})
+)");
+
+    const beez::test::ProcessResult Result = beez::test::runBeez(Project.path(), {"debug"});
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_TRUE(Project.hasFile("debug.out"));
+}
+
+TEST(SystemProfileTest, TaskWithNoneProfileSkippedWhenActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+task("debug", {
+    profile = "NONE",
+    "echo debug > debug.out",
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "dev", "debug"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_TRUE(beez::test::outputContains(Result, "not found"));
+    EXPECT_FALSE(Project.hasFile("debug.out"));
+}
