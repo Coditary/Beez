@@ -1,5 +1,6 @@
 #include "beez/plugin/lua/dsl/configure_parser.hpp"
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -44,13 +45,17 @@ namespace
     return copy;
 }
 
-void parsePluginSteps(const std::string& qualifiedPluginName,
-                      const sol::table& stepsTable,
-                      const std::function<void(const std::string& stepName,
-                                               const sol::table& stepConfig)>& onStepConfig)
+void parsePluginSteps(
+    const std::string& qualifiedPluginName,
+    const sol::table& stepsTable,
+    const std::optional<std::string>& profile,
+    const std::function<void(const std::string& stepName,
+                             const sol::table& stepConfig,
+                             const std::optional<std::string>& profile)>& onStepConfig)
 {
     stepsTable.for_each(
-        [&qualifiedPluginName, &onStepConfig](const sol::object& key, const sol::object& value)
+        [&qualifiedPluginName, &onStepConfig, &profile](const sol::object& key,
+                                                        const sol::object& value)
         {
             if (!key.is<std::string>())
             {
@@ -64,7 +69,7 @@ void parsePluginSteps(const std::string& qualifiedPluginName,
                                          key.as<std::string>() + "'] must be a table");
             }
 
-            onStepConfig(key.as<std::string>(), value.as<sol::table>());
+            onStepConfig(key.as<std::string>(), value.as<sol::table>(), profile);
         });
 }
 
@@ -89,13 +94,16 @@ void parsePluginSteps(const std::string& qualifiedPluginName,
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
-void parseConfigureEntry(const sol::object& key,
-                         const sol::object& value,
-                         const std::shared_ptr<sol::state>& luaState,
-                         const std::function<void(const std::string& qualifiedPluginName,
-                                                  const sol::table& pluginConfig)>& onPluginConfig,
-                         const std::function<void(const std::string& stepName,
-                                                  const sol::table& stepConfig)>& onStepConfig)
+void parseConfigureEntry(
+    const sol::object& key,
+    const sol::object& value,
+    const std::shared_ptr<sol::state>& luaState,
+    const std::function<void(const std::string& qualifiedPluginName,
+                             const sol::table& pluginConfig,
+                             const std::optional<std::string>& profile)>& onPluginConfig,
+    const std::function<void(const std::string& stepName,
+                             const sol::table& stepConfig,
+                             const std::optional<std::string>& profile)>& onStepConfig)
 {
     const std::string EntryLabel = formatEntryIndex(key);
 
@@ -124,13 +132,20 @@ void parseConfigureEntry(const sol::object& key,
     const std::string Target = TargetValue.as<std::string>();
     const sol::table ConfigTable = ConfigValue.as<sol::table>();
 
+    std::optional<std::string> profile;
+    const sol::object ProfileValue = EntryTable["profile"];
+    if (isPresent(ProfileValue) && ProfileValue.is<std::string>())
+    {
+        profile = ProfileValue.as<std::string>();
+    }
+
     if (isStandaloneStepReference(Target))
     {
-        onStepConfig(standaloneStepName(Target), ConfigTable);
+        onStepConfig(standaloneStepName(Target), ConfigTable, profile);
         return;
     }
 
-    onPluginConfig(Target, copyTableWithoutSteps(luaState, ConfigTable));
+    onPluginConfig(Target, copyTableWithoutSteps(luaState, ConfigTable), profile);
 
     const sol::object StepsValue = ConfigTable["steps"];
     if (!isPresent(StepsValue))
@@ -143,18 +158,21 @@ void parseConfigureEntry(const sol::object& key,
         throw std::runtime_error("configure plugin '" + Target + "' field 'steps' must be a table");
     }
 
-    parsePluginSteps(Target, StepsValue.as<sol::table>(), onStepConfig);
+    parsePluginSteps(Target, StepsValue.as<sol::table>(), profile, onStepConfig);
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)
 
 }  // namespace
 
-void parseConfigureTable(const sol::table& entriesTable,
-                         const std::shared_ptr<sol::state>& luaState,
-                         const std::function<void(const std::string& qualifiedPluginName,
-                                                  const sol::table& pluginConfig)>& onPluginConfig,
-                         const std::function<void(const std::string& stepName,
-                                                  const sol::table& stepConfig)>& onStepConfig)
+void parseConfigureTable(
+    const sol::table& entriesTable,
+    const std::shared_ptr<sol::state>& luaState,
+    const std::function<void(const std::string& qualifiedPluginName,
+                             const sol::table& pluginConfig,
+                             const std::optional<std::string>& profile)>& onPluginConfig,
+    const std::function<void(const std::string& stepName,
+                             const sol::table& stepConfig,
+                             const std::optional<std::string>& profile)>& onStepConfig)
 {
     if (entriesTable.empty())
     {

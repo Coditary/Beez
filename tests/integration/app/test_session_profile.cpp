@@ -426,3 +426,354 @@ TEST(ProfileIntegrationTest, PluginWithNilAlwaysIncluded)
 
     EXPECT_TRUE(registry.isPluginIncludedInProfile(std::nullopt));
 }
+
+TEST(ProfileIntegrationTest, ConfigurePluginProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "dev" },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(ProfileIntegrationTest, ConfigurePluginProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "dev" },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "test").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(ProfileIntegrationTest, ConfigurePluginWithoutProfileAlwaysApplied)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    } },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(ProfileIntegrationTest, ConfigurePluginNoneProfileAppliedWhenNoActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "NONE" },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project).has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(ProfileIntegrationTest, ConfigurePluginNoneProfileSkippedWhenActive)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "NONE" },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(ProfileIntegrationTest, ConfigureStepProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure({
+    { ":clean:artifacts", {
+        force = true,
+    }, profile = "dev" },
+})
+
+step({
+    name = "clean:artifacts",
+    phase = "clean",
+    scope = "repo",
+    run = "true",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("clean:artifacts");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("force=true"), std::string::npos);
+}
+
+TEST(ProfileIntegrationTest, ConfigureStepProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure({
+    { ":clean:artifacts", {
+        force = true,
+    }, profile = "dev" },
+})
+
+step({
+    name = "clean:artifacts",
+    phase = "clean",
+    scope = "repo",
+    run = "true",
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "test").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findStep("clean:artifacts");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("force=true"), std::string::npos);
+}

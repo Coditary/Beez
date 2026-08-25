@@ -18,6 +18,7 @@
 #include "beez/core/registry/workflow_reference.hpp"
 
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -142,8 +143,29 @@ class DslBinder
         registry_->registerStep(parseStepTable(options, LuaState));
     }
 
-    void configureStep(const std::string& name, const sol::table& configTable) const
+    void configureStep(const std::string& name,
+                       const sol::table& configTable,
+                       const std::optional<std::string>& profile = std::nullopt) const
     {
+        if (profile.has_value())
+        {
+            if (*profile == "NONE")
+            {
+                if (registry_->profile().has_value())
+                {
+                    return;
+                }
+            }
+            else
+            {
+                const auto& currentProfile = registry_->profile();
+                if (!currentProfile.has_value() || *currentProfile != *profile)
+                {
+                    return;
+                }
+            }
+        }
+
         const auto LuaState = luaState_.lock();
         if (!LuaState)
         {
@@ -162,16 +184,38 @@ class DslBinder
         }
 
         parseConfigureTable(
-            entriesTable,
-            LuaState,
-            [this](const std::string& qualifiedName, const sol::table& configTable)
-            { configurePlugin(qualifiedName, configTable); },
-            [this](const std::string& stepName, const sol::table& configTable)
-            { configureStep(stepName, configTable); });
+            entriesTable, LuaState,
+            [this](const std::string& qualifiedName, const sol::table& configTable,
+                   const std::optional<std::string>& profile)
+            { configurePlugin(qualifiedName, configTable, profile); },
+            [this](const std::string& stepName, const sol::table& configTable,
+                   const std::optional<std::string>& profile)
+            { configureStep(stepName, configTable, profile); });
     }
 
-    void configurePlugin(const std::string& qualifiedName, const sol::table& configTable) const
+    void configurePlugin(const std::string& qualifiedName,
+                         const sol::table& configTable,
+                         const std::optional<std::string>& profile = std::nullopt) const
     {
+        if (profile.has_value())
+        {
+            if (*profile == "NONE")
+            {
+                if (registry_->profile().has_value())
+                {
+                    return;
+                }
+            }
+            else
+            {
+                const auto& currentProfile = registry_->profile();
+                if (!currentProfile.has_value() || *currentProfile != *profile)
+                {
+                    return;
+                }
+            }
+        }
+
         const auto LuaState = luaState_.lock();
         if (!LuaState)
         {

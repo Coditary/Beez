@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 
 // NOLINTBEGIN(misc-include-cleaner)
@@ -14,8 +15,10 @@ namespace beez::plugin::lua
 void parseConfigureTable(const sol::table& entriesTable,
                          const std::shared_ptr<sol::state>& luaState,
                          const std::function<void(const std::string& qualifiedPluginName,
-                                                  const sol::table& pluginConfig)>& onPluginConfig,
+                                                  const sol::table& pluginConfig,
+                                                  const std::optional<std::string>& profile)>& onPluginConfig,
                          const std::function<void(const std::string& stepName,
-                                                  const sol::table& stepConfig)>& onStepConfig);
+                                                  const sol::table& stepConfig,
+                                                  const std::optional<std::string>& profile)>& onStepConfig);
 
 }  // namespace beez::plugin::lua

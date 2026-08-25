@@ -1,11 +1,3 @@
-
-reqpack {
-    beez = {
-        { name = "coditary/clang-format", path = "./plugins/coditary/clang-format", version = "1.0.0", profile = "production" },
-        { name = "coditary/clang",        path = "./plugins/coditary/clang",        version = "1.0.0" },
-        { name = "coditary/pipeline",     path = "./plugins/coditary/pipeline",     version = "1.0.0" },
-    },
-}
 reqpack {
     beez = {
         { name = "coditary/clang-format", path = "./plugins/coditary/clang-format", version = "1.0.0" },

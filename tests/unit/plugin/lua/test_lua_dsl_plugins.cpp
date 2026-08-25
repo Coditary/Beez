@@ -1989,4 +1989,493 @@ workflows({
     EXPECT_NE(Output.find("beez --install"), std::string::npos);
 }
 
+TEST(LuaDslPluginTest, ConfigurePluginWithProfileAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "dev" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginWithProfileSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "dev" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginWithProfileSkippedWhenNoActiveProfile)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "dev" },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginWithoutProfileAlwaysApplied)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    } },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginWithNoneProfileAppliedWhenNoActive)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "NONE" },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginWithNoneProfileSkippedWhenActive)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        check = {
+            phase = "test",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo check",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+    }, profile = "NONE" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("check");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginStepsInheritProfileFromEntry)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        alpha = {
+            phase = "qa",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo alpha",
+        },
+        beta = {
+            phase = "qa",
+            scope = "lint",
+            config = { flag = "base" },
+            run = "echo beta",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+        steps = {
+            alpha = { flag = "alpha" },
+        },
+    }, profile = "dev" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Alpha = registry.findStep("alpha");
+    const auto Beta = registry.findStep("beta");
+    ASSERT_TRUE(Alpha.has_value());
+    ASSERT_TRUE(Beta.has_value());
+    if (!Alpha || !Beta)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(Alpha->hasConfig());
+    ASSERT_TRUE(Beta->hasConfig());
+    if (Alpha->config == nullptr || Beta->config == nullptr)
+    {
+        return;
+    }
+
+    const std::string AlphaFingerprint = Alpha->config->cacheFingerprint();
+    const std::string BetaFingerprint = Beta->config->cacheFingerprint();
+    EXPECT_NE(AlphaFingerprint.find("compdb=build/tree"), std::string::npos);
+    EXPECT_NE(BetaFingerprint.find("compdb=build/tree"), std::string::npos);
+    EXPECT_NE(AlphaFingerprint.find("flag=alpha"), std::string::npos);
+    EXPECT_NE(BetaFingerprint.find("flag=base"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigurePluginStepsSkippedWhenProfileDoesNotMatch)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {
+        alpha = {
+            phase = "qa",
+            scope = "code",
+            config = { flag = "base" },
+            run = "echo alpha",
+        },
+    },
+})
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+configure({
+    { "coditary/demo", {
+        compdb = "build/tree",
+        steps = {
+            alpha = { flag = "alpha" },
+        },
+    }, profile = "dev" },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Alpha = registry.findStep("alpha");
+    ASSERT_TRUE(Alpha.has_value());
+    if (!Alpha || Alpha->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Alpha->config->cacheFingerprint().find("compdb=build/tree"), std::string::npos);
+    EXPECT_EQ(Alpha->config->cacheFingerprint().find("flag=alpha"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigureStandaloneStepWithProfileAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure({
+    { ":clean:artifacts", {
+        force = true,
+    }, profile = "dev" },
+})
+
+step({
+    name = "clean:artifacts",
+    phase = "clean",
+    scope = "repo",
+    run = "true",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("clean:artifacts");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_NE(Found->config->cacheFingerprint().find("force=true"), std::string::npos);
+}
+
+TEST(LuaDslPluginTest, ConfigureStandaloneStepWithProfileSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+configure({
+    { ":clean:artifacts", {
+        force = true,
+    }, profile = "dev" },
+})
+
+step({
+    name = "clean:artifacts",
+    phase = "clean",
+    scope = "repo",
+    run = "true",
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findStep("clean:artifacts");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found || Found->config == nullptr)
+    {
+        return;
+    }
+
+    EXPECT_EQ(Found->config->cacheFingerprint().find("force=true"), std::string::npos);
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)
