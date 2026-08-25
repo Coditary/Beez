@@ -277,6 +277,24 @@ class DslBinder
 
     void workflow(const std::string& name, const sol::table& steps) const
     {
+        const sol::object ProfileValue = steps["profile"];
+        std::optional<std::string> profile;
+        if (ProfileValue.valid() && ProfileValue.get_type() != sol::type::lua_nil)
+        {
+            if (!ProfileValue.is<std::string>())
+            {
+                throw std::runtime_error("workflow '" + name +
+                                         "' field 'profile' must be a string");
+            }
+
+            profile = ProfileValue.as<std::string>();
+        }
+
+        if (!registry_->isProfileActive(profile))
+        {
+            return;
+        }
+
         registry_->registerWorkflow(parseWorkflow(name, steps));
     }
 

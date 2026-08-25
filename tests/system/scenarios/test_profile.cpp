@@ -443,3 +443,119 @@ task("run-check", {
     EXPECT_NE(Result.exitCode, 0);
     EXPECT_FALSE(Project.hasFile("check.out"));
 }
+
+TEST(SystemProfileTest, LocalWorkflowWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev > dev.out" })
+
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "dev", "ship"});
+    EXPECT_EQ(Result.exitCode, 0) << Result.output;
+    EXPECT_TRUE(Project.hasFile("dev.out"));
+}
+
+TEST(SystemProfileTest, LocalWorkflowWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::FixtureProject Project("profile-basic");
+    Project.writeFile("build.lua", R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev > dev.out" })
+
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    const beez::test::ProcessResult Result =
+        beez::test::runBeez(Project.path(), {"--profile", "test", "ship"});
+    EXPECT_NE(Result.exitCode, 0);
+    EXPECT_TRUE(beez::test::outputContains(Result, "not found"));
+    EXPECT_FALSE(Project.hasFile("dev.out"));
+}
+
+TEST(SystemProfileTest, WorkflowsReferenceSelectsPluginWorkflowByProfile)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const char* BuildLua = R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev > dev.out" })
+step({ name = "base-build", phase = "build", scope = "base", run = "echo base > base.out" })
+
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({ ship = {
+    reference = "coditary/demo:ship-dev",
+    profile = "dev",
+} })
+workflows({ ship = {
+    reference = "coditary/demo:ship-base",
+    profile = "NONE",
+} })
+)";
+
+    const beez::test::FixtureProject DevProject("profile-basic");
+    DevProject.writeFile("plugins/coditary/demo/1.0.0/beez_plugin.lua", R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+    ["ship-base"] = { "build[base]" },
+}
+)");
+    DevProject.writeFile("build.lua", BuildLua);
+
+    const beez::test::ProcessResult DevResult =
+        beez::test::runBeez(DevProject.path(), {"--profile", "dev", "ship"});
+    EXPECT_EQ(DevResult.exitCode, 0) << DevResult.output;
+    EXPECT_TRUE(DevProject.hasFile("dev.out"));
+    EXPECT_FALSE(DevProject.hasFile("base.out"));
+
+    const beez::test::FixtureProject BaseProject("profile-basic");
+    BaseProject.writeFile("plugins/coditary/demo/1.0.0/beez_plugin.lua", R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+    ["ship-base"] = { "build[base]" },
+}
+)");
+    BaseProject.writeFile("build.lua", BuildLua);
+
+    const beez::test::ProcessResult BaseResult =
+        beez::test::runBeez(BaseProject.path(), {"ship"});
+    EXPECT_EQ(BaseResult.exitCode, 0) << BaseResult.output;
+    EXPECT_FALSE(BaseProject.hasFile("dev.out"));
+    EXPECT_TRUE(BaseProject.hasFile("base.out"));
+}

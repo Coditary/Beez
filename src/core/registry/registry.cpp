@@ -716,14 +716,14 @@ const std::optional<std::string>& Registry::profile() const
     return profile_;
 }
 
-bool Registry::isPluginIncludedInProfile(const std::optional<std::string>& pluginProfile) const
+bool Registry::isProfileActive(const std::optional<std::string>& profileFilter) const
 {
-    if (!pluginProfile.has_value())
+    if (!profileFilter.has_value())
     {
         return true;
     }
 
-    if (*pluginProfile == "NONE")
+    if (*profileFilter == "NONE")
     {
         return !profile_.has_value();
     }
@@ -733,7 +733,12 @@ bool Registry::isPluginIncludedInProfile(const std::optional<std::string>& plugi
         return false;
     }
 
-    return *pluginProfile == *profile_;
+    return *profileFilter == *profile_;
+}
+
+bool Registry::isPluginIncludedInProfile(const std::optional<std::string>& pluginProfile) const
+{
+    return isProfileActive(pluginProfile);
 }
 
 }  // namespace beez::core

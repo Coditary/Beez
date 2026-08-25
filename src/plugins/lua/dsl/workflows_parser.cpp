@@ -3,6 +3,7 @@
 #include "beez/core/registry/workflow_reference.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -54,7 +55,49 @@ void parseWorkflowsTable(const sol::table& workflowsTable,
 
             if (value.is<sol::table>())
             {
-                registry.registerWorkflow(parseWorkflow(LocalName, value.as<sol::table>()));
+                const sol::table EntryTable = value.as<sol::table>();
+
+                std::optional<std::string> profile;
+                const sol::object ProfileValue = EntryTable["profile"];
+                if (ProfileValue.valid() && ProfileValue.get_type() != sol::type::lua_nil)
+                {
+                    if (!ProfileValue.is<std::string>())
+                    {
+                        throw std::runtime_error("workflow '" + LocalName +
+                                                 "' field 'profile' must be a string");
+                    }
+
+                    profile = ProfileValue.as<std::string>();
+                }
+
+                const sol::object ReferenceValue = EntryTable["reference"];
+                if (ReferenceValue.valid() && ReferenceValue.get_type() != sol::type::lua_nil)
+                {
+                    if (!ReferenceValue.is<std::string>() ||
+                        ReferenceValue.as<std::string>().empty())
+                    {
+                        throw std::runtime_error("workflow '" + LocalName +
+                                                 "' field 'reference' must be a non-empty string");
+                    }
+
+                    if (!registry.isProfileActive(profile))
+                    {
+                        return;
+                    }
+
+                    const std::string PluginWorkflowReference = ReferenceValue.as<std::string>();
+                    validatePluginWorkflowReference(PluginWorkflowReference, reqpackBeezPlugins);
+                    registry.registerWorkflowFromPluginReference(LocalName,
+                                                                 PluginWorkflowReference);
+                    return;
+                }
+
+                if (!registry.isProfileActive(profile))
+                {
+                    return;
+                }
+
+                registry.registerWorkflow(parseWorkflow(LocalName, EntryTable));
                 return;
             }
 

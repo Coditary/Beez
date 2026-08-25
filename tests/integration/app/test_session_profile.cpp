@@ -1012,3 +1012,145 @@ step({
     const auto Found = project.registry.findStep("custom-check");
     EXPECT_FALSE(Found.has_value());
 }
+
+TEST(ProfileIntegrationTest, WorkflowWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev" })
+
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, WorkflowWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "test").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    EXPECT_FALSE(project.registry.findWorkflow("ship").has_value());
+}
+
+TEST(ProfileIntegrationTest, WorkflowsReferenceWithProfileAppliedWhenMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("dev", "return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+}
+)";
+
+    Project.writeBuildLua(R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev" })
+
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-dev",
+        profile = "dev",
+    },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "dev").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    const auto Found = project.registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(ProfileIntegrationTest, WorkflowsReferenceWithProfileSkippedWhenNotMatching)
+{
+    const ProfileTestEnv Env;
+    Env.writeGlobalConfig("return {}");
+    Env.writeProfile("test", "return {}");
+
+    const beez::test::TempProject Project;
+
+    const auto PluginDir = Project.path() / "plugins" / "coditary" / "demo" / "1.0.0";
+    std::filesystem::create_directories(PluginDir);
+    std::ofstream(PluginDir / "beez_plugin.lua") << R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+}
+)";
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-dev",
+        profile = "dev",
+    },
+})
+)");
+
+    auto project = makeLoadedProject(Project.path());
+    ASSERT_FALSE(beez::cli::loadGlobalSettings(project, "test").has_value());
+    ASSERT_FALSE(beez::cli::loadBuildScript(project, true).has_value());
+
+    EXPECT_FALSE(project.registry.findWorkflow("ship").has_value());
+}

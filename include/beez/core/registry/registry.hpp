@@ -72,6 +72,8 @@ class Registry
     void setProfile(const std::optional<std::string>& profile);
     [[nodiscard]] const std::optional<std::string>& profile() const;
 
+    [[nodiscard]] bool isProfileActive(const std::optional<std::string>& profileFilter) const;
+
     [[nodiscard]] const std::unordered_map<std::string, Task>& tasks() const
     {
         return tasks_;

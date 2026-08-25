@@ -968,4 +968,126 @@ workflows({
     EXPECT_FALSE(loadScript(Project, registry));
 }
 
+TEST(LuaDslTest, WorkflowWithProfileAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev" })
+
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(LuaDslTest, WorkflowWithProfileSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("ship").has_value());
+}
+
+TEST(LuaDslTest, WorkflowWithProfileSkippedWhenNoActiveProfile)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflow("ship", {
+    profile = "dev",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("ship").has_value());
+}
+
+TEST(LuaDslTest, WorkflowWithoutProfileAlwaysApplied)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev" })
+
+workflow("ship", {
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(LuaDslTest, WorkflowWithNoneProfileAppliedWhenNoActive)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev" })
+
+workflow("ship", {
+    profile = "NONE",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+}
+
+TEST(LuaDslTest, WorkflowWithNoneProfileSkippedWhenActive)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflow("ship", {
+    profile = "NONE",
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("ship").has_value());
+}
+
+TEST(LuaDslTest, RejectsWorkflowProfileNotAString)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflow("ship", {
+    profile = 123,
+    { "verify", { "build[dev]" } },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity)

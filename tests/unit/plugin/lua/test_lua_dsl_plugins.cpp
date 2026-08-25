@@ -2802,4 +2802,279 @@ step({
     EXPECT_FALSE(Found.has_value());
 }
 
+TEST(LuaDslPluginTest, WorkflowsReferenceWithProfileAppliedWhenMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+}
+)");
+
+    Project.writeBuildLua(R"(
+step({ name = "dev-build", phase = "build", scope = "dev", run = "echo dev" })
+
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-dev",
+        profile = "dev",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_EQ(Found->steps.size(), 1U);
+    EXPECT_EQ(Found->steps[0].invocation.phase, "build");
+    EXPECT_EQ(Found->steps[0].invocation.scope, "dev");
+}
+
+TEST(LuaDslPluginTest, WorkflowsReferenceWithProfileSkippedWhenNotMatching)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-dev",
+        profile = "dev",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("test");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("ship").has_value());
+}
+
+TEST(LuaDslPluginTest, WorkflowsReferenceWithProfileSkippedWhenNoActiveProfile)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-dev"] = { "build[dev]" },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-dev",
+        profile = "dev",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("ship").has_value());
+}
+
+TEST(LuaDslPluginTest, WorkflowsReferenceWithNoneProfileAppliedWhenNoActive)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-base"] = { "build[base]" },
+}
+)");
+
+    Project.writeBuildLua(R"(
+step({ name = "base-build", phase = "build", scope = "base", run = "echo base" })
+
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-base",
+        profile = "NONE",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    const auto Found = registry.findWorkflow("ship");
+    ASSERT_TRUE(Found.has_value());
+    if (!Found)
+    {
+        return;
+    }
+
+    ASSERT_EQ(Found->steps.size(), 1U);
+    EXPECT_EQ(Found->steps[0].invocation.phase, "build");
+    EXPECT_EQ(Found->steps[0].invocation.scope, "base");
+}
+
+TEST(LuaDslPluginTest, WorkflowsReferenceWithNoneProfileSkippedWhenActive)
+{
+    const beez::test::TempProject Project;
+    Project.writePluginAt("plugins/coditary/demo/1.0.0",
+                          R"(
+plugin("demo", {
+    version = "1.0.0",
+    steps = {},
+})
+
+workflows {
+    ["ship-base"] = { "build[base]" },
+}
+)");
+
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {
+        {
+            name = "coditary/demo",
+            path = "./plugins/coditary/demo",
+            version = "1.0.0",
+        },
+    },
+}
+
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-base",
+        profile = "NONE",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    registry.setProfile("dev");
+    ASSERT_TRUE(loadScript(Project, registry));
+
+    EXPECT_FALSE(registry.findWorkflow("ship").has_value());
+}
+
+TEST(LuaDslPluginTest, RejectsWorkflowsReferenceNotAString)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+reqpack {
+    beez = {},
+}
+
+workflows({
+    ship = {
+        reference = 123,
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsWorkflowsReferenceEmptyString)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflows({
+    ship = {
+        reference = "",
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
+TEST(LuaDslPluginTest, RejectsWorkflowsProfileNotAStringInReferenceForm)
+{
+    const beez::test::TempProject Project;
+    Project.writeBuildLua(R"(
+workflows({
+    ship = {
+        reference = "coditary/demo:ship-dev",
+        profile = 123,
+    },
+})
+)");
+
+    beez::core::Registry registry;
+    EXPECT_FALSE(loadScript(Project, registry));
+}
+
 // NOLINTEND(bugprone-unchecked-optional-access,readability-function-cognitive-complexity,readability-identifier-naming,misc-include-cleaner)

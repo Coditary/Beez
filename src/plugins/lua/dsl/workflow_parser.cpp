@@ -143,9 +143,14 @@ core::Workflow parseWorkflow(const std::string& name, const sol::table& stepsTab
     std::unordered_set<std::string> stageNames;
 
     stepsTable.for_each(
-        [&workflow, &name, &stagedFormat, &stageNames](const sol::object& /*key*/,
+        [&workflow, &name, &stagedFormat, &stageNames](const sol::object& key,
                                                        const sol::object& value)
         {
+            if (key.is<std::string>() && key.as<std::string>() == "profile")
+            {
+                return;
+            }
+
             if (!value.is<sol::table>())
             {
                 if (value.is<std::string>())
