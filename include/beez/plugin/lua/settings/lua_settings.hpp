@@ -12,4 +12,6 @@ namespace beez::plugin::lua
 
 void tryLoadGlobalBeezSettings(core::BeezSettings& settings);
 
+void tryLoadProfileBeezSettings(const std::string& profileName, core::BeezSettings& settings);
+
 }  // namespace beez::plugin::lua

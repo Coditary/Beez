@@ -135,7 +135,10 @@ int run(int argc, const char* argv[])
         }
 
         LoadedProject project;
-        loadGlobalSettings(project);
+        if (const auto LoadError = loadGlobalSettings(project, Parsed.options.profile))
+        {
+            return *LoadError;
+        }
 
         if (!hasRunTarget(Parsed.options))
         {

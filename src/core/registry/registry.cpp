@@ -706,4 +706,34 @@ std::vector<std::string> Registry::phases() const
     return phases;
 }
 
+void Registry::setProfile(const std::optional<std::string>& profile)
+{
+    profile_ = profile;
+}
+
+const std::optional<std::string>& Registry::profile() const
+{
+    return profile_;
+}
+
+bool Registry::isPluginIncludedInProfile(const std::optional<std::string>& pluginProfile) const
+{
+    if (!pluginProfile.has_value())
+    {
+        return true;
+    }
+
+    if (*pluginProfile == "NONE")
+    {
+        return !profile_.has_value();
+    }
+
+    if (!profile_.has_value())
+    {
+        return false;
+    }
+
+    return *pluginProfile == *profile_;
+}
+
 }  // namespace beez::core

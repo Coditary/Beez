@@ -1,6 +1,13 @@
 
 reqpack {
     beez = {
+        { name = "coditary/clang-format", path = "./plugins/coditary/clang-format", version = "1.0.0", profile = "production" },
+        { name = "coditary/clang",        path = "./plugins/coditary/clang",        version = "1.0.0" },
+        { name = "coditary/pipeline",     path = "./plugins/coditary/pipeline",     version = "1.0.0" },
+    },
+}
+reqpack {
+    beez = {
         { name = "coditary/clang-format", path = "./plugins/coditary/clang-format", version = "1.0.0" },
         { name = "coditary/clang-tidy",   path = "./plugins/coditary/clang-tidy",   version = "1.0.0" },
         { name = "coditary/cppcheck",     path = "./plugins/coditary/cppcheck",     version = "1.0.0" },
@@ -10,7 +17,7 @@ reqpack {
         { name = "coditary/ctest",        path = "./plugins/coditary/ctest",        version = "1.0.0" },
         { name = "coditary/coverage",     path = "./plugins/coditary/coverage",     version = "1.0.0" },
         { name = "coditary/fuzzer",       path = "./plugins/coditary/fuzzer",       version = "1.0.0" },
-        { name = "coditary/clang",  path = "./plugins/coditary/clang",  version = "1.0.0" },
+        { name = "coditary/clang",        path = "./plugins/coditary/clang",        version = "1.0.0" },
         { name = "coditary/pipeline",     path = "./plugins/coditary/pipeline",     version = "1.0.0" },
     },
 }

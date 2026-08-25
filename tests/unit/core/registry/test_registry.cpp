@@ -483,3 +483,80 @@ TEST(RegistryTest, UniquePluginStepKeepsShortNameAlias)
     ASSERT_TRUE(QualifiedAction.hasValue());
     EXPECT_EQ(QualifiedAction.value().shellRun.value_or(""), "echo compile");
 }
+
+TEST(RegistryTest, ProfileNilIncludesPluginForAnyActiveProfile)
+{
+    beez::core::Registry registry;
+    registry.setProfile("production");
+
+    EXPECT_TRUE(registry.isPluginIncludedInProfile(std::nullopt));
+}
+
+TEST(RegistryTest, ProfileNoneExcludesPluginWhenProfileActive)
+{
+    beez::core::Registry registry;
+    registry.setProfile("production");
+
+    EXPECT_FALSE(registry.isPluginIncludedInProfile(std::string("NONE")));
+}
+
+TEST(RegistryTest, ProfileNoneIncludesPluginWhenNoProfileActive)
+{
+    beez::core::Registry registry;
+
+    EXPECT_TRUE(registry.isPluginIncludedInProfile(std::string("NONE")));
+}
+
+TEST(RegistryTest, ProfileMatchesActiveProfile)
+{
+    beez::core::Registry registry;
+    registry.setProfile("production");
+
+    EXPECT_TRUE(registry.isPluginIncludedInProfile(std::string("production")));
+}
+
+TEST(RegistryTest, ProfileDoesNotMatchDifferentProfile)
+{
+    beez::core::Registry registry;
+    registry.setProfile("production");
+
+    EXPECT_FALSE(registry.isPluginIncludedInProfile(std::string("dev")));
+}
+
+TEST(RegistryTest, ProfileExcludesPluginWhenNoProfileActive)
+{
+    beez::core::Registry registry;
+
+    EXPECT_FALSE(registry.isPluginIncludedInProfile(std::string("production")));
+}
+
+TEST(RegistryTest, RegistrySetAndGetProfile)
+{
+    beez::core::Registry registry;
+    EXPECT_FALSE(registry.profile().has_value());
+
+    registry.setProfile("dev");
+    ASSERT_TRUE(registry.profile().has_value());
+    EXPECT_EQ(*registry.profile(), "dev");
+
+    registry.setProfile(std::nullopt);
+    EXPECT_FALSE(registry.profile().has_value());
+}
+
+TEST(RegistryTest, PluginWithProfileNilAlwaysIncluded)
+{
+    beez::core::Registry registry;
+    registry.setProfile("production");
+
+    EXPECT_TRUE(registry.isPluginIncludedInProfile(std::nullopt));
+}
+
+TEST(RegistryTest, PluginWithNoneOnlyWithoutProfile)
+{
+    beez::core::Registry registry;
+
+    EXPECT_TRUE(registry.isPluginIncludedInProfile(std::string("NONE")));
+
+    registry.setProfile("production");
+    EXPECT_FALSE(registry.isPluginIncludedInProfile(std::string("NONE")));
+}

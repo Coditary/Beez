@@ -18,6 +18,7 @@ add_executable(
     scenarios/test_robustness.cpp
     scenarios/test_negative_fixtures.cpp
     scenarios/test_dsl_field_matrix.cpp
+    scenarios/test_profile.cpp
 )
 
 add_dependencies(beez_system_tests beez)

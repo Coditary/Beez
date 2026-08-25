@@ -69,6 +69,9 @@ class Registry
     [[nodiscard]] std::vector<std::string> scopesForPhase(const std::string& phase) const;
     [[nodiscard]] std::vector<std::string> phases() const;
 
+    void setProfile(const std::optional<std::string>& profile);
+    [[nodiscard]] const std::optional<std::string>& profile() const;
+
     [[nodiscard]] const std::unordered_map<std::string, Task>& tasks() const
     {
         return tasks_;
@@ -103,6 +106,8 @@ class Registry
         return pluginTasks_;
     }
 
+    [[nodiscard]] bool isPluginIncludedInProfile(const std::optional<std::string>& pluginProfile) const;
+
   private:
     void applyStepConfig(const std::string& name, const StepConfigPtr& config);
     void applyPluginConfigToRegisteredSteps(const std::string& pluginKey,
@@ -124,6 +129,7 @@ class Registry
     std::unordered_map<std::string, Task> pluginTasks_;
     std::unordered_map<std::string, std::string> pendingWorkflowReferences_;
     std::vector<StepOrderHint> stepOrderHints_;
+    std::optional<std::string> profile_;
 };
 
 }  // namespace beez::core

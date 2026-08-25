@@ -451,6 +451,47 @@ TEST(CliParserTest, BridgeAndGlobalFlagsRejectedTogether)
     EXPECT_NE(Result.exitCode, 0);
 }
 
+TEST(CliParserTest, ParsesProfileFlag)
+{
+    const std::vector<std::string> Args = {"beez", "build", "--profile", "dev"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.profile.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.profile.value(), "dev");
+}
+
+TEST(CliParserTest, ParsesProfileFlagWithTarget)
+{
+    const std::vector<std::string> Args = {"beez", "--profile", "release", "build"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_TRUE(Result.options.profile.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.profile.value(), "release");
+    ASSERT_TRUE(Result.options.target.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) -- guarded by ASSERT_TRUE above
+    EXPECT_EQ(Result.options.target.value(), "build");
+}
+
+TEST(CliParserTest, ProfileFlagNotSetByDefault)
+{
+    const std::vector<std::string> Args = {"beez", "build"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    EXPECT_FALSE(Result.options.profile.has_value());
+}
+
+TEST(CliParserTest, HelpContainsProfileOption)
+{
+    const std::string Help = beez::cli::helpText();
+    EXPECT_NE(Help.find("--profile NAME"), std::string::npos);
+    EXPECT_NE(Help.find("Profiles:"), std::string::npos);
+}
+
 TEST(InstallCompletionTest, DumpsEmbeddedBashAndZshScripts)
 {
     const auto BashScript = beez::cli::dumpCompletionScript("bash");

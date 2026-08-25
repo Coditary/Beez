@@ -59,5 +59,16 @@ void tryLoadGlobalBeezSettings(core::BeezSettings& settings)
     static_cast<void>(loadSettingsFromLuaFile(ConfigPath, settings));
 }
 
+void tryLoadProfileBeezSettings(const std::string& profileName, core::BeezSettings& settings)
+{
+    const auto ProfilePath = core::profileBeezConfigPath(profileName);
+    if (ProfilePath.empty())
+    {
+        return;
+    }
+
+    static_cast<void>(loadSettingsFromLuaFile(ProfilePath, settings));
+}
+
 }  // namespace beez::plugin::lua
 // NOLINTEND(misc-include-cleaner,cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)

@@ -46,9 +46,11 @@ std::string helpText()
     stream << "      --install     Install reqpack dependencies declared in build.lua\n";
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
+    stream << "      --profile NAME Load profile from ~/.config/beez/profiles/<NAME>.lua\n";
     stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";
     stream << "\nConfiguration:\n";
     stream << "  User defaults: ~/.config/beez/config.lua (return a settings table)\n";
+    stream << "  Profiles: ~/.config/beez/profiles/<name>.lua (--profile <name>)\n";
     stream << "  Project overrides: beez.config({ ... }) in build.lua\n";
     stream << "  CLI flags override both.\n";
     stream << "      --list TEXT  List registered entities (tasks, workflows, steps, phases)\n";

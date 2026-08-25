@@ -156,3 +156,36 @@ TEST(ConfigPathsTest, ReturnsEmptyWhenHomeUnset)
     EXPECT_TRUE(beez::core::beezConfigDirectory().empty());
     EXPECT_TRUE(beez::core::globalBeezConfigPath().empty());
 }
+
+TEST(ConfigPathsTest, ProfilePathRespectsXdg)
+{
+    const auto Root = beez::core::systemTempDirectory() / "beez_config_paths_profile_xdg_test";
+    const ScopedTempTree Cleanup(Root);
+    std::filesystem::create_directories(Root);
+    const ScopedEnv Xdg("XDG_CONFIG_HOME", Root.c_str());
+
+    EXPECT_EQ(beez::core::profileBeezConfigPath("dev"), Root / "beez" / "profiles" / "dev.lua");
+    EXPECT_EQ(beez::core::profileBeezConfigPath("release"),
+              Root / "beez" / "profiles" / "release.lua");
+}
+
+TEST(ConfigPathsTest, ProfilePathFallsBackToHomeDotConfig)
+{
+    const auto HomeRoot =
+        beez::core::systemTempDirectory() / "beez_config_paths_profile_home_test";
+    const ScopedTempTree Cleanup(HomeRoot);
+    std::filesystem::create_directories(HomeRoot);
+    const ScopedEnv Home("HOME", HomeRoot.c_str());
+    const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");
+
+    EXPECT_EQ(beez::core::profileBeezConfigPath("dev"),
+              HomeRoot / ".config" / "beez" / "profiles" / "dev.lua");
+}
+
+TEST(ConfigPathsTest, ProfilePathEmptyWhenHomeUnset)
+{
+    const ScopedEnv HomeUnset("HOME", "");
+    const ScopedEnv XdgUnset("XDG_CONFIG_HOME", "");
+
+    EXPECT_TRUE(beez::core::profileBeezConfigPath("dev").empty());
+}

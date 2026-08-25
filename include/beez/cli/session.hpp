@@ -36,7 +36,8 @@ struct LoadedProject
     plugin::lua::LuaDslLoader* luaLoader = nullptr;
 };
 
-void loadGlobalSettings(LoadedProject& project);
+[[nodiscard]] std::optional<int> loadGlobalSettings(LoadedProject& project,
+                                                   const std::optional<std::string>& profileName = std::nullopt);
 
 [[nodiscard]] std::optional<int> loadBuildScript(LoadedProject& project,
                                                  bool silentRun,

@@ -32,6 +32,7 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     std::string listKind;
     std::string phaseArgument;
     std::string stepName;
+    std::string profileName;
 
     app.add_flag_callback("-h,--help", []() {}, "Display this help and exit");
 
@@ -94,6 +95,7 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     bool fromGlobal = false;
     app.add_flag("-l", fromBridge, "Run the target using the linked bridge build.lua");
     app.add_flag("-g", fromGlobal, "Run the target using the global ~/.config/beez/global/build.lua");
+    app.add_option("--profile", profileName, "Load profile from ~/.config/beez/profiles/<name>.lua");
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -141,6 +143,11 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     if (!stepName.empty())
     {
         options.stepName = stepName;
+    }
+
+    if (!profileName.empty())
+    {
+        options.profile = profileName;
     }
 
     const auto& remaining = app.remaining();

@@ -92,6 +92,16 @@ namespace
         pluginRef.source = SourceObject.as<std::string>();
     }
 
+    const sol::object ProfileObject = PluginTable["profile"];
+    if (ProfileObject.valid() && ProfileObject.get_type() != sol::type::lua_nil)
+    {
+        if (!ProfileObject.is<std::string>())
+        {
+            throw std::runtime_error("reqpack.beez plugin profile must be a string");
+        }
+        pluginRef.profile = ProfileObject.as<std::string>();
+    }
+
     if (!pluginRef.isLocal() && !pluginRef.version.has_value())
     {
         throw std::runtime_error("remote reqpack.beez plugin '" + pluginRef.organization + '/' +
@@ -332,6 +342,11 @@ void loadBeezPlugins(const std::vector<BeezPluginRef>& plugins,
     for (const auto& pluginRef : plugins)
     {
         if (!pluginRef.isLocal())
+        {
+            continue;
+        }
+
+        if (!registry.isPluginIncludedInProfile(pluginRef.profile))
         {
             continue;
         }

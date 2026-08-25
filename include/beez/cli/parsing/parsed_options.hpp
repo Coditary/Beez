@@ -22,6 +22,7 @@ struct ParsedOptions
     std::optional<std::string> target;
     std::optional<std::string> stepName;
     std::optional<std::string> listKind;
+    std::optional<std::string> profile;
     std::optional<std::filesystem::path> logFile;
     std::optional<std::filesystem::path> linkPath;
     std::optional<core::PhaseRequest> phaseRequest;

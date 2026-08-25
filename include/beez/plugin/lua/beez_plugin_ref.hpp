@@ -13,6 +13,7 @@ struct BeezPluginRef
     std::optional<std::string> path;
     std::optional<std::string> version;
     std::optional<std::string> source;
+    std::optional<std::string> profile;
     bool fromInstalledCache = false;
 
     [[nodiscard]] bool isLocal() const

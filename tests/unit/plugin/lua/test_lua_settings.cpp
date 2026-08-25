@@ -630,3 +630,144 @@ TEST(LuaSettingsTest, RejectsInvalidEnvFilesValue)
     EXPECT_THROW(beez::plugin::lua::loadSettingsFromLuaFile(ConfigPath, settings),
                  std::runtime_error);
 }
+
+TEST(LuaSettingsTest, LoadsProfileSettingsFromFile)
+{
+    const beez::test::TempProject Project;
+    const auto profilesDir = Project.path() / "profiles";
+    std::filesystem::create_directories(profilesDir);
+    const auto ProfilePath = profilesDir / "dev.lua";
+    {
+        std::ofstream stream(ProfilePath);
+        stream << R"(
+return {
+    performance = {
+        max_threads = 2,
+    },
+    cache = {
+        enabled = false,
+    },
+    ui = {
+        output_mode = "verbose",
+    },
+}
+)";
+    }
+
+    beez::core::BeezSettings settings;
+    ASSERT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(ProfilePath, settings));
+
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    ASSERT_TRUE(settings.performance.maxThreads.has_value());
+    EXPECT_EQ(*settings.performance.maxThreads, 2U);
+    ASSERT_TRUE(settings.cache.enabled.has_value());
+    EXPECT_FALSE(*settings.cache.enabled);
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Verbose);
+    // NOLINTEND(bugprone-unchecked-optional-access)
+}
+
+TEST(LuaSettingsTest, ProfileNotFoundSkipsLoading)
+{
+    beez::core::BeezSettings settings;
+    const auto missingPath = beez::core::systemTempDirectory() / "beez_nonexistent_profile.lua";
+    EXPECT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(missingPath, settings));
+}
+
+TEST(LuaSettingsTest, ProfileOverridesGlobalSettings)
+{
+    const beez::test::TempProject Project;
+
+    const auto GlobalConfigPath = Project.path() / "config.lua";
+    {
+        std::ofstream stream(GlobalConfigPath);
+        stream << R"(
+return {
+    performance = {
+        max_threads = 4,
+    },
+    cache = {
+        enabled = true,
+    },
+}
+)";
+    }
+
+    beez::core::BeezSettings settings;
+    ASSERT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(GlobalConfigPath, settings));
+
+    const auto profilesDir = Project.path() / "profiles";
+    std::filesystem::create_directories(profilesDir);
+    const auto ProfilePath = profilesDir / "dev.lua";
+    {
+        std::ofstream stream(ProfilePath);
+        stream << R"(
+return {
+    performance = {
+        max_threads = 2,
+    },
+    cache = {
+        enabled = false,
+    },
+}
+)";
+    }
+
+    ASSERT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(ProfilePath, settings));
+
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    ASSERT_TRUE(settings.performance.maxThreads.has_value());
+    EXPECT_EQ(*settings.performance.maxThreads, 2U);
+    ASSERT_TRUE(settings.cache.enabled.has_value());
+    EXPECT_FALSE(*settings.cache.enabled);
+    // NOLINTEND(bugprone-unchecked-optional-access)
+}
+
+TEST(LuaSettingsTest, ProfileMergedCorrectlyAfterGlobal)
+{
+    const beez::test::TempProject Project;
+
+    const auto GlobalConfigPath = Project.path() / "config.lua";
+    {
+        std::ofstream stream(GlobalConfigPath);
+        stream << R"(
+return {
+    performance = {
+        max_threads = 4,
+    },
+    ui = {
+        output_mode = "clean",
+    },
+}
+)";
+    }
+
+    beez::core::BeezSettings settings;
+    ASSERT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(GlobalConfigPath, settings));
+
+    const auto profilesDir = Project.path() / "profiles";
+    std::filesystem::create_directories(profilesDir);
+    const auto ProfilePath = profilesDir / "dev.lua";
+    {
+        std::ofstream stream(ProfilePath);
+        stream << R"(
+return {
+    performance = {
+        max_threads = 1,
+    },
+    ui = {
+        output_mode = "silent",
+    },
+}
+)";
+    }
+
+    ASSERT_TRUE(beez::plugin::lua::loadSettingsFromLuaFile(ProfilePath, settings));
+
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
+    ASSERT_TRUE(settings.performance.maxThreads.has_value());
+    EXPECT_EQ(*settings.performance.maxThreads, 1U);
+    ASSERT_TRUE(settings.ui.outputMode.has_value());
+    EXPECT_EQ(*settings.ui.outputMode, beez::logging::OutputMode::Silent);
+    // NOLINTEND(bugprone-unchecked-optional-access)
+}

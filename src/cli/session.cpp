@@ -48,12 +48,27 @@ void writeErrorUnlessSilent(bool silentRun, const std::function<void()>& writeEr
 
 }  // namespace
 
-void loadGlobalSettings(LoadedProject& project)
+[[nodiscard]] std::optional<int> loadGlobalSettings(LoadedProject& project,
+                                                   const std::optional<std::string>& profileName)
 {
     project.configPath = core::globalBeezConfigPath();
     plugin::lua::tryLoadGlobalBeezSettings(project.globalSettings);
+
+    if (profileName.has_value())
+    {
+        const auto ProfilePath = core::profileBeezConfigPath(*profileName);
+        if (ProfilePath.empty() || !std::filesystem::exists(ProfilePath))
+        {
+            std::cerr << "Error: profile not found: " << *profileName << '\n';
+            return 1;
+        }
+        plugin::lua::tryLoadProfileBeezSettings(*profileName, project.globalSettings);
+    }
+
+    project.registry.setProfile(profileName);
     project.settings = project.globalSettings;
     project.settings.applyEnvironment(project.context);
+    return std::nullopt;
 }
 
 std::optional<int> loadBuildScript(LoadedProject& project,
