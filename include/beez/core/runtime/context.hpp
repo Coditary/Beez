@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace beez::core
 {
@@ -36,6 +37,12 @@ class Context
     void setEnvFilePath(std::filesystem::path envFilePath);
 
     [[nodiscard]] std::filesystem::path envFilePath() const;
+
+    void setParameterDefines(std::vector<std::string> defines);
+    [[nodiscard]] const std::vector<std::string>& parameterDefines() const
+    {
+        return parameterDefines_;
+    }
 
     void setStepConfigAccessor(StepConfigAccessor accessor);
     void clearStepConfigAccessor();
@@ -99,6 +106,7 @@ class Context
     std::filesystem::path projectRoot_;
     std::optional<std::string> buildScriptFileName_;
     std::optional<std::filesystem::path> envFilePath_;
+    std::vector<std::string> parameterDefines_;
     StepConfigAccessor stepConfigAccessor_;
     std::optional<StepIdentity> stepIdentity_;
     SuccessCacheSession* successCacheSession_ = nullptr;

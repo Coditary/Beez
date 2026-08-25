@@ -58,3 +58,9 @@ tests/fuzz/corpus/**/*
 
 # Optional local Tempify clone for development (-DTEMPIFY_SOURCE_DIR=...)
 Tempify/
+
+# Local design docs (never commit)
+docs/superpowers/
+
+# CTest artifacts
+Testing/

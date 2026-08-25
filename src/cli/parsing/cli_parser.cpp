@@ -19,16 +19,103 @@ namespace
 
 constexpr int MaxThreadCount = 1024;
 
+// -D/--define is extracted manually before CLI11 sees the arguments: a
+// repeatable CLI11 vector option would greedily consume the positional target
+// that follows it ("beez -Dk=v show").
+[[nodiscard]] bool extractParameterDefines(int argc,
+                                           const char* const* argv,
+                                           ParsedOptions& options,
+                                           std::vector<std::string>& filteredArgs)
+{
+    bool allValid = true;
+
+    for (int index = 0; index < argc; ++index)
+    {
+        const std::string_view Argument = argv[index];
+
+        if (index == 0)
+        {
+            filteredArgs.emplace_back(Argument);
+            continue;
+        }
+
+        // Everything after the first bare "--" belongs to the target.
+        if (Argument == "--")
+        {
+            for (int rest = index; rest < argc; ++rest)
+            {
+                filteredArgs.emplace_back(argv[rest]);
+            }
+            break;
+        }
+
+        if (Argument.rfind("--define=", 0) == 0)
+        {
+            options.defines.emplace_back(Argument.substr(9));
+            continue;
+        }
+
+        if (Argument == "--define" || Argument == "-D")
+        {
+            if (index + 1 < argc)
+            {
+                options.defines.emplace_back(argv[index + 1]);
+                ++index;
+                continue;
+            }
+            allValid = false;
+            continue;
+        }
+
+        if (Argument.rfind("-D", 0) == 0 && Argument.size() > 2)
+        {
+            options.defines.emplace_back(Argument.substr(2));
+            continue;
+        }
+
+        filteredArgs.emplace_back(Argument);
+    }
+
+    for (const auto& define : options.defines)
+    {
+        const auto Separator = define.find('=');
+        if (Separator == std::string::npos || Separator == 0)
+        {
+            allValid = false;
+        }
+    }
+
+    return allValid;
+}
+
 }  // namespace
 
 CliParseResult CliParser::parse(int argc, const char* const* argv)
 {
+    ParsedOptions options;
+
+    std::vector<std::string> filteredArgs;
+    filteredArgs.reserve(static_cast<std::size_t>(argc));
+    if (!extractParameterDefines(argc, argv, options, filteredArgs))
+    {
+        CliParseResult result;
+        result.reason = CliExitReason::Error;
+        result.exitCode = 105;
+        return result;
+    }
+
+    std::vector<const char*> filteredArgv;
+    filteredArgv.reserve(filteredArgs.size());
+    for (const auto& argument : filteredArgs)
+    {
+        filteredArgv.push_back(argument.c_str());
+    }
+
     CLI::App app {"Beez"};
     app.allow_extras();
     app.set_help_flag("", "");
     app.set_version_flag("", "");
 
-    ParsedOptions options;
     std::string listKind;
     std::string phaseArgument;
     std::string stepName;
@@ -89,13 +176,18 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
         ->check(CLI::Range(1, MaxThreadCount));
     std::string linkPath;
-    auto* linkOption = app.add_option("--link", linkPath, "Link current directory build.lua to bridge (optional: custom build.lua path)");
+    auto* linkOption = app.add_option(
+        "--link",
+        linkPath,
+        "Link current directory build.lua to bridge (optional: custom build.lua path)");
     linkOption->expected(0, 1);
     bool fromBridge = false;
     bool fromGlobal = false;
     app.add_flag("-l", fromBridge, "Run the target using the linked bridge build.lua");
-    app.add_flag("-g", fromGlobal, "Run the target using the global ~/.config/beez/global/build.lua");
-    app.add_option("--profile", profileName, "Load profile from ~/.config/beez/profiles/<name>.lua");
+    app.add_flag(
+        "-g", fromGlobal, "Run the target using the global ~/.config/beez/global/build.lua");
+    app.add_option(
+        "--profile", profileName, "Load profile from ~/.config/beez/profiles/<name>.lua");
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -105,7 +197,7 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
 
     try
     {
-        app.parse(argc, argv);
+        app.parse(static_cast<int>(filteredArgv.size()), filteredArgv.data());
     }
     catch (const CLI::ParseError& error)
     {
@@ -157,13 +249,12 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
         options.userOptions.assign(Separator + 1, remaining.end());
     }
 
-    const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
-                              options.stepName.has_value() || options.listKind.has_value() ||
-                              cleanCache || updateCache || installCompletion || showConfig ||
-                              app.count("--config-options") > 0 ||
-                              app.count("--complete-config-options") > 0 ||
-                              app.count("--dump-completion") > 0 || installDependencies ||
-                              app.count("--link") > 0;
+    const bool HasRunTarget =
+        options.target.has_value() || options.phaseRequest.has_value() ||
+        options.stepName.has_value() || options.listKind.has_value() || cleanCache || updateCache ||
+        installCompletion || showConfig || app.count("--config-options") > 0 ||
+        app.count("--complete-config-options") > 0 || app.count("--dump-completion") > 0 ||
+        installDependencies || app.count("--link") > 0;
 
     if (!HasRunTarget)
     {
@@ -189,8 +280,8 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
 
     if (app.count("--link") > 0)
     {
-        options.linkPath = linkPath.empty() ? std::filesystem::path{}
-                                            : std::filesystem::path(linkPath);
+        options.linkPath =
+            linkPath.empty() ? std::filesystem::path {} : std::filesystem::path(linkPath);
     }
 
     if (fromBridge && fromGlobal)

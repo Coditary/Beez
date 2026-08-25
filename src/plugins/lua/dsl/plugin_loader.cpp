@@ -5,6 +5,7 @@
 #include "beez/plugin/lua/dsl/step_parser.hpp"
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
+#include "beez/plugin/lua/parameters/parameter_loader.hpp"
 #include "beez/plugin/lua/runtime/plugin_config.hpp"
 
 #include <filesystem>
@@ -232,6 +233,9 @@ void loadPluginScript(const std::filesystem::path& scriptPath,
     registerBeezApi(PluginState, context, *pluginSettings);
     // beez.config captures the settings by reference; pin them to the state lifetime.
     PluginState->registry()["__beez_plugin_settings_keepalive"] = std::move(pluginSettings);
+    const sol::table PluginBeezTable = (*PluginState)["beez"];
+    sol::table PluginVarTable = PluginBeezTable["var"];
+    parameters::applyParameterDefines(PluginVarTable, context.parameterDefines());
 
     const auto PluginDirectory = scriptPath.parent_path();
     const std::string PluginPathPrefix =

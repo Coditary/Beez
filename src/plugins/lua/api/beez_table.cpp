@@ -28,6 +28,7 @@ void registerBeezApi(const std::shared_ptr<sol::state>& luaState,
                      core::BeezSettings& buildSettings)
 {
     sol::table beezTable = luaState->create_table();
+    beezTable["var"] = luaState->create_table();
     bindEnvToTable(beezTable, context);
     bindChar(luaState, beezTable);
     bindShell(luaState, beezTable);

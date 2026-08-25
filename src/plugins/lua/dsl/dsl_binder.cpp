@@ -10,6 +10,7 @@
 #include "beez/plugin/lua/dsl/task_parser.hpp"
 #include "beez/plugin/lua/dsl/workflow_parser.hpp"
 #include "beez/plugin/lua/dsl/workflows_parser.hpp"
+#include "beez/plugin/lua/parameters/parameter_loader.hpp"
 #include "beez/plugin/lua/runtime/step_config.hpp"
 
 #include "beez/plugin/lua/dsl/reqpack_beez_plugin_catalog.hpp"
@@ -431,6 +432,37 @@ void registerDsl(const std::shared_ptr<sol::state>& luaState,
     PackageTable["path"] = ProjectPathPrefix + ";" + ExistingPath;
 
     registerBeezApi(luaState, context, buildSettings);
+
+    const sol::table BeezTable = (*luaState)["beez"];
+    sol::table VarTable = BeezTable["var"];
+    const auto& Defines = context.parameterDefines();
+    parameters::applyParameterDefines(VarTable, Defines);
+
+    (*luaState)["parameters"] = [&registry, &context, VarTable](sol::variadic_args args) mutable
+    {
+        std::vector<std::string> paths;
+        paths.reserve(args.size());
+        for (const sol::stack_proxy& argument : args)
+        {
+            if (!argument.is<std::string>())
+            {
+                throw std::runtime_error(
+                    "parameters() arguments must be strings pointing to parameter JSON files");
+            }
+            paths.push_back(argument.as<std::string>());
+        }
+
+        if (paths.empty())
+        {
+            throw std::runtime_error("parameters() requires at least one JSON file path");
+        }
+
+        parameters::loadParameterFiles(VarTable,
+                                       paths,
+                                       context.projectRoot(),
+                                       registry.profile(),
+                                       context.parameterDefines());
+    };
 }
 
 }  // namespace beez::plugin::lua

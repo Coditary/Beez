@@ -144,6 +144,7 @@ add_library(
     runtime/plugin_config.cpp
     runtime/lua_table_util.cpp
     runtime/worker_parser.cpp
+    parameters/parameter_loader.cpp
 )
 
 target_include_directories(beez_plugin_lua PUBLIC ${CMAKE_SOURCE_DIR}/include)

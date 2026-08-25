@@ -16,6 +16,7 @@ struct ParsedOptions
 {
     std::optional<std::size_t> maxThreads;
     std::vector<std::string> userOptions;
+    std::vector<std::string> defines;
     std::string configOptionsPath;
     std::string completeConfigOptionsPrefix;
     std::string dumpCompletionShell;

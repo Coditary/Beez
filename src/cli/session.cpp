@@ -57,12 +57,13 @@ void writeErrorUnlessSilent(bool silentRun, const std::function<void()>& writeEr
     if (profileName.has_value())
     {
         const auto ProfilePath = core::profileBeezConfigPath(*profileName);
-        if (ProfilePath.empty() || !std::filesystem::exists(ProfilePath))
+        // Profiles are a pure runtime selection: a missing Lua profile file is
+        // not an error. The name stays active for DSL profile filters and
+        // parameters() profile lookups.
+        if (!ProfilePath.empty() && std::filesystem::exists(ProfilePath))
         {
-            std::cerr << "Error: profile not found: " << *profileName << '\n';
-            return 1;
+            plugin::lua::tryLoadProfileBeezSettings(*profileName, project.globalSettings);
         }
-        plugin::lua::tryLoadProfileBeezSettings(*profileName, project.globalSettings);
     }
 
     project.registry.setProfile(profileName);

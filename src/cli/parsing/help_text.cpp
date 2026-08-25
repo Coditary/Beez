@@ -47,6 +47,8 @@ std::string helpText()
     stream << "      --install-completion Register shell tab completion (no make install-beez "
               "needed)\n";
     stream << "      --profile NAME Load profile from ~/.config/beez/profiles/<NAME>.lua\n";
+    stream
+        << "  -D, --define KEY=VALUE  Set a parameter variable (repeatable, visible as beez.var)\n";
     stream << "  -j, --threads N  Maximum worker threads (default: CPU cores)\n";
     stream << "\nConfiguration:\n";
     stream << "  User defaults: ~/.config/beez/config.lua (return a settings table)\n";

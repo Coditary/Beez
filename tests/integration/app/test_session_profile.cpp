@@ -198,7 +198,7 @@ return {
     // NOLINTEND(bugprone-unchecked-optional-access)
 }
 
-TEST(ProfileIntegrationTest, LoadGlobalSettingsWithMissingProfileReturnsError)
+TEST(ProfileIntegrationTest, LoadGlobalSettingsWithMissingProfileToleratesRuntimeSelection)
 {
     const ProfileTestEnv Env;
     Env.writeGlobalConfig("return {}");
@@ -206,9 +206,12 @@ TEST(ProfileIntegrationTest, LoadGlobalSettingsWithMissingProfileReturnsError)
     const beez::test::TempProject Project;
     auto project = makeLoadedProject(Project.path());
 
+    // Profiles are runtime-only: a missing Lua profile file must not abort,
+    // the name stays active for DSL/parameters filtering.
     const auto Error = beez::cli::loadGlobalSettings(project, "nonexistent");
-    ASSERT_TRUE(Error.has_value()) << "should return error for missing profile";
-    EXPECT_NE(*Error, 0);
+    ASSERT_FALSE(Error.has_value()) << "missing profile file should not abort";
+    ASSERT_TRUE(project.registry.profile().has_value());
+    EXPECT_EQ(*project.registry.profile(), "nonexistent");
 }
 
 TEST(ProfileIntegrationTest, ProfileSettingsAppliedToEnvironment)

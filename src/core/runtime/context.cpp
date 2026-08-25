@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace beez::core
 {
@@ -26,6 +27,11 @@ void Context::setBuildScriptFileName(std::string fileName)
 void Context::setEnvFilePath(std::filesystem::path path)
 {
     envFilePath_ = std::move(path);
+}
+
+void Context::setParameterDefines(std::vector<std::string> defines)
+{
+    parameterDefines_ = std::move(defines);
 }
 
 std::filesystem::path Context::envFilePath() const

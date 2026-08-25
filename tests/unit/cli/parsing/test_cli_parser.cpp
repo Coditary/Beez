@@ -144,6 +144,26 @@ TEST(CliParserTest, ParsesUserOptionsAfterSeparator)
     EXPECT_EQ(Result.options.userOptions[1], "release");
 }
 
+TEST(CliParserTest, ParsesRepeatedDefines)
+{
+    const std::vector<std::string> Args = {
+        "beez", "build", "-Dhallo.hund=Bernd", "--define", "plain=1"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    ASSERT_EQ(Result.reason, beez::cli::CliExitReason::Continue);
+    ASSERT_EQ(Result.options.defines.size(), 2U);
+    EXPECT_EQ(Result.options.defines[0], "hallo.hund=Bernd");
+    EXPECT_EQ(Result.options.defines[1], "plain=1");
+}
+
+TEST(CliParserTest, RejectsDefineWithoutSeparator)
+{
+    const std::vector<std::string> Args = {"beez", "build", "-Dbroken"};
+    const auto Argv = toArgv(Args);
+    const auto Result = beez::cli::CliParser::parse(static_cast<int>(Argv.size()), Argv.data());
+    EXPECT_EQ(Result.reason, beez::cli::CliExitReason::Error);
+}
+
 TEST(CliParserTest, MissingTargetShowsHelpWithError)
 {
     const std::vector<std::string> Args = {"beez"};

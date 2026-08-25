@@ -17,6 +17,7 @@ add_executable(
     app/test_session_source_flags.cpp
     app/test_config_runtime.cpp
     app/test_session_profile.cpp
+    app/test_session_parameters.cpp
     app/test_completion.cpp
     app/test_install_completion.cpp
     app/test_security_scripts.cpp

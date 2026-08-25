@@ -135,6 +135,7 @@ int run(int argc, const char* argv[])
         }
 
         LoadedProject project;
+        project.context.setParameterDefines(Parsed.options.defines);
         if (const auto LoadError = loadGlobalSettings(project, Parsed.options.profile))
         {
             return *LoadError;

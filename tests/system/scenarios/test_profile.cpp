@@ -126,14 +126,16 @@ class ProfileTestEnv
 
 }  // namespace
 
-TEST(SystemProfileTest, ProfileFlagShowsErrorForMissingProfile)
+TEST(SystemProfileTest, ProfileFlagToleratesMissingProfileFile)
 {
     const beez::test::FixtureProject Project("profile-basic");
 
+    // Profiles are a runtime-only selection: a missing Lua profile file does
+    // not abort the run. The name stays active for DSL/parameters filtering.
     const beez::test::ProcessResult Result =
         beez::test::runBeez(Project.path(), {"--profile", "nonexistent", "hello"});
-    EXPECT_NE(Result.exitCode, 0);
-    EXPECT_TRUE(beez::test::outputContains(Result, "profile not found: nonexistent"));
+    EXPECT_EQ(Result.exitCode, 0);
+    EXPECT_FALSE(beez::test::outputContains(Result, "profile not found"));
 }
 
 TEST(SystemProfileTest, ProfileFlagWithShowConfig)

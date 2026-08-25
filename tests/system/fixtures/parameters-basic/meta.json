@@ -1,0 +1,12 @@
+{
+  "properties": {
+    "greeting": "hello",
+    "server": { "host": "localhost", "port": 8080 }
+  },
+  "profiles": {
+    "dev": {
+      "greeting": "hi dev",
+      "server": { "host": "127.0.0.1" }
+    }
+  }
+}
