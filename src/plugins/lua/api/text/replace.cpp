@@ -1,5 +1,7 @@
 #include "beez/plugin/lua/api/text/replace.hpp"
 
+#include "coditary/utils/strings.hpp"
+
 #include <stdexcept>
 #include <string>
 
@@ -11,23 +13,18 @@ namespace beez::plugin::lua
 
 void bindReplace(sol::table& textTable)
 {
-    textTable["replace"] = [](std::string text,
+    textTable["replace"] = [](const std::string& text,
                               const std::string& search,
                               const std::string& replacement) -> std::string
     {
-        if (search.empty())
+        try
         {
-            throw std::runtime_error("beez.text.replace: search string must not be empty");
+            return coditary::utils::replace_first(text, search, replacement);
         }
-
-        const std::size_t position = text.find(search);
-        if (position == std::string::npos)
+        catch (const std::invalid_argument& error)
         {
-            return text;
+            throw std::runtime_error(std::string("beez.text.replace: ") + error.what());
         }
-
-        text.replace(position, search.size(), replacement);
-        return text;
     };
 }
 

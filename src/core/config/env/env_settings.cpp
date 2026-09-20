@@ -172,7 +172,7 @@ void applyEnvSettings(const EnvSettings& env, const std::filesystem::path& proje
     for (const auto& file : resolveEnvFilePaths(env, projectRoot))
     {
         const EnvFile EnvFileInstance(file);
-        EnvFileInstance.forEachEntry(
+        EnvFileInstance.for_each_entry(
             [&](const std::string& key, const std::string& value)
             {
                 if (!env.dotenvOverridesSystem)

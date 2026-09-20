@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/api/text/regex_replace.hpp"
 
-#include <regex>
+#include "coditary/utils/strings.hpp"
+
 #include <stdexcept>
 #include <string>
 
@@ -12,19 +13,17 @@ namespace beez::plugin::lua
 
 void bindRegexReplace(sol::table& textTable)
 {
-    textTable["regex_replace"] = [](std::string text,
+    textTable["regex_replace"] = [](const std::string& text,
                                     const std::string& pattern,
                                     const std::string& replacement) -> std::string
     {
         try
         {
-            const std::regex expression(pattern);
-            return std::regex_replace(text, expression, replacement);
+            return coditary::utils::regex_replace(text, pattern, replacement);
         }
-        catch (const std::regex_error& error)
+        catch (const std::invalid_argument& error)
         {
-            throw std::runtime_error(std::string("beez.text.regex_replace: invalid pattern: ") +
-                                     error.what());
+            throw std::runtime_error(std::string("beez.text.regex_replace: ") + error.what());
         }
     };
 }

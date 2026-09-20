@@ -6,6 +6,8 @@ find_package(
     REQUIRED
 )
 
+set(COMPLETION_EMBED_SCRIPT
+    "${CODITARY_SHARED_CPP_DIR}/completion/scripts/generate_embedded_sources.py")
 set(COMPLETION_EMBEDDED_CPP "${CMAKE_CURRENT_BINARY_DIR}/completion_embedded.cpp")
 set(COMPLETION_SOURCE_DIR "${CMAKE_SOURCE_DIR}/scripts/completions")
 
@@ -18,11 +20,18 @@ endif ()
 
 add_custom_command(
     OUTPUT "${COMPLETION_EMBEDDED_CPP}"
-    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/generate-completion-embedded.py"
-            "${COMPLETION_SOURCE_DIR}" "${COMPLETION_EMBEDDED_CPP}" ${BEEZ_COMPLETION_POST_GEN}
-    DEPENDS "${CMAKE_SOURCE_DIR}/scripts/generate-completion-embedded.py" "${COMPLETION_SOURCE_DIR}/beez.bash"
-            "${COMPLETION_SOURCE_DIR}/beez.zsh" "${COMPLETION_SOURCE_DIR}/activate.bash"
-            "${COMPLETION_SOURCE_DIR}/activate.zsh" "${COMPLETION_SOURCE_DIR}/install-lib.sh"
+    COMMAND ${Python3_EXECUTABLE} "${COMPLETION_EMBED_SCRIPT}"
+            "${COMPLETION_SOURCE_DIR}" "${COMPLETION_EMBEDDED_CPP}"
+            --header "beez/cli/completion/completion_embedded.hpp"
+            --namespace "beez::cli"
+            --struct "EmbeddedCompletionFile"
+            --function "embeddedCompletionFiles"
+            beez.bash beez.zsh activate.bash activate.zsh install-lib.sh
+            ${BEEZ_COMPLETION_POST_GEN}
+    DEPENDS "${COMPLETION_EMBED_SCRIPT}" "${CMAKE_SOURCE_DIR}/scripts/generate-completion-embedded.py"
+            "${COMPLETION_SOURCE_DIR}/beez.bash" "${COMPLETION_SOURCE_DIR}/beez.zsh"
+            "${COMPLETION_SOURCE_DIR}/activate.bash" "${COMPLETION_SOURCE_DIR}/activate.zsh"
+            "${COMPLETION_SOURCE_DIR}/install-lib.sh"
     VERBATIM
 )
 

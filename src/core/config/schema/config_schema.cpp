@@ -6,6 +6,8 @@
 #include "beez/core/util/text_table.hpp"
 #include "beez/logging/settings/logging_settings.hpp"
 
+#include "completion/dotted_path.hpp"
+
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
@@ -499,19 +501,20 @@ void appendScalarDetails(std::ostringstream& stream, const ConfigSchemaNode& nod
     return output;
 }
 
-[[nodiscard]] std::vector<std::string> listObjectChildPaths(const ConfigSchemaNode& node,
-                                                            const std::string& basePath)
+[[nodiscard]] completion::CompletionTree buildCompletionTree(const ConfigSchemaNode& node)
 {
-    std::vector<std::string> completions;
-    completions.reserve(node.children.size());
-    for (const auto& [key, child] : node.children)
+    if (node.kind != ConfigSchemaKind::Object)
     {
-        (void)child;
-        completions.push_back(basePath + key);
+        return completion::CompletionTree::leaf();
     }
 
-    std::ranges::sort(completions);
-    return completions;
+    completion::CompletionTree tree;
+    for (const auto& [key, child] : node.children)
+    {
+        tree.ensure_object_child(key) = buildCompletionTree(child);
+    }
+
+    return tree;
 }
 
 }  // namespace
@@ -530,67 +533,9 @@ std::optional<std::string> formatConfigOptions(const std::string& dottedPath)
 
 std::vector<std::string> listConfigOptionCompletions(const std::string& prefix)
 {
-    const ConfigSchemaNode& root = rootConfigSchema();
-
-    if (prefix.empty())
-    {
-        return listObjectChildPaths(root, "");
-    }
-
-    if (prefix.ends_with('.'))
-    {
-        const std::string ParentPath = prefix.substr(0, prefix.size() - 1);
-        const ConfigSchemaNode* node = resolveSchemaNode(root, splitDottedPath(ParentPath));
-        if (node != nullptr && node->kind == ConfigSchemaKind::Object)
-        {
-            return listObjectChildPaths(*node, prefix);
-        }
-        return {};
-    }
-
-    const ConfigSchemaNode* exactNode = resolveSchemaNode(root, splitDottedPath(prefix));
-    if (exactNode != nullptr && exactNode->kind == ConfigSchemaKind::Object)
-    {
-        return listObjectChildPaths(*exactNode, prefix + '.');
-    }
-
-    std::string_view parentPath;
-    std::string_view partial;
-    const auto LastDot = prefix.rfind('.');
-    if (LastDot == std::string::npos)
-    {
-        parentPath = {};
-        partial = prefix;
-    }
-    else
-    {
-        parentPath = std::string_view(prefix).substr(0, LastDot);
-        partial = std::string_view(prefix).substr(LastDot + 1);
-    }
-
-    const ConfigSchemaNode* node = resolveSchemaNode(root, splitDottedPath(parentPath));
-    if (node == nullptr || node->kind != ConfigSchemaKind::Object)
-    {
-        return {};
-    }
-
-    const std::string Base = parentPath.empty() ? std::string {} : std::string(parentPath) + '.';
-
-    std::vector<std::string> completions;
-    completions.reserve(node->children.size());
-    for (const auto& [key, child] : node->children)
-    {
-        (void)child;
-        if (!partial.empty() && !key.starts_with(partial))
-        {
-            continue;
-        }
-
-        completions.push_back(Base + key);
-    }
-
-    std::ranges::sort(completions);
-    return completions;
+    static const completion::CompletionTree CompletionTree =
+        buildCompletionTree(rootConfigSchema());
+    return completion::list_dotted_path_completions(CompletionTree, prefix);
 }
 
 }  // namespace beez::core

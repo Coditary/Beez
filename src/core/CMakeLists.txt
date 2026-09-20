@@ -38,7 +38,6 @@ add_library(
     config/ui/run_summary.cpp
     config/ui/theme.cpp
     runtime/context.cpp
-    env/env_file.cpp
     glob/expand.cpp
     glob/metadata_cache.cpp
     glob/pattern.cpp
@@ -84,6 +83,6 @@ target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/step)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/storage)
 
-target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB yyjson::yyjson)
+target_link_libraries(beez_core PUBLIC beez_logging TBB::tbb ZLIB::ZLIB yyjson::yyjson std_cpp_parser_core coditary_utils coditary_fs coditary::completion)
 
 target_compile_features(beez_core PUBLIC cxx_std_20)

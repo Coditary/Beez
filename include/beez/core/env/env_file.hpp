@@ -1,32 +1,18 @@
 #pragma once
 
-#include <filesystem>
-#include <functional>
+#include <coditary/parser/env.hpp>
+
 #include <optional>
 #include <string>
-#include <unordered_map>
 
 namespace beez::core
 {
 
-class EnvFile
+using EnvFile = coditary::parser::EnvFile;
+
+[[nodiscard]] inline std::optional<std::string> readProcessEnvironment(const std::string& key)
 {
-  public:
-    explicit EnvFile(std::filesystem::path path);
-
-    [[nodiscard]] std::optional<std::string> lookup(const std::string& key) const;
-
-    void
-    forEachEntry(const std::function<void(const std::string&, const std::string&)>& visitor) const;
-
-  private:
-    void ensureLoaded() const;
-
-    std::filesystem::path path_;
-    mutable bool loaded_ = false;
-    mutable std::unordered_map<std::string, std::string> values_;
-};
-
-[[nodiscard]] std::optional<std::string> readProcessEnvironment(const std::string& key);
+    return coditary::parser::read_process_environment(key);
+}
 
 }  // namespace beez::core

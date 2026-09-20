@@ -1,5 +1,7 @@
 #include "beez/plugin/lua/api/text/join.hpp"
 
+#include "coditary/utils/strings.hpp"
+
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -35,30 +37,12 @@ namespace
     return parts;
 }
 
-[[nodiscard]] std::string joinStrings(const std::vector<std::string>& parts,
-                                      const std::string& delimiter)
-{
-    if (parts.empty())
-    {
-        return {};
-    }
-
-    std::string result = parts.front();
-    for (std::size_t index = 1; index < parts.size(); ++index)
-    {
-        result += delimiter;
-        result += parts[index];
-    }
-
-    return result;
-}
-
 }  // namespace
 
 void bindTextJoin(sol::table& textTable)
 {
     textTable["join"] = [](const sol::table& values, const std::string& delimiter) -> std::string
-    { return joinStrings(readStringArray(values), delimiter); };
+    { return coditary::utils::join(readStringArray(values), delimiter); };
 }
 
 }  // namespace beez::plugin::lua

@@ -1,6 +1,7 @@
 #include "beez/plugin/lua/api/text/regex_match.hpp"
 
-#include <regex>
+#include "coditary/utils/strings.hpp"
+
 #include <stdexcept>
 #include <string>
 
@@ -16,13 +17,11 @@ void bindRegexMatch(sol::table& textTable)
     {
         try
         {
-            const std::regex expression(pattern);
-            return std::regex_match(text, expression);
+            return coditary::utils::regex_match(text, pattern);
         }
-        catch (const std::regex_error& error)
+        catch (const std::invalid_argument& error)
         {
-            throw std::runtime_error(std::string("beez.text.regex_match: invalid pattern: ") +
-                                     error.what());
+            throw std::runtime_error(std::string("beez.text.regex_match: ") + error.what());
         }
     };
 }
