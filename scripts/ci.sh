@@ -4,6 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [ ! -f "$(cd "${ROOT_DIR}/../.." && pwd)/shared/Shared-Cpp/cmake/CoditarySharedCpp.cmake" ]; then
+    "${ROOT_DIR}/scripts/ci-checkout-shared-cpp.sh"
+fi
+
 export CC="${CC:-clang}"
 export CXX="${CXX:-clang++}"
 export FUZZER_TIME="${FUZZER_TIME:-30}"

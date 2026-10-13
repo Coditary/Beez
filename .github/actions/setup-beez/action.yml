@@ -34,6 +34,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Checkout Shared-Cpp
+      shell: bash
+      run: ./scripts/ci-checkout-shared-cpp.sh
+
     - name: Install LLVM toolchain
       if: inputs.install-llvm == 'true'
       shell: bash

@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
+"${ROOT_DIR}/scripts/ci-checkout-shared-cpp.sh"
+
 BUILD_DIR="${BUILD_DIR:-build}"
 BUILD_TYPE="${BUILD_TYPE:-Release}"
 BUILD_TESTING="${BUILD_TESTING:-OFF}"
