@@ -88,12 +88,16 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
     app.add_option("-j,--threads", threadCount, "Maximum worker threads (default: CPU cores)")
         ->check(CLI::Range(1, MaxThreadCount));
     std::string linkPath;
-    auto* linkOption = app.add_option("--link", linkPath, "Link current directory build.lua to bridge (optional: custom build.lua path)");
+    auto* linkOption = app.add_option(
+        "--link",
+        linkPath,
+        "Link current directory build.lua to bridge (optional: custom build.lua path)");
     linkOption->expected(0, 1);
     bool fromBridge = false;
     bool fromGlobal = false;
     app.add_flag("-l", fromBridge, "Run the target using the linked bridge build.lua");
-    app.add_flag("-g", fromGlobal, "Run the target using the global ~/.config/beez/global/build.lua");
+    app.add_flag(
+        "-g", fromGlobal, "Run the target using the global ~/.config/beez/global/build.lua");
     app.add_option("--list", listKind, "List registered entities (tasks, workflows, steps, phases)")
         ->check(CLI::IsMember({"tasks", "workflows", "steps", "phases"}));
     app.add_option(
@@ -150,13 +154,12 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
         options.userOptions.assign(Separator + 1, remaining.end());
     }
 
-    const bool HasRunTarget = options.target.has_value() || options.phaseRequest.has_value() ||
-                              options.stepName.has_value() || options.listKind.has_value() ||
-                              cleanCache || updateCache || installCompletion || showConfig ||
-                              app.count("--config-options") > 0 ||
-                              app.count("--complete-config-options") > 0 ||
-                              app.count("--dump-completion") > 0 || installDependencies ||
-                              app.count("--link") > 0;
+    const bool HasRunTarget =
+        options.target.has_value() || options.phaseRequest.has_value() ||
+        options.stepName.has_value() || options.listKind.has_value() || cleanCache || updateCache ||
+        installCompletion || showConfig || app.count("--config-options") > 0 ||
+        app.count("--complete-config-options") > 0 || app.count("--dump-completion") > 0 ||
+        installDependencies || app.count("--link") > 0;
 
     if (!HasRunTarget)
     {
@@ -182,8 +185,8 @@ CliParseResult CliParser::parse(int argc, const char* const* argv)
 
     if (app.count("--link") > 0)
     {
-        options.linkPath = linkPath.empty() ? std::filesystem::path{}
-                                            : std::filesystem::path(linkPath);
+        options.linkPath =
+            linkPath.empty() ? std::filesystem::path {} : std::filesystem::path(linkPath);
     }
 
     if (fromBridge && fromGlobal)

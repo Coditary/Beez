@@ -86,7 +86,10 @@ class ScopedTempTree
     ScopedTempTree(const ScopedTempTree&) = delete;
     ScopedTempTree& operator=(const ScopedTempTree&) = delete;
 
-    [[nodiscard]] const std::filesystem::path& path() const { return path_; }
+    [[nodiscard]] const std::filesystem::path& path() const
+    {
+        return path_;
+    }
 
   private:
     std::filesystem::path path_;
@@ -102,12 +105,18 @@ class LinkTestEnv
         std::filesystem::create_directories(tempRoot_ / "xdg" / "beez");
     }
 
-    [[nodiscard]] const std::filesystem::path& tempRoot() const { return tempRoot_; }
+    [[nodiscard]] const std::filesystem::path& tempRoot() const
+    {
+        return tempRoot_;
+    }
     [[nodiscard]] std::filesystem::path bridgesDir() const
     {
         return tempRoot_ / "xdg" / "beez" / "bridges";
     }
-    [[nodiscard]] std::filesystem::path indexPath() const { return bridgesDir() / "index.json"; }
+    [[nodiscard]] std::filesystem::path indexPath() const
+    {
+        return bridgesDir() / "index.json";
+    }
 
   private:
     std::filesystem::path tempRoot_;
@@ -125,8 +134,8 @@ TEST(CliLinkIntegrationTest, LinkWithoutPathCopiesBuildLua)
 task("echo-task", "echo hello-from-link")
 )");
 
-    const beez::test::ProcessResult Result =
-        beez::test::runBeez(Project.path(), {"--link"}, {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
+    const beez::test::ProcessResult Result = beez::test::runBeez(
+        Project.path(), {"--link"}, {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
 
     EXPECT_EQ(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("Linked"), std::string::npos);
@@ -150,7 +159,8 @@ task("custom-task", "echo custom-link")
     }
 
     const beez::test::ProcessResult Result =
-        beez::test::runBeez(Project.path(), {"--link", (CustomDir / "my-build.lua").string()},
+        beez::test::runBeez(Project.path(),
+                            {"--link", (CustomDir / "my-build.lua").string()},
                             {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
 
     EXPECT_EQ(Result.exitCode, 0);
@@ -185,8 +195,8 @@ TEST(CliLinkIntegrationTest, LinkWithMissingBuildLuaShowsError)
     LinkTestEnv env;
     const beez::test::TempProject Project;
 
-    const beez::test::ProcessResult Result =
-        beez::test::runBeez(Project.path(), {"--link"}, {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
+    const beez::test::ProcessResult Result = beez::test::runBeez(
+        Project.path(), {"--link"}, {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
 
     EXPECT_NE(Result.exitCode, 0);
     EXPECT_NE(Result.output.find("Error:"), std::string::npos);
@@ -201,7 +211,8 @@ task("noop", "true")
 )");
 
     const beez::test::ProcessResult Result =
-        beez::test::runBeez(Project.path(), {"--link", "/nonexistent/build.lua"},
+        beez::test::runBeez(Project.path(),
+                            {"--link", "/nonexistent/build.lua"},
                             {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
 
     EXPECT_NE(Result.exitCode, 0);
@@ -216,8 +227,8 @@ TEST(CliLinkIntegrationTest, BridgeDirectoryContainsHash)
 task("noop", "true")
 )");
 
-    beez::test::runBeez(Project.path(), {"--link"},
-                        {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
+    beez::test::runBeez(
+        Project.path(), {"--link"}, {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
 
     const auto BridgesDir = env.bridgesDir();
     ASSERT_TRUE(std::filesystem::exists(BridgesDir));
@@ -250,8 +261,8 @@ TEST(CliLinkIntegrationTest, IndexJsonContainsProjectPath)
 task("noop", "true")
 )");
 
-    beez::test::runBeez(Project.path(), {"--link"},
-                        {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
+    beez::test::runBeez(
+        Project.path(), {"--link"}, {"XDG_CONFIG_HOME=" + (env.tempRoot() / "xdg").string()});
 
     ASSERT_TRUE(std::filesystem::exists(env.indexPath()));
     std::ifstream file(env.indexPath());

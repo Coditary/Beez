@@ -56,10 +56,8 @@ void loadGlobalSettings(LoadedProject& project)
     project.settings.applyEnvironment(project.context);
 }
 
-std::optional<int> loadBuildScript(LoadedProject& project,
-                                   bool silentRun,
-                                   bool validateRegistry,
-                                   ScriptSource source)
+std::optional<int>
+loadBuildScript(LoadedProject& project, bool silentRun, bool validateRegistry, ScriptSource source)
 {
     project.pluginHost.addPlugin(std::make_unique<plugin::lua::LuaDslPlugin>());
     project.pluginHost.addPlugin(std::make_unique<plugin::shell::ShellPlugin>());
@@ -78,13 +76,12 @@ std::optional<int> loadBuildScript(LoadedProject& project,
         const auto BridgePath = core::resolveBridge(project.context.projectRoot());
         if (!BridgePath.has_value())
         {
-            writeErrorUnlessSilent(
-                silentRun,
-                [&project]()
-                {
-                    std::cerr << "Error: no bridge linked for project: "
-                              << project.context.projectRoot() << '\n';
-                });
+            writeErrorUnlessSilent(silentRun,
+                                   [&project]()
+                                   {
+                                       std::cerr << "Error: no bridge linked for project: "
+                                                 << project.context.projectRoot() << '\n';
+                                   });
             return 1;
         }
         project.context.setBuildScriptFileName(BridgePath->string());
@@ -97,9 +94,8 @@ std::optional<int> loadBuildScript(LoadedProject& project,
             writeErrorUnlessSilent(silentRun,
                                    []()
                                    {
-                                       std::cerr
-                                           << "Error: global build script not found: "
-                                           << core::globalBuildScriptPath().string() << '\n';
+                                       std::cerr << "Error: global build script not found: "
+                                                 << core::globalBuildScriptPath().string() << '\n';
                                    });
             return 1;
         }

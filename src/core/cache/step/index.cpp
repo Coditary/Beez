@@ -13,8 +13,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <iterator>
 #include <filesystem>
+#include <iterator>
 #include <optional>
 #include <ranges>  // NOLINT(misc-include-cleaner) -- std::ranges algorithms
 #include <sstream>

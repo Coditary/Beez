@@ -56,7 +56,8 @@ std::string helpText()
     stream << "  -s, --step TEXT  Run a step by name (plugin:step, org/plugin:step, optional "
               "@version)\n";
     stream << "  -l               Run the target using the linked bridge build.lua\n";
-    stream << "  -g               Run the target using the global ~/.config/beez/global/build.lua\n";
+    stream
+        << "  -g               Run the target using the global ~/.config/beez/global/build.lua\n";
     return stream.str();
 }
 

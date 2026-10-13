@@ -29,7 +29,7 @@ std::filesystem::path bridgeIndexPath()
 std::string hashPath(const std::filesystem::path& path)
 {
     const auto PathString = path.string();
-    const auto HashValue = std::hash<std::string>{}(PathString);
+    const auto HashValue = std::hash<std::string> {}(PathString);
     std::ostringstream stream;
     stream << std::hex << HashValue;
     return stream.str();
@@ -144,9 +144,7 @@ struct BridgeIndex
         }
 
         yyjson_mut_obj_add(entryObj, yyjson_mut_str(doc, "hash"), hashVal);
-        yyjson_mut_obj_add(root,
-                           yyjson_mut_str(doc, entry.sourcePath.c_str()),
-                           entryObj);
+        yyjson_mut_obj_add(root, yyjson_mut_str(doc, entry.sourcePath.c_str()), entryObj);
     }
 
     yyjson_write_err writeErr = {};
@@ -231,13 +229,13 @@ BridgeLinkResult createBridgeLink(const std::filesystem::path& buildScriptSource
     std::filesystem::create_directories(BridgeDir);
 
     // Copy build.lua to bridge
-    std::filesystem::copy_file(AbsoluteSource, TargetPath, std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::copy_file(
+        AbsoluteSource, TargetPath, std::filesystem::copy_options::overwrite_existing);
 
     // Remove stale entries for this project root
-    std::erase_if(index.entries, [&](const BridgeIndex::Entry& entry)
-    {
-        return entry.sourcePath == ProjectRootString;
-    });
+    std::erase_if(index.entries,
+                  [&](const BridgeIndex::Entry& entry)
+                  { return entry.sourcePath == ProjectRootString; });
 
     // Add new entry
     index.entries.push_back({AbsoluteProjectRoot.string(), Hash});

@@ -15,19 +15,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-foreach(_shared_cpp_candidate
-    "${CMAKE_SOURCE_DIR}/../../shared/Shared-Cpp"
-    "${CMAKE_SOURCE_DIR}/../../../shared/Shared-Cpp"
+foreach (_shared_cpp_candidate "${CMAKE_SOURCE_DIR}/../../shared/Shared-Cpp"
+                               "${CMAKE_SOURCE_DIR}/../../../shared/Shared-Cpp"
 )
-    if(EXISTS "${_shared_cpp_candidate}/cmake/CoditarySharedCpp.cmake")
+    if (EXISTS "${_shared_cpp_candidate}/cmake/CoditarySharedCpp.cmake")
         include("${_shared_cpp_candidate}/cmake/CoditarySharedCpp.cmake")
         break()
-    endif()
-endforeach()
+    endif ()
+endforeach ()
 
-if(NOT CODITARY_SHARED_CPP_DIR)
+if (NOT CODITARY_SHARED_CPP_DIR)
     message(FATAL_ERROR "Shared-Cpp not found next to the Beez checkout")
-endif()
+endif ()
 
 include(CoditaryResolveUtils)
 include(CoditaryResolveFs)
@@ -39,6 +38,8 @@ include(Coverage)
 
 coditary_resolve_utils()
 coditary_resolve_fs()
+include(CoditaryResolveParser)
+coditary_resolve_parser()
 resolve_completion()
 
 add_subdirectory(src)

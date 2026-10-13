@@ -112,7 +112,8 @@ TEST(SystemSourceFlagsTest, BridgeFlagRunsLinkedVersionInsteadOfLocal)
     EXPECT_EQ(LocalRun.exitCode, 0);
     EXPECT_TRUE(beez::test::outputContains(LocalRun, "from-v2"));
 
-    const beez::test::ProcessResult BridgeRun = beez::test::runBeez(Project.path(), {"-l", "hello"});
+    const beez::test::ProcessResult BridgeRun =
+        beez::test::runBeez(Project.path(), {"-l", "hello"});
     EXPECT_EQ(BridgeRun.exitCode, 0);
     EXPECT_TRUE(beez::test::outputContains(BridgeRun, "from-v1"));
 }

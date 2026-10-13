@@ -89,7 +89,10 @@ class LinkSystemEnv
         return root_ / "xdg" / "beez" / "bridges";
     }
 
-    [[nodiscard]] std::filesystem::path indexPath() const { return bridgesDir() / "index.json"; }
+    [[nodiscard]] std::filesystem::path indexPath() const
+    {
+        return bridgesDir() / "index.json";
+    }
 
   private:
     std::filesystem::path root_;

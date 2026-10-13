@@ -88,7 +88,10 @@ class ScopedTempTree
     ScopedTempTree(const ScopedTempTree&) = delete;
     ScopedTempTree& operator=(const ScopedTempTree&) = delete;
 
-    [[nodiscard]] const std::filesystem::path& path() const { return path_; }
+    [[nodiscard]] const std::filesystem::path& path() const
+    {
+        return path_;
+    }
 
   private:
     std::filesystem::path path_;
@@ -99,17 +102,30 @@ class BridgeTestEnv
   public:
     BridgeTestEnv()
         : tempRoot_(beez::core::systemTempDirectory() /
-                    ("beez_bridge_test_" + std::to_string(reinterpret_cast<std::uintptr_t>(&instanceCounter_)))),
+                    ("beez_bridge_test_" +
+                     std::to_string(reinterpret_cast<std::uintptr_t>(&instanceCounter_)))),
           xdgEnv_("XDG_CONFIG_HOME", tempRoot_.c_str()), cleanup_(tempRoot_)
     {
         ++instanceCounter_;
         std::filesystem::create_directories(tempRoot_ / "beez");
     }
 
-    [[nodiscard]] std::filesystem::path configDir() const { return tempRoot_ / "beez"; }
-    [[nodiscard]] std::filesystem::path bridgesDir() const { return tempRoot_ / "beez" / "bridges"; }
-    [[nodiscard]] std::filesystem::path indexPath() const { return bridgesDir() / "index.json"; }
-    [[nodiscard]] const std::filesystem::path& tempRoot() const { return tempRoot_; }
+    [[nodiscard]] std::filesystem::path configDir() const
+    {
+        return tempRoot_ / "beez";
+    }
+    [[nodiscard]] std::filesystem::path bridgesDir() const
+    {
+        return tempRoot_ / "beez" / "bridges";
+    }
+    [[nodiscard]] std::filesystem::path indexPath() const
+    {
+        return bridgesDir() / "index.json";
+    }
+    [[nodiscard]] const std::filesystem::path& tempRoot() const
+    {
+        return tempRoot_;
+    }
 
     [[nodiscard]] std::filesystem::path createBuildLua(const std::string& relativePath,
                                                        const std::string& content)
@@ -319,10 +335,9 @@ TEST(BridgePathsTest, CreateBridgeLinkStaleEntryRemoved)
 
     // Manually corrupt index by adding a duplicate entry with different hash
     std::ofstream indexFile(env.indexPath());
-    indexFile << "{ \"" << ProjectRoot.string()
-              << "\": { \"hash\": \"wrong_hash\" }, \"" << ProjectRoot.string()
-              << "_old\": { \"hash\": \"" << beez::core::hashPath(ProjectRoot)
-              << "\" } }";
+    indexFile << "{ \"" << ProjectRoot.string() << "\": { \"hash\": \"wrong_hash\" }, \""
+              << ProjectRoot.string() << "_old\": { \"hash\": \""
+              << beez::core::hashPath(ProjectRoot) << "\" } }";
     indexFile.close();
 
     // Re-create should clean up stale entries

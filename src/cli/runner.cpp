@@ -111,9 +111,10 @@ int run(int argc, const char* argv[])
         if (Parsed.options.linkPath.has_value())
         {
             const auto Cwd = std::filesystem::current_path();
-            const auto BuildScriptSource = Parsed.options.linkPath.has_value() && !Parsed.options.linkPath->empty()
-                                              ? *Parsed.options.linkPath
-                                              : Cwd / "build.lua";
+            const auto BuildScriptSource =
+                Parsed.options.linkPath.has_value() && !Parsed.options.linkPath->empty()
+                    ? *Parsed.options.linkPath
+                    : Cwd / "build.lua";
 
             if (!std::filesystem::exists(BuildScriptSource))
             {
@@ -142,13 +143,13 @@ int run(int argc, const char* argv[])
             return 0;
         }
 
-        if (const auto LoadError = loadBuildScript(project,
-                                                   silentRun,
-                                                   !Parsed.options.installDependencies,
-                                                   Parsed.options.fromBridge ? ScriptSource::Bridge
-                                                   : Parsed.options.fromGlobal
-                                                       ? ScriptSource::Global
-                                                       : ScriptSource::Auto))
+        if (const auto LoadError =
+                loadBuildScript(project,
+                                silentRun,
+                                !Parsed.options.installDependencies,
+                                Parsed.options.fromBridge   ? ScriptSource::Bridge
+                                : Parsed.options.fromGlobal ? ScriptSource::Global
+                                                            : ScriptSource::Auto))
         {
             return *LoadError;
         }

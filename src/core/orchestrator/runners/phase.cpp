@@ -124,12 +124,10 @@ Expected<int, OrchestratorError> Orchestrator::runPhase(const PhaseRequest& requ
     {
         scopes = KnownScopes;
     }
-    else if (std::ranges::any_of(scopes,
-                                 [&](const std::string& scope)
-                                 {
-                                     return std::ranges::find(KnownScopes, scope) ==
-                                            KnownScopes.end();
-                                 }))
+    else if (std::ranges::any_of(
+                 scopes,
+                 [&](const std::string& scope)
+                 { return std::ranges::find(KnownScopes, scope) == KnownScopes.end(); }))
     {
         return OrchestratorError::NotFound;
     }

@@ -79,7 +79,10 @@ class ScopedTempTree
     ScopedTempTree(const ScopedTempTree&) = delete;
     ScopedTempTree& operator=(const ScopedTempTree&) = delete;
 
-    [[nodiscard]] const std::filesystem::path& path() const { return path_; }
+    [[nodiscard]] const std::filesystem::path& path() const
+    {
+        return path_;
+    }
 
   private:
     std::filesystem::path path_;
@@ -95,9 +98,18 @@ class SourceFlagTestEnv
         std::filesystem::create_directories(configDir());
     }
 
-    [[nodiscard]] std::filesystem::path configDir() const { return root_ / "xdg" / "beez"; }
-    [[nodiscard]] std::filesystem::path globalDir() const { return configDir() / "global"; }
-    [[nodiscard]] std::filesystem::path bridgesDir() const { return configDir() / "bridges"; }
+    [[nodiscard]] std::filesystem::path configDir() const
+    {
+        return root_ / "xdg" / "beez";
+    }
+    [[nodiscard]] std::filesystem::path globalDir() const
+    {
+        return configDir() / "global";
+    }
+    [[nodiscard]] std::filesystem::path bridgesDir() const
+    {
+        return configDir() / "bridges";
+    }
 
     void writeGlobalBuildLua(const std::string& content) const
     {

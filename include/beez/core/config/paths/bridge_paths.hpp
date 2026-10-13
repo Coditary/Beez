@@ -16,7 +16,8 @@ struct BridgeLinkResult
 [[nodiscard]] std::filesystem::path bridgeDirectory();
 [[nodiscard]] std::filesystem::path bridgeIndexPath();
 [[nodiscard]] std::string hashPath(const std::filesystem::path& path);
-[[nodiscard]] std::optional<std::filesystem::path> resolveBridge(const std::filesystem::path& projectRoot);
+[[nodiscard]] std::optional<std::filesystem::path>
+resolveBridge(const std::filesystem::path& projectRoot);
 [[nodiscard]] BridgeLinkResult createBridgeLink(const std::filesystem::path& buildScriptSource,
                                                 const std::filesystem::path& projectRoot);
 
