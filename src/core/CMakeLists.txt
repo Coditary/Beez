@@ -87,13 +87,19 @@ target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/step)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/storage)
 
+if (TARGET std_cpp_parser_codec)
+    set(_beez_std_cpp_parser std_cpp_parser_codec)
+else ()
+    set(_beez_std_cpp_parser std_cpp_parser_core)
+endif ()
+
 target_link_libraries(
     beez_core
     PUBLIC beez_logging
            TBB::tbb
            ZLIB::ZLIB
            yyjson::yyjson
-           std_cpp_parser_codec
+           ${_beez_std_cpp_parser}
            coditary_utils
            coditary_fs
            coditary::completion
