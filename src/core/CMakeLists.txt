@@ -89,7 +89,7 @@ target_link_libraries(
            TBB::tbb
            ZLIB::ZLIB
            yyjson::yyjson
-           coditary::std_cpp_parser
+           std_cpp_parser_codec
            coditary_utils
            coditary_fs
            coditary::completion
