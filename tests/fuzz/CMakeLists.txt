@@ -7,7 +7,7 @@ if (BUILD_FUZZER)
 
     target_include_directories(fuzz_lua_dsl PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-    target_link_libraries(fuzz_lua_dsl PRIVATE beez_plugins)
+    target_link_libraries(fuzz_lua_dsl PRIVATE beez_plugins coditary::std_cpp_parser)
 
     beez_enable_fuzzer(fuzz_lua_dsl)
 

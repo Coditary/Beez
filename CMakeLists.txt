@@ -38,6 +38,36 @@ include(Coverage)
 
 coditary_resolve_utils()
 coditary_resolve_fs()
+
+set(STDCPP_PARSER_DIR
+    "${CODITARY_SHARED_CPP_DIR}/std-cpp-parser"
+    CACHE PATH "Path to std-cpp-parser" FORCE
+)
+set(STDCPP_PARSER_BUILD_TESTS
+    OFF
+    CACHE BOOL "" FORCE
+)
+set(STDCPP_PARSER_ENABLE_ALL_BY_DEFAULT
+    ON
+    CACHE BOOL "" FORCE
+)
+set(STDCPP_PARSER_ENABLE_ENV
+    ON
+    CACHE BOOL "" FORCE
+)
+set(STDCPP_PARSER_ENABLE_JSON
+    ON
+    CACHE BOOL "" FORCE
+)
+set(STDCPP_PARSER_ENABLE_YAML
+    ON
+    CACHE BOOL "" FORCE
+)
+set(STDCPP_PARSER_ENABLE_TOML
+    ON
+    CACHE BOOL "" FORCE
+)
+
 include(CoditaryResolveParser)
 coditary_resolve_parser()
 resolve_completion()
