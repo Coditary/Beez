@@ -68,8 +68,11 @@ set(STDCPP_PARSER_ENABLE_TOML
     CACHE BOOL "" FORCE
 )
 
-include(CoditaryResolveParser)
-coditary_resolve_parser()
+if (NOT EXISTS "${STDCPP_PARSER_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR "std-cpp-parser not found at ${STDCPP_PARSER_DIR}")
+endif ()
+
+add_subdirectory("${STDCPP_PARSER_DIR}" "${CMAKE_BINARY_DIR}/_deps/std-cpp-parser")
 resolve_completion()
 
 add_subdirectory(src)
