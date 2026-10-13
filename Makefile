@@ -31,7 +31,13 @@ help: ## Alle Targets anzeigen
 
 setup: ## Conan install + CMake configure (Release/Debug via BUILD_TYPE)
 	conan install . --output-folder=$(BUILD_DIR) --build=missing -s build_type=$(BUILD_TYPE) -pr $(CONAN_PROFILE) -pr:b $(CONAN_PROFILE)
-	cmake --preset conan-$(shell echo $(BUILD_TYPE) | tr '[:upper:]' '[:lower:]') -DBUILD_TESTING=ON -DBUILD_CACHE=ON
+	cmake --preset conan-$(shell echo $(BUILD_TYPE) | tr '[:upper:]' '[:lower:]') -DBUILD_TESTING=ON -DBUILD_CACHE=ON \
+		-DSTDCPP_PARSER_ENABLE_ALL_BY_DEFAULT=ON \
+		-DSTDCPP_PARSER_ENABLE_ENV=ON \
+		-DSTDCPP_PARSER_ENABLE_JSON=ON \
+		-DSTDCPP_PARSER_ENABLE_YAML=ON \
+		-DSTDCPP_PARSER_ENABLE_TOML=ON \
+		-DSTDCPP_PARSER_BUILD_TESTS=OFF
 
 setup-debug: ## Conan + CMake configure (Debug)
 	$(MAKE) setup BUILD_TYPE=Debug

@@ -39,40 +39,34 @@ include(Coverage)
 coditary_resolve_utils()
 coditary_resolve_fs()
 
-set(STDCPP_PARSER_DIR
-    "${CODITARY_SHARED_CPP_DIR}/std-cpp-parser"
-    CACHE PATH "Path to std-cpp-parser" FORCE
-)
-set(STDCPP_PARSER_BUILD_TESTS
-    OFF
-    CACHE BOOL "" FORCE
-)
-set(STDCPP_PARSER_ENABLE_ALL_BY_DEFAULT
-    ON
-    CACHE BOOL "" FORCE
-)
-set(STDCPP_PARSER_ENABLE_ENV
-    ON
-    CACHE BOOL "" FORCE
-)
-set(STDCPP_PARSER_ENABLE_JSON
-    ON
-    CACHE BOOL "" FORCE
-)
-set(STDCPP_PARSER_ENABLE_YAML
-    ON
-    CACHE BOOL "" FORCE
-)
-set(STDCPP_PARSER_ENABLE_TOML
-    ON
-    CACHE BOOL "" FORCE
-)
+set(STDCPP_PARSER_DIR "${CODITARY_SHARED_CPP_DIR}/std-cpp-parser")
 
 if (NOT EXISTS "${STDCPP_PARSER_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "std-cpp-parser not found at ${STDCPP_PARSER_DIR}")
 endif ()
 
+# Normal variables (not stale CACHE) so std-cpp-parser format toggles apply on CI.
+set(STDCPP_PARSER_BUILD_TESTS OFF)
+set(STDCPP_PARSER_ENABLE_ALL_BY_DEFAULT ON)
+set(STDCPP_PARSER_ENABLE_ENV ON)
+set(STDCPP_PARSER_ENABLE_JSON ON)
+set(STDCPP_PARSER_ENABLE_YAML ON)
+set(STDCPP_PARSER_ENABLE_TOML ON)
+
 add_subdirectory("${STDCPP_PARSER_DIR}" "${CMAKE_BINARY_DIR}/_deps/std-cpp-parser")
+
+if (NOT TARGET std_cpp_parser_core)
+    message(FATAL_ERROR "std-cpp-parser did not define std_cpp_parser_core")
+endif ()
+
+get_target_property(_stdcpp_core_sources std_cpp_parser_core SOURCES)
+if (NOT _stdcpp_core_sources OR NOT "${STDCPP_PARSER_DIR}/src/env.cpp" IN_LIST _stdcpp_core_sources)
+    target_sources(std_cpp_parser_core PRIVATE "${STDCPP_PARSER_DIR}/src/env.cpp")
+    target_compile_definitions(std_cpp_parser_core PUBLIC STDCPP_PARSER_ENABLE_ENV)
+    if (TARGET std_cpp_parser_codec)
+        target_compile_definitions(std_cpp_parser_codec PUBLIC STDCPP_PARSER_ENABLE_ENV)
+    endif ()
+endif ()
 resolve_completion()
 
 add_subdirectory(src)

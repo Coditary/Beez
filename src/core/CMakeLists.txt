@@ -79,6 +79,10 @@ add_library(
 )
 
 target_include_directories(beez_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+if (DEFINED STDCPP_PARSER_DIR)
+    target_include_directories(beez_core PUBLIC "${STDCPP_PARSER_DIR}/include")
+endif ()
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/config/report)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/step)
 target_include_directories(beez_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cache/storage)
